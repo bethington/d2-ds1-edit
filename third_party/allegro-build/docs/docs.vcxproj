@@ -1,0 +1,1120 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="RelWithDebInfo|Win32">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{EF187526-118B-389F-9B25-0BD5719B4987}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
+    <Platform>Win32</Platform>
+    <ProjectName>docs</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">
+    <Midl>
+      <AdditionalIncludeDirectories>C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\include;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\include;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\3b01a7b702ea007e035bc58125416fdd\AUTHORS.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating AUTHORS</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -part -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/AUTHORS C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/thanks._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\thanks._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\AUTHORS</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\3b01a7b702ea007e035bc58125416fdd\CHANGES.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating CHANGES</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/CHANGES C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/changes._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\changes._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\CHANGES</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\3b01a7b702ea007e035bc58125416fdd\THANKS.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating THANKS</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -part -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/THANKS C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/thanks._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\thanks._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\THANKS</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\33ef2e3cfe01058324e2c88fbb4f47b4\cmake.html.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating build/cmake.html</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/build/cmake.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/build/cmake._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\build\cmake._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\build\cmake.html</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\33ef2e3cfe01058324e2c88fbb4f47b4\cmake.txt.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating build/cmake.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/build/cmake.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/build/cmake._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\build\cmake._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\build\cmake.txt</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\33ef2e3cfe01058324e2c88fbb4f47b4\linux.html.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating build/linux.html</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/build/linux.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/build/linux._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\build\linux._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\build\linux.html</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\33ef2e3cfe01058324e2c88fbb4f47b4\linux.txt.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating build/linux.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/build/linux.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/build/linux._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\build\linux._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\build\linux.txt</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\33ef2e3cfe01058324e2c88fbb4f47b4\macosx.html.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating build/macosx.html</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/build/macosx.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/build/macosx._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\build\macosx._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\build\macosx.html</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\33ef2e3cfe01058324e2c88fbb4f47b4\macosx.txt.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating build/macosx.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/build/macosx.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/build/macosx._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\build\macosx._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\build\macosx.txt</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\33ef2e3cfe01058324e2c88fbb4f47b4\mingw32.html.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating build/mingw32.html</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/build/mingw32.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/build/mingw32._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\build\mingw32._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\build\mingw32.html</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\33ef2e3cfe01058324e2c88fbb4f47b4\mingw32.txt.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating build/mingw32.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/build/mingw32.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/build/mingw32._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\build\mingw32._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\build\mingw32.txt</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\33ef2e3cfe01058324e2c88fbb4f47b4\msvc.html.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating build/msvc.html</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/build/msvc.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/build/msvc._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\build\msvc._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\build\msvc.html</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\33ef2e3cfe01058324e2c88fbb4f47b4\msvc.txt.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating build/msvc.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/build/msvc.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/build/msvc._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\build\msvc._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\build\msvc.txt</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\33ef2e3cfe01058324e2c88fbb4f47b4\unix.html.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating build/unix.html</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/build/unix.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/build/unix._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\build\unix._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\build\unix.html</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\33ef2e3cfe01058324e2c88fbb4f47b4\unix.txt.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating build/unix.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/build/unix.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/build/unix._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\build\unix._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\build\unix.txt</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\abi.html.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating html/abi.html</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/abi.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/abi._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\abi._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\abi.html</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\addons.html.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating html/addons.html</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/addons.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/addons._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\addons._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\addons.html</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\ahack.html.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating html/ahack.html</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/ahack.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/ahack._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\ahack._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\ahack.html</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\allegro.html.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating html/allegro.html</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/allegro.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/allegro._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\allegro._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\allegro.html</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\api.html.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating html/api.html</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/api.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/api._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\api._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\api.html</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\changes.html.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating html/changes.html</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/changes.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/changes._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\changes._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\changes.html</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\const.html.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating html/const.html</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/const.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/const._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\const._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\const.html</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\dat.html.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating html/dat.html</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/dat.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/dat._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\dat._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\dat.html</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\dat2c.html.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating html/dat2c.html</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/dat2c.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/dat2c._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\dat2c._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\dat2c.html</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\dat2s.html.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating html/dat2s.html</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/dat2s.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/dat2s._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\dat2s._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\dat2s.html</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\datafile.html.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating html/datafile.html</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/datafile.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/datafile._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\datafile._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\datafile.html</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\faq.html.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating html/faq.html</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/faq.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/faq._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\faq._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\faq.html</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\grabber.html.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating html/grabber.html</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/grabber.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/grabber._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\grabber._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\grabber.html</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\help.html.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating html/help.html</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/help.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/help._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\help._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\help.html</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\index.html.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating html/index.html</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/index.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/index._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\index._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\index.html</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\license.html.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating html/license.html</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/license.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/license._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\license._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\license.html</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\makedoc.html.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating html/makedoc.html</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/makedoc.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/makedoc._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\makedoc._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\makedoc.html</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\mistakes.html.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating html/mistakes.html</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/mistakes.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/mistakes._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\mistakes._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\mistakes.html</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\packfile.html.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating html/packfile.html</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/packfile.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/packfile._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\packfile._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\packfile.html</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\readme.html.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating html/readme.html</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/readme.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/readme._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\readme._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\readme.html</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\thanks.html.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating html/thanks.html</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/thanks.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/thanks._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\thanks._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\thanks.html</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fb76b67018608e10affaf798c1f6b912\allegro_init.3.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating man/allegro_init.3</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -man C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/man/allegro_init.3 C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/allegro._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\allegro._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\man\allegro_init.3</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\3b01a7b702ea007e035bc58125416fdd\readme.txt.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating readme.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/readme.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/readme._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\readme._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\readme.txt</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\80920c29edc7e5ff5f1f8581cd9c974c\allegro.api.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating scite/allegro.api</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -scite C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/scite/allegro.api C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/allegro._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\scite\allegro.api</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\abi.txt.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating txt/abi.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/abi.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/abi._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\abi._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\abi.txt</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\addons.txt.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating txt/addons.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/addons.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/addons._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\addons._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\addons.txt</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\ahack.txt.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating txt/ahack.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/ahack.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/ahack._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\ahack._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\ahack.txt</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\allegro.txt.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating txt/allegro.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/allegro.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/allegro._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\allegro._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\allegro.txt</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\api.txt.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating txt/api.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/api.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/api._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\api._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\api.txt</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\changes.txt.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating txt/changes.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/changes.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/changes._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\changes._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\changes.txt</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\const.txt.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating txt/const.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/const.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/const._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\const._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\const.txt</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\dat.txt.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating txt/dat.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/dat.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/dat._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\dat._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\dat.txt</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\dat2c.txt.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating txt/dat2c.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/dat2c.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/dat2c._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\dat2c._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\dat2c.txt</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\dat2s.txt.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating txt/dat2s.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/dat2s.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/dat2s._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\dat2s._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\dat2s.txt</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\datafile.txt.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating txt/datafile.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/datafile.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/datafile._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\datafile._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\datafile.txt</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\faq.txt.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating txt/faq.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/faq.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/faq._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\faq._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\faq.txt</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\grabber.txt.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating txt/grabber.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/grabber.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/grabber._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\grabber._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\grabber.txt</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\help.txt.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating txt/help.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/help.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/help._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\help._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\help.txt</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\index.txt.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating txt/index.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/index.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/index._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\index._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\index.txt</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\license.txt.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating txt/license.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/license.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/license._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\license._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\license.txt</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\makedoc.txt.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating txt/makedoc.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/makedoc.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/makedoc._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\makedoc._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\makedoc.txt</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\mistakes.txt.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating txt/mistakes.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/mistakes.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/mistakes._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\mistakes._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\mistakes.txt</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\packfile.txt.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating txt/packfile.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/packfile.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/packfile._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\packfile._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\packfile.txt</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\readme.txt.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating txt/readme.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/readme.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/readme._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\readme._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\readme.txt</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\thanks.txt.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Generating txt/thanks.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/thanks.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/thanks._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\RelWithDebInfo\makedoc.exe;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\src\thanks._tx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\thanks.txt</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\6014affe3110d7f250ba15a01310b532\docs.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'"></Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\abi.txt;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\abi.html;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\addons.txt;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\addons.html;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\ahack.txt;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\ahack.html;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\allegro.txt;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\allegro.html;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\api.txt;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\api.html;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\changes.txt;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\changes.html;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\const.txt;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\const.html;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\dat2c.txt;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\dat2c.html;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\dat2s.txt;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\dat2s.html;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\datafile.txt;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\datafile.html;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\dat.txt;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\dat.html;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\faq.txt;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\faq.html;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\grabber.txt;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\grabber.html;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\help.txt;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\help.html;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\index.txt;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\index.html;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\license.txt;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\license.html;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\makedoc.txt;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\makedoc.html;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\mistakes.txt;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\mistakes.html;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\packfile.txt;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\packfile.html;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\readme.txt;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\readme.html;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\txt\thanks.txt;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\html\thanks.html;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\build\cmake.txt;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\build\cmake.html;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\build\linux.txt;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\build\linux.html;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\build\macosx.txt;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\build\macosx.html;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\build\mingw32.txt;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\build\mingw32.html;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\build\msvc.txt;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\build\msvc.html;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\build\unix.txt;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\build\unix.html;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\AUTHORS;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\THANKS;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\CHANGES;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\readme.txt;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\man\allegro_init.3;C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\scite\allegro.api;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\CMakeFiles\docs</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+      <VerifyInputsAndOutputsExist Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</VerifyInputsAndOutputsExist>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Building Custom Rule C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1 -BC:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build --check-stamp-file C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\CMakeFiles\docs">
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\ZERO_CHECK.vcxproj">
+      <Project>{84416DEC-209B-3D78-A4B7-6589DF84812F}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\makedoc.vcxproj">
+      <Project>{023B2E84-4371-32FF-A795-171CB1E39E08}</Project>
+      <Name>makedoc</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -1,0 +1,99 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\addons\allegrogl\src\alleggl.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\addons\allegrogl\src\glvtable.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\addons\allegrogl\src\scorer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\addons\allegrogl\src\math.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\addons\allegrogl\src\aglf.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\addons\allegrogl\src\fontconv.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\addons\allegrogl\src\texture.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\addons\allegrogl\src\glext.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\addons\allegrogl\src\gui.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\addons\allegrogl\src\videovtb.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\addons\allegrogl\src\win.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\addons\allegrogl\include\alleggl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\addons\allegrogl\include\allegrogl\gl_ext.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\addons\allegrogl\include\allegrogl\gl_header_detect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\addons\allegrogl\include\allegrogl\alleggl_config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\addons\allegrogl\include\allegrogl\GLext\glx_ext_alias.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\addons\allegrogl\include\allegrogl\GLext\glx_ext_api.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\addons\allegrogl\include\allegrogl\GLext\glx_ext_defs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\addons\allegrogl\include\allegrogl\GLext\glx_ext_list.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\addons\allegrogl\include\allegrogl\GLext\gl_ext_alias.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\addons\allegrogl\include\allegrogl\GLext\gl_ext_api.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\addons\allegrogl\include\allegrogl\GLext\gl_ext_defs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\addons\allegrogl\include\allegrogl\GLext\gl_ext_list.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\addons\allegrogl\include\allegrogl\GLext\wgl_ext_alias.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\addons\allegrogl\include\allegrogl\GLext\wgl_ext_api.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\addons\allegrogl\include\allegrogl\GLext\wgl_ext_defs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\addons\allegrogl\include\allegrogl\GLext\wgl_ext_list.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\addons\allegrogl\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{94D296C5-78E8-3992-A532-30B7B83FD721}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{1760F084-A3D7-3F92-AFBD-D18A59D83614}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,618 @@
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\3B01A7B702EA007E035BC58125416FDD\AUTHORS.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -part -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/AUTHORS C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/thanks._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\3B01A7B702EA007E035BC58125416FDD\CHANGES.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/CHANGES C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/changes._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\3B01A7B702EA007E035BC58125416FDD\THANKS.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -part -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/THANKS C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/thanks._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\33EF2E3CFE01058324E2C88FBB4F47B4\CMAKE.HTML.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/build/cmake.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/build/cmake._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\33EF2E3CFE01058324E2C88FBB4F47B4\CMAKE.TXT.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/build/cmake.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/build/cmake._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\33EF2E3CFE01058324E2C88FBB4F47B4\LINUX.HTML.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/build/linux.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/build/linux._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\33EF2E3CFE01058324E2C88FBB4F47B4\LINUX.TXT.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/build/linux.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/build/linux._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\33EF2E3CFE01058324E2C88FBB4F47B4\MACOSX.HTML.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/build/macosx.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/build/macosx._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\33EF2E3CFE01058324E2C88FBB4F47B4\MACOSX.TXT.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/build/macosx.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/build/macosx._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\33EF2E3CFE01058324E2C88FBB4F47B4\MINGW32.HTML.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/build/mingw32.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/build/mingw32._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\33EF2E3CFE01058324E2C88FBB4F47B4\MINGW32.TXT.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/build/mingw32.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/build/mingw32._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\33EF2E3CFE01058324E2C88FBB4F47B4\MSVC.HTML.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/build/msvc.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/build/msvc._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\33EF2E3CFE01058324E2C88FBB4F47B4\MSVC.TXT.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/build/msvc.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/build/msvc._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\33EF2E3CFE01058324E2C88FBB4F47B4\UNIX.HTML.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/build/unix.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/build/unix._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\33EF2E3CFE01058324E2C88FBB4F47B4\UNIX.TXT.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/build/unix.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/build/unix._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\FDCDFAF8F68ED4A88E0F561C31629603\ABI.HTML.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/abi.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/abi._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\FDCDFAF8F68ED4A88E0F561C31629603\ADDONS.HTML.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/addons.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/addons._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\FDCDFAF8F68ED4A88E0F561C31629603\AHACK.HTML.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/ahack.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/ahack._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\FDCDFAF8F68ED4A88E0F561C31629603\ALLEGRO.HTML.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/allegro.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/allegro._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\FDCDFAF8F68ED4A88E0F561C31629603\API.HTML.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/api.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/api._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\FDCDFAF8F68ED4A88E0F561C31629603\CHANGES.HTML.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/changes.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/changes._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\FDCDFAF8F68ED4A88E0F561C31629603\CONST.HTML.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/const.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/const._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\FDCDFAF8F68ED4A88E0F561C31629603\DAT.HTML.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/dat.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/dat._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\FDCDFAF8F68ED4A88E0F561C31629603\DAT2C.HTML.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/dat2c.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/dat2c._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\FDCDFAF8F68ED4A88E0F561C31629603\DAT2S.HTML.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/dat2s.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/dat2s._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\FDCDFAF8F68ED4A88E0F561C31629603\DATAFILE.HTML.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/datafile.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/datafile._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\FDCDFAF8F68ED4A88E0F561C31629603\FAQ.HTML.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/faq.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/faq._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\FDCDFAF8F68ED4A88E0F561C31629603\GRABBER.HTML.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/grabber.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/grabber._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\FDCDFAF8F68ED4A88E0F561C31629603\HELP.HTML.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/help.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/help._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\FDCDFAF8F68ED4A88E0F561C31629603\INDEX.HTML.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/index.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/index._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\FDCDFAF8F68ED4A88E0F561C31629603\LICENSE.HTML.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/license.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/license._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\FDCDFAF8F68ED4A88E0F561C31629603\MAKEDOC.HTML.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/makedoc.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/makedoc._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\FDCDFAF8F68ED4A88E0F561C31629603\MISTAKES.HTML.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/mistakes.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/mistakes._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\FDCDFAF8F68ED4A88E0F561C31629603\PACKFILE.HTML.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/packfile.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/packfile._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\FDCDFAF8F68ED4A88E0F561C31629603\README.HTML.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/readme.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/readme._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\FDCDFAF8F68ED4A88E0F561C31629603\THANKS.HTML.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/html/thanks.html C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/thanks._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\FB76B67018608E10AFFAF798C1F6B912\ALLEGRO_INIT.3.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -man C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/man/allegro_init.3 C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/allegro._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\3B01A7B702EA007E035BC58125416FDD\README.TXT.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/readme.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/readme._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\80920C29EDC7E5FF5F1F8581CD9C974C\ALLEGRO.API.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -scite C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/scite/allegro.api C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/allegro._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\CC0B6F1405C6CC632AF27126FDA46A20\ABI.TXT.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/abi.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/abi._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\CC0B6F1405C6CC632AF27126FDA46A20\ADDONS.TXT.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/addons.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/addons._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\CC0B6F1405C6CC632AF27126FDA46A20\AHACK.TXT.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/ahack.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/ahack._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\CC0B6F1405C6CC632AF27126FDA46A20\ALLEGRO.TXT.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/allegro.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/allegro._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\CC0B6F1405C6CC632AF27126FDA46A20\API.TXT.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/api.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/api._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\CC0B6F1405C6CC632AF27126FDA46A20\CHANGES.TXT.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/changes.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/changes._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\CC0B6F1405C6CC632AF27126FDA46A20\CONST.TXT.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/const.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/const._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\CC0B6F1405C6CC632AF27126FDA46A20\DAT.TXT.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/dat.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/dat._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\CC0B6F1405C6CC632AF27126FDA46A20\DAT2C.TXT.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/dat2c.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/dat2c._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\CC0B6F1405C6CC632AF27126FDA46A20\DAT2S.TXT.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/dat2s.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/dat2s._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\CC0B6F1405C6CC632AF27126FDA46A20\DATAFILE.TXT.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/datafile.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/datafile._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\CC0B6F1405C6CC632AF27126FDA46A20\FAQ.TXT.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/faq.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/faq._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\CC0B6F1405C6CC632AF27126FDA46A20\GRABBER.TXT.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/grabber.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/grabber._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\CC0B6F1405C6CC632AF27126FDA46A20\HELP.TXT.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/help.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/help._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\CC0B6F1405C6CC632AF27126FDA46A20\INDEX.TXT.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/index.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/index._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\CC0B6F1405C6CC632AF27126FDA46A20\LICENSE.TXT.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/license.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/license._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\CC0B6F1405C6CC632AF27126FDA46A20\MAKEDOC.TXT.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/makedoc.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/makedoc._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\CC0B6F1405C6CC632AF27126FDA46A20\MISTAKES.TXT.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/mistakes.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/mistakes._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\CC0B6F1405C6CC632AF27126FDA46A20\PACKFILE.TXT.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/packfile.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/packfile._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\CC0B6F1405C6CC632AF27126FDA46A20\README.TXT.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/readme.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/readme._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\CC0B6F1405C6CC632AF27126FDA46A20\THANKS.TXT.RULE
+setlocal
+RelWithDebInfo\makedoc.exe -ascii C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/txt/thanks.txt C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1/docs/src/thanks._tx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\6014AFFE3110D7F250BA15A01310B532\DOCS.RULE
+setlocal
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-4.4.3.1\DOCS\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1 -BC:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build --check-stamp-file C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/docs/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

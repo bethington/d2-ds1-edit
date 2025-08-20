@@ -1,0 +1,5 @@
+
+ERROR: 35 1053 assets/tiles/ACT4/Expansion/lavaN.ds1 - Exit code: 3
+ERROR: 35 1053 assets/tiles/ACT4/Expansion/lavaN2.ds1 - Exit code: 3
+ERROR: 35 1054 assets/tiles/ACT4/Expansion/lavaS.ds1 - Exit code: 3
+ERROR: 35 1054 assets/tiles/ACT4/Expansion/lavaS2.ds1 - Exit code: 3

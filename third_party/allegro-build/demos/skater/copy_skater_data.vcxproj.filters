@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\1665948f6e3eabe5541942efe84feb53\demo.dat.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\1665948f6e3eabe5541942efe84feb53\level.dat.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\200caf32acfeb4765ff96380fa3eb5df\copy_skater_data.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\demos\skater\CMakeFiles\copy_skater_data" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{970D3A2A-D5CC-3CA9-9403-39CD6F833CA9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

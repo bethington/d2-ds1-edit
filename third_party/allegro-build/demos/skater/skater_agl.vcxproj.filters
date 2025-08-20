@@ -1,0 +1,118 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\anim.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\backscrl.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\credits.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\dblbuf.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\fps.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\framewk.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\game_sk.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\gamepad.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\global.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\intro.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\kbd_sk.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\level.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\lvlalloc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\lvlfile.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\lvlstate.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\menu.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\menuabt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\menuctl.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\menugfx.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\menumain.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\menumisc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\menuopts.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\menusnd.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\menusucc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\music.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\oglflip.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\pageflip.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\physics.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\quadtree.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\scrshot.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\skater.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\token.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\transitn.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\tribuf.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\source\virtctl.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\demos\skater\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{1760F084-A3D7-3F92-AFBD-D18A59D83614}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

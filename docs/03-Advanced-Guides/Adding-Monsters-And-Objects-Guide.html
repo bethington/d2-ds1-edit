@@ -1,0 +1,1092 @@
+<!-- saved from url=(0054)http://paul.siramy.free.fr/_divers2/tut_any_units_ds1/ -->
+<html>
+<script data-token="926149-593038-565673" id="eternl-dom-script"
+  src="chrome-extension://kmhcihpebfmpgmihbkipmjlmmioameka/app/dom.js?token=926149-593038-565673"></script>
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+</head>
+
+<body bgcolor="#000000" text="#FFFFFF" link="#00CCCC" vlink="#0066CC" alink="#FF0000">
+  <table width="700" border="0" cellspacing="0" cellpadding="4" bgcolor="#2F2F4F">
+    <tbody>
+      <tr>
+        <td colspan="3" class="modulecell mkalign1" style="font-size: 12px;">
+          <div class="body_just">
+            <p align="center">
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="4" color="#5D7790"><b>Adding
+                  ANY Monsters and ANY Objects to a DS1<br>
+                  &nbsp; </b></font><br>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#5D7790">by
+                <b>Paul Siramy</b> - May 2010
+              </font><br>
+            </p>
+            <p align="left">&nbsp;</p>
+            <p align="left">
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                  <font color="#00ff00" size="4">Table Of Content :</font>
+                </b></font>
+            </p>
+            <ul>
+              <li>
+                <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="#">Overview</a></font>
+              </li>
+              <li>
+                <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="#">Hardcoded tables in DLL</a>
+                </font>
+                <ul>
+                  <li>
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="#">Type 1 units</a></font>
+                  </li>
+                  <li>
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="#">Type 2 units</a></font>
+                  </li>
+                </ul>
+              </li>
+              <li>
+                <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="#">Softcoded Type 1 table in the
+                    patch 1.10</a></font>
+              </li>
+              <li>
+                <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="#">Adding a SuperUnique Monster to
+                    a DS1</a></font>
+              </li>
+              <li>
+                <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="#">Adding a regular Monster to a
+                    DS1</a></font>
+                <ul>
+                  <li>
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="#">First method (direct
+                        index)</a></font>
+                  </li>
+                  <li>
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="#">Second method (indirect
+                        index)</a></font>
+                  </li>
+                </ul>
+              </li>
+              <li>
+                <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="#">Adding an Object to a DS1</a>
+                </font>
+              </li>
+            </ul>
+            <p>&nbsp;</p>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                  <font color="#ffff00" size="4"><a name="overview"></a>Overview</font>
+                </b></font>
+            </p>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">This tutorial
+                will explain how to add any Monster and any Object of any Act into any
+                DS1, dealing only with Diablo II T</font>
+              <font face="Verdana, 
+Arial, Helvetica, sans-serif" size="2">XT as well as my DS1 editor, without DLL
+                editing. Since the 1.10 patch, it is now possible to use a new and very
+                interesting functionality. <b>TeknoKyo</b> discovered how the Type 1
+                units (Monsters/NPC) were now working, and <b>SVR</b> did the same with
+                the Type 2 units.</font>
+            </p>
+            <p>&nbsp;</p>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                      <font color="#ffff00" size="4"><a name="hardcoded"></a></font>
+                    </b></font>
+                  <font color="#ffff00" size="4">Hardcoded tables in DLL</font>
+                </b>
+                <font color="#ffff00" size="4"></font>
+              </font>
+            </p>
+            <p>
+              <font size="2">
+                <font face="Verdana, Arial, Helvetica, 
+sans-serif">In a DS1 you can find 2 kind of units. The Type 1 </font>
+                <font size="2">
+                  <font face="Verdana, Arial, Helvetica, sans-serif">units</font>
+                </font>
+                <font face="Verdana, Arial, Helvetica, sans-serif"> are Monsters/NPC, taken from Data\Global</font>
+                <font size="2">
+                  <font face="Verdana, Arial, Helvetica, sans-serif">\</font>
+                </font>
+                <font face="Verdana, Arial, Helvetica, sans-serif">Excel</font>
+                <font size="2">
+                  <font face="Verdana, Arial, Helvetica, sans-serif">\</font>
+                </font>
+                <font face="Verdana, Arial, Helvetica, sans-serif" color="#00FF00">MonStats.txt</font>
+                <font face="Verdana, Arial, Helvetica, sans-serif">, Data\Global\Excel\<font color="#00FF00">
+                    MonPlace.txt</font>,
+                  and Data\Global\Excel\<font color="#00FF00">SuperUniques.txt</font>.
+                  Each Type 1 </font>
+                <font size="2">
+                  <font face="Verdana, Arial, Helvetica, sans-serif">units</font>
+                </font>
+                <font face="Verdana, Arial, Helvetica, sans-serif"> can have Paths. </font>
+                <font size="2">
+                  <font face="Verdana, 
+Arial, Helvetica, sans-serif">The Type 2 </font>
+                  <font size="2">
+                    <font face="Verdana, Arial, 
+Helvetica, sans-serif">units</font>
+                  </font>
+                  <font face="Verdana, Arial, 
+Helvetica, sans-serif"> are Objects, taken from Data\Global\Excel\<font color="#00FF00">Objects.txt</font>,
+                    such as Chest, Shrine, Torch...</font>
+                </font>
+              </font>
+            </p>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">In D2Common.DLL
+                (before patch 1.10) we can find 2 tables, one for the Type 1 </font>
+              <font size="2">
+                <font face="Verdana, Arial, Helvetica, sans-serif">units</font>
+              </font>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">, the other for the Type
+                2 </font>
+              <font size="2">
+                <font face="Verdana, Arial, Helvetica, sans-serif">units</font>
+              </font>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">. Both contains indexes,
+                and are split into 5 parts, one for each act.</font>
+            </p>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">The Type
+                1 hardcoded table is composed of 60 entries per act, so since we have
+                5 acts this table has a total of 300 indexes. The Type 2 hardcoded table
+                is composed of 150 entries per act, for a total of 750 indexes.</font>
+            </p>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Here's
+                an extract of the start of the Type 1 table :</font>
+            </p>
+            <blockquote>
+              <p><img src="../assets/images/01.png" width="267" height="588"></p>
+            </blockquote>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">In a DS1
+                the Type 1 units are using an index. This is NOT directly the <b>hcIdx</b>
+                you can find in <font color="#00FF00">MonStats.txt</font>, it's in fact
+                the entry number in this Type 1 table. For instance, if in a DS1 of
+                act&nbsp;2 you put a Type 1 unit with ID 2, the game will take the Type
+                1 unit table, and check the entry # 2 of act 2 (here the entry noted
+                "62" in the image). The index value at this entry is 177, so the game
+                will use the Monster with hcIdx 177 from <font color="#00FF00">MonStats.txt</font>,
+                which is a NPC : <i>Drognan</i>.</font>
+            </p>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b><br>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                      <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                          <font color="#ffff00" size="4"><a name="type1"></a></font>
+                        </b></font>
+                    </b></font>
+                  <font color="#ff9900" size="3">Type 1 units</font>
+                </b></font>
+            </p>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">In all
+                the original DS1 of the game, each Type 1 unit are using ID which range
+                from 0 to 59. This is the Act value inside the DS1 that indicates which
+                one of the 5 possible parts of the Type 1 table the game will look into
+                :</font>
+            </p>
+            <ul>
+              <li>
+                <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Act
+                  1 = entries 0 to 59</font>
+              </li>
+              <li>
+                <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Act
+                  2 = entries 60 to 119</font>
+              </li>
+              <li>
+                <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Act
+                  3 = entries 120 to 179</font>
+              </li>
+              <li>
+                <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Act
+                  4 = entries 180 to 239</font>
+              </li>
+              <li>
+                <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Act
+                  5 = entries 240 to 299</font>
+              </li>
+            </ul>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2"> This also
+                means that, normally, one DS1 can have access to only 60 different Monsters/NPC.
+                But up to the 1.09d patch it was possible to use a useful trick to make
+                one DS1 have access to all 300 Monsters/NPC of the entire Type 1 table
+                : you simply had to used an ID that was out of the legit bounds (lower
+                than 0, or greater than 59). </font>
+            </p>
+            <blockquote>
+              <p>
+                <font face="Verdana, Arial, Helvetica, sans-serif" size="2">For instance,
+                  if in an Act <b>2</b> DS1 (which use entries 60 to 119 in the table)
+                  you placed a Type 1 unit with an ID of -14, then the game was looking
+                  in the Act <b>1</b> part of the Type 1 table instead of the expected
+                  Act 2, and took the entry 46 (60 - 14 = 46), which has the value 652.
+                  For some reasons this is not the Monster with hcIdx from <font color="#00FF00">MonStats.txt</font>
+                  (bloodlord6), but a SuperUnique Monster (<i>Corpsefire</i>).<br>
+                </font>
+              </p>
+              <p>
+                <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Another
+                  example : in the same Act 2 DS1, a Type 1 unit with an ID of 62 would
+                  have make the game use a Monster/NPC of Act 3 (not Act 2), and it'd
+                  be the entry 122 in the Type 1 table : Act 2 start at entry 60, 60
+                  + 62 = 122, 122 is in the range of Act 3 units.</font>
+              </p>
+            </blockquote>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">You have
+                to know that the 1.10 patch changed that behavior, and this trick don't
+                work anymore, but we'll see that in details later.</font>
+            </p>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+                <b>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                      <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                          <font color="#ffff00" size="4"><a name="type2"></a></font>
+                        </b></font>
+                    </b></font>
+                  <font color="#ff9900" size="3">Type 2 units</font>
+                </b>
+              </font>
+            </p>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">This table
+                has 150 entries per act, so in a DS1 each Type 2 unit has an ID that
+                range from 0 to 149. As for the Type 1 units, the ID are NOT directly
+                the Id from Data\Global\Excel\<font color="#00FF00">Objects.txt</font>
+                but the entry number in the Type 2 table for the Act of the DS1. Up
+                to the 1.09d patch you were able to use the same trick idea, except
+                that there was a check in the DLL that prevent it working exactly the
+                same : you were able to use Objects of precedent Acts (with a negative
+                ID), but it was impossible to use an ID greater or equal than 150, making
+                it impossible to use Objects of later acts. The workaround was to always
+                use a DS1 of Act 5, since it gave the access to all the Objects contained
+                in the Type 2 table.</font>
+            </p>
+            <p>&nbsp;</p>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                      <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                          <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                              <font color="#ffff00" size="4"><a name="soft"></a></font>
+                            </b></font>
+                        </b></font>
+                    </b></font>
+                  <font color="#ffff00" size="4">Softcoded Type 1 table in the patch 1.10</font>
+                </b></font>
+            </p>
+            <p>
+              <font size="2">
+                <font face="Verdana, Arial, Helvetica, 
+sans-serif">The patch 1.10 (in fact it was there from the beta release, 1.10s)
+                  gave us a new level of flexibility for Type 1 units, as it introduced
+                  a new TXT : Data\Global\Excel\<font color="#00FF00">MonPreset.txt</font>.
+                  It also introduced Data\Global\Excel\<font color="#00FF00">MonPlace.txt</font>,
+                  but this one is better left out. <font color="#00FF00">MonPreset.txt</font>
+                  can be seen as the original table from which the hardcoded Type 1 table
+                  has been made.</font>
+              </font>
+            </p>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">In <font color="#00FF00">MonPreset.txt</font>,
+                there are 47 entries for the Act 1. As you can see in the precedent
+                image, the first 4 entries have the values 147, 146, 148 and 149. In
+                <font color="#00FF00">MonStats.txt</font> the Monsters/NPC with these
+                <b>hcIdx</b> are : <i>gheed</i>, <i>cain1</i>, <i>akara</i> and <i>chicken</i>.
+                Coincidentally, in <font color="#00FF00">MonPreset.txt</font> the first
+                4 entries for Act 1 are exactly these 4 codes. This makes it clear that
+                the old Type 1 hardcoded table is not in the DLL anymore, but is now
+                accessible in a TXT.
+              </font>
+            </p>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">The good
+                thing about the Type 1 table being a TXT table is that you can edit
+                the entries very easily (not recommended tough), but also *<b>add</b>*
+                new entries. And you're not limited to 60 Monsters per Act now, you
+                can put in one Act the entire list of the Monsters/NPC from <font color="#00FF00">MonStats.txt</font>
+                and all the SuperUnique Monsters if you want&nbsp;!</font>
+            </p>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">A drawback
+                is that 1.09 DS1 that used the trick of placing Monsters of another
+                Act (with the help of ID out of bounds) are not compatible with the
+                1.10 patch, so you have to edit all these 1.09 DS1 to convert them into
+                1.10, else unexpected Monsters/NPC will spawned in these DS1.</font>
+            </p>
+            <p>&nbsp;</p>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                      <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                          <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                              <font color="#ffff00" size="4"><a name="super"></a></font>
+                            </b></font>
+                        </b></font>
+                    </b></font>
+                  <font color="#ffff00" size="4">Adding a SuperUnique Monster to a DS1</font>
+                </b></font>
+            </p>
+            <p>
+              <font size="2">
+                <font face="Verdana, Arial, Helvetica, 
+sans-serif">Let's say that you want to use a SuperUnique Monster at the Den of
+                  Evil's entrance, one that you either created or one that simply not
+                  belongs to the Act 1 usually. </font>
+                <font size="2">
+                  <font face="Verdana, Arial, 
+Helvetica, sans-serif">For SuperUnique monsters (monsters found in <font color="#00FF00">SuperUniques.txt</font>)
+                    you have no choice, </font>
+                </font>
+                <font face="Verdana, Arial, Helvetica, 
+sans-serif">you *have* to use <font color="#00FF00">MonPreset.txt</font>. </font>
+                <font size="2">
+                  <font size="2">
+                    <font face="Verdana, Arial, Helvetica, sans-serif">For regular Monsters/NPC
+                      (found in <font color="#00FF00">MonStats.txt</font>) we will use another
+                      and more simple method, that we'll see later.</font>
+                  </font>
+                </font>
+              </font>
+            </p>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">First,
+                we have to make this SuperUnique monster available for any Act 1 DS1.
+                So we edit <font color="#00FF00">MonPreset.txt</font> and add a new
+                row at the end of the act 1 entries. Let's say that we'll use <i>Frozenstein</i>,
+                found in Act 5 normally, <font color="#00FF00">MonPreset.txt</font>
+                will then looks like this :</font>
+            </p>
+            <blockquote>
+              <p><img src="../assets/images/02.png" width="308" height="361"></p>
+            </blockquote>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">For the
+                game, this is enough to make this SuperUnique monster available for
+                any DS1 that use Units of Act 1. But if you want to put that monster
+                into a DS1 using my DS1 editor, you have to edit another file.</font>
+            </p>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">In the
+                DS1 editor directory, go into the <font color="#00FFFF">Data</font>
+                sub-directory, and edit the file <font color="#00FFFF">Obj.txt</font>
+                in MS-Excel or any similar program. This file tells the editor which
+                units you can place into a DS1, and to avoid problems it should be the
+                reflect of the game's files. Here, we already have some rows below <i>Corpsefire</i>,
+                still in Act 1 (from Id 47 to Id 59) :</font>
+            </p>
+            <blockquote>
+              <p><img src="../assets/images/03.png" width="397" height="602"></p>
+            </blockquote>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">They are
+                unused entries of the 1.09 patch where the Type 1 hardcoded table was
+                60 entries per Act. In the 1.10 patch however, these entries have no
+                meaning anymore.</font>
+            </p>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">You have
+                to make the Type 1 units of the DS1 editor's <font color="#00FFFF">Obj.txt</font>
+                be the exact reflect of <font color="#00FF00">MonPreset.txt</font> so,
+                as you did for <font color="#00FF00">MonPreset.txt</font>, place <i>Frozenstein</i>
+                right after <i>Corpsefire</i>, <b>inserting a new row if needed</b>
+                (and adjusting the Id column), which is not the case here so just replace
+                the first unused row. Your <font color="#00FFFF">Obj.txt</font> should
+                now looks like this :</font>
+            </p>
+            <blockquote>
+              <p><img src="../assets/images/04.png" width="454" height="604"></p>
+            </blockquote>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">The important
+                columns are <b>Act</b>, <b>Type</b>, <b>Id</b> and <b>Description</b>,
+                as the others are only graphical datas to display an animated sprite
+                into the Editor, which is only optional. Don't forget to add a <b>0</b>
+                (zero) in the column <b>*eol</b> column tough, this is to ensure that
+                Ms-Excel will save the file correctly.</font>
+            </p>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">You are
+                now able to add <i>Frozenstein</i> to the entrance of the Den of Evil
+                DS1. There are 2 files (as there are 2 variations), both in <font color="#00FFFF">d2data.mpq</font>,
+                in the directory <font color="#00FF00">Data\Global\Tiles\ACT1\CAVES</font>.
+                The DS1 files are <font color="#00FF00">denent.ds1</font> and <font color="#00FF00">denent2.ds1</font>,
+                <font size="2" face="Verdana, Arial, Helvetica, sans-serif">using both
+                  a LvlPrest <font color="#FFFF00">52</font> and a LvlType <font color="#FFFF00">2</font>
+                  :</font>
+              </font>
+            </p>
+          </div>
+          <blockquote>
+            <div class="body_just">
+              <div align="left">
+                <font size="2" face="Verdana, Arial, Helvetica, sans-serif"><img src="../assets/images/05.png"
+                    width="639" height="612"></font>
+              </div>
+            </div>
+          </blockquote>
+          <div class="body_just">
+            <p>&nbsp;</p>
+            <p>
+              <font size="2" face="Verdana, Arial, Helvetica, sans-serif">In the
+                DS1 Editor, INSERT the object <i>Frozenstein</i> near the entrance,
+                in both DS1 files :</font>
+            </p>
+          </div>
+          <blockquote>
+            <div class="body_just">
+              <font color="#ffffff" face="Verdana, Arial, Helvetica, sans-serif" size="2"><img
+                  src="../assets/images/06.png" width="368" height="275"></font>
+            </div>
+          </blockquote>
+          <div class="body_just">
+            <p align="center">&nbsp;</p>
+            <p align="left">
+              <font color="#ffffff" face="Verdana, Arial, Helvetica, sans-serif" size="2">Run
+                the game in <font color="#FFFF00">-direct -txt</font> mode, go to the
+                Den of Evil, and here's the result : </font>
+            </p>
+          </div>
+          <blockquote>
+            <div class="body_just">
+              <font color="#ffffff" face="Verdana, Arial, Helvetica, sans-serif" size="2"><img
+                  src="../assets/images/07.png" width="525" height="497"></font>
+            </div>
+          </blockquote>
+          <div class="body_just">
+            <p align="left">&nbsp;</p>
+            <p align="left">
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#ffffff">ZIP
+                file with the relevant modded files to place <i>Frozenstein</i> at the
+                entrance of the Den of Evil : <a href="../04-Examples/Doe-Frozenstein-Example/">doe_frozenstein_1.13
+                  example files</a>.
+                It contains these 3 files :</font>
+            </p>
+          </div>
+          <ul>
+            <li>
+              <div class="body_just">
+                <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Excel\<font color="#00FF00">
+                    MonPreset.txt</font>
+                </font>
+              </div>
+            </li>
+            <li>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Tiles\ACT1\CAVES\<font
+                  color="#00FF00">denent.ds1</font>
+              </font>
+            </li>
+            <li>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Tiles\ACT1\CAVES\<font
+                  color="#00FF00">denent2.ds1</font>
+              </font>
+            </li>
+          </ul>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">with the
+              TXT file taken from patch_d2.mpq, Patch 1.13.</font>
+          </p>
+          <div class="body_just">
+            <p align="left">&nbsp;</p>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                  <font size="4">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                        <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                            <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                                <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                                    <font color="#ffff00" size="4"><a name="regular"></a></font>
+                                  </b></font>
+                              </b></font>
+                          </b></font>
+                      </b></font>
+                    <font color="#ffff00">Adding a regular Monster to a DS1</font>
+                  </font>
+                </b></font>
+            </p>
+            <p>
+              <font size="2">
+                <font face="Verdana, Arial, Helvetica, 
+sans-serif">When you want to add in a DS1 a monster that is present in <font color="#00FF00">MonStats.txt</font>
+                  (not in <font color="#00FF00">SuperUniques.txt</font>), you don't have
+                  to place it's <b>Id</b> in <font color="#00FF00">MonPreset.txt</font>,
+                  you can use a new functionality of the 1.10 patch :</font>
+              </font>
+            </p>
+            <table width="100%" border="1" cellpadding="4" cellspacing="0">
+              <tbody>
+                <tr>
+                  <td>
+                    <font color="#ffffff" face="Verdana, Arial, Helvetica, 
+sans-serif" size="2">In a DS1, a Type 1 unit that has an ID which don't represent
+                      a valid row in <font color="#00FF00">MonPreset.txt</font> is considered
+                      as the <b>hcIdx</b> in <font color="#00FF00">MonStats.txt</font>.</font>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">This is
+                how you can place in a DS1 of any Act *almost* any Monster/NPC present
+                in <font color="#00FF00">MonStats.txt</font> : <i>QuillRat</i>, <i>BloodLord</i>,
+                <i>Larzuk</i>, <i>Radament</i>, <i>Diablo</i>... As for the "almost"
+                part : The monsters at the start of <font color="#00FF00">MonStats.txt</font>
+                which have a <b>hcIdx</b> that represent a valid row in <font color="#00FF00">MonPreset.txt</font>
+                can't be accessed using this method, because the monsters defined in
+                <font color="#00FF00">MonPreset.txt</font> will be take instead. So
+                if you really wanted to place a monster with such a low ID, then put
+                its code (<b>Id</b> column from <font color="#00FF00">MonStats.txt</font>)
+                in <font color="#00FF00">MonPreset.txt</font> as you would do for a
+                SuperUnique monster.
+              </font>
+            </p>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">In the
+                un-modded 1.10 patch, <font color="#00FF00">MonPreset.txt</font> has
+                47 entries for Act 1, their indexes ranging therefore from 0 to 46.
+                So, in a DS1 that use Act 1 units, a Type 1 unit with an ID of 46 will
+                be <i>Corpsefire</i>, while a Type 1 unit with an ID of 47 will be the
+                Monster/NPC with <b>hcIdx</b> 47 in <font color="#00FF00">MonStats.txt</font>
+                : <i>FleshHunter</i>.</font>
+            </p>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">In our
+                precedent example, we have added a new row to the Act 1 of <font color="#00FF00">MonPreset.txt</font>,
+                <i>Frozenstein</i>. In that case then, in a DS1 that use Act 1 units,
+                a Type 1 unit with an ID of 46 will still be <i>Corpsefire</i> as expected,
+                but another unit with a Type 1 ID of 47 will be <i>Frozenstein</i> and
+                not <i>FleshHunter</i> any more. A Type 1 unit with an ID of 48 will
+                be taken from <font color="#00FF00">MonStats.txt</font>, and this will
+                be the Monster with hcIdx 48 : <i>DuneBeast</i>.
+              </font>
+            </p>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Here's
+                a diagram that show the logic, for the un-modded 1.10 patch (original
+                <font color="#00FF00">MonPreset.txt</font> to be more specific). In
+                the Act 2 part of <font color="#00FF00">MonPreset.txt</font>, we find
+                59 rows, so the IDs, there, are ranging from 0 to 58. In a DS1 that
+                use Act 2 units, a Type 1 unit with ID 58 will be found into <font color="#00FF00">MonPreset.txt</font>
+                (row #58 = skeleton5), but another with ID 59 is a row that is not in
+                <font color="#00FF00">MonPreset.txt</font>, so the game will looks into
+                <font color="#00FF00">MonStats.txt</font> instead, and the Monster with
+                <b>hcIdx</b> 59 (<i>CarverShaman</i>) will be used :
+              </font>
+            </p>
+          </div>
+          <blockquote>
+            <div class="body_just">
+              <font face="Verdana, Arial, Helvetica, 
+sans-serif" size="2"><img src="../assets/images/08.png" width="641" height="324"></font>
+            </div>
+          </blockquote>
+          <div class="body_just">
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+                If you want to place <i>Diablo</i> in a Act 3 DS1, since he is <b>hcIdx</b>
+                243 in<font color="#00FF00"> MonStats.txt</font> (greater than 38 then),
+                you have 2 solutions :</font>
+            </p>
+            <ul>
+              <li>
+                <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Direct
+                  index : In the DS1, place a Type 1 unit with ID <b>243</b><br>
+                  &nbsp; </font>
+              </li>
+              <li>
+                <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Indirect
+                  index : In <font color="#00FF00">MonPreset.txt</font>, in the Act
+                  3 part, put <i>diablo</i> in the <b>Place</b> column, and in the DS1
+                  put a Type 1 unit with an ID that is the row of <i>diablo</i> in <font color="#00FF00">MonPreset.txt
+                  </font>,
+                  Act 3 part. If you didn't add entries to the act 3 part of <font color="#00FF00">MonPreset.txt</font>
+                  yet, it'll be the row 39, so in the DS1 put a Type 1 unit with ID
+                  <b>39</b>.
+                </font>
+              </li>
+            </ul>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Both methods
+                will work, so it's up to you to decide which one to use. None will prevent
+                you to corrupt your DS1 if you delete or insert rows in <font color="#00FF00">MonPreset.txt</font>
+                and/or <font color="#00FF00">MonStats.txt</font> so, as often as possible,
+                just <b>add</b> entries to these files to avoid you the need to edit
+                the corupted DS1.</font>
+            </p>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Whatever
+                the method you'll choose, you'll have to edit my DS1 editor's Obj.txt
+                to be able to put the Type 1 unit. If you choose the 1st method, put
+                the <font color="#00FF00">MonStats.txt</font> <b>hcIdx</b> in the Obj.txt
+                <b>Id</b> column. If you choose the 2nd method, put the <font color="#00FF00">MonPreset.txt</font>
+                row number instead.
+              </font>
+            </p>
+            <p>&nbsp;<br>
+              &nbsp; <br>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                      <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                          <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                              <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                                  <font color="#ffff00" size="4"><a name="method1"></a></font>
+                                </b></font>
+                            </b></font>
+                        </b></font>
+                    </b></font>
+                  <font color="#ff9900" size="3">First method (direct index)</font>
+                </b></font>
+            </p>
+            <p>
+              <font color="#ffffff" face="Verdana, Arial, Helvetica, 
+sans-serif" size="2">Insert <i>Diablo</i> in the Obj.txt of the DS1 Editor (Act
+                3, type 1 list, using <font color="#00FF00">MonStats.txt</font> <b>hcIdx</b>)
+                :</font>
+            </p>
+          </div>
+          <blockquote>
+            <div class="body_just">
+              <font color="#ffffff" face="Verdana, Arial, Helvetica, 
+sans-serif" size="2"><img src="../assets/images/09.png" width="416" height="351"></font>
+            </div>
+          </blockquote>
+          <div class="body_just">
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">You are
+                now able to add <i>Diablo</i> to the Act 3 Town DS1. The file is in
+                <font color="#00FFFF">d2data.mpq</font>, in the directory <font color="#00FF00">
+                  Data\Global\Tiles\ACT3\Docktown</font>,
+                and the DS1 file is<font color="#00FF00"> docktown3.ds1</font>, <font size="2"
+                  face="Verdana, Arial, Helvetica, sans-serif">which
+                  use a LvlPrest <font color="#FFFF00">529</font> and a LvlType <font color="#FFFF00">20
+                  </font>:</font>
+              </font>
+            </p>
+          </div>
+          <blockquote>
+            <div class="body_just">
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="../assets/images/10.png" width="639"
+                  height="612"></font>
+            </div>
+          </blockquote>
+          <div class="body_just">
+            <div class="body_just">
+              <p>&nbsp;</p>
+              <p>
+                <font face="Verdana, Arial, Helvetica, sans-serif" size="2">In the
+                  DS1 Editor, INSERT the object <i>Diablo</i> where you want :</font>
+              </p>
+            </div>
+          </div>
+          <blockquote>
+            <div class="body_just">
+              <div class="body_just">
+                <font color="#ffffff" face="Verdana, Arial, Helvetica, sans-serif" size="2"><img
+                    src="../assets/images/11.png" width="578" height="349"></font>
+              </div>
+            </div>
+          </blockquote>
+          <div class="body_just">
+            <div class="body_just">
+              <p align="left">
+                <font color="#ffffff" face="Verdana, Arial, Helvetica, sans-serif" size="2">Run
+                  the game in <font color="#FFFF00">-direct </font> mode, go to Act
+                  3 if needed, then to the place where you inserted your own <i>Diablo</i>,
+                  and here's the result :</font>
+              </p>
+            </div>
+          </div>
+          <blockquote>
+            <div class="body_just">
+              <div class="body_just">
+                <font color="#ffffff" face="Verdana, Arial, Helvetica, sans-serif" size="2"><img
+                    src="../assets/images/12.png" width="498" height="309"></font>
+              </div>
+            </div>
+          </blockquote>
+          <div class="body_just">
+            <div class="body_just">
+              <p align="left">
+                <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#ffffff">ZIP
+                  file with the modified DS1 <font color="#00FF00">docktown3.ds1</font>
+                  : <a href="../04-Examples/Act3-Town-Method1-Example/">act3_town_diablo_method1 example files</a>
+                </font>
+              </p>
+            </div>
+            <p>&nbsp;</p>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                      <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                          <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                              <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                                  <font color="#ffff00" size="4"><a name="method2"></a></font>
+                                </b></font>
+                            </b></font>
+                        </b></font>
+                    </b></font>
+                  <font color="#ff9900" size="3">Second method (indirect index)</font>
+                </b></font>
+            </p>
+            <p>
+              <font color="#ffffff" face="Verdana, Arial, Helvetica, 
+sans-serif" size="2">Insert <i>Diablo</i> in <font color="#00FF00">MonPreset.txt</font>
+                (Row 39 of the Act 3 Type 1 list) :</font>
+            </p>
+          </div>
+          <blockquote>
+            <div class="body_just">
+              <font color="#ffffff" face="Verdana, Arial, Helvetica, 
+sans-serif" size="2"><img src="../assets/images/13.png" width="298" height="366"></font>
+            </div>
+          </blockquote>
+          <div class="body_just">
+            <p>
+              <font color="#ffffff" face="Verdana, Arial, Helvetica, 
+sans-serif" size="2">Edit or insert <i>Diablo</i> in Obj.txt of the DS1 editor
+                (Act 3, Type 1 list, using row number in <font color="#00FF00">MonPreset.txt</font>)
+                :</font>
+            </p>
+          </div>
+          <blockquote>
+            <div class="body_just">
+              <font color="#ffffff" face="Verdana, Arial, Helvetica, 
+sans-serif" size="2"><img src="../assets/images/14.png" width="402" height="338"></font>
+            </div>
+          </blockquote>
+          <div class="body_just">
+            <p>
+              <font color="#ffffff" face="Verdana, Arial, Helvetica, 
+sans-serif" size="2">Insert <i>Diablo</i> in the Act 3 DS1, using the DS1 Editor
+                :</font>
+            </p>
+          </div>
+          <blockquote>
+            <div class="body_just">
+              <font color="#ffffff" face="Verdana, Arial, Helvetica, 
+sans-serif" size="2"><img src="../assets/images/15.png" width="478" height="322"></font>
+            </div>
+          </blockquote>
+          <div class="body_just">
+            <p align="left">
+              <font color="#ffffff" face="Verdana, Arial, Helvetica, sans-serif" size="2">Run
+                the game in <font color="#FFFF00">-direct -txt</font> mode, go to Act
+                3 if needed, then to the place where you inserted your own <i>Diablo</i>,
+                and here's the result :</font>
+            </p>
+          </div>
+          <blockquote>
+            <div class="body_just">
+              <font color="#ffffff" face="Verdana, Arial, Helvetica, 
+sans-serif" size="2"><img src="../assets/images/16.png" width="348" height="294"></font>
+            </div>
+          </blockquote>
+          <div class="body_just">
+            <p align="left">
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#ffffff">ZIP
+                file with the modified files : <a
+                  href="../04-Examples/Act3-Town-Method2-Example/">act3_town_diablo_method2 example files</a>.
+                It contains these 2 files :</font>
+            </p>
+            <div class="body_just"></div>
+            <ul>
+              <li>
+                <div class="body_just">
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Excel\<font color="#00FF00">
+                      MonPreset.txt</font>
+                  </font>
+                </div>
+              </li>
+              <li>
+                <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Tiles\ACT3\Docktown\<font
+                    color="#00FF00">docktown3.ds1</font>
+                </font>
+              </li>
+            </ul>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">with the
+                TXT file taken from patch_d2.mpq, Patch 1.13.</font>
+            </p>
+            <p align="left">&nbsp;</p>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                  <font color="#ffff00" size="4"><br>
+                  </font>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                      <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                          <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                              <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                                  <font color="#ffff00" size="4"><a name="object"></a></font>
+                                </b></font>
+                            </b></font>
+                        </b></font>
+                    </b></font>
+                  <font color="#ffff00" size="4">Adding an Object to a DS1</font>
+                </b></font>
+            </p>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Using a
+                negative ID for an Object still works in 1.10 like in 1.09. This means
+                that a DS1 can have access to all objects of its Act and the precedent
+                Acts, but not later ones.</font>
+            </p>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Now, even
+                if there is no equivalent of <font color="#00FF00">MonPreset.txt</font>
+                for the Objects, the possibility to use a greater ID works the same
+                as for Type 1 unit, with one noticeable difference : if the game find
+                in a DS1 an Object with an ID greater or equal than 150, then <b>it
+                  first substract 150</b> to this value, and then it use this new value
+                and consider it as the ID in <font color="#00FF00">Objects.txt</font>.
+                Note that you can't use a Type 2 Object ID of exactly 150, because in
+                Objects.txt the object with ID 0 make the game crash.</font>
+            </p>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Substracting
+                150 to the DS1 Type 2 ID gives you access to ALL the objects in <font color="#00FF00">Objects.txt</font>
+                ,
+                not like Type 1 units where you couldn't use the first monsters with
+                a too low <b>hcidx</b>.</font>
+            </p>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Let's use
+                different objects of all acts in an act 1 DS1 :</font>
+            </p>
+            <blockquote>
+              <table border="1" cellpadding="2" cellspacing="0">
+                <tbody>
+                  <tr bgcolor="#000000">
+                    <td width="130" align="left">
+                      <font color="#ffffff" face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>Description</b>
+                      </font>
+                    </td>
+                    <td width="35" align="center">
+                      <font color="#ffffff" face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>Act</b></font>
+                    </td>
+                    <td width="120" align="right">
+                      <font color="#ffffff" face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>Objects.txt ID </b>
+                      </font>
+                    </td>
+                    <td width="70" align="center">
+                      <font color="#ffffff">&nbsp;</font>
+                    </td>
+                    <td width="115" align="left">
+                      <font color="#ffffff" face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>DS1 Editor ID</b>
+                      </font>
+                    </td>
+                  </tr>
+                  <tr bgcolor="#aaaaaa">
+                    <td width="130" align="left">
+                      <font color="#000000" face="Verdana, Arial, Helvetica, sans-serif" size="2">Trap Door </font>
+                    </td>
+                    <td width="35" align="center">
+                      <font color="#000000" face="Verdana, Arial, Helvetica, sans-serif" size="2">2</font>
+                    </td>
+                    <td width="120" align="right">
+                      <font color="#000000" face="Verdana, Arial, Helvetica, sans-serif" size="2">74</font>
+                    </td>
+                    <td width="70" align="center">
+                      <font color="#000000" face="Verdana, Arial, Helvetica, sans-serif" size="2">+ 150 =</font>
+                    </td>
+                    <td width="115" align="left">
+                      <font face="Verdana, Arial, 
+Helvetica, sans-serif" size="2"><b>
+                          <font color="#000000">224</font>
+                        </b></font>
+                    </td>
+                  </tr>
+                  <tr bgcolor="#aaaaaa">
+                    <td width="130" align="left">
+                      <font color="#000000" face="Verdana, Arial, Helvetica, sans-serif" size="2">Lam Esen's Tome</font>
+                    </td>
+                    <td width="35" align="center">
+                      <font color="#000000" face="Verdana, Arial, Helvetica, sans-serif" size="2">3</font>
+                    </td>
+                    <td width="120" align="right">
+                      <font color="#000000" face="Verdana, Arial, Helvetica, sans-serif" size="2">193</font>
+                    </td>
+                    <td width="70" align="center">
+                      <font color="#000000" face="Verdana, Arial, Helvetica, sans-serif" size="2">+ 150 =</font>
+                    </td>
+                    <td width="115" align="left">
+                      <font face="Verdana, Arial, 
+Helvetica, sans-serif" size="2"><b>
+                          <font color="#000000">343</font>
+                        </b></font>
+                    </td>
+                  </tr>
+                  <tr bgcolor="#aaaaaa">
+                    <td width="130" align="left">
+                      <font color="#000000" face="Verdana, Arial, Helvetica, sans-serif" size="2">Diablo seal</font>
+                    </td>
+                    <td width="35" align="center">
+                      <font color="#000000" face="Verdana, Arial, Helvetica, sans-serif" size="2">4</font>
+                    </td>
+                    <td width="120" align="right">
+                      <font color="#000000" face="Verdana, Arial, Helvetica, sans-serif" size="2">392</font>
+                    </td>
+                    <td width="70" align="center">
+                      <font color="#000000" face="Verdana, Arial, Helvetica, sans-serif" size="2">+ 150 =</font>
+                    </td>
+                    <td width="115" align="left">
+                      <font face="Verdana, Arial, 
+Helvetica, sans-serif" size="2"><b>
+                          <font color="#000000">542</font>
+                        </b></font>
+                    </td>
+                  </tr>
+                  <tr bgcolor="#aaaaaa">
+                    <td width="130" align="left">
+                      <font color="#000000" face="Verdana, Arial, Helvetica, sans-serif" size="2">Ancients Altar</font>
+                    </td>
+                    <td width="35" align="center">
+                      <font color="#000000" face="Verdana, Arial, Helvetica, sans-serif" size="2">5</font>
+                    </td>
+                    <td width="120" align="right">
+                      <font color="#000000" face="Verdana, Arial, Helvetica, sans-serif" size="2">546</font>
+                    </td>
+                    <td width="70" align="center">
+                      <font color="#000000" face="Verdana, Arial, Helvetica, sans-serif" size="2">+ 150 =</font>
+                    </td>
+                    <td width="115" align="left">
+                      <font face="Verdana, Arial, 
+Helvetica, sans-serif" size="2"><b>
+                          <font color="#000000">696</font>
+                        </b></font>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </blockquote>
+            <p>
+              <font color="#ffffff" face="Verdana, Arial, Helvetica, 
+sans-serif" size="2">Insert the 4 new objects ID in the Obj.txt file of the DS1
+                Editor :</font>
+            </p>
+          </div>
+          <blockquote>
+            <div class="body_just">
+              <p>
+                <font color="#ffffff" face="Verdana, Arial, Helvetica, 
+sans-serif" size="2"><img src="../assets/images/17.png" width="365" height="400"></font>
+              </p>
+            </div>
+          </blockquote>
+          <div class="body_just"></div>
+          <div class="body_just">
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">You are
+                now able to add the 4 objects to one of the 4 variations of the Act
+                1 Town DS1. The file is in <font color="#00FFFF">d2exp.mpq</font>, in
+                the directory <font color="#00FF00">Data\Global\Tiles\ACT1\Town</font>,
+                and the DS1 file we'll used is<font color="#00FF00"> townE1.ds1. </font>It's
+                <font size="2" face="Verdana, Arial, Helvetica, sans-serif">using a
+                  LvlPrest&nbsp;<font color="#FFFF00">1</font> and a LvlType&nbsp;<font color="#FFFF00">1</font>:</font>
+              </font>
+            </p>
+          </div>
+          <blockquote>
+            <div class="body_just"><img src="../assets/images/18.png" width="639" height="612"></div>
+          </blockquote>
+          <div class="body_just">
+            <p>
+              <font color="#ffffff" face="Verdana, Arial, Helvetica, 
+sans-serif" size="2">To make it working for our test, edit <font color="#00FF00">LvlPrest.txt</font>
+                and force the 4 act 1 town variations to be <font color="#00FF00">TownE1.ds1</font>
+                :</font>
+            </p>
+          </div>
+          <div class="body_just"><img src="../assets/images/19.png" width="768" height="205"></div>
+          <div class="body_just">
+            <p>
+              <font color="#ffffff" face="Verdana, Arial, Helvetica, 
+sans-serif" size="2">Place somewhere in the Rogue Camp the 4 objects of later
+                acts, in the DS1 Editor :</font>
+            </p>
+          </div>
+          <blockquote>
+            <div class="body_just">
+              <font color="#ffffff" face="Verdana, Arial, Helvetica, 
+sans-serif" size="2"><img src="../assets/images/20.png" width="567" height="365"></font>
+            </div>
+          </blockquote>
+          <div class="body_just">
+            <p>
+              <font color="#ffffff" face="Verdana, Arial, Helvetica, sans-serif" size="2">Run
+                the game in <font color="#FFFF00">-direct -txt</font> mode, go to the
+                place where you have added the 4 Objects, and here's the result </font>
+              <font color="#ffffff" face="Verdana, Arial, Helvetica, 
+sans-serif" size="2">:</font>
+            </p>
+          </div>
+          <blockquote>
+            <div class="body_just">
+              <p><img src="../assets/images/21.png" width="542" height="518"></p>
+            </div>
+          </blockquote>
+          <div class="body_just">
+            <p align="left">
+              <font color="#ffffff" face="Verdana, Arial, Helvetica, 
+sans-serif" size="2">As you can see, the Objects looks like they're working (more
+                or less).</font>
+            </p>
+            <p align="left">
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#ffffff">ZIP
+                file with the modified files : <a href="../04-Examples/Act1-Town-4Objects-Example/">act1town_4objects
+                  example files</a>.
+                It contains these 2 files :</font>
+            </p>
+            <div class="body_just"></div>
+            <ul>
+              <li>
+                <div class="body_just">
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Excel\<font color="#00FF00">
+                      LvlPrest.txt</font>
+                  </font>
+                </div>
+              </li>
+              <li>
+                <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Tiles\ACT1\Town\<font
+                    color="#00FF00">townE1.ds1</font>
+                </font>
+              </li>
+            </ul>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">with the
+                TXT file taken from patch_d2.mpq, Patch 1.13.</font>
+            </p>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <div id="speechify-global-notifications"><template shadowrootmode="open">
+      <div id="speechify-global-notifications-root"
+        style="position: fixed; top: 0px; left: 0px; height: 100vh; z-index: 2147483644; width: 0vw;"></div>
+    </template></div>
+  <div id="speechify-hover-player-shadow-root"><template shadowrootmode="open">
+      <div id="speechify-hover-player-container"></div>
+    </template></div>
+  <div id="speechify-settings-modal" style="position: absolute; bottom: 0px; right: 0px;"><template
+      shadowrootmode="open">
+      <div id="speechify-settings-modal-root"
+        style="position: fixed; z-index: 2147483646; top: 0px; left: 0px; height: fit-content; font-size: initial;">
+      </div>
+    </template></div>
+  <div id="speechify-screenshot-mode"
+    style="position: fixed; top: 0px; right: 0px; width: 100%; min-height: 100%; z-index: 2147483640; display: none !important;">
+    <template shadowrootmode="open">
+      <div id="speechify-screenshot-mode-root" style="width: 100%; height: 100%; position: relative;"></div>
+    </template>
+  </div>
+</body>
+
+</html>

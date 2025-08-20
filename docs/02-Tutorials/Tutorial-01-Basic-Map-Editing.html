@@ -1,0 +1,3312 @@
+<!-- saved from url=(0059)http://paul.siramy.free.fr/_divers/ds1/doc/tut01/index.html -->
+<html>
+<script data-token="576877-405672-298935" id="eternl-dom-script"
+  src="chrome-extension://kmhcihpebfmpgmihbkipmjlmmioameka/app/dom.js?token=576877-405672-298935"></script>
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+  <title>Ds1 Editor - Tutorial 1</title>
+  <meta name="Description" value="Diablo II Map Editor - Tutorial 1">
+  <meta name="Keywords"
+    value="Diablo, II, 2, ds1, map, level, edit, editor, ds1edit, win_ds1edit, win_ds1edit.exe, documentation, documentations, tutorial, tutorials">
+  <meta name="Author" value="Paul SIRAMY">
+  <meta name="Identifier-URL" value="http://paul.siramy.free.fr/_divers/ds1/doc/tut01/index.html">
+  <meta name="Date-Creation-yyyymmdd" value="20030729">
+  <meta name="Date-Revision-yyyymmdd" value="20040701">
+  <meta name="Reply-to" value="siramy_paul@yahoo.com">
+  <meta name="revisit-after" value="7">
+</head>
+
+<body bgcolor="black" text="#cccc99" link="#189bd8" vlink="#189bd8" alink="silver">
+  <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+      <font size="7">
+      </font>
+    </b></font>
+  <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+      <font size="7">
+        <font color="#FFCC00" size="6">Ds1
+          Editor </font>
+        <font color="#FFCC00">
+          <font size="6"> - Tutorial 1</font>
+        </font>
+      </font>
+    </b></font>
+  <font face="Verdana, Arial, Helvetica, sans-serif"><br>
+  </font>
+  <hr>
+  <table width="640" border="0">
+    <tbody>
+      <tr>
+        <td>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Back to the
+              main <a href="../01-Getting-Started/DS1-Editor-Complete-Documentation.html"><b>
+                  Documentation Page</b></a></font>
+          </p>
+          <p>&nbsp;</p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                <font size="6">Overview</font>
+              </b></font>
+          </p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">This tutorial
+              will explain step by step how to work with some <font color="#FFFF00">advanced</font>
+              stuff of Map Editing :</font>
+          </p>
+          <ul>
+            <li>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Adding
+                3 different kind of <font color="#FF9900">Warps</font> between levels</font>
+            </li>
+            <li>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Adding
+                a <font color="#FF9900">house</font> with Roofs that disapear when the
+                player enter it</font>
+            </li>
+            <li>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FF9900">Resizing</font>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+                a preset level</font>
+            </li>
+            <li>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Deals
+                with <font color="#FF9900">walkable infos</font> of some tiles</font>
+            </li>
+          </ul>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">It was made
+              with the <font color="#FFFF00">Patch 1.10 Beta</font>.</font>
+          </p>
+          <p>&nbsp;</p>
+          <p>&nbsp;</p>
+          <p>&nbsp;</p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                <font size="6">Get
+                  all the files</font>
+              </b></font>
+          </p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">First, let's
+              extract these files from the MPQs :</font>
+          </p>
+          <ul>
+            <li>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">from <font color="#FFFF00">Patch_D2.mpq</font>
+                : </font>
+              <ul>
+                <li>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Excel\<font color="#33FFFF">
+                      Levels.txt</font>
+                  </font>
+                </li>
+                <li>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Excel\<font color="#33FFFF">
+                      LvlPrest.txt</font>
+                  </font>
+                </li>
+                <li>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Excel\<font color="#33FFFF">
+                      LvlTypes.txt</font>
+                  </font>
+                </li>
+                <li>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Excel\<font color="#33FFFF">
+                        Objects.txt</font>
+                    </font>
+                    <font color="#33FFFF"><br>
+                      <br>
+                      &nbsp;
+                    </font>
+                  </font>
+                </li>
+              </ul>
+            </li>
+            <li>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">from <font color="#FFFF00">D2Exp.mpq</font>
+                : </font>
+              <ul>
+                <li>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Excel\<font color="#33FFFF">
+                      LvlWarp.txt</font>
+                  </font>
+                </li>
+                <li>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Excel\<font color="#33FFFF">
+                      ObjType.txt</font>
+                  </font>
+                </li>
+                <li>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Tiles\Act1\Town\<font
+                        color="#33FFFF">TownE1.ds1</font>
+                    </font>
+                  </font>
+                </li>
+                <li>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Tiles\Act1\Tristram\<font
+                        color="#33FFFF">Tri_Town4.ds1</font>
+                    </font>
+                  </font>
+                </li>
+                <li>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Tiles\Act2\Town\<font
+                        color="#33FFFF">LutN.ds1</font>
+                    </font>
+                    <font color="#33FFFF"><br>
+                      <br>
+                    </font>
+                  </font>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+                    <font color="#33FFFF"><br>
+                    </font>
+                  </font>
+                </li>
+              </ul>
+            </li>
+            <li>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">from <font color="#FFFF00">D2Data.mpq</font>
+                :</font>
+              <ul>
+                <li>
+                  <font size="2" face="Verdana, Arial, Helvetica, sans-serif">Data\Global\Tiles\Act1\Barracks\<font
+                      color="#33FFFF">JailEWarpNext.ds1</font>
+                  </font>
+                </li>
+                <li>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Tiles\Act1\Caves\<font
+                      color="#33FFFF">CaveDR1.ds1</font>
+                  </font>
+                </li>
+                <li>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Tiles\Act1\Caves\<font
+                      color="#33FFFF">CaveEDown1.ds1</font>
+                  </font>
+                </li>
+                <li>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Tiles\Act1\Caves\<font
+                      color="#33FFFF">CaveESpec.ds1</font>
+                  </font>
+                </li>
+                <li>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Tiles\Act1\Caves\<font
+                      color="#33FFFF">CaveNSpec.ds1</font>
+                  </font>
+                </li>
+                <li>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Tiles\Act1\Caves\<font
+                      color="#33FFFF">CaveSSpec.ds1</font>
+                  </font>
+                </li>
+                <li>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Tiles\Act1\Caves\<font
+                      color="#33FFFF">CaveWSpec.ds1</font>
+                  </font>
+                </li>
+                <li>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Tiles\Act1\Graveyard\<font
+                      color="#33FFFF">Gravey.ds1</font>
+                  </font>
+                </li>
+                <li>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Tiles\Act1\Outdoors\<font
+                      color="#33FFFF">Cott1.ds1</font>
+                  </font>
+                </li>
+              </ul>
+            </li>
+          </ul>
+          <p><br>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">If you prefer
+              to don't extract them yourself, then take this zip : <a
+                href="../04-Examples/Text-And-DS1-Integration-Data/"><b>txt_and_ds1 example files</b></a>
+              (68 KB), it has them all.</font>
+          </p>
+          <p>&nbsp;</p>
+          <p>&nbsp;</p>
+          <p>&nbsp;</p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="5"><b>
+                <font size="6">Create
+                  a new Mod directory</font>
+              </b></font>
+          </p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Now, prepare
+              a new Mod directory : in your <font color="#FFFF00">Diablo II</font> directory,
+              if you already have a <font color="#FFFF00">Data</font> directory, then
+              rename it to something else (like <font color="#FFFF00">my_old_data</font>
+              <font size="2" face="Verdana, Arial, Helvetica, sans-serif">
+                for instance). Now, create a <font color="#FFFF00">Data</font> directory,
+                inside this one create a <font color="#FFFF00">Global</font> directory,
+                inside this one create an <font color="#FFFF00">Excel</font> directory
+                as well as a <font color="#FFFF00">Tiles</font> directory. Your <font color="#FFFF00">Diablo
+                  II</font> directory should now looks like :</font>
+            </font>
+          </p>
+          <ul>
+            <li>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Diablo
+                II</font>
+              <ul>
+                <li>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data</font>
+                  <ul>
+                    <li>
+                      <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Global</font>
+                      <ul>
+                        <li>
+                          <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Excel</font>
+                        </li>
+                        <li>
+                          <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">Tiles</font>
+                        </li>
+                      </ul>
+                    </li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+          </ul>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Put the 6<font color="#33FFFF">
+                .txt</font> in this <font color="#FFFF00">Excel</font> directory (<font color="#33FFFF">Levels.txt
+              </font>,
+              <font color="#33FFFF">LvlPrest.txt</font>, <font color="#33FFFF">LvlTypes.txt</font>,
+              <font color="#33FFFF">LvlWarp.txt</font>, <font color="#33FFFF">Objects.txt</font>
+              and <font color="#33FFFF">ObjType.txt</font>). They are the .txt that
+              you'll edit later. Now in this <font color="#00FF00">Tiles</font> directory,
+              create <font color="#FFFF00">Act1</font>, and inside this directory create
+              <font color="#FFFF00">Town</font> and <font color="#FFFF00">Graveyard</font>.
+              Your <font color="#00FF00">Tiles</font> directory should now looks like
+              this :
+            </font>
+          </p>
+          <ul>
+            <li>
+              <font size="2" face="Verdana, Arial, Helvetica, sans-serif" color="#00FF00">Tiles</font>
+              <font size="2" face="Verdana, Arial, Helvetica, sans-serif">
+              </font>
+              <ul>
+                <li>
+                  <font size="2" face="Verdana, Arial, Helvetica, sans-serif">Act1
+                  </font>
+                  <ul>
+                    <li>
+                      <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Graveyard</font>
+                    </li>
+                    <li>
+                      <font size="2" face="Verdana, Arial, Helvetica, sans-serif">Town</font>
+                    </li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+          </ul>
+          <p>
+            <font size="2" face="Verdana, Arial, Helvetica, sans-serif">You'll put
+              later <font color="#33FFFF">TownE1.ds1</font> in the <font color="#FFFF00">Town</font>
+              directory and <font color="#33FFFF">Gravey.ds1</font> in the <font color="#FFFF00">Graveyard</font>
+              directory<font face="Verdana, Arial, Helvetica, sans-serif" size="2">,
+                but just left them for now.</font>
+            </font>
+          </p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2"> Now that
+              we have a Mod Directory, update the <font color="#33FFFF">Ds1edit.ini</font>
+              of the Ds1 Editor : the line <font color="#FF9900">mod_dir</font> should
+              now point to your <font color="#FF9900">Diablo II</font> directory, like
+              for instance :</font>
+          </p>
+          <blockquote>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFFFF">mod_dir
+                = C:\Program Files\Diablo II</font>
+            </p>
+          </blockquote>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">This way
+              the Ds1 Editor is now able to use the exact same <font color="#33FFFF">.txt</font>
+              than the game.</font>
+          </p>
+          <p>&nbsp;</p>
+          <p>&nbsp;</p>
+          <p>&nbsp;</p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="5"><b>
+                <font size="6">
+                  1 ds1 for the 4 Town Variations</font>
+              </b></font>
+          </p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">We'll now
+              avoid us some works, as we just want to edit 1 ds1 of the Rogue Encampment,
+              not to do the same changments in all the 4 variations (North, South, East
+              and West). So, let's open (from your Mod Directory) the file <font color="#33FFFF">LvlPrest.txt</font>
+              in Excel. The line <font color="#FF9900">Act 1 - Town 1</font> has 4 different
+              files in the columns <font color="#00FF00">File1</font> to <font color="#00FF00">File4</font>,
+              they are :</font>
+          </p>
+          <ul>
+            <li>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">File1</font>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+                = <font color="#FFFFFF">Act1/Town/TownN1.ds1</font>
+              </font>
+            </li>
+            <li>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">File2</font>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+                = <font color="#FFFFFF">Act1/Town/TownE1.ds1</font>
+              </font>
+            </li>
+            <li>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">File3</font>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+                = <font color="#FFFFFF">Act1/Town/TownS1.ds1</font>
+              </font>
+            </li>
+            <li>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">File4</font>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+                = <font color="#FFFFFF">Act1/Town/TownW1.ds1</font>
+              </font>
+            </li>
+          </ul>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Copy / paste
+              the <font color="#00FF00">File2</font> value into the <font color="#00FF00">File1</font>,
+              <font color="#00FF00">File3</font> and <font color="#00FF00">File4</font>
+              columns. Now, whichever the orientation the game will want the Town to
+              be, it'll take in all case the ds1 <font color="#FFFFFF">Act1/Town/TownE1.ds1,
+              </font>the one we'll edit soon. Save, and close <font color="#33FFFF">LvlPrest.txt</font>.
+            </font>
+          </p>
+          <p>&nbsp;</p>
+          <p>&nbsp;</p>
+          <p>&nbsp;</p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="5"><b>
+                <font size="6">A
+                  new Trap Door</font>
+              </b></font>
+          </p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Before trying
+              to make a new trap Door, check that tutorial I made for the Phrozen Keep:<br>
+              &nbsp;&nbsp;&nbsp;<a href="../03-Advanced-Guides/Adding-Monsters-And-Objects-Guide.html">Adding
+                ANY Monsters and ANY Objects to a DS1 (by Paul Siramy)</a><br>
+              This is an easier alternative, if you're using the patch 1.10.</font>
+          </p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">But If you
+              prefer to go the hard way : in the win_ds1edit directory, put the file
+              <font color="#33FFFF">LutN.ds1</font> and let's make a .bat to open it
+              with the editor.
+            </font>
+          </p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFF00">Lut_Gholein.bat</font>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+              :</font>
+          </p>
+          <blockquote>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFFFF">@echo
+                off<br>
+                win_ds1edit LutN.ds1 12 301 &gt; log.txt<br>
+                &nbsp; </font>
+            </p>
+          </blockquote>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Launch the
+            </font>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFF00">Lut_Gholein.bat</font>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">.
+              If all was correct you're now able to view the Act 2 Town. Go to the upper
+              part of the Town, near <font color="#FFFFFF">Greiz</font>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+                :</font>
+            </font>
+          </p>
+          <table border="0" cellspacing="0" cellpadding="4">
+            <tbody>
+              <tr valign="bottom" align="center">
+                <td width="50%">
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;<img
+                      src="../assets/images/tut01_01.gif" width="270" height="315"><br>
+                  </font>
+                </td>
+                <td>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="../assets/images/tut01_02.gif"
+                      width="270" height="315">
+                  </font>
+                </td>
+              </tr>
+              <tr valign="top" align="center">
+                <td width="50%">
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Here
+                    is the <font color="#FFFF00">Trap Door</font> that we'll use in the
+                    Rogue Encampment and the Graveyard to connect them.</font>
+                </td>
+                <td>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">This
+                    Warp is composed of 2 elements : an <font color="#FFFF00">invisible
+                      Vis</font> (here the Vis 2), and the <font color="#FFFF00">Trap Door</font>
+                    object over it, right in the middle.</font>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p><br>
+          </p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">There's
+              just 1 problem : the <font color="#FFFF00">Trap Door</font> is an object
+              of <font color="#00FF00">Act 2</font>, and we want to use it in <font color="#00FF00">Act
+                1</font>. We'll solve this by using an object of Act 1 and replace it
+              by the Trap Door datas. We'll use the <font color="#FFFF00">Inactive Cairn
+                Stone</font>. Of course that means that if you don't edit the file <font color="#FFFFFF">
+                Data\Global\Tiles\Act1\Outdoors\Cairn2.ds1</font>
+              then when the player will go into the <font color="#FFFFFF">Stony Fields</font>
+              he'll find a <font color="#FFFF00">Trap Door</font> instead of the <font color="#FFFF00">Stone</font>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">,
+                so you'd better have to edit the ds1 and remove that object :</font>
+            </font>
+          </p>
+          <p align="center"><img src="../assets/images/tut01_03.gif" width="362" height="190"></p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2"> We won't
+              do the change in this tutorial, as it is left as an excercise to the reader,
+              but to help you a bit, this .ds1 LvlType.txt ID is <font color="#00FF00">2</font>,
+              and its LvlPrest.txt DEF is <font color="#00FF00">160</font>.</font>
+          </p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Now, let's
+              edit our .txt :</font>
+          </p>
+          <ul>
+            <li>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">As you
+                can see on a precedent screenshot the <font color="#FFFF00">Trap Door</font>
+                is ID <font color="#FF9900">74</font>. So, in <font color="#33FFFF">Objects.txt</font>,
+                let's go to the line that has ID 74. It's the line 76 in MS-Excel, its
+                name is <font color="#FFFFFF">TrappDoor</font>, so no error, that's
+                the good one.The <font color="#FFFF00">Inactive Cairn Stone</font> is
+                ID <font color="#FF9900">22</font> (<font color="#FFFFFF">StoneTheta</font>),
+                so copy the entire row of the Trap Door and paste it over this row that
+                have ID 22.</font>
+            </li>
+          </ul>
+          <ul>
+            <li>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Now in
+                <font color="#33FFFF">ObjType.txt</font>, copy the <font color="#FFFF00">Trap
+                  Door</font> row onto the <font color="#FFFF00">Stone 6</font> row (line
+                76 onto line 24 in MS-Excel). Save and Close <font color="#33FFFF">ObjType.txt</font>.
+              </font>
+            </li>
+          </ul>
+          <ul>
+            <li>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Finally,
+                in the <font color="#33FFFF">data\obj.txt</font> that you'll find in
+                the <font color="#33FF00">win_ds1edit</font> directory, made the corresponding
+                changes. You don't *have* to do it to make it works in the game, but
+                it's better if we're in sync. A search for "<font color="#FFFFFF">Trap
+                  Door</font>" in obj.txt gives the line <font color="#00FF00">272</font>
+                (<font color="#FF9900">Trap Door (74)</font>), and a search for "<font color="#FFFFFF">Theta</font>"
+                gives the line <font color="#00FF00">73</font>
+                <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+                  (<font color="#FF9900">Cairn Stone, Theta (inactive) (22)</font>). So,
+                  copy the entire row 272 onto the row 73, and don't forget to change
+                  these columns back to their original values :</font>
+              </font>
+            </li>
+          </ul>
+          <blockquote>
+            <ul>
+              <li>
+                <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">Act</font>
+                <font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;&nbsp;
+                  = <font color="#FF9900">&nbsp;1</font>
+                </font>
+              </li>
+              <li>
+                <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">Type</font>
+                <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+                  = <font color="#FF9900">&nbsp;2</font>
+                </font>
+              </li>
+              <li>
+                <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">Id</font>
+                <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+                  &nbsp;&nbsp;&nbsp;&nbsp;= <font color="#FF9900">11</font>
+                </font>
+              </li>
+            </ul>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Close and
+                save <font color="#33FFFF">obj.txt</font>.</font>
+            </p>
+          </blockquote>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+              You now have a working <font color="#FFFF00">Trap Door</font> in <font color="#00FF00">Act
+                1</font>, but no more <font color="#FFFF00">Inactive Cairn Stone</font>.</font>
+          </p>
+          <p>&nbsp;</p>
+          <p>&nbsp;</p>
+          <p>&nbsp;</p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="5"><b>
+                <font size="6">Trap
+                  Door in Town and Graveyard</font>
+              </b></font>
+          </p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">In the win_ds1edit
+              directory, put the files <font color="#33FFFF">Gravey.ds1</font>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+                and <font color="#33FFFF">TownE1.ds1</font>. Let's make 2 .bat to open
+                them with the editor.</font>
+            </font>
+          </p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFF00">Graveyard.bat</font>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+              :</font>
+          </p>
+          <blockquote>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFFFF">@echo
+                off<br>
+                win_ds1edit Gravey.ds1 2 108 &gt; log.txt<br>
+                &nbsp; </font>
+            </p>
+          </blockquote>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFF00">TownE1.bat</font>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+              :</font>
+          </p>
+          <blockquote>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFFFF">@echo
+                off<br>
+                win_ds1edit TownE1.ds1 1 1 &gt; log.txt</font>
+            </p>
+          </blockquote>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+              Launch the </font>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFF00">Graveyard.bat</font>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+              and you're now editing the Graveyard<font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+                :</font>
+            </font>
+          </p>
+          <table border="0" cellspacing="0" cellpadding="4">
+            <tbody>
+              <tr valign="bottom" align="center">
+                <td width="50%">
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;<img
+                      src="../assets/images/tut01_04.gif" width="316" height="345"><br>
+                  </font>
+                </td>
+                <td><img src="../assets/images/tut01_05.gif" width="315" height="345"></td>
+              </tr>
+              <tr valign="top" align="center">
+                <td width="50%">
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">First,
+                    press the <font color="#FF9900">Space</font> key, in order to be able
+                    to view the walkables infos, this help to choose a good place. We'll
+                    place our Trap Door here, at Cell <font color="#FFFFFF">5, 2</font>
+                    (check the coordinates on the bottom / left corner of the screen).</font>
+                </td>
+                <td>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FF9900">Right-click</font>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">,
+                    press the <font color="#FFFF00">Wall 1</font> button, click on the
+                    <font color="#FFFF00">Special</font> button, choose a <font color="#FFFFFF">Vis
+                      7</font> and press the <font color="#FFFF00">OK</font> button. It
+                    has a problem tough : to avoid a Green Tile to appear in the game,
+                    we have to make this one Invisible, since it don't use any graphics.
+                  </font>
+                </td>
+              </tr>
+              <tr valign="top" align="center">
+                <td width="50%">
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+                    &nbsp; </font>
+                </td>
+                <td>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2"></font>
+                </td>
+              </tr>
+              <tr valign="top" align="center">
+                <td colspan="2" valign="bottom">
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="../assets/images/tut01_06.gif"
+                      width="464" height="245"></font>
+                </td>
+              </tr>
+              <tr valign="top" align="center">
+                <td colspan="2" valign="top">
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Press
+                    <font color="#FF9900">Shift + Ctrl + Right-click</font> and we're
+                    in the <font color="#00FF00">Expert Tile Editing window</font>. Here,
+                    since<br>
+                    our <font color="#FFFFFF">Vis</font> is on the Wall Layer 1, we set
+                    the <font color="#FFFFFF">Hidden</font> bit of the line <font color="#FFFF00">W1</font>
+                    to <font color="#FF9900">1</font>. Then press <font color="#FFFF00">OK</font>.<br>
+                    We now have an invisible Vis in the game, so the infamous Green Tile
+                    won't appear.<br>
+                    All that left is to place the Trap Door object itself onto this Special
+                    Tile.
+                  </font>
+                </td>
+              </tr>
+              <tr valign="top" align="center">
+                <td width="50%">
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+                    &nbsp; </font>
+                </td>
+                <td>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2"></font>
+                </td>
+              </tr>
+              <tr valign="bottom" align="center">
+                <td width="50%">
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="../assets/images/tut01_07.gif"
+                      width="266" height="270"></font>
+                </td>
+                <td><img src="../assets/images/tut01_08.gif" width="224" height="312"></td>
+              </tr>
+              <tr valign="top" align="center">
+                <td width="50%">
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Press
+                    <font color="#FF9900">Tab</font> to go in Objects Editing mode, place
+                    the cursor in the middle of the Tile, press <font color="#FF9900">Insert</font>
+                    and change the new object (with a <font color="#FF9900">right-click</font>
+                    on the label) to be the <font color="#FFFF00">Trap Door</font> we
+                    have made before (<font color="#FFFFFF">Act 1</font>, <font color="#FFFFFF">Type
+                      2</font>, <font color="#FFFFFF">Id 11</font> in the ds1).<br>
+                    Press <font color="#FF9900">Ctrl + S</font> to Save, then <font color="#FF9900">Esc</font>
+                    to Quit.
+                  </font>
+                </td>
+                <td>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Here
+                    are 2 screenshots of this<br>
+                    new Warp, in-game.</font>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p><br>
+          </p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFF00">Note</font>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+              : that's because the Trap Door in <font color="#33FFFF">Objects.txt</font>
+              has the column <font color="#00FF00">OpenWarp</font> set to <font color="#FF9900">1</font>
+              that we can read the warp destination, but it isn't required : if you
+              set this column to <font color="#FF9900">0</font>, then the trap Door
+              will still work, but when selected its description will stay "<font color="#FFFFFF">Trap
+                Door</font>" instead of "<font color="#FFFFFF">To The Rogue
+                Encampment</font>", which can be usefull if you want to easily hide
+              the destination name.</font>
+          </p>
+          <p align="left">&nbsp;</p>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Now,
+              let's do the same for the Rogue Encampment. Launch the </font>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFF00">TownE1.bat</font>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+              :</font>
+          </p>
+          <table border="0" cellspacing="0" cellpadding="4">
+            <tbody>
+              <tr valign="bottom" align="center">
+                <td width="50%">
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;<img
+                      src="../assets/images/tut01_09.gif" width="273" height="272"><br>
+                  </font>
+                </td>
+                <td>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="../assets/images/tut01_10.gif"
+                      width="254" height="244"></font>
+                </td>
+              </tr>
+              <tr valign="top" align="center">
+                <td width="50%">
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Go
+                    to Cell <font color="#FFFFFF">25, 20</font>, and as for the Graveyard
+                    place a <font color="#FFFFFF">Vis 7</font> there, makes it invisible,
+                    place the Trap Door object over it, Save and Quit.</font>
+                </td>
+                <td>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">This
+                    will be our Trap Door warp in Town.</font>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+              Since we'll test soon that these 2 trap Doors are working, copy <font color="#33FFFF">TownE1.ds1</font>
+              into your <font color="#00FF00">Mod directory</font>, at the location
+              <font color="#FFFFFF">Data\Global\Tiles\Act1\Town</font>, and <font color="#33FFFF">Gravey.ds1</font>
+              at the location <font color="#FFFFFF">Data\Global\Tiles\Act1\Graveyard</font>.
+            </font>
+          </p>
+          <p align="left">&nbsp;</p>
+          <p align="left">&nbsp;</p>
+          <p align="left">&nbsp;</p>
+          <p align="left">
+            <font size="2" face="Verdana, Arial, Helvetica, sans-serif">
+              <font size="5"><b>
+                  <font size="6">Connect
+                    Act 1 Town to Graveyard</font>
+                </b></font>
+            </font>
+          </p>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Here's
+              now your</font>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+            </font>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="gold">
+              <font color="#00FF00">Golden
+                Rule</font>
+            </font>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+              :<br>
+              <br>
+            </font>
+          </p>
+          <div align="center">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+            </font>
+          </div>
+          <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+            <hr align="center">
+            <div align="center"><b>
+                <font color="gold" size="3">All the Vis present in
+                  the ds1 MUST be defined in Levels.txt</font>
+              </b><br>
+            </div>
+          </font>
+          <hr>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">If
+              we were trying our Mod now, before any <font color="#33FFFF">Levels.txt</font>
+              editing, this Assertation would arise :</font>
+          </p>
+          <blockquote>
+            <table border="1" cellspacing="0" cellpadding="10">
+              <tbody>
+                <tr>
+                  <td>
+                    <font color="#FFFFFF" face="Verdana, Arial, Helvetica, sans-serif" size="2">Assertion
+                      Failure<br>
+                      Location : D2Common\DATATBLS\LvlTbls.cpp, line #1047<br>
+                      Expression : Error in DRLG related to stairs that connect levels</font>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </blockquote>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">If this assert
+              appear, check carefully all your ds1, write down the Vis numbers they're
+              using, and in <font color="#33FFFF">Levels.txt</font> check that all of
+              these Vis are linked to the correct level, using the correct Vis.</font>
+          </p>
+          <p>&nbsp;</p>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">So,
+            </font>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">now
+              let's edit <font color="#33FFFF">Levels.txt</font>, in order to link these
+              2 Trap Doors together. Go to your <font color="#00FF00">Mod directory</font>,
+              and open <font color="#33FFFF">Data\Global\Excel\Levels.txt</font> there
+              in Excel.</font>
+          </p>
+          <ul>
+            <li>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">The <font color="#FFFF00">Rogue
+                  Encampmen</font>t is the line with Id <font color="#FF9900">1</font>
+                "Act 1 - Town", as you can verify if you check the column
+                <font color="#00FF00">LevelName</font> btw.
+              </font>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+                &nbsp;<br>
+              </font>
+            </li>
+            <li>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">The <font color="#FFFF00">Graveyard</font>
+                is the line with Id <font color="#FF9900">17</font> "Act 1 - Graveyard"<br>
+              </font>
+            </li>
+          </ul>
+          <p>&nbsp;</p>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">If
+              you don't link the Levels together correctly, this assertion can popup
+              :</font>
+          </p>
+          <blockquote>
+            <table border="1" cellspacing="0" cellpadding="10">
+              <tbody>
+                <tr>
+                  <td>
+                    <font color="#FFFFFF" face="Verdana, Arial, Helvetica, sans-serif" size="2">Assertion
+                      Failure<br>
+                      Location : D2Common\DRLG\DrlgRoom.cpp, line #604<br>
+                      Expression : hDungeonRoomOther</font>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </blockquote>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">With this
+              one check in <font color="#33FFFF">Levels.txt</font> that you don't have
+              linked a Vis to the wrong other Level : to be correctly linked, 2 levels
+              must referenced each others. If you link the Vis 7 of Act 1 Town incorrectly
+              to the Crypt, instead of the Graveyard, then this error appear since the
+              Crypt is not referencing Act 1 Town in all its Vis.</font>
+          </p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFF00">Note</font>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+              : this can also have another meanings, as this part of code seems to make
+              several type of checks. You need to know that the last column and the
+              last row of tiles in a ds1 are not used by the game (they're overlapped
+              by their adjacent ds1 at run-time). So if you try to put the Trap Door
+              in the Cell <font color="#FFFFFF">24, 0</font> of the Graveyard (the far
+              right corner), since it's a forbiden place, the game can't place the Vis
+              here, and this Assertion comes.</font>
+          </p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">In addition,
+              some Warps are composed of more than 1 Tile, like the stairs of the Caves
+              for instance, so even if the Vis itself is not on a forbidden place, maybe
+              one of the tiles that are changed at run-time for making the cave stairs
+              hilighten *are* on such a forbidden place. So, as another rule :</font><br>
+          </p>
+          <hr align="center">
+          <div align="center">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>
+                <font color="gold" size="3">Don't
+                  place Vis too close of the Borders of the ds1</font>
+              </b><br>
+            </font>
+          </div>
+          <hr>
+          <p>&nbsp;</p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">What we want
+              is to connect our 2 levels together, using our new Vis. Here, we have
+              created the exact same Vis number (<font color="#FF9900">7</font>) in
+              the 2 ds1, but it's not required, it just helps us to keep things organized.</font>
+          </p>
+          <ul>
+            <li>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">In the
+                <font color="#00FF00">Vis7</font> column of the "Act 1 - Town"
+                line, put the <font color="#00FF00">Id</font> of the Graveyard (<font color="#FF9900">17</font>).
+              </font>
+            </li>
+            <li>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">In the
+                <font color="#00FF00">Vis7</font> column of the "Act 1 - Graveyard"
+                line, put the <font color="#00FF00">Id</font> of the Act 1 Town (<font color="#FF9900">1</font>).
+              </font>
+            </li>
+          </ul>
+          <p>&nbsp;</p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">This has
+              taken care of the link between the 2 levels, but not the warps themselves.
+              <font color="#FFFF00">Vis</font> are for the logical connection between
+              levels (the columns <font color="#00FF00">Vis0</font> to <font color="#00FF00">Vis7</font>),
+              but all of these Vis have their corresponding <font color="#FFFF00">Warp</font>
+              columns (<font color="#00FF00">Warp0</font> to <font color="#00FF00">Warp7</font>).
+              These Warps columns are ID of a line in <font color="#33FFFF">LvlWarp.txt</font>.
+              1 Warp in this .txt define the orientation of the warp, the area where
+              the mouse must be in order to activate the warp, and it indicate if the
+              game must replace some tiles at run-time to hilight the warp.
+            </font>
+          </p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">For us, it's
+              easy. Since we have used the Trap Door of Lut Gholein, we just have to
+              use the same Warp index. Check in <font color="#33FFFF">Levels.txt</font>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+                the line "Act 2 - Town" (Id 40). The Invisilbe Vis under the
+                Trap Door was a <font color="#00FF00">Vis 2</font>, so get the value in
+                the <font color="#00FF00">Warp 2</font> column, here <font color="#FF9900">19</font>.
+              </font>
+            </font>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">So,
+                for the Act 1 Town and the Graveyard, put <font color="#FF9900">19</font>
+                in the columns <font color="#00FF00">Warp7</font> of these 2 levels.</font>
+            </font>
+          </p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">If you forgot
+              to set a <font color="#00FF00">Warp</font> column (and therefore left
+              it to <font color="#FF9900">-1</font>), then you can have this assertion
+              : </font>
+          </p>
+          <blockquote>
+            <table border="1" cellspacing="0" cellpadding="10">
+              <tbody>
+                <tr>
+                  <td>
+                    <font color="#FFFFFF" face="Verdana, Arial, Helvetica, sans-serif" size="2">Assertion
+                      Failure<br>
+                      Location : D2Common\DRLG\DrlgVer.cpp, line #109<br>
+                      Expression : FALSE</font>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </blockquote>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">If you have
+              a <font color="#00FF00">Vis</font>, then you must fill its corresponding
+              <font color="#00FF00">Warp</font> column as well.
+            </font>
+          </p>
+          <p align="left">&nbsp;</p>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">We
+              have added Warps to the 2 ds1, we have filled their Vis and Warp columns,
+              now we can test. Just use the usual <font color="#FFFF00">-direct -txt</font>
+              method, and with any Player go in the Act 1 Town, and the Trap Doors should
+              work in both ways, without any warning or error. Don't try to go outside
+              of the Town tough, since you're likely to have a bridge that go to a black
+              wall : we have forced the use of only 1 ds1 for the 4 Town variations,
+              so there's only 1 possible way... But there's a trap Door anyway, so you
+              can escape.</font>
+          </p>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">This
+              zip contains the files necessary to test our modifications so far : <b><a href="#">trap_door.zip</a></b>
+              (52 KB). You'll find the ds1 of the <font color="#FFFFFF">Rogue Encampment</font>
+              and the <font color="#FFFFFF">Graveyard</font>, and the <font color="#FFFFFF">4
+                .txt</font> of the game we have modified. It's a normal Mod that needs
+              the -direct -txt method.</font>
+          </p>
+          <p align="left">&nbsp;</p>
+          <p align="left">&nbsp;</p>
+          <p align="left">
+            <font size="2" face="Verdana, Arial, Helvetica, sans-serif">
+              <font size="5"><b>
+                  <font size="6"><a name="new_tent_warp"></a>A
+                    new Tent Warp</font>
+                </b></font>
+            </font>
+          </p>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">This
+              is taken from an idea of <font color="#FFFF00">Kingpin</font>, from <a
+                href="http://d2mods.com/forum/viewtopic.php?t=14484" target="kingpin_tent"><b>this
+                  topic</b></a> in a Phrozen Keep forum.</font>
+          </p>
+          <table border="0" cellspacing="0" cellpadding="8">
+            <tbody>
+              <tr valign="top" align="left">
+                <td>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="../assets/images/tut01_11.gif"
+                      width="189" height="213"></font>
+                </td>
+                <td>
+                  <p>
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2">As
+                      you see it's possible to make Warps from any elements of the maps.
+                      Here, not only we will recreate this warp, but we'll also improve
+                      it, as we'll make our own warp settings : area where the mouse must
+                      be to activate the warp, exact position of the warp to enter it,
+                      and location where the player is heading to when he 's coming out
+                      of the tent.</font>
+                  </p>
+                  <p>
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2">To
+                      make our own warp, we'll use <font color="#33FFFF">LvlWarp.txt</font>.
+                      We can add our own warps in this file, and once you understand what
+                      the columns are for it's not very hard to make them.</font>
+                  </p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p align="left">&nbsp;</p>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">But
+              before doing any .txt editing, let's find what will be our settings for
+              this warp.</font>
+          </p>
+          <table border="0" cellspacing="0" cellpadding="8" width="100%">
+            <tbody>
+              <tr valign="bottom" align="center">
+                <td width="50%">
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="../assets/images/tut01_12.gif"
+                      width="190" height="178"></font>
+                </td>
+                <td>
+                  <p>
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="../assets/images/tut01_13.gif"
+                        width="190" height="178"></font>
+                  </p>
+                </td>
+              </tr>
+              <tr valign="top" align="center">
+                <td width="50%">
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">First,
+                    let's use the Ds1 Editor. Place a Hidden Vis 6 <font color="#FFFF00">of
+                      orientation 11</font> on the Wall layer 2, exactly here. Move the
+                    Rogue and the Torch objects to somewhere else, Save, press the <font color="#FF9900">P</font>
+                    key to take a screenshot, and Quit.</font>
+                </td>
+                <td>
+                  <p>
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Open
+                      this screenshot in an image editor, like <font color="#FFFF00">Paint
+                        Shop Pro</font>. In the game a Tile is a group of 5 x 5 sub-tiles,
+                      as this screenshot show.<br>
+                      <br>
+                    </font>
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2">We
+                      now have to decide which sub-tile will be our base : this is the
+                      sub-tile where the player appear when he exit the warp. </font>
+                  </p>
+                </td>
+              </tr>
+              <tr valign="top" align="center">
+                <td width="50%">
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+                    &nbsp; </font>
+                </td>
+                <td>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2"></font>
+                </td>
+              </tr>
+              <tr valign="bottom" align="center">
+                <td width="50%"><img src="../assets/images/tut01_14.gif" width="190" height="178"></td>
+                <td>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="../assets/images/tut01_15.gif"
+                      width="190" height="178"></font>
+                </td>
+              </tr>
+              <tr valign="top" align="center">
+                <td width="50%">
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">It's
+                    better if we choose the center of the tent entrance, on the ground
+                    level, so, here, let's choose this one, at coordinate <font color="#FFFF00">2,1</font>
+                    in the <font color="#FFFFFF">sub-tile coordinates system</font> of
+                    this Tile.<br>
+                    <font color="#FF9900"> <br>
+                      Note</font> : this sub-tile can be far away of the <font color="#FFFFFF">Vis</font>,
+                    not necessary inside the Special Tile. The warp <font color="#FFFFFF">Act
+                      2 Sewer Dock to Town</font> is like that.
+                  </font>
+                </td>
+                <td>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Let's
+                    define the sensitive area we want for the tent warp. We draw a box
+                    that include exactly the tent entrance.</font>
+                </td>
+              </tr>
+              <tr valign="top" align="center">
+                <td width="50%">
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+                    &nbsp; </font>
+                </td>
+                <td>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2"></font>
+                </td>
+              </tr>
+              <tr valign="bottom" align="center">
+                <td width="50%">
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="../assets/images/tut01_16.gif"
+                      width="190" height="178"></font>
+                </td>
+                <td><img src="../assets/images/tut01_17.gif" width="190" height="178"></td>
+              </tr>
+              <tr valign="top" align="center">
+                <td width="50%">
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">If
+                    we take the <font color="#FFFFFF">bottom</font> of the Base sub-tile
+                    as a reference, and consider it the base of the mouse coordinates
+                    system, then the upper&nbsp;/&nbsp;left corner of the mouse area is
+                    the point <font color="#00FF00">A</font>, at coordinates <font color="#FFFF00">-20,
+                      -111</font>, in pixels.</font>
+                </td>
+                <td>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">The
+                    Width (<font color="#00FF00">W</font>) and the Height (<font color="#00FF00">H</font>)
+                    of<br>
+                    the box is <font color="#FFFF00">46 x 112</font> pixels.</font>
+                </td>
+              </tr>
+              <tr valign="top" align="center">
+                <td width="50%"><br>
+                  &nbsp; </td>
+                <td>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2"></font>
+                </td>
+              </tr>
+              <tr valign="bottom" align="center">
+                <td colspan="2">
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="../assets/images/tut01_18.gif"
+                      width="190" height="178"></font>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2"></font>
+                </td>
+              </tr>
+              <tr valign="top" align="center">
+                <td colspan="2">
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">The
+                    last data we need is the <font color="#00FF00">location</font> from
+                    the <font color="#CCCCCC"><b>base</b></font> where the player<br>
+                    will head to, when he'll exit the tent. Here, we'll make him walk
+                    to<br>
+                    sub-tile <font color="#FFFF00">0, 5</font>
+                    <font color="#FF9900">from
+                      the base</font>. We can make it far away, but in any case<br>
+                    the Player has the possibility to stop the auto-walk by clicking elsewhere.
+                  </font>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p align="left">&nbsp;</p>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">We
+              can now edit <font color="#33FFFF">LvlWarp.txt</font>, since we have all
+              the infos we need to make a new warp.</font>
+          </p>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">In
+              this file, if we check carefully, we'll see that all warps have the column
+              <font color="#00FF00">Direction</font> set to <font color="#FF9900">b</font>,
+              except some of the <font color="#FFFF00">Expansion</font>, which have
+              <font color="#FF9900">l</font> and <font color="#FF9900">r</font>. Coincidently,
+              the warps that don't have <font color="#FF9900">b</font> are a pair of
+              warps with the same <font color="#00FF00">Id</font>, but one with <font color="#00FF00">Direction</font>
+              <font color="#FF9900">l</font>, the other with <font color="#FF9900">r</font>.
+            </font>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">So,
+              <font color="#FF9900"> l</font> stands for <font color="#FF9900">Left</font>,
+              <font color="#FF9900">r</font> for <font color="#FF9900">Right</font>,
+              and <font color="#FF9900">b</font> for <font color="#FF9900">Both</font>.
+            </font>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">The
+              <font color="#FFFFFF">Orientation</font> of the <font color="#FFFFFF">Vis</font>
+              (<font color="#FF9900">10</font> or <font color="#FF9900">11</font>),
+              will be used by the game to know which one of these 2 lines it'll use
+              : if the Vis is an Orientation 10, this will be the line with the <font color="#FF9900">l</font>
+              Direction, else if it's a Vis of Orientation 11, the game will choose
+              the line with the <font color="#FF9900">r</font> Direction.
+            </font>
+          </p>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Note
+              : if you create a Warp that don't use the Direction <font color="#FF9900">b</font>,
+              then be sure to make 2 lines in <font color="#33FFFF">LvlWarp.txt</font>
+              for this warp Id, one for the Left, one for the Right, else this assertion
+              (that we already described before) will arise :</font>
+          </p>
+          <blockquote>
+            <table border="1" cellspacing="0" cellpadding="10">
+              <tbody>
+                <tr>
+                  <td>
+                    <font color="#FFFFFF" face="Verdana, Arial, Helvetica, sans-serif" size="2">Assertion
+                      Failure<br>
+                      Location : D2Common\DATATBLS\LvlTbls.cpp, line #1047<br>
+                      Expression : Error in DRLG related to stairs that connect levels</font>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </blockquote>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">This
+              time it's indicating that it can't find the warp data in <font color="#33FFFF">LvlWarp.txt</font>,
+              either because the <font color="#00FF00">Id</font> is just not present,
+              or because the expected <font color="#00FF00">Direction</font> is not
+              present.</font>
+          </p>
+          <p>&nbsp;</p>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">To
+              create a new warp, go to the bottom of the file, and in the first empty
+              row edit the columns like this :</font>
+          </p>
+          <table border="0" cellspacing="0" cellpadding="4">
+            <tbody>
+              <tr>
+                <td>
+                  <div align="left">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
+                </td>
+                <td>
+                  <div align="left">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">
+                      Name</font>
+                  </div>
+                </td>
+                <td>
+                  <div align="center">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;=&nbsp;</font>
+                  </div>
+                </td>
+                <td>
+                  <div align="left">
+                    <font color="#FF9900" face="Verdana, Arial, Helvetica, sans-serif" size="2">Act
+                      1 Small Tent R</font>
+                  </div>
+                </td>
+                <td>
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                </td>
+                <td>
+                  <div align="left">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">OffsetX</font>
+                  </div>
+                </td>
+                <td>
+                  <div align="center">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;=&nbsp;</font>
+                  </div>
+                </td>
+                <td>
+                  <div align="left">
+                    <font color="#FF9900" face="Verdana, Arial, Helvetica, sans-serif" size="2">2</font>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div align="left"></div>
+                </td>
+                <td>
+                  <div align="left">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">
+                      Id</font>
+                  </div>
+                </td>
+                <td>
+                  <div align="center">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;=&nbsp;</font>
+                  </div>
+                </td>
+                <td>
+                  <div align="left">
+                    <font color="#FF9900" face="Verdana, Arial, Helvetica, sans-serif" size="2">83</font>
+                  </div>
+                </td>
+                <td>&nbsp;</td>
+                <td>
+                  <div align="left">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">OffsetY</font>
+                  </div>
+                </td>
+                <td>
+                  <div align="center">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;=&nbsp;</font>
+                  </div>
+                </td>
+                <td>
+                  <div align="left">
+                    <font color="#FF9900" face="Verdana, Arial, Helvetica, sans-serif" size="2">1</font>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div align="left"></div>
+                </td>
+                <td>
+                  <div align="left">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">
+                      SelectX</font>
+                  </div>
+                </td>
+                <td>
+                  <div align="center">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;=&nbsp;</font>
+                  </div>
+                </td>
+                <td>
+                  <div align="left">
+                    <font color="#FF9900" face="Verdana, Arial, Helvetica, sans-serif" size="2">-20</font>
+                  </div>
+                </td>
+                <td>&nbsp;</td>
+                <td>
+                  <div align="left">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">LitVersion</font>
+                  </div>
+                </td>
+                <td>
+                  <div align="center">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;=&nbsp;</font>
+                  </div>
+                </td>
+                <td>
+                  <div align="left">
+                    <font color="#FF9900" face="Verdana, Arial, Helvetica, sans-serif" size="2">0</font>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div align="left"></div>
+                </td>
+                <td>
+                  <div align="left">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">SelectY</font>
+                  </div>
+                </td>
+                <td>
+                  <div align="center">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;=&nbsp;</font>
+                  </div>
+                </td>
+                <td>
+                  <div align="left">
+                    <font color="#FF9900" face="Verdana, Arial, Helvetica, sans-serif" size="2">-111</font>
+                  </div>
+                </td>
+                <td>&nbsp;</td>
+                <td>
+                  <div align="left">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">Tiles</font>
+                  </div>
+                </td>
+                <td>
+                  <div align="center">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;=&nbsp;</font>
+                  </div>
+                </td>
+                <td>
+                  <div align="left">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FF9900">2</font>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div align="left"></div>
+                </td>
+                <td>
+                  <div align="left">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">SelectDX</font>
+                  </div>
+                </td>
+                <td>
+                  <div align="center">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;=&nbsp;</font>
+                  </div>
+                </td>
+                <td>
+                  <div align="left">
+                    <font color="#FF9900" face="Verdana, Arial, Helvetica, sans-serif" size="2">46</font>
+                  </div>
+                </td>
+                <td>&nbsp;</td>
+                <td>
+                  <div align="left">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">Direction</font>
+                  </div>
+                </td>
+                <td>
+                  <div align="center">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;=&nbsp;</font>
+                  </div>
+                </td>
+                <td>
+                  <div align="left">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FF9900">b</font>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div align="left"></div>
+                </td>
+                <td>
+                  <div align="left">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">SelectDY</font>
+                  </div>
+                </td>
+                <td>
+                  <div align="center">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;=&nbsp;</font>
+                  </div>
+                </td>
+                <td>
+                  <div align="left">
+                    <font color="#FF9900" face="Verdana, Arial, Helvetica, sans-serif" size="2">112</font>
+                  </div>
+                </td>
+                <td>&nbsp;</td>
+                <td>
+                  <div align="left">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">Beta</font>
+                  </div>
+                </td>
+                <td>
+                  <div align="center">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;=&nbsp;</font>
+                  </div>
+                </td>
+                <td>
+                  <div align="left">
+                    <font color="#FF9900" face="Verdana, Arial, Helvetica, sans-serif" size="2">0</font>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div align="left"></div>
+                </td>
+                <td>
+                  <div align="left">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">ExitWalkX</font>
+                  </div>
+                </td>
+                <td>
+                  <div align="center">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;=&nbsp;</font>
+                  </div>
+                </td>
+                <td>
+                  <div align="left">
+                    <font color="#FF9900" face="Verdana, Arial, Helvetica, sans-serif" size="2">0</font>
+                  </div>
+                </td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+              </tr>
+              <tr>
+                <td>
+                  <div align="left"></div>
+                </td>
+                <td>
+                  <div align="left">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">ExitWalkY</font>
+                  </div>
+                </td>
+                <td>
+                  <div align="center">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;=&nbsp;</font>
+                  </div>
+                </td>
+                <td>
+                  <div align="left">
+                    <font color="#FF9900" face="Verdana, Arial, Helvetica, sans-serif" size="2">5</font>
+                  </div>
+                </td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+              </tr>
+            </tbody>
+          </table>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">The
+              column <font color="#00FF00">Name</font> is not used by the game, but
+              it's better to have a good description.</font>
+          </p>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Here
+              we have set the column <font color="#00FF00">Direction</font> to <font color="#FF9900">b</font>,
+              because even if we know that it is definitively for a Right entrance,
+              it'll avoid some possible assertion later, if you use this warp ID with
+              a Vis of Orientation 10 by mistake for instance.</font>
+          </p>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">The
+              column <font color="#00FF00">LitVersion</font> is used by the game to
+              know if it has to replace some tiles of a warp at run-time by their hilightened
+              version. Si</font>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">nce
+              we don't have such graphics for our tent, we set it to <font color="#FF9900">0</font>,
+              this avoid some glitchs, like part of the tent changing to mud when the
+              mouse is over the entrance. Anyway, the hilight process is hardcoded,
+              and linked to the warp Id, so unless you're doing DLL editing, never use
+              a LitVersion of 1 when you create warps with a new Id.</font>
+          </p>
+          <p align="left">&nbsp;</p>
+          <p align="left">&nbsp;</p>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="5"><b>
+                <font size="6"><a name="one_way_warp"></a>1-way
+                  Warp to Tristram</font>
+              </b></font>
+          </p>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">We'll
+              make the Tent connected to Tristram, but without turning back, just to
+              show that it's possible (and easy) to do.</font>
+          </p>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">First,
+              put the <font color="#FFFFFF">Tri_Town4.ds1</font> in the Ds1 Editor directory,
+              and make this .bat ;</font>
+          </p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFF00">Tristram.bat</font>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+              :</font>
+          </p>
+          <blockquote>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFFFF">@echo
+                off<br>
+                win_ds1edit Tri_Town4.ds1 11 300 &gt; log.txt</font>
+            </p>
+          </blockquote>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+              Launch it, and </font>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+              at cell coordinates <font color="#FFFF00">10, 38</font> place an <font color="#FFFFFF">Hidden</font>
+              <font color="#FFFFFF">Vis 6</font> on Wall layer 1, delete the Fallen
+              object that's near, then place 1 non-selectable object on the Vis (here,
+              just a light), and just for fun place some Fog Water around the Vis like
+              in this exemple, to make it looks like a special area :
+            </font>
+          </p>
+          <p align="center"><img src="../assets/images/tut01_19.gif" width="530" height="291"></p>
+          <p>&nbsp;</p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">As you have
+              noticed, it's the same process as the Trap Doors we have created before,
+              except that the Object on the Vis is different. If you don't put any Object
+              on the Vis, then the Warp will still work, but it'll be selectable by
+              the Player, something we don't want here. So we place an object, but the
+              trick is that the object is not selectable, so despite the Warp IS working,
+              since the Player is unable to select the object, he can't activate this
+              side of the Warp, so it's a 1-way warp :</font>
+          </p>
+          <p align="center"><img src="../assets/images/tut01_20.gif" width="459" height="281"></p>
+          <p align="left">&nbsp;</p>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Now,
+              let's test our new Warps, from the Rogue Encampment to Tristram. Open
+              <font color="#33FFFF">Levels.txt</font> in Excel. The Act 1 Town is still
+              the Level Id 1, Tristram is the Level Id 38, we have used 2 Vis 6, for
+              the Warp 6 in Town we have created our own Warp, and for Tristram the
+              Vis 6 will be like the Trap Door.
+            </font>
+          </p>
+          <ul>
+            <li>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Act 1
+                - Town : </font>
+              <ul>
+                <li>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">Vis6</font>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+                    = <font color="#FF9900">38</font> (to Tristram)</font>
+                </li>
+                <li>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">Warp6</font>
+                  <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+                    = <font color="#FF9900">83</font> (our new Tent entrance warp Id
+                    from <font color="#33FFFF">LvlWarp.txt</font>)<br>
+                    <br>
+                  </font>
+                </li>
+              </ul>
+            </li>
+            <li>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Tristram
+                :</font>
+              <ul>
+                <li>
+                  <font color="#00FF00" size="2" face="Verdana, Arial, Helvetica, sans-serif">Vis6</font>
+                  <font size="2" face="Verdana, Arial, Helvetica, sans-serif">
+                    = <font color="#FF9900">1</font> (to Town)</font>
+                </li>
+                <li>
+                  <font color="#00FF00" size="2" face="Verdana, Arial, Helvetica, sans-serif">Warp6</font>
+                  <font size="2" face="Verdana, Arial, Helvetica, sans-serif">
+                    = <font color="#FF9900">19</font> (Trap Door)</font>
+                </li>
+              </ul>
+            </li>
+          </ul>
+          <p align="left">&nbsp;</p>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">In
+              your <font color="#00FF00">Mod directory</font> :</font>
+          </p>
+          <ul>
+            <li>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2"> in the
+                <font color="#FFFFFF">Data\Global\Tiles\Act1</font> directory, create
+                the <font color="#FFFF00">Tristram</font> directory and place <font color="#FFFFFF">Tri_Town4.ds1</font>
+                inside.<br>
+                <br>
+              </font>
+            </li>
+            <li>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Place
+                the new version of <font color="#FFFFFF">TownE1.ds1</font> in <font color="#FFFFFF">
+                  Data\Global\Tiles\Act1\Town</font>.<br>
+                <br>
+              </font>
+            </li>
+            <li>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+                <font color="#33FFFF">LvlWarp.txt</font>
+                should be in your <font color="#FFFFFF">Data\Global\Excel</font>
+                <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+                  directory.</font>
+              </font>
+            </li>
+          </ul>
+          <p align="left">&nbsp;</p>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">You
+              can now test this Mod, and the Rogue encampment's Tent to Tristram's Fog
+              Warp. The Trap Door between the Town and the Graveyard is of course still
+              working. </font>
+          </p>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">This
+              zip contains the files necessary to test our modifications so far : <b><a href="#">tent.zip</a></b>
+              (56.1 KB). You'll find the files of the trap_door.zip with the new and
+              updated files we have made since.</font>
+          </p>
+          <p align="left">&nbsp;</p>
+          <p align="left">&nbsp;</p>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="5"><b>
+                <font size="6"><a name="new_house"></a>A
+                  new House in Town</font>
+              </b></font>
+          </p>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">We'll
+              add a House in the Rogue Encampment, one with Roofs that disapear when
+              you walk inside. It's not very hard, but we have to take care of some
+              details else it won't work.</font>
+          </p>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">First,
+              don't build them from scratch, always take a model, because in order to
+              have Roofs that disapear, you have to use and place specific special tiles,
+              and the details of how these ones are working is still unknown. So, we'll
+              take the file <font color="#FFFFFF">Data\Global\Tiles\Act1\Outdoors\Cott1.ds1</font>
+              as a model.</font>
+          </p>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Since
+              we want to copy / paste the house in another ds1, we have to load 2 ds1
+              at once in the ds1 editor, which is done by a .ini that we use as a parameter
+              to win_ds1edit.exe :</font>
+          </p>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFF00">Cottage
+              and Town.bat</font>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+              :</font>
+          </p>
+          <blockquote>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFFFF">@echo
+                off<br>
+                win_ds1edit cottage_town.ini &gt; log.tx</font>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFFFF">t<br>
+                &nbsp; </font>
+            </p>
+          </blockquote>
+          <p align="left">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFF00">cottage_town.ini</font>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+              :</font>
+          </p>
+          <blockquote>
+            <p>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFFFF">2
+                47 Cott1.ds1<br>
+                1 1 TownE1.ds1<br>
+              </font>
+            </p>
+          </blockquote>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Place <font color="#33FFFF">Cott1.ds1</font>,
+              this <font color="#33FFFF">.ini</font>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+                and this <font color="#33FFFF">.bat</font> in the directory of the ds1
+                editor, then launch the .bat. Select the house, press the keys <font color="#FF9900">Ctrl
+                  + C</font> to copy it, press the key <font color="#FF9900">2</font> to
+                view the 2nd ds1 and ... damn, where's the house ? What are these weird
+                tiles ?</font>
+            </font>
+          </p>
+          <table border="0" cellspacing="0" cellpadding="8">
+            <tbody>
+              <tr valign="bottom">
+                <td>
+                  <div align="center">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="../assets/images/tut01_21.gif"
+                        width="264" height="270"></font>
+                  </div>
+                </td>
+                <td>
+                  <div align="center">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="../assets/images/tut01_22.gif"
+                        width="322" height="270"></font>
+                  </div>
+                </td>
+              </tr>
+              <tr valign="top">
+                <td>
+                  <div align="center">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Select
+                      the house, and copy it</font>
+                  </div>
+                </td>
+                <td>
+                  <div align="center">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Try
+                      to paste it in the other ds1,<br>
+                      and bad things happens</font>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">We forgot
+              to edit <font color="#33FFFF">LvlTypes.txt</font> : This file contains
+              several lists of DT1, and our Rogue Encampment don't use yet the graphics
+              of the Cottage house. Before beeing able to use the cottage tiles, we
+              have to include them to the list of the active DT1 of this ds1.</font>
+          </p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Take <font color="#33FFFF">LvlTypes.txt</font>
+              and place it into the <font color="#FFFFFF">Data\Global\Excel</font> directory
+              of your <font color="#00FF00">Mod directory</font>. Then open it with
+              Excel. The Rogue Encampment ds1 is using the LvlType 1. It already have
+              some DT1 like Act1/Town/Floor.dt1, Act1/Town/Fence.dt1, Act1/Town/trees.dt1...
+              but nowhere a cottage.</font>
+          </p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">The Cott1.ds1
+              is using the LvlType 2 (Wilderness), and here we can find a cottage :
+              the column <font color="#00FF00">File25</font> of the LvlType 2 row has
+              the dt1 <font color="#FFFFFF">Act1/Outdoors/Cottages.dt1</font>. Copy
+              this filename, and paste it into a free slot of the LvlType 1 row, here
+              in the <font color="#00FF00">File7</font> column, you can now save and
+              close this file.</font>
+          </p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">We have added
+              a gfx to the DT1 list of the Town... but it won't use it yet. We have
+              just added the *possibility* for this ds1 to use it, we didn't set the
+              ds1 parameters to actually use it. This is done in <font color="#33FFFF">LvlPrest.txt</font>,
+              with the column <font color="#00FF00">Dt1Mask</font>. This column is a
+              bitfield. We currently find the value <font color="#FF9900">959</font>.
+              In binary this value is <font color="#FF9900">1110111111</font>. There
+              are 32 bits maximum, and we have 32 columns File, from <font color="#00FF00">File1</font>
+              to <font color="#00FF00">File32</font>, each bit indicate if the ds1 is
+              using the filename in the corresponding column. If we read the bits from
+              the lowest to the highest (from right to left), we'll find that this ds1
+              is using the columns <font color="#00FF00">File1</font> to <font color="#00FF00">File10</font>,
+              except the <font color="#00FF00">File7</font> (which had a 0 before we
+              add our cottage dt1 in there, so that's why).</font>
+          </p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Let's add
+              the column File7 to this Dt1Mask. Each column is a power of 2. File1=1,
+              File2=2, File3=4, File4=8, File5=16, File6=32 and finally <font color="#00FF00">File7</font>=<font
+                color="#FF9900">64</font>.
+              So we add 64 to 959, and our new value is <font color="#FF9900">1023</font>.
+              Replace 959 by 1023 in LvlPrest.txt, save and close the file. If you don't
+              like doing it manually, you can use this tool to help you : <b><a
+                  href="http://phrozenkeep.hugelaser.com/filecenter/dload.php?action=file&amp;file_id=129"
+                  target="dt1mask_maker">dt1mask
+                  Maker v1.0</a></b>.</font>
+          </p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Now we're
+              ready. Launch again the </font>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFF00">Cottage
+              and Town.bat</font>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">,
+              make some place in Town, copy/paste the house (floor + walls + special
+              tiles) into town, save, quit, and we're done with the editor :</font>
+          </p>
+          <table border="0" cellspacing="0" cellpadding="8">
+            <tbody>
+              <tr>
+                <td>
+                  <div align="center">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="../assets/images/tut01_23.gif"
+                        width="280" height="260"></font>
+                  </div>
+                </td>
+                <td>
+                  <div align="center">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="../assets/images/tut01_24.gif"
+                        width="280" height="260"></font>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div align="center">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Near
+                      Charsi, remove the Vehicle, the Rogue and the Chicken, to make some
+                      place</font>
+                  </div>
+                </td>
+                <td>
+                  <div align="center">
+                    <font face="Verdana, Arial, Helvetica, sans-serif" size="2">You
+                      can now safely copy / paste the house right there.</font>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Save and
+              quit, and place the new <font color="#33FFFF">TownE1.ds1</font>
+              <font face="Verdana, Arial, Helvetica, sans-serif" size="2">
+                into your <font color="#00FF00">Mod directory</font>, at its usual <font color="#FFFFFF">
+                  Data\Global\Tiles\Act1\Town</font>
+                place. We can now test the house in game :</font>
+            </font>
+          </p>
+          <p align="center">
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="../assets/images/tut01_25.gif"
+                width="303" height="242"><br>
+              Hmmm, the house is there but the Roofs are not disapearing...</font>
+          </p>
+          <blockquote>
+            <div align="left"></div>
+          </blockquote>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">It seems
+              we forgot something but what ? Open <font color="#33FFFF">LvlPrest.txt</font>,
+              make a search for "<font color="#FFFFFF">cottage</font>", and
+              you'll find the line <font color="#FFFFFF">Act 1 - Cottages 1</font> at
+              <font color="#00FF00">Def</font>
+              <font color="#FF9900">47</font>. If we
+              now compare 2 columns, the <font color="#00FF00">Pops</font> and <font color="#00FF00">PopPad</font>,
+              we'll see that the <font color="#FFFF00">Town</font> is not using them,
+              while the <font color="#FFFF00">Cottage house</font> does. Just copy/paste
+              these 2 values in the row of Town (<font color="#00FF00">Pops</font> =
+              <font color="#FF9900">2</font> and <font color="#00FF00">PopPad </font>=
+              <font color="#FF9900">-4</font>), and the house will finally works as
+              expected :
+            </font>
+          </p>
+          <p align="center"><img src="../assets/images/tut01_26.gif" width="364" height="273"></p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">The meaning
+              of the columns <font color="#00FF00">Pops</font> and <font color="#00FF00">PopPad</font>
+              is not well know, but at least it's clear they have something to do with
+              Areas of Tiles that disapear when the player walk somewhere (presence
+              and count of areas / special tiles). That's why it's important to always
+              follow a model, because we can't yet guess these values from scratch.</font>
+          </p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">This zip
+              contains the files necessary to test our modifications so far : <b><a href="#">house.zip</a></b>
+              (58.3 KB).</font>
+          </p>
+          <p>&nbsp;</p>
+          <p>
+            <font face="Verdana, Arial, Helvetica, sans-serif" size="2">To be continued....</font>
+          </p>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <p>&nbsp;</p>
+  <div id="speechify-global-notifications"><template shadowrootmode="open">
+      <div id="speechify-global-notifications-root"
+        style="position: fixed; top: 0px; left: 0px; height: 100vh; z-index: 2147483644; width: 0vw;"></div>
+    </template></div>
+  <div id="speechify-hover-player-shadow-root"><template shadowrootmode="open">
+      <div id="speechify-hover-player-container"></div>
+    </template></div>
+  <div id="speechify-settings-modal" style="position: absolute; bottom: 0px; right: 0px;"><template
+      shadowrootmode="open">
+      <div id="speechify-settings-modal-root"
+        style="position: fixed; z-index: 2147483646; top: 0px; left: 0px; height: fit-content; font-size: initial;">
+      </div>
+    </template></div>
+  <div id="speechify-screenshot-mode"
+    style="position: fixed; top: 0px; right: 0px; width: 100%; min-height: 100%; z-index: 2147483640; display: none !important;">
+    <template shadowrootmode="open">
+      <div id="speechify-screenshot-mode-root" style="width: 100%; height: 100%; position: relative;"></div>
+    </template>
+  </div>
+  <div id="speechify-pill-player" style="position: absolute; bottom: 0px; right: 0px;"><template shadowrootmode="open">
+      <div id="speechify-pill-player-root"
+        style="position: fixed; z-index: 2147483645; top: calc(50% - 171px); right: 18px; height: fit-content; font-size: initial;">
+        <div class="player-emotion-cache-l2eekb">
+          <div class="player-emotion-cache-9a1w0v"></div>
+          <div class="player-emotion-cache-2qhgnx">
+            <div class="player-emotion-cache-4jvpqb">
+              <div class="player-emotion-cache-cssveg">
+                <div class="player-emotion-cache-1imzxnm">
+                  <div class="player-emotion-cache-1224nbk"></div>
+                </div>
+                <div class="player-emotion-cache-1os8mqp">
+                  <div class="player-emotion-cache-10erag2">
+                    <div class="player-emotion-cache-mpoplv">
+                      <div class="player-emotion-cache-1mve43x"></div>
+                      <div class="player-emotion-cache-1091ts7"><button data-testid="Close Side Panel"
+                          class="player-emotion-cache-r4o0jv"><svg width="16" height="16" viewBox="0 0 16 16"
+                            fill="#9899a6">
+                            <path
+                              d="M2.82191 11.9313C2.61879 12.1344 2.61098 12.4782 2.82191 12.6813C3.02504 12.8923 3.36879 12.8844 3.57191 12.6813L7.7516 8.50163L11.9313 12.6813C12.1344 12.8844 12.4782 12.8923 12.6813 12.6813C12.8922 12.4782 12.8844 12.1344 12.6813 11.9313L8.5016 7.75163L12.6813 3.56413C12.8844 3.36101 12.8922 3.02507 12.6813 2.82194C12.4782 2.61101 12.1344 2.61882 11.9313 2.82194L7.7516 7.00163L3.57191 2.82194C3.36879 2.61882 3.02504 2.61101 2.82191 2.82194C2.61098 3.02507 2.61879 3.36101 2.82191 3.56413L7.0016 7.75163L2.82191 11.9313Z">
+                            </path>
+                          </svg></button></div>
+                    </div>
+                  </div>
+                </div>
+                <div class=" player-emotion-cache-14pyho">
+                  <div class="player-emotion-cache-i301zs">
+                    <div class="player-emotion-cache-14iww7j" style="height: 20px;">
+                      <div aria-label="Speechify duration in mins" data-testid="Speechify duration in mins"
+                        class="left player-emotion-cache-177f3d1">11 </div>
+                      <div class="player-emotion-cache-xrjqvi">:</div>
+                      <div aria-label="Speechify duration in secs" data-testid="Speechify duration in secs"
+                        class="right player-emotion-cache-177f3d1">03 </div>
+                    </div>
+                    <div class="player-emotion-cache-2ercfa"><button aria-label="Speechify play button"
+                        data-testid="Speechify play button" class="player-emotion-cache-2g1ao1"><svg
+                          aria-label="Speechify play button" data-testid="Speechify play button"
+                          xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" size="20px"
+                          class="player-emotion-cache-1nlgyuz">
+                          <path
+                            d="M7.164 19.84c.474 0 .835-.088 1.283-.36l9.826-5.705c.844-.483 1.336-.958 1.336-1.775 0-.809-.492-1.292-1.336-1.775L8.447 4.52c-.448-.263-.809-.36-1.283-.36-.95 0-1.714.677-1.714 1.907v11.866c0 1.23.765 1.907 1.714 1.907z">
+                          </path>
+                        </svg></button></div>
+                    <div class="player-emotion-cache-19pbexn"></div>
+                  </div>
+                  <div class="player-emotion-cache-1p4ctt2">
+                    <div class="player-emotion-cache-9a1w0v"><button aria-label="Speechify voice menu"
+                        data-testid="Speechify voice menu" class="player-emotion-cache-9qilc6"><img
+                          src="https://vms.cdn.speechify.dev/avatars/5e471af7-40d3-42cf-be02-02b9438230c5.webp"
+                          alt="Selected Voice" style="border-radius: 50%; object-fit: cover;"></button></div>
+                    <div class="player-emotion-cache-9a1w0v"><button aria-label="Speechify playback speed menu"
+                        data-testid="Speechify playback speed menu" class="player-emotion-cache-9qilc6"><span
+                          font-size="14px" class="player-emotion-cache-134h92v">2.0�</span></button></div>
+                  </div>
+                  <div class="player-emotion-cache-9a1w0v"><button
+                      aria-label="Capture Screenshot button , shortcut Alt + R"
+                      data-testid="Capture Screenshot button , shortcut Alt + R"
+                      class="player-emotion-cache-mgjwvm"><svg width="21" height="20" viewBox="0 0 21 20" fill="none"
+                        xmlns="http://www.w3.org/2000/svg" class="player-emotion-cache-1b8pgz">
+                        <g clip-path="url(#clip0_17880_17245)">
+                          <path fill-rule="evenodd" clip-rule="evenodd"
+                            d="M18.7697 7.89786L18.7351 3.37668H17.4809C17.1063 3.37668 16.7759 3.13154 16.6674 2.77309L16.3873 1.84844H13.5391L13.1869 2.81713C13.0647 3.15306 12.7455 3.37668 12.388 3.37668H10.9608L10.9953 7.89589C13.6192 8.38029 16.146 8.38094 18.7697 7.89786ZM20.47 7.93575C20.4759 8.71314 19.9331 9.40998 19.142 9.55779C16.2705 10.0943 13.495 10.0936 10.6233 9.55587C9.84194 9.40953 9.30161 8.7269 9.29574 7.95885L9.26043 3.33929C9.25343 2.42312 9.99418 1.67668 10.9104 1.67668L11.7927 1.67668L11.9534 1.23462C12.1905 0.58253 12.8102 0.148438 13.5041 0.148438H16.4244C17.1514 0.148438 17.7928 0.6243 18.0035 1.32011L18.1115 1.67668H18.7847C19.6911 1.67668 20.4277 2.40775 20.4347 3.31407L20.47 7.93575ZM1.5 15.9984C1.5 17.103 2.39543 17.9984 3.5 17.9984H6.5C7.05228 17.9984 7.5 17.5507 7.5 16.9984C7.5 16.4462 7.05228 15.9984 6.5 15.9984H3.5V12.4984C3.5 11.9462 3.05228 11.4984 2.5 11.4984C1.94772 11.4984 1.5 11.9462 1.5 12.4984V15.9984ZM13.5 16.9984C13.5 17.5507 13.9477 17.9984 14.5 17.9984H17.5C18.6046 17.9984 19.5 17.103 19.5 15.9984V13.4984C19.5 12.9462 19.0523 12.4984 18.5 12.4984C17.9477 12.4984 17.5 12.9462 17.5 13.4984V15.9984H14.5C13.9477 15.9984 13.5 16.4462 13.5 16.9984ZM2.5 8.49844C3.05228 8.49844 3.5 8.05072 3.5 7.49844V3.99844H5.5C6.05228 3.99844 6.5 3.55072 6.5 2.99844C6.5 2.44615 6.05228 1.99844 5.5 1.99844H3.5C2.39543 1.99844 1.5 2.89387 1.5 3.99844V7.49844C1.5 8.05072 1.94772 8.49844 2.5 8.49844ZM14.9805 7.07954C15.916 7.07954 16.6744 6.32117 16.6744 5.38567C16.6744 4.45017 15.916 3.6918 14.9805 3.6918C14.045 3.6918 13.2866 4.45017 13.2866 5.38567C13.2866 6.32117 14.045 7.07954 14.9805 7.07954Z"
+                            fill="#FFFFFF"></path>
+                        </g>
+                        <defs>
+                          <clippath id="clip0_17880_17245">
+                            <rect width="20" height="20" fill="white" transform="translate(0.5)"></rect>
+                          </clippath>
+                        </defs>
+                      </svg></button></div>
+                  <div class="player-emotion-cache-9a1w0v"><button aria-label="Save to library button, shortcut Alt + S"
+                      data-testid="Save to library button, shortcut Alt + S" color="#F1F4F9"
+                      class="player-emotion-cache-19swl4x"><svg class="icon--save player-emotion-cache-1nlgyuz"
+                        viewBox="0 0 21 20" xmlns="http://www.w3.org/2000/svg">
+                        <g clip-path="url(#clip0_17880_17248)">
+                          <path fill-rule="evenodd" clip-rule="evenodd"
+                            d="M16.5 1C17.0523 1 17.5 1.44772 17.5 2V4H19.5C20.0523 4 20.5 4.44772 20.5 5C20.5 5.55228 20.0523 6 19.5 6H17.5V8C17.5 8.55228 17.0523 9 16.5 9C15.9477 9 15.5 8.55228 15.5 8V6H13.5C12.9477 6 12.5 5.55228 12.5 5C12.5 4.44771 12.9477 4 13.5 4H15.5V2C15.5 1.44772 15.9477 1 16.5 1ZM6.16667 4C5.79848 4 5.5 4.29848 5.5 4.66667L5.50003 15.7589L9.99613 13.1362C10.3075 12.9546 10.6925 12.9546 11.0039 13.1362L15.5 15.7589V12C15.5 11.4477 15.9477 11 16.5 11C17.0523 11 17.5 11.4477 17.5 12V17.5C17.5 17.858 17.3086 18.1888 16.9981 18.3671C16.6876 18.5454 16.3054 18.5442 15.9961 18.3637L10.5 15.1577L5.00391 18.3637C4.69462 18.5442 4.31247 18.5454 4.00198 18.3671C3.69148 18.1888 3.50004 17.858 3.50004 17.5L3.5 4.66667C3.5 3.19391 4.6939 2 6.16667 2H10.5C11.0523 2 11.5 2.44772 11.5 3C11.5 3.55228 11.0523 4 10.5 4H6.16667Z"
+                            fill="#F1F4F9"></path>
+                        </g>
+                        <defs>
+                          <clippath id="clip0_17880_17248">
+                            <rect width="20" height="20" fill="white" transform="translate(0.5)"></rect>
+                          </clippath>
+                        </defs>
+                      </svg></button></div>
+                  <div class="player-emotion-cache-1p4ctt2">
+                    <div class="player-emotion-cache-9a1w0v"><button aria-label="Report a Problem with Speechify App"
+                        data-testid="Report a Problem with Speechify App" class="player-emotion-cache-9h4fgc"><svg
+                          width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"
+                          class="player-emotion-cache-10bpkok">
+                          <path fill-rule="evenodd" clip-rule="evenodd"
+                            d="M7.22475 14.299C7.61471 14.329 7.98428 14.4852 8.27756 14.744L10.0034 16.2666L11.7292 14.744C12.0224 14.4852 12.392 14.329 12.782 14.299L15.8904 14.0599C16.2551 14.0319 16.5367 13.7278 16.5367 13.362L16.5368 4.63338C16.5368 4.48678 16.4908 4.38598 16.4501 4.33262C16.4157 4.28758 16.3802 4.26554 16.3259 4.25535C15.1039 4.0262 13.0406 3.76338 10.0034 3.76338C6.96624 3.76338 4.90295 4.02621 3.68099 4.25535C3.62663 4.26554 3.59114 4.28759 3.55679 4.33262C3.51609 4.38598 3.47009 4.48678 3.47009 4.63338L3.47004 13.362C3.47004 13.7278 3.75166 14.0319 4.11636 14.0599L7.22475 14.299ZM12.92 16.0937L16.0285 15.8546C17.3309 15.7544 18.3367 14.6684 18.3367 13.362L18.3368 4.63339C18.3368 3.59127 17.6819 2.67825 16.6576 2.48618C15.3195 2.23525 13.1448 1.96338 10.0034 1.96338C6.86208 1.96338 4.68739 2.23526 3.34924 2.48619C2.32498 2.67826 1.6701 3.59126 1.67009 4.63337L1.67004 13.362C1.67004 14.6683 2.67581 15.7544 3.9783 15.8546L7.0867 16.0937L8.90071 17.6942C9.53073 18.2501 10.476 18.2501 11.106 17.6942L12.92 16.0937ZM9.12547 5.10628C8.47758 5.32554 7.93533 5.82056 7.65809 6.44584C7.57939 6.62335 7.52208 6.80904 7.48701 6.99899C7.43665 7.27176 7.5795 7.53469 7.80457 7.69682L7.82022 7.70809C8.12082 7.92464 8.52829 7.91675 8.82029 7.68873C9.02253 7.53079 9.12167 7.28096 9.2092 7.03974C9.32204 6.72875 9.59079 6.44584 10.1333 6.44584C10.7232 6.44584 11.083 6.84453 11.083 7.32207C11.083 7.84653 10.7435 8.17893 10.3486 8.50592C9.76387 8.87192 9.35675 9.54096 9.23494 10.2331C9.1885 10.497 9.33022 10.7493 9.55248 10.899C9.82434 11.082 10.1801 11.082 10.4519 10.8989C10.6742 10.7493 10.7876 10.4902 10.8833 10.24C11.0308 9.85416 11.3719 9.58308 11.7124 9.31254C12.0026 9.08193 12.2923 8.85172 12.4612 8.55116C12.6811 8.15977 12.7832 7.72555 12.7832 7.2793C12.7723 6.95035 12.6935 6.6272 12.5518 6.33016C12.2683 5.73606 11.7343 5.2738 11.1058 5.07834C10.5109 4.89336 9.71463 4.90689 9.12547 5.10628ZM10.0034 14.018C10.5557 14.018 11.0034 13.5703 11.0034 13.018C11.0034 12.4657 10.5557 12.018 10.0034 12.018C9.45115 12.018 9.00343 12.4657 9.00343 13.018C9.00343 13.5703 9.45115 14.018 10.0034 14.018Z"
+                            fill="#FFFFFF"></path>
+                        </svg></button></div>
+                  </div>
+                  <div class="pill-player-bottom-section player-emotion-cache-i301zs">
+                    <div class="player-emotion-cache-1p4ctt2">
+                      <div class="player-emotion-cache-9a1w0v"><button aria-label="View Library"
+                          data-testid="View Library" class="player-emotion-cache-1iqg2eb"><svg width="34" height="20"
+                            viewBox="0 0 34 20" fill="none" xmlns="http://www.w3.org/2000/svg"
+                            class="player-emotion-cache-1jhbrij">
+                            <path fill-rule="evenodd" clip-rule="evenodd"
+                              d="M7.50048 5.81892C8.34021 4.59179 9.06844 3.98503 10.1587 4.32209C10.8185 4.52605 11.0893 5.36826 10.8185 6.42505C10.3423 8.28319 10.1587 9.3498 10.1587 10.6192C11.8335 7.10883 14.9296 2.44317 16.2714 0.8739C17.1988 -0.210755 18.5282 -0.0724331 19.0287 0.169504C19.8418 0.562612 19.8848 1.415 19.6041 2.23017C17.6623 7.8699 17.5947 10.882 17.3562 13.8083C18.5631 10.5629 20.0303 7.51007 21.8023 5.36005C22.5488 4.32883 23.8573 4.00512 24.6837 4.34011C25.5102 4.6751 25.6986 5.47657 25.5102 6.48091C25.019 9.10001 24.7752 10.3275 24.7752 11.3422C25.6727 10.6557 26.3873 10.0758 28.021 9.94324C29.6548 9.81069 33.0312 10.4611 33.0312 10.4611C33.0312 10.4611 31.082 10.7923 30.0525 11.0448C27.942 11.5623 27.205 12.1676 25.8387 14.1685C25.4417 14.7499 24.7752 15.1963 24.0243 15.1395C23.2733 15.0827 22.7691 14.6103 22.5488 13.9723C22.2426 13.0856 22.1516 11.7592 22.5488 8.88889C20.6023 11.8503 19.6041 15.873 18.2704 18.5407C17.9294 19.2228 17.3471 20 16.5578 20C15.7686 20 14.7451 19.6939 14.6122 17.349C14.2718 11.3422 15.4066 6.56214 15.4066 6.56214C13.1964 10.0666 12.4905 12.1094 11.7217 13.1746C10.9528 14.2398 10.2068 15.1623 9.29939 15.1395C8.39194 15.1167 7.86383 14.1022 7.749 13.1746C7.63417 12.247 7.60113 11.0622 7.93651 8.88889C7.06349 9.7619 6.29586 10.3531 4.92112 10.7234C3.54637 11.0936 1.90476 10.858 0 10.4611C1.90476 10.4611 5.11017 9.31194 7.50048 5.81892Z"
+                              fill="white"></path>
+                          </svg></button></div>
+                      <div class="player-emotion-cache-9a1w0v"><button aria-label="Speechify Side Player Settings"
+                          data-testid="Speechify Pill Player Settings" class="player-emotion-cache-9h4fgc"><svg
+                            width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"
+                            class="player-emotion-cache-10bpkok">
+                            <path fill-rule="evenodd" clip-rule="evenodd"
+                              d="M8.90532 3.39998H11.0976L11.487 4.19493C12.0055 5.25336 13.1129 5.89274 14.2888 5.81252L15.1716 5.75229L16.2679 7.65111L15.7743 8.38555C15.1169 9.36375 15.1169 10.6425 15.7743 11.6207L16.2676 12.3547L15.1711 14.254L14.2888 14.1938C13.1129 14.1135 12.0055 14.7529 11.487 15.8113L11.0981 16.6054H8.90487L8.51593 15.8113C7.99749 14.7529 6.89003 14.1135 5.71418 14.1938L4.83174 14.254L3.73528 12.3548L4.22864 11.6207C4.88605 10.6425 4.88605 9.36375 4.22864 8.38555L3.735 7.65101L4.83123 5.75228L5.71418 5.81252C6.89003 5.89275 7.99748 5.25336 8.51593 4.19493L8.90532 3.39998ZM12.6058 2.38709C12.3304 1.82486 11.7678 1.59998 11.3015 1.59998H8.70144C8.23513 1.59998 7.67252 1.82486 7.39712 2.38709L6.89944 3.40313C6.70279 3.8046 6.28272 4.04712 5.83671 4.01669L4.70795 3.93968C4.08353 3.89708 3.60757 4.27173 3.37445 4.67549L2.07409 6.9278C1.84097 7.33156 1.7545 7.93108 2.10361 8.45055L2.73468 9.38957C2.98404 9.76061 2.98404 10.2457 2.73468 10.6167L2.10361 11.5557C1.75477 12.0748 1.84103 12.6739 2.07404 13.0775L3.37529 15.3313C3.6083 15.7349 4.08402 16.1092 4.70795 16.0666L5.83671 15.9896C6.28272 15.9592 6.70279 16.2017 6.89944 16.6032L7.39712 17.6192C7.67209 18.1806 8.23379 18.4054 8.69968 18.4054H11.3033C11.7692 18.4054 12.3308 18.1805 12.6058 17.6192L13.1035 16.6032C13.3002 16.2017 13.7202 15.9592 14.1662 15.9896L15.295 16.0666C15.9188 16.1092 16.3945 15.735 16.6275 15.3314L17.9289 13.0773C18.1619 12.6737 18.2481 12.0747 17.8993 11.5557L17.2683 10.6167C17.0189 10.2457 17.0189 9.76061 17.2683 9.38957L17.8993 8.45055C18.2484 7.93118 18.162 7.33175 17.9289 6.92803L16.6283 4.67537C16.3952 4.27165 15.9193 3.89709 15.295 3.93968L14.1662 4.01669C13.7202 4.04712 13.3002 3.8046 13.1035 3.40313L12.6058 2.38709ZM11.5341 10.0037C11.5341 10.8506 10.8477 11.5371 10.0008 11.5371C9.15398 11.5371 8.46748 10.8506 8.46748 10.0037C8.46748 9.15691 9.15398 8.47041 10.0008 8.47041C10.8477 8.47041 11.5341 9.15691 11.5341 10.0037ZM13.3341 10.0037C13.3341 11.8447 11.8418 13.3371 10.0008 13.3371C8.15986 13.3371 6.66748 11.8447 6.66748 10.0037C6.66748 8.16279 8.15986 6.67041 10.0008 6.67041C11.8418 6.67041 13.3341 8.16279 13.3341 10.0037Z"
+                              fill="#FFFFFF"></path>
+                          </svg></button></div>
+                    </div>
+                    <div class="player-emotion-cache-1p4ctt2">
+                      <div class="player-emotion-cache-9a1w0v"><button aria-label="Upgrade to Premium button"
+                          data-testid="Upgrade to Premium button" class="player-emotion-cache-9h4fgc"><svg width="20"
+                            height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path
+                              d="M6.50001 7C5.94772 7 5.50001 7.44772 5.50001 8C5.50001 8.55228 5.94772 9 6.50001 9H13.5C14.0523 9 14.5 8.55228 14.5 8C14.5 7.44772 14.0523 7 13.5 7H6.50001Z"
+                              fill="url(#paint0_linear_816_802)"></path>
+                            <path
+                              d="M6.50001 7C5.94772 7 5.50001 7.44772 5.50001 8C5.50001 8.55228 5.94772 9 6.50001 9H13.5C14.0523 9 14.5 8.55228 14.5 8C14.5 7.44772 14.0523 7 13.5 7H6.50001Z"
+                              fill="url(#paint1_radial_816_802)" fill-opacity="0.4"></path>
+                            <path
+                              d="M6.50001 7C5.94772 7 5.50001 7.44772 5.50001 8C5.50001 8.55228 5.94772 9 6.50001 9H13.5C14.0523 9 14.5 8.55228 14.5 8C14.5 7.44772 14.0523 7 13.5 7H6.50001Z"
+                              fill="url(#paint2_radial_816_802)" fill-opacity="0.8"></path>
+                            <path
+                              d="M6.50001 7C5.94772 7 5.50001 7.44772 5.50001 8C5.50001 8.55228 5.94772 9 6.50001 9H13.5C14.0523 9 14.5 8.55228 14.5 8C14.5 7.44772 14.0523 7 13.5 7H6.50001Z"
+                              fill="black" fill-opacity="0.4" style="mix-blend-mode: overlay;"></path>
+                            <path fill-rule="evenodd" clip-rule="evenodd"
+                              d="M5.90053 2C5.11721 2 4.39027 2.4074 3.98139 3.07553L1.61053 6.94965C1.11096 7.76597 1.18246 8.80898 1.78875 9.54949L8.25909 17.4522C9.1593 18.5517 10.8407 18.5517 11.7409 17.4522L18.2113 9.54949C18.8176 8.80898 18.8891 7.76597 18.3895 6.94965L16.0186 3.07553C15.6097 2.4074 14.8828 2 14.0995 2H5.90053ZM5.6873 4.1195C5.73273 4.04527 5.8135 4 5.90053 4H14.0995C14.1865 4 14.2673 4.04527 14.3127 4.1195L16.6836 7.99362C16.7391 8.08432 16.7311 8.20021 16.6638 8.28249L10.1934 16.1852C10.0934 16.3074 9.9066 16.3074 9.80657 16.1852L3.33624 8.28249C3.26887 8.20021 3.26093 8.08432 3.31644 7.99362L5.6873 4.1195Z"
+                              fill="url(#paint3_linear_816_802)"></path>
+                            <path fill-rule="evenodd" clip-rule="evenodd"
+                              d="M5.90053 2C5.11721 2 4.39027 2.4074 3.98139 3.07553L1.61053 6.94965C1.11096 7.76597 1.18246 8.80898 1.78875 9.54949L8.25909 17.4522C9.1593 18.5517 10.8407 18.5517 11.7409 17.4522L18.2113 9.54949C18.8176 8.80898 18.8891 7.76597 18.3895 6.94965L16.0186 3.07553C15.6097 2.4074 14.8828 2 14.0995 2H5.90053ZM5.6873 4.1195C5.73273 4.04527 5.8135 4 5.90053 4H14.0995C14.1865 4 14.2673 4.04527 14.3127 4.1195L16.6836 7.99362C16.7391 8.08432 16.7311 8.20021 16.6638 8.28249L10.1934 16.1852C10.0934 16.3074 9.9066 16.3074 9.80657 16.1852L3.33624 8.28249C3.26887 8.20021 3.26093 8.08432 3.31644 7.99362L5.6873 4.1195Z"
+                              fill="url(#paint4_radial_816_802)" fill-opacity="0.4"></path>
+                            <path fill-rule="evenodd" clip-rule="evenodd"
+                              d="M5.90053 2C5.11721 2 4.39027 2.4074 3.98139 3.07553L1.61053 6.94965C1.11096 7.76597 1.18246 8.80898 1.78875 9.54949L8.25909 17.4522C9.1593 18.5517 10.8407 18.5517 11.7409 17.4522L18.2113 9.54949C18.8176 8.80898 18.8891 7.76597 18.3895 6.94965L16.0186 3.07553C15.6097 2.4074 14.8828 2 14.0995 2H5.90053ZM5.6873 4.1195C5.73273 4.04527 5.8135 4 5.90053 4H14.0995C14.1865 4 14.2673 4.04527 14.3127 4.1195L16.6836 7.99362C16.7391 8.08432 16.7311 8.20021 16.6638 8.28249L10.1934 16.1852C10.0934 16.3074 9.9066 16.3074 9.80657 16.1852L3.33624 8.28249C3.26887 8.20021 3.26093 8.08432 3.31644 7.99362L5.6873 4.1195Z"
+                              fill="url(#paint5_radial_816_802)" fill-opacity="0.8"></path>
+                            <path fill-rule="evenodd" clip-rule="evenodd"
+                              d="M5.90053 2C5.11721 2 4.39027 2.4074 3.98139 3.07553L1.61053 6.94965C1.11096 7.76597 1.18246 8.80898 1.78875 9.54949L8.25909 17.4522C9.1593 18.5517 10.8407 18.5517 11.7409 17.4522L18.2113 9.54949C18.8176 8.80898 18.8891 7.76597 18.3895 6.94965L16.0186 3.07553C15.6097 2.4074 14.8828 2 14.0995 2H5.90053ZM5.6873 4.1195C5.73273 4.04527 5.8135 4 5.90053 4H14.0995C14.1865 4 14.2673 4.04527 14.3127 4.1195L16.6836 7.99362C16.7391 8.08432 16.7311 8.20021 16.6638 8.28249L10.1934 16.1852C10.0934 16.3074 9.9066 16.3074 9.80657 16.1852L3.33624 8.28249C3.26887 8.20021 3.26093 8.08432 3.31644 7.99362L5.6873 4.1195Z"
+                              fill="black" fill-opacity="0.4" style="mix-blend-mode: overlay;"></path>
+                            <defs>
+                              <lineargradient id="paint0_linear_816_802" x1="18.6675" y1="18.2768" x2="-1.49373"
+                                y2="13.3505" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#FFA82F"></stop>
+                                <stop offset="1" stop-color="#FF795B"></stop>
+                              </lineargradient>
+                              <radialgradient id="paint1_radial_816_802" cx="0" cy="0" r="1"
+                                gradientUnits="userSpaceOnUse"
+                                gradientTransform="translate(0.189618 20.6021) scale(26.4725 15.8837)">
+                                <stop stop-color="#FF1A96"></stop>
+                                <stop offset="0.841762" stop-color="#FA00FF" stop-opacity="0.0634006"></stop>
+                                <stop offset="1" stop-color="#FA00FF" stop-opacity="0"></stop>
+                              </radialgradient>
+                              <radialgradient id="paint2_radial_816_802" cx="0" cy="0" r="1"
+                                gradientUnits="userSpaceOnUse"
+                                gradientTransform="translate(16.0731 -0.325263) rotate(124.643) scale(18.9013 19.4084)">
+                                <stop stop-color="#FFE600"></stop>
+                                <stop offset="1" stop-color="#FF9500" stop-opacity="0"></stop>
+                              </radialgradient>
+                              <lineargradient id="paint3_linear_816_802" x1="18.6675" y1="18.2768" x2="-1.49373"
+                                y2="13.3505" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#FFA82F"></stop>
+                                <stop offset="1" stop-color="#FF795B"></stop>
+                              </lineargradient>
+                              <radialgradient id="paint4_radial_816_802" cx="0" cy="0" r="1"
+                                gradientUnits="userSpaceOnUse"
+                                gradientTransform="translate(0.189618 20.6021) scale(26.4725 15.8837)">
+                                <stop stop-color="#FF1A96"></stop>
+                                <stop offset="0.841762" stop-color="#FA00FF" stop-opacity="0.0634006"></stop>
+                                <stop offset="1" stop-color="#FA00FF" stop-opacity="0"></stop>
+                              </radialgradient>
+                              <radialgradient id="paint5_radial_816_802" cx="0" cy="0" r="1"
+                                gradientUnits="userSpaceOnUse"
+                                gradientTransform="translate(16.0731 -0.325263) rotate(124.643) scale(18.9013 19.4084)">
+                                <stop stop-color="#FFE600"></stop>
+                                <stop offset="1" stop-color="#FF9500" stop-opacity="0"></stop>
+                              </radialgradient>
+                            </defs>
+                          </svg></button></div>
+                    </div>
+                    <div class="dismiss player-emotion-cache-1p4ctt2"><button aria-label="Turn Off Speechify button"
+                        data-testid="Pill player Turn Off Speechify button" class="player-emotion-cache-5gd25v"><svg
+                          width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"
+                          class="player-emotion-cache-1t179n4">
+                          <path id="Union" fill-rule="evenodd" clip-rule="evenodd" fill="#9899A6"
+                            d="M12.3884 6.38837C12.6813 6.09548 13.1562 6.09548 13.4491 6.38837C13.742 6.68127 13.742 7.15614 13.4491 7.44903L10.9794 9.91867L13.4491 12.3884C13.742 12.6813 13.742 13.1561 13.4491 13.449C13.1563 13.7419 12.6814 13.7419 12.3885 13.449L9.91876 10.9793L7.44903 13.449C7.15613 13.7419 6.68126 13.7419 6.38837 13.449C6.09548 13.1561 6.09548 12.6813 6.38837 12.3884L8.85809 9.91867L6.38843 7.44903C6.09553 7.15614 6.09553 6.68127 6.38842 6.38837C6.68132 6.09548 7.15619 6.09548 7.44908 6.38837L9.91876 8.85802L12.3884 6.38837Z">
+                          </path>
+                        </svg></button></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="player-emotion-cache-4pjaeq"></div>
+        </div>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-l2eekb {
+            -webkit-align-items: center;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            -webkit-animation: animation-v6cndd 0.08s ease-out 0.08s forwards;
+            animation: animation-v6cndd 0.08s ease-out 0.08s forwards;
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-flex-direction: column;
+            -ms-flex-direction: column;
+            flex-direction: column;
+            gap: 8px;
+            visibility: hidden;
+            visibility: hidden;
+            position: relative;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          @-webkit-keyframes animation-v6cndd {
+            0% {
+              opacity: 0;
+              -webkit-transform: translateX(60px);
+              -moz-transform: translateX(60px);
+              -ms-transform: translateX(60px);
+              transform: translateX(60px);
+              visibility: hidden;
+            }
+
+            1% {
+              visibility: visible;
+            }
+
+            100% {
+              opacity: 1;
+              -webkit-transform: translateX(0);
+              -moz-transform: translateX(0);
+              -ms-transform: translateX(0);
+              transform: translateX(0);
+              visibility: visible;
+            }
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          @keyframes animation-v6cndd {
+            0% {
+              opacity: 0;
+              -webkit-transform: translateX(60px);
+              -moz-transform: translateX(60px);
+              -ms-transform: translateX(60px);
+              transform: translateX(60px);
+              visibility: hidden;
+            }
+
+            1% {
+              visibility: visible;
+            }
+
+            100% {
+              opacity: 1;
+              -webkit-transform: translateX(0);
+              -moz-transform: translateX(0);
+              -ms-transform: translateX(0);
+              transform: translateX(0);
+              visibility: visible;
+            }
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-9a1w0v {
+            position: relative;
+            opacity: 1;
+            -webkit-transition: opacity 0.15s ease-in-out;
+            transition: opacity 0.15s ease-in-out;
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-align-items: center;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            bottom: 0;
+            z-index: 9998;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-2qhgnx {
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+            z-index: 9999;
+            padding-bottom: 8px;
+            position: relative;
+            cursor: move;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-4jvpqb {
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+            z-index: 9999;
+            background-color: #1e1e1f;
+            padding: 12px 0 8px;
+            border-radius: 100px;
+            position: relative;
+            cursor: move;
+            box-shadow: 0px 0px 0px 0px rgba(106, 120, 252, 0.5), 0px 0px 2px 0px rgba(106, 120, 252, 0.49), 0px 0px 3px 0px rgba(106, 120, 252, 0.43), 0px 0px 4px 0px rgba(106, 120, 252, 0.25), 0px 0px 4px 0px rgba(106, 120, 252, 0.07), 0px 0px 5px 0px rgba(106, 120, 252, 0.01);
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-cssveg {
+            position: relative;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-1imzxnm {
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-animation: 0.2s ease-out;
+            animation: 0.2s ease-out;
+            background: #1e1e1e;
+            border-radius: 12px;
+            box-shadow: 0px 0px 0px 0px rgba(106, 120, 252, 0.5), 0px 0px 2px 0px rgba(106, 120, 252, 0.49), 0px 0px 3px 0px rgba(106, 120, 252, 0.43), 0px 0px 4px 0px rgba(106, 120, 252, 0.25), 0px 0px 4px 0px rgba(106, 120, 252, 0.07), 0px 0px 5px 0px rgba(106, 120, 252, 0.01);
+            box-shadow: 0px 4px 6px 0px rgba(0, 0, 0, 0.32);
+            color: #fff;
+            cursor: default;
+            right: 60px;
+            overflow: hidden;
+            position: absolute;
+            top: -12px;
+            visibility: hidden;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-1224nbk {
+            font-family: ABCDiatype, sans-serif;
+            height: 100%;
+            min-width: 230px;
+            padding: 0;
+            width: 100%;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-1os8mqp {
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-animation: 0.2s ease-out;
+            animation: 0.2s ease-out;
+            background: #1e1e1e;
+            border-radius: 12px;
+            box-shadow: 0px 0px 0px 0px rgba(106, 120, 252, 0.5), 0px 0px 2px 0px rgba(106, 120, 252, 0.49), 0px 0px 3px 0px rgba(106, 120, 252, 0.43), 0px 0px 4px 0px rgba(106, 120, 252, 0.25), 0px 0px 4px 0px rgba(106, 120, 252, 0.07), 0px 0px 5px 0px rgba(106, 120, 252, 0.01);
+            cursor: default;
+            right: 60px;
+            overflow: hidden;
+            position: absolute;
+            top: 20px;
+            visibility: hidden;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-10erag2 {
+            font-family: ABCDiatype, sans-serif;
+            height: 100%;
+            min-width: 240px;
+            padding: 0;
+            width: 100%;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-mpoplv {
+            -webkit-align-items: center;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            -webkit-align-self: stretch;
+            -ms-flex-item-align: stretch;
+            align-self: stretch;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+            padding: 12px 16px;
+            position: relative;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-1mve43x {
+            -webkit-align-items: center;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            color: #fff;
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-flex: 1 0 0;
+            -ms-flex: 1 0 0;
+            flex: 1 0 0;
+            font-size: 16px;
+            font-style: normal;
+            font-weight: 700;
+            gap: 6px;
+            -webkit-box-pack: center;
+            -ms-flex-pack: center;
+            -webkit-justify-content: center;
+            justify-content: center;
+            letter-spacing: 0.16px;
+            line-height: 24px;
+            text-align: center;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-1091ts7 {
+            position: absolute;
+            right: 16px;
+            top: 8px;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-r4o0jv {
+            background: unset;
+            border: unset;
+            color: #fff;
+            cursor: pointer;
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+            outline: unset;
+            padding: 0;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-r4o0jv>svg {
+            width: 24px !important;
+            height: 24px !important;
+            margin-top: 4px;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-14pyho {
+            position: relative;
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-align-items: center;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            color: #ffffff;
+            cursor: default;
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-flex-direction: column;
+            -ms-flex-direction: column;
+            flex-direction: column;
+            gap: 4px;
+            height: 138px;
+            -webkit-transition: height 0.15s ease-in-out;
+            transition: height 0.15s ease-in-out;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-14pyho .pill-player-bottom-section {
+            opacity: 1;
+            -webkit-transition: opacity 0.05s ease-in-out forwards;
+            transition: opacity 0.05s ease-in-out forwards;
+            will-change: opacity;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-14pyho.animating .pill-player-bottom-section {
+            opacity: 0;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-i301zs {
+            -webkit-align-items: center;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-flex-direction: column;
+            -ms-flex-direction: column;
+            flex-direction: column;
+            gap: 4px;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-14iww7j {
+            -webkit-align-items: center;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-flex-direction: row;
+            -ms-flex-direction: row;
+            flex-direction: row;
+            font-family: ABCDiatype;
+            font-size: 12px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            -webkit-box-pack: center;
+            -ms-flex-pack: center;
+            -webkit-justify-content: center;
+            justify-content: center;
+            height: 20px;
+            line-height: 20px;
+            text-align: center;
+            width: 48px;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-177f3d1 {
+            -webkit-align-items: center;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-pack: center;
+            -ms-flex-pack: center;
+            -webkit-justify-content: center;
+            justify-content: center;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-177f3d1.left {
+            text-align: right;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-177f3d1.right {
+            text-align: left;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-xrjqvi {
+            -webkit-align-items: center;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+            padding: 0;
+            margin: -2px 0 0 0;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-2ercfa {
+            position: relative;
+            opacity: 1;
+            -webkit-transition: opacity 0.15s ease-in-out;
+            transition: opacity 0.15s ease-in-out;
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-align-items: center;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            height: 36px;
+            bottom: 0;
+            z-index: 9998;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-184guo2 {
+            background: #4759F7;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-184guo2>svg {
+            max-height: 18px;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-184guo2:hover {
+            background: #4454E3;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-184guo2:active {
+            background: #3D4AC4;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-184guo2:active .CircularProgressBarTrail {
+            stroke: #3C3C3E;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-2g1ao1 {
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-pack: center;
+            -ms-flex-pack: center;
+            -webkit-justify-content: center;
+            justify-content: center;
+            -webkit-align-items: center;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            outline: none;
+            border: none;
+            background-color: #4759f7;
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 8px;
+            box-shadow: rgba(109, 117, 141, 0.2) 0 0 2px;
+            color: #ffffff;
+            -webkit-text-decoration: none;
+            text-decoration: none;
+            box-sizing: border-box;
+            border-radius: 20px;
+            margin: 0;
+            padding: 8px 12px;
+            font-size: 12px;
+            height: 40px;
+            width: 100%;
+            width: 32px !important;
+            height: 32px;
+            border-radius: 50%;
+            background: #4759F7;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-2g1ao1>svg {
+            -webkit-transform: translateX(1px);
+            -moz-transform: translateX(1px);
+            -ms-transform: translateX(1px);
+            transform: translateX(1px);
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-2g1ao1>span {
+            white-space: nowrap;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-2g1ao1 svg {
+            -webkit-transition: 0.2s min-width;
+            transition: 0.2s min-width;
+            min-width: 28px;
+            color: #ffffff;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-2g1ao1>svg {
+            max-height: 18px;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-2g1ao1:hover {
+            background: #4454E3;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-2g1ao1:active {
+            background: #3D4AC4;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-2g1ao1:active .CircularProgressBarTrail {
+            stroke: #3C3C3E;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-1nlgyuz {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-19pbexn {
+            background-color: #2d2d2f;
+            display: block;
+            height: 2px;
+            max-height: 2px;
+            border-radius: 2px;
+            width: 60%;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-1p4ctt2 {
+            display: none;
+            -webkit-flex-direction: column;
+            -ms-flex-direction: column;
+            flex-direction: column;
+            gap: 4px;
+            max-height: 0px;
+            -webkit-transition: max-height 0.2s ease-in-out;
+            transition: max-height 0.2s ease-in-out;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-1p4ctt2.dismiss {
+            bottom: 6px;
+            position: absolute;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-9qilc6 {
+            background: unset;
+            border-radius: 50%;
+            border: unset;
+            cursor: pointer;
+            height: 32px;
+            outline: unset;
+            padding: 0;
+            text-align: center;
+            vertical-align: middle;
+            width: 32px;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-9qilc6>svg {
+            height: 96% !important;
+            left: 50%;
+            position: absolute;
+            top: 50%;
+            -webkit-transform: translate(-50%, -50%);
+            -moz-transform: translate(-50%, -50%);
+            -ms-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+            width: 96% !important;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-9qilc6>img {
+            height: 80% !important;
+            left: 50%;
+            position: absolute;
+            top: 50%;
+            -webkit-transform: translate(-50%, -50%);
+            -moz-transform: translate(-50%, -50%);
+            -ms-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+            width: 80% !important;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-9qilc6:hover {
+            background-color: #343537;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-9qilc6:active {
+            background-color: #3C3C3E;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-134h92v {
+            font-family: ABCDiatype;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 20px;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-144fsyp {
+            opacity: 1;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-144fsyp>svg {
+            height: 20px !important;
+            left: 50%;
+            position: absolute;
+            top: 50%;
+            -webkit-transform: translate(-50%, -50%);
+            -moz-transform: translate(-50%, -50%);
+            -ms-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+            width: 20px !important;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-mgjwvm {
+            background: unset;
+            border-radius: 50%;
+            border: unset;
+            cursor: pointer;
+            height: 32px;
+            outline: unset;
+            padding: 0;
+            text-align: center;
+            vertical-align: middle;
+            width: 32px;
+            opacity: 1;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-mgjwvm>svg {
+            height: 96% !important;
+            left: 50%;
+            position: absolute;
+            top: 50%;
+            -webkit-transform: translate(-50%, -50%);
+            -moz-transform: translate(-50%, -50%);
+            -ms-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+            width: 96% !important;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-mgjwvm>img {
+            height: 80% !important;
+            left: 50%;
+            position: absolute;
+            top: 50%;
+            -webkit-transform: translate(-50%, -50%);
+            -moz-transform: translate(-50%, -50%);
+            -ms-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+            width: 80% !important;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-mgjwvm:hover {
+            background-color: #343537;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-mgjwvm:active {
+            background-color: #3C3C3E;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-mgjwvm>svg {
+            height: 20px !important;
+            left: 50%;
+            position: absolute;
+            top: 50%;
+            -webkit-transform: translate(-50%, -50%);
+            -moz-transform: translate(-50%, -50%);
+            -ms-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+            width: 20px !important;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-1b8pgz {
+            width: 21;
+            height: 20;
+            fill: none;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-1pgqnn {
+            width: 32px;
+            height: 32px;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-1pgqnn>svg {
+            height: 20px !important;
+            left: 50%;
+            position: absolute;
+            top: 50%;
+            -webkit-transform: translate(-50%, -50%);
+            -moz-transform: translate(-50%, -50%);
+            -ms-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+            width: 20px !important;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-1pgqnn:hover {
+            background-color: #343537;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-1pgqnn:active {
+            background-color: #3C3C3E;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-19swl4x {
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-pack: center;
+            -ms-flex-pack: center;
+            -webkit-justify-content: center;
+            justify-content: center;
+            -webkit-align-items: center;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            background-color: transparent;
+            color: #F1F4F9;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: none;
+            padding: 0;
+            margin: 0;
+            padding: 0;
+            outline: none;
+            border: none;
+            width: 32px;
+            height: 32px;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-19swl4x>svg {
+            height: 20px !important;
+            left: 50%;
+            position: absolute;
+            top: 50%;
+            -webkit-transform: translate(-50%, -50%);
+            -moz-transform: translate(-50%, -50%);
+            -ms-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+            width: 20px !important;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-19swl4x:hover {
+            background-color: #343537;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-19swl4x:active {
+            background-color: #3C3C3E;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-1ki7u9k>svg {
+            height: 20px !important;
+            left: 50%;
+            position: absolute;
+            top: 50%;
+            -webkit-transform: translate(-50%, -50%);
+            -moz-transform: translate(-50%, -50%);
+            -ms-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+            width: 20px !important;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-9h4fgc {
+            background: unset;
+            border-radius: 50%;
+            border: unset;
+            cursor: pointer;
+            height: 32px;
+            outline: unset;
+            padding: 0;
+            text-align: center;
+            vertical-align: middle;
+            width: 32px;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-9h4fgc>svg {
+            height: 96% !important;
+            left: 50%;
+            position: absolute;
+            top: 50%;
+            -webkit-transform: translate(-50%, -50%);
+            -moz-transform: translate(-50%, -50%);
+            -ms-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+            width: 96% !important;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-9h4fgc>img {
+            height: 80% !important;
+            left: 50%;
+            position: absolute;
+            top: 50%;
+            -webkit-transform: translate(-50%, -50%);
+            -moz-transform: translate(-50%, -50%);
+            -ms-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+            width: 80% !important;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-9h4fgc:hover {
+            background-color: #343537;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-9h4fgc:active {
+            background-color: #3C3C3E;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-9h4fgc>svg {
+            height: 20px !important;
+            left: 50%;
+            position: absolute;
+            top: 50%;
+            -webkit-transform: translate(-50%, -50%);
+            -moz-transform: translate(-50%, -50%);
+            -ms-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+            width: 20px !important;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-10bpkok {
+            width: 20;
+            height: 20;
+            fill: none;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-1ix4767>svg {
+            height: 24px !important;
+            left: 50%;
+            position: absolute;
+            top: 50%;
+            -webkit-transform: translate(-50%, -50%);
+            -moz-transform: translate(-50%, -50%);
+            -ms-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+            width: 24px !important;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-1iqg2eb {
+            background: unset;
+            border-radius: 50%;
+            border: unset;
+            cursor: pointer;
+            height: 32px;
+            outline: unset;
+            padding: 0;
+            text-align: center;
+            vertical-align: middle;
+            width: 32px;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-1iqg2eb>svg {
+            height: 96% !important;
+            left: 50%;
+            position: absolute;
+            top: 50%;
+            -webkit-transform: translate(-50%, -50%);
+            -moz-transform: translate(-50%, -50%);
+            -ms-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+            width: 96% !important;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-1iqg2eb>img {
+            height: 80% !important;
+            left: 50%;
+            position: absolute;
+            top: 50%;
+            -webkit-transform: translate(-50%, -50%);
+            -moz-transform: translate(-50%, -50%);
+            -ms-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+            width: 80% !important;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-1iqg2eb:hover {
+            background-color: #343537;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-1iqg2eb:active {
+            background-color: #3C3C3E;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-1iqg2eb>svg {
+            height: 24px !important;
+            left: 50%;
+            position: absolute;
+            top: 50%;
+            -webkit-transform: translate(-50%, -50%);
+            -moz-transform: translate(-50%, -50%);
+            -ms-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+            width: 24px !important;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-1jhbrij {
+            width: 34;
+            height: 20;
+            fill: none;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-5gd25v {
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+            background: #2d2d2f;
+            border: unset;
+            border-radius: 50%;
+            cursor: pointer;
+            outline: unset;
+            padding: 0;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-5gd25v>svg path {
+            fill: #9899a6;
+            height: 20px !important;
+            width: 20px !important;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-5gd25v:hover {
+            background: #2d2d2f;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-5gd25v:hover>svg path {
+            fill: #ffffff;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-1t179n4 {
+            width: 20;
+            height: 20;
+            fill: currentColor;
+          }
+        </style>
+        <style data-emotion="player-emotion-cache" data-s="">
+          .player-emotion-cache-4pjaeq {
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-flex-direction: column;
+            -ms-flex-direction: column;
+            flex-direction: column;
+            position: absolute;
+            bottom: 0;
+            -webkit-align-items: center;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            gap: 8px;
+            bottom: 0px;
+          }
+        </style>
+      </div>
+    </template></div>
+  <div id="speechify-shortcuts-prompt"><template shadowrootmode="open">
+      <div id="speechify-shortcuts-prompt-root">
+        <div class="shortcuts-prompt-emotion-cache-1f3vpj5" style="left: 26px; bottom: 26px;">
+          <div class="shortcuts-prompt-emotion-cache-ys6pnx">
+            <div class="shortcuts-prompt-emotion-cache-1pnru1q"><svg width="34" height="19" viewBox="0 0 34 19"
+                xmlns="http://www.w3.org/2000/svg" class="shortcuts-prompt-emotion-cache-136jy6k">
+                <path fill-rule="evenodd" clip-rule="evenodd"
+                  d="M7.13085 6.43475L7.97166 5.34716C8.35281 4.85414 8.97964 4.6224 9.58737 4.74983C10.0579 4.84849 10.3599 5.31228 10.2618 5.78572C10.2537 5.8249 10.2429 5.86348 10.2296 5.90119C9.53109 7.87216 9.30873 9.17396 9.5625 9.80659C10.6072 8.55759 15.9444 0.413118 17.6313 0.0265105C18.1945 -0.102562 18.755 0.252173 18.8833 0.818834C18.9267 1.01055 18.9159 1.21067 18.852 1.3965C17.2581 6.03365 16.5832 8.8376 16.8275 9.80836C17.6693 8.61652 18.9197 7.01242 20.5787 4.99605C21.2018 4.23866 22.1959 3.89924 23.1485 4.11866C23.9861 4.31161 24.5097 5.15124 24.3179 5.99404C24.3166 5.99958 24.3154 6.00511 24.3141 6.01064C23.7368 8.42634 23.5228 9.83969 23.6722 10.2507C23.738 10.2002 23.8048 10.1485 23.8728 10.0954C24.6337 9.50119 25.5864 9.21161 26.547 9.28254L34 9.83284L29.0621 10.3978C27.6835 10.5555 26.421 11.2496 25.5442 12.3316L24.3626 13.7898C23.9757 14.2672 23.3813 14.5242 22.7708 14.478C22.1644 14.432 21.663 13.9844 21.5455 13.384C21.2568 11.9092 21.2106 10.1684 21.4069 8.16161C19.9241 10.3907 18.6376 13.5967 17.5473 17.7793C17.3599 18.4985 16.7139 19 15.975 19C15.2693 19 14.6913 18.436 14.6696 17.7263L14.3429 7.03113L11.1828 13.2973C10.8539 13.9494 10.1302 14.2974 9.41932 14.1453C8.6662 13.9841 8.04316 13.4545 7.75942 12.7343L7.40531 11.8354C6.90425 10.5636 5.77337 9.65224 4.43045 9.438C2.95363 9.2024 1.47681 8.96681 0 8.73121L3.28955 8.4971C4.80287 8.3894 6.19938 7.63963 7.13085 6.43475Z">
+                </path>
+              </svg></div>
+            <div class="shortcuts-prompt-emotion-cache-1h21a40">
+              <div class="shortcuts-prompt-emotion-cache-h0v53k">
+                <div class="shortcuts-prompt-emotion-cache-ip0f3c">Alt</div>
+              </div>
+              <div class="shortcuts-prompt-emotion-cache-h0v53k">
+                <div class="shortcuts-prompt-emotion-cache-ip0f3c">A</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <style data-emotion="shortcuts-prompt-emotion-cache" data-s="">
+          .shortcuts-prompt-emotion-cache-1f3vpj5 {
+            cursor: -webkit-grab;
+            cursor: grab;
+            position: fixed;
+            z-index: 999999999;
+            border: 6px solid transparent;
+            opacity: 0.4;
+            -webkit-transition: opacity 0.2s ease-in-out;
+            transition: opacity 0.2s ease-in-out;
+          }
+        </style>
+        <style data-emotion="shortcuts-prompt-emotion-cache" data-s="">
+          .shortcuts-prompt-emotion-cache-1f3vpj5:hover {
+            opacity: 1;
+          }
+        </style>
+        <style data-emotion="shortcuts-prompt-emotion-cache" data-s="">
+          .shortcuts-prompt-emotion-cache-ys6pnx {
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-align-items: center;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            background: #111112;
+            color: #ffffff;
+            padding: 8px;
+            border-radius: 12px;
+            border-color: #3c3c3e;
+            font-size: 14px;
+            font-family: ABCDiatype;
+            position: relative;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+          }
+        </style>
+        <style data-emotion="shortcuts-prompt-emotion-cache" data-s="">
+          .shortcuts-prompt-emotion-cache-ys6pnx>*+* {
+            margin-left: 8px;
+          }
+        </style>
+        <style data-emotion="shortcuts-prompt-emotion-cache" data-s="">
+          .shortcuts-prompt-emotion-cache-1pnru1q {
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-pack: center;
+            -ms-flex-pack: center;
+            -webkit-justify-content: center;
+            justify-content: center;
+            -webkit-align-items: center;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            width: 28px;
+            height: 28px;
+            background-color: #2f43fa;
+            border-radius: 6px;
+          }
+        </style>
+        <style data-emotion="shortcuts-prompt-emotion-cache" data-s="">
+          .shortcuts-prompt-emotion-cache-1pnru1q>svg {
+            width: 24px;
+            color: #ffffff;
+          }
+        </style>
+        <style data-emotion="shortcuts-prompt-emotion-cache" data-s="">
+          .shortcuts-prompt-emotion-cache-136jy6k {
+            width: 34;
+            height: 19;
+            fill: currentColor;
+          }
+        </style>
+        <style data-emotion="shortcuts-prompt-emotion-cache" data-s="">
+          .shortcuts-prompt-emotion-cache-1h21a40 {
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-align-items: center;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            position: relative;
+            font-size: 14px;
+          }
+        </style>
+        <style data-emotion="shortcuts-prompt-emotion-cache" data-s="">
+          .shortcuts-prompt-emotion-cache-1h21a40>*:not(:last-child) {
+            margin-right: 8px;
+          }
+        </style>
+        <style data-emotion="shortcuts-prompt-emotion-cache" data-s="">
+          .shortcuts-prompt-emotion-cache-h0v53k {
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-align-items: center;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+          }
+        </style>
+        <style data-emotion="shortcuts-prompt-emotion-cache" data-s="">
+          .shortcuts-prompt-emotion-cache-h0v53k>*+* {
+            margin-left: 4px;
+          }
+        </style>
+        <style data-emotion="shortcuts-prompt-emotion-cache" data-s="">
+          .shortcuts-prompt-emotion-cache-ip0f3c {
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-pack: center;
+            -ms-flex-pack: center;
+            -webkit-justify-content: center;
+            justify-content: center;
+            -webkit-align-items: center;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            min-width: 12px;
+            padding: 0 6px;
+            height: 26px;
+            border-radius: 6px;
+            background-color: #252627;
+            color: #ffffff;
+            border: 1px solid #2d2d2f;
+          }
+        </style>
+      </div>
+    </template></div>
+</body>
+
+</html>

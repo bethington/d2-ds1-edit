@@ -1,0 +1,10 @@
+^C:\USERS\BENAM\SOURCE\CPP\WIN_DS1EDIT_20250818\ALLEGRO-BUILD\CMAKEFILES\3EAF633800EAB4A5118D2A2884E960BB\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-4.4.3.1 -BC:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/benam/source/cpp/win_ds1edit_20250818/allegro-build/ALLEGRO.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

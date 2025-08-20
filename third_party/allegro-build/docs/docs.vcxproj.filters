@@ -1,0 +1,197 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\3b01a7b702ea007e035bc58125416fdd\AUTHORS.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\3b01a7b702ea007e035bc58125416fdd\CHANGES.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\3b01a7b702ea007e035bc58125416fdd\THANKS.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\33ef2e3cfe01058324e2c88fbb4f47b4\cmake.html.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\33ef2e3cfe01058324e2c88fbb4f47b4\cmake.txt.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\33ef2e3cfe01058324e2c88fbb4f47b4\linux.html.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\33ef2e3cfe01058324e2c88fbb4f47b4\linux.txt.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\33ef2e3cfe01058324e2c88fbb4f47b4\macosx.html.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\33ef2e3cfe01058324e2c88fbb4f47b4\macosx.txt.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\33ef2e3cfe01058324e2c88fbb4f47b4\mingw32.html.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\33ef2e3cfe01058324e2c88fbb4f47b4\mingw32.txt.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\33ef2e3cfe01058324e2c88fbb4f47b4\msvc.html.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\33ef2e3cfe01058324e2c88fbb4f47b4\msvc.txt.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\33ef2e3cfe01058324e2c88fbb4f47b4\unix.html.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\33ef2e3cfe01058324e2c88fbb4f47b4\unix.txt.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\abi.html.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\addons.html.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\ahack.html.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\allegro.html.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\api.html.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\changes.html.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\const.html.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\dat.html.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\dat2c.html.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\dat2s.html.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\datafile.html.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\faq.html.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\grabber.html.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\help.html.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\index.html.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\license.html.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\makedoc.html.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\mistakes.html.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\packfile.html.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\readme.html.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fdcdfaf8f68ed4a88e0f561c31629603\thanks.html.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\fb76b67018608e10affaf798c1f6b912\allegro_init.3.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\3b01a7b702ea007e035bc58125416fdd\readme.txt.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\80920c29edc7e5ff5f1f8581cd9c974c\allegro.api.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\abi.txt.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\addons.txt.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\ahack.txt.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\allegro.txt.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\api.txt.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\changes.txt.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\const.txt.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\dat.txt.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\dat2c.txt.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\dat2s.txt.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\datafile.txt.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\faq.txt.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\grabber.txt.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\help.txt.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\index.txt.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\license.txt.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\makedoc.txt.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\mistakes.txt.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\packfile.txt.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\readme.txt.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\cc0b6f1405c6cc632af27126fda46a20\thanks.txt.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\CMakeFiles\6014affe3110d7f250ba15a01310b532\docs.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-4.4.3.1\docs\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\benam\source\cpp\win_ds1edit_20250818\allegro-build\docs\CMakeFiles\docs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{970D3A2A-D5CC-3CA9-9403-39CD6F833CA9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
