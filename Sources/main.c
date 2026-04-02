@@ -983,7 +983,11 @@ int main(int argc, char * argv[])
    
    // load palettes from disk, else from mpq
    ds1edit_load_palettes();
-   
+
+   // set default palette for tile rendering (Act 1)
+   // this ensures a5_putpixel/pal_color use correct colors during tile loading
+   a5_current_palette = &glb_ds1edit.vga_pal[0];
+
    // parse the command line
    if (misc_cmd_line_parse (argc, argv))
       ds1edit_error("main(), error.\nProblem in the command line.");
@@ -1110,10 +1114,10 @@ int main(int argc, char * argv[])
          pal_idx = glb_ds1edit.cmd_line.force_pal_num - 1;
 
       a5_current_palette = &glb_ds1edit.vga_pal[pal_idx];
+      dt1_rebuild_bitmaps_from_cache(a5_current_palette);
 
       // render complete map
       old_screen_buff = glb_ds1edit.screen_buff;
-      // TODO: wpreview_draw_tiles_big_screenshot still uses A4 internally -- needs migration
       if (wpreview_draw_tiles_big_screenshot(ds1_idx) == 0)
       {
          al_save_bitmap(glb_ds1edit.cmd_line.headless_output,

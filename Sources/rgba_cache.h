@@ -41,6 +41,15 @@ void cache_tile_destroy(CACHED_TILE *tile);
 void cache_tile_rebuild(CACHED_TILE *tile, const RGBA_PALETTE *pal);
 
 /*
+ * Convert a CACHED_TILE to an ALLEGRO_BITMAP using the given palette.
+ * Rebuilds the RGBA buffer from indices, then copies to the bitmap.
+ * Returns a new ALLEGRO_BITMAP (caller must destroy it).
+ * Returns NULL on failure.
+ */
+struct ALLEGRO_BITMAP;
+struct ALLEGRO_BITMAP *cache_tile_to_a5_bitmap(CACHED_TILE *tile, const RGBA_PALETTE *pal);
+
+/*
  * Pack an RGBA_COLOR into a uint32_t (ABGR byte order for Allegro 5 compatibility).
  * Format: 0xAABBGGRR (little-endian: R at lowest byte)
  */

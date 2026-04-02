@@ -6,6 +6,7 @@
 #include "editobj.h"
 #include "editpath.h"
 #include "wPreview.h"
+#include "dt1misc.h"
 
 #ifdef WIN32
    #pragma warning (push)
@@ -2144,6 +2145,7 @@ void wpreview_draw_tiles(int ds1_idx)
       {
          old_pal = glb_ds1[ds1_idx].act - 1;
          a5_current_palette = &glb_ds1edit.vga_pal[old_pal];
+         dt1_rebuild_bitmaps_from_cache(a5_current_palette);
       }
    }
    else
@@ -2153,6 +2155,7 @@ void wpreview_draw_tiles(int ds1_idx)
       {
          old_pal = glb_ds1edit.cmd_line.force_pal_num - 1;
          a5_current_palette = &glb_ds1edit.vga_pal[old_pal];
+         dt1_rebuild_bitmaps_from_cache(a5_current_palette);
       }
    }
 
@@ -2895,6 +2898,7 @@ int wpreview_draw_tiles_big_screenshot(int ds1_idx)
       {
          old_pal = glb_ds1[ds1_idx].act - 1;
          a5_current_palette = &glb_ds1edit.vga_pal[old_pal];
+         dt1_rebuild_bitmaps_from_cache(a5_current_palette);
       }
    }
    else
@@ -2904,6 +2908,7 @@ int wpreview_draw_tiles_big_screenshot(int ds1_idx)
       {
          old_pal = glb_ds1edit.cmd_line.force_pal_num - 1;
          a5_current_palette = &glb_ds1edit.vga_pal[old_pal];
+         dt1_rebuild_bitmaps_from_cache(a5_current_palette);
       }
    }
 

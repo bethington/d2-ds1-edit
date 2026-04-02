@@ -560,3 +560,42 @@ int dt1_add_special(char * dt1name)
       return -1; // useless, just for not having a vc6 warning
    }
 }
+
+
+// ==========================================================================
+// rebuild all DT1 tile bitmaps from cached index data using the given palette
+// call this whenever the active palette changes (act switch, gamma change)
+void dt1_rebuild_bitmaps_from_cache(const RGBA_PALETTE *pal)
+{
+   int i, z, b;
+   ALLEGRO_BITMAP *old_bmp, *new_bmp;
+   CACHED_TILE *ct;
+
+   for (i = 0; i < DT1_MAX; i++)
+   {
+      if (glb_dt1[i].ds1_usage == 0)
+         continue;
+
+      for (z = 0; z < ZM_MAX; z++)
+      {
+         if (glb_dt1[i].block_cache[z] == NULL || glb_dt1[i].block_zoom[z] == NULL)
+            continue;
+
+         for (b = 0; b < glb_dt1[i].block_num; b++)
+         {
+            ct = glb_dt1[i].block_cache[z][b];
+            if (ct == NULL)
+               continue;
+
+            new_bmp = cache_tile_to_a5_bitmap(ct, pal);
+            if (new_bmp != NULL)
+            {
+               old_bmp = *(glb_dt1[i].block_zoom[z] + b);
+               if (old_bmp != NULL)
+                  al_destroy_bitmap(old_bmp);
+               *(glb_dt1[i].block_zoom[z] + b) = new_bmp;
+            }
+         }
+      }
+   }
+}
