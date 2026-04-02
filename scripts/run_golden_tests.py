@@ -27,7 +27,7 @@ PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
 BIN_DIR = os.path.join(PROJECT_ROOT, "bin")
 ASSETS_DIR = os.path.join(BIN_DIR, "assets")
 GOLDEN_DIR = os.path.join(PROJECT_ROOT, "test", "golden")
-EXE = os.path.join(BIN_DIR, "win_ds1edit_debug.exe")
+EXE = os.path.join(BIN_DIR, "ds1edit.exe")
 
 # Import comparison function
 sys.path.insert(0, SCRIPT_DIR)
@@ -69,7 +69,9 @@ def render_headless(lvltype_id, lvlprest_def, ds1_path, output_path):
     try:
         result = subprocess.run(cmd, cwd=BIN_DIR, capture_output=True,
                                 text=True, timeout=120)
-        return result.returncode == 0 and os.path.exists(output_path)
+        # Check file existence rather than exit code — the atexit handler
+        # may return non-zero even when the render succeeded
+        return os.path.exists(output_path) and os.path.getsize(output_path) > 0
     except subprocess.TimeoutExpired:
         return False
 
