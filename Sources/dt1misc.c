@@ -1,10 +1,12 @@
 #include <string.h>
+#include <stdlib.h>
 #include "structs.h"
 #include "error.h"
 #include "dt1_draw.h"
 #include "misc.h"
 #include "mpq/MpqView.h"
 #include "dt1misc.h"
+#include "rgba_cache.h"
 
 
 // ==========================================================================
@@ -57,6 +59,16 @@ fflush(stderr);
          }
          size += glb_dt1[i].bz_size[z];
          free(glb_dt1[i].block_zoom[z]);
+      }
+
+      // free cached tiles (Allegro 5 migration)
+      if (glb_dt1[i].block_cache[z] != NULL)
+      {
+         for (b=0; b < glb_dt1[i].block_num; b++)
+         {
+            cache_tile_destroy(glb_dt1[i].block_cache[z][b]);
+         }
+         free(glb_dt1[i].block_cache[z]);
       }
    }
 
@@ -160,10 +172,13 @@ void dt1_fill_subt(SUB_TILE_S * ptr, int i, long tiles_ptr, int s)
 
 // ==========================================================================
 // make the bitmap of 1 tile, for 1 zoom
-void dt1_zoom(BITMAP * src, int i, int b, int z)
+// also creates a CACHED_TILE from the source index buffer
+void dt1_zoom(BITMAP * src, int i, int b, int z,
+              const uint8_t *src_indices, int src_w, int src_h)
 {
    BITMAP * dst;
-   int    w = src->w, h = src->h, d=1;
+   CACHED_TILE * ct;
+   int    w = src_w, h = src_h, d=1;
    char   tmp_str[100];
 
    switch(z)
@@ -176,6 +191,8 @@ void dt1_zoom(BITMAP * src, int i, int b, int z)
    }
    w /= d;
    h /= d;
+
+   // legacy BITMAP (for rendering until Phase 4)
    dst = create_bitmap(w, h);
    if (dst == NULL)
    {
@@ -184,8 +201,25 @@ void dt1_zoom(BITMAP * src, int i, int b, int z)
       ds1edit_error(tmp_str);
    }
    stretch_blit(src, dst, 0, 0, src->w, src->h, 0, 0, w, h);
-
    * (glb_dt1[i].block_zoom[z] + b) = dst;
+
+   // CACHED_TILE with index data
+   ct = cache_tile_create(w, h);
+   if (ct != NULL)
+   {
+      if (d == 1)
+      {
+         // 1:1 zoom — direct copy from source indices
+         memcpy(ct->indices, src_indices, w * h);
+      }
+      else
+      {
+         // downscale the index buffer
+         index_buf_scale_down(src_indices, src_w, src_h,
+                              ct->indices, w, h);
+      }
+   }
+   glb_dt1[i].block_cache[z][b] = ct;
 }
 
 
@@ -202,6 +236,7 @@ void dt1_all_zoom_make(int i)
    long          orientation;
    char          tmp_str[100];
    int           t_mi, t_si, my_idx;
+   uint8_t       * idx_buf = NULL; // temporary index buffer for decoding
 
    b_ptr    = (BLOCK_S *) glb_dt1[i].bh_buffer;
 
@@ -220,6 +255,12 @@ void dt1_all_zoom_make(int i)
       }
       memset(glb_dt1[i].block_zoom[z], 0, mem_size);
       glb_dt1[i].bz_size[z] = mem_size;
+
+      // allocate parallel cache table
+      mem_size = sizeof(CACHED_TILE *) * glb_dt1[i].block_num;
+      glb_dt1[i].block_cache[z] = (CACHED_TILE **) malloc(mem_size);
+      if (glb_dt1[i].block_cache[z] != NULL)
+         memset(glb_dt1[i].block_cache[z], 0, mem_size);
    }
 
    // make the bitmaps
@@ -265,7 +306,7 @@ void dt1_all_zoom_make(int i)
          b_ptr ++;
          continue;
       }
-      
+
       // normal block (non-empty)
       tmp_bmp = create_bitmap(w, h);
       if (tmp_bmp == NULL)
@@ -276,24 +317,36 @@ void dt1_all_zoom_make(int i)
       }
       clear(tmp_bmp);
 
-      // draw sub-tiles in this bitmap
+      // allocate index buffer for parallel decode
+      idx_buf = (uint8_t *) calloc(w * h, 1);
+
+      // draw sub-tiles in this bitmap (and index buffer)
       for (s=0; s < b_ptr->tiles_number; s++) // for each sub-tiles
       {
          // get the sub-tile info
          dt1_fill_subt(& st_ptr, i, b_ptr->tiles_ptr, s);
-         
+
          // get infos
          x0     = st_ptr.x_pos;
          y0     = y_add + st_ptr.y_pos;
          data   = (UBYTE *) ((UBYTE *)glb_dt1[i].buffer + b_ptr->tiles_ptr + st_ptr.data_offset);
          length = st_ptr.length;
          format = st_ptr.format;
-         
-         // draw the sub-tile
+
+         // draw the sub-tile (legacy BITMAP)
          if (format == 0x0001)
             draw_sub_tile_isometric(tmp_bmp, x0, y0, data, length);
          else
             draw_sub_tile_normal(tmp_bmp, x0, y0, data, length);
+
+         // decode to index buffer (new path)
+         if (idx_buf != NULL)
+         {
+            if (format == 0x0001)
+               decode_sub_tile_isometric(idx_buf, w, h, x0, y0, data, length);
+            else
+               decode_sub_tile_normal(idx_buf, w, h, x0, y0, data, length);
+         }
       }
 
       // if a game's special tile, draw my own info over it
@@ -319,18 +372,39 @@ void dt1_all_zoom_make(int i)
                if (sprite != NULL)
                   draw_sprite(tmp_bmp, sprite, 0, tmp_bmp->h - sprite->h);
 
+               // also overlay in the index buffer from the cached tile
+               if (idx_buf != NULL && glb_dt1[0].block_cache[ZM_11] != NULL)
+               {
+                  CACHED_TILE * spr_ct = glb_dt1[0].block_cache[ZM_11][my_idx];
+                  if (spr_ct != NULL)
+                  {
+                     int sx, sy, dy_off = h - spr_ct->height;
+                     for (sy = 0; sy < spr_ct->height; sy++)
+                     {
+                        for (sx = 0; sx < spr_ct->width && sx < w; sx++)
+                        {
+                           uint8_t pidx = spr_ct->indices[sy * spr_ct->width + sx];
+                           if (pidx != 0 && (dy_off + sy) >= 0)
+                              idx_buf[(dy_off + sy) * w + sx] = pidx;
+                        }
+                     }
+                  }
+               }
+
                // stop the search
                my_idx = glb_dt1[0].block_num;
             }
          }
       }
-      
-      // make zoom from the bitmap, for each zoom
-      for (z=0; z<ZM_MAX; z++)
-         dt1_zoom(tmp_bmp, i, b, z);
 
-      // destroy tmp bitmap
+      // make zoom from the bitmap (and cached tile), for each zoom
+      for (z=0; z<ZM_MAX; z++)
+         dt1_zoom(tmp_bmp, i, b, z, idx_buf, w, h);
+
+      // destroy tmp bitmap and index buffer
       destroy_bitmap(tmp_bmp);
+      free(idx_buf);
+      idx_buf = NULL;
 
       // next block header
       b_ptr ++;

@@ -10,6 +10,7 @@
 #include <string.h>
 #include <allegro.h>
 #include "mpq\\mpqtypes.h"
+#include "rgba_cache.h"
 
 #define MAX_MPQ_FILE           4
 #define MAX_MOD_DIR            1
@@ -921,8 +922,11 @@ typedef struct DT1_S
 
    // all blocks in differents zoom format
    BITMAP     ** block_zoom[ZM_MAX]; // ZM_MAX tables of table of pointers
-                                     //   to BITMAP
+                                     //   to BITMAP (legacy, used by rendering)
    int        bz_size[ZM_MAX];
+
+   // cached tiles with palette indices + RGBA (for Allegro 5 migration)
+   CACHED_TILE ** block_cache[ZM_MAX]; // parallel to block_zoom
 } DT1_S;
 
 extern DT1_S * glb_dt1;

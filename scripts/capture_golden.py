@@ -79,7 +79,18 @@ def capture_screenshot(map_name, lvltype_id, lvlprest_def, ds1_path, output_path
 
     if os.path.exists(output_path):
         size = os.path.getsize(output_path)
-        print(f"    OK ({size:,} bytes)")
+        # Also convert to PNG
+        try:
+            from PIL import Image
+            png_path = os.path.splitext(output_path)[0] + ".png"
+            img = Image.open(output_path)
+            if img.mode == "P":
+                img = img.convert("RGB")
+            img.save(png_path, "PNG")
+            png_size = os.path.getsize(png_path)
+            print(f"    OK ({size:,} bytes BMP, {png_size:,} bytes PNG)")
+        except ImportError:
+            print(f"    OK ({size:,} bytes, no PNG - install Pillow)")
         return True
     else:
         print(f"    FAILED (output file not created)")

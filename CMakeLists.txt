@@ -14,6 +14,7 @@ set(SOURCES
     Sources/ds1save.c
     Sources/dt1misc.c
     Sources/dt1_draw.c
+    Sources/dt1_decode.c
     Sources/editobj.c
     Sources/editpath.c
     Sources/edittile.c
