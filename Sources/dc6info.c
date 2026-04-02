@@ -1,6 +1,7 @@
 #include "structs.h"
 #include "misc.h"
 #include "dc6info.h"
+#include "anim.h"
 
 
 // ==========================================================================
@@ -246,6 +247,10 @@ int anim_load_dc6(char * name, COF_S * cof, int lay_idx, long user_dir,
          );
       }
    }
+
+   // build CACHED_TILE array from the BITMAP frames
+   anim_build_layer_cache(lay);
+
    free(buff);
    return 0;
 }

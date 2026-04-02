@@ -1,10 +1,47 @@
-#include <string.h> 
+#include <string.h>
+#include <stdlib.h>
 #include "structs.h"
 #include "dccinfo.h"
 #include "misc.h"
 #include "dc6info.h"
 #include "animdata.h"
 #include "anim.h"
+#include "rgba_cache.h"
+
+
+// ==========================================================================
+// Create CACHED_TILE array from BITMAP array in a LAY_INF_S.
+// Reads palette indices from each BITMAP via getpixel().
+void anim_build_layer_cache(LAY_INF_S *lay)
+{
+   int i, x, y, w, h, size;
+
+   if (lay->bmp == NULL || lay->bmp_num <= 0)
+      return;
+
+   size = lay->bmp_num * sizeof(CACHED_TILE *);
+   lay->cache = (CACHED_TILE **) malloc(size);
+   if (lay->cache == NULL)
+      return;
+   memset(lay->cache, 0, size);
+
+   for (i = 0; i < lay->bmp_num; i++)
+   {
+      if (lay->bmp[i] == NULL)
+         continue;
+
+      w = lay->bmp[i]->w;
+      h = lay->bmp[i]->h;
+      lay->cache[i] = cache_tile_create(w, h);
+      if (lay->cache[i] == NULL)
+         continue;
+
+      // copy palette indices from BITMAP to CACHED_TILE
+      for (y = 0; y < h; y++)
+         for (x = 0; x < w; x++)
+            lay->cache[i]->indices[y * w + x] = (uint8_t) getpixel(lay->bmp[i], x, y);
+   }
+}
 
 
 // ==========================================================================
@@ -95,6 +132,9 @@ int anim_load_dcc(
       else
          blit(dcc->frame[dir][i].bmp, lay->bmp[i], 0, 0, 0, 0, w, h);
    }
+
+   // build CACHED_TILE array from the BITMAP frames
+   anim_build_layer_cache(lay);
 
    // end
    dcc_destroy(dcc);
@@ -480,7 +520,7 @@ int anim_destroy_cof(COF_S * cof)
    if (cof == NULL)
       return 0;
       
-   // free bitmaps
+   // free bitmaps and cached tiles
    for (c=0; c < COMPOSIT_NB; c++)
    {
       bmp = cof->lay_inf[c].bmp;
@@ -498,6 +538,16 @@ int anim_destroy_cof(COF_S * cof)
          }
          size += max_b * sizeof (BITMAP *);
          free(bmp);
+      }
+
+      // free cached tiles (Allegro 5 migration)
+      if (cof->lay_inf[c].cache != NULL)
+      {
+         max_b = cof->lay_inf[c].bmp_num;
+         for (b=0; b < max_b; b++)
+            cache_tile_destroy(cof->lay_inf[c].cache[b]);
+         free(cof->lay_inf[c].cache);
+         cof->lay_inf[c].cache = NULL;
       }
    }
 

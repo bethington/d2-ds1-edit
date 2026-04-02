@@ -300,7 +300,8 @@ typedef struct LAY_INF_S
 
    // editor only
    int    bmp_num;
-   BITMAP ** bmp;
+   BITMAP ** bmp;              // legacy frame bitmaps (palette indices)
+   CACHED_TILE ** cache;       // cached tiles with indices + RGBA (Allegro 5 migration)
    int    off_x;
    int    off_y;
    int    last_good_frame;
