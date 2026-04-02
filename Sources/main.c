@@ -449,9 +449,20 @@ UDWORD ds1edit_get_RLE_bitmap_size(ALLEGRO_BITMAP * bmp)
 void ds1edit_exit(void)
 {
    int i, z, b;
-   
+   static int already_called = 0;
+
+   /* Guard against being called twice (atexit + explicit) */
+   if (already_called) return;
+   already_called = 1;
 
    printf("\nds1edit_exit()\n");
+
+   /* If Allegro is already shut down, skip bitmap cleanup */
+   if (!al_is_system_installed())
+   {
+      printf("(Allegro already shut down, skipping cleanup)\n");
+      return;
+   }
 
    // close all mpq
    for (i=0; i<MAX_MPQ_FILE; i++)
@@ -599,10 +610,8 @@ void ds1edit_exit(void)
    }
 
 
-   // walkable infos tiles, combinations
-   fprintf(stderr, "   * walkable info tiles combinations...\n");
-   fflush(stderr);
-   for (b=0; b<256; b++)
+   // walkable infos tiles, flag overlays (9 flag types)
+   for (b=0; b<9; b++)
    {
       for (z=0; z<ZM_MAX; z++)
       {
@@ -612,6 +621,24 @@ void ds1edit_exit(void)
             {
                al_destroy_bitmap(glb_ds1edit.subtile_flag[b][z][i]);
                glb_ds1edit.subtile_flag[b][z][i] = NULL;
+            }
+         }
+      }
+   }
+
+   // walkable infos tiles, combinations (256 combinations)
+   fprintf(stderr, "   * walkable info tiles combinations...\n");
+   fflush(stderr);
+   for (b=0; b<256; b++)
+   {
+      for (z=0; z<ZM_MAX; z++)
+      {
+         for (i=0; i<25; i++)
+         {
+            if (glb_ds1edit.subtile_flag_combination[b][z][i] != NULL)
+            {
+               al_destroy_bitmap(glb_ds1edit.subtile_flag_combination[b][z][i]);
+               glb_ds1edit.subtile_flag_combination[b][z][i] = NULL;
             }
          }
       }
