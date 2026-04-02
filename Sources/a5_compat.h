@@ -299,8 +299,15 @@ extern ALLEGRO_MOUSE_STATE a5_ms_state;
 /* ---- Misc compat ---- */
 #define rest(ms) al_rest((double)(ms) / 1000.0)
 
-/* makecol - Allegro 4 color from RGB. In A5, return palette index (approximate) */
-#define makecol(r,g,b) (0) /* TODO: proper A5 color handling */
+/* makecol - Allegro 4 color from RGB. Returns closest palette index. */
+static inline int a5_makecol(int r, int g, int b)
+{
+    if (a5_current_palette != NULL)
+        return palette_find_closest(a5_current_palette, (uint8_t)r, (uint8_t)g, (uint8_t)b);
+    /* Fallback: encode as a raw index (won't look right but won't crash) */
+    return (r > 128) ? 255 : 0;
+}
+#define makecol(r,g,b) a5_makecol(r,g,b)
 
 /* Allegro 4 config functions — implemented via Allegro 5 ALLEGRO_CONFIG */
 extern ALLEGRO_CONFIG *a5_config;
