@@ -446,6 +446,10 @@ typedef struct CMD_LINE_S
 
    // -no_vis_debug : desactivate debug infos on Vis Tiles that have graphics
    int  no_vis_debug;
+
+   // --headless : render one frame and save to file, then exit (no display)
+   int    headless_mode;
+   char * headless_output; // output filename, NULL if not used
 } CMD_LINE_S;
 
 // Tile Grid states

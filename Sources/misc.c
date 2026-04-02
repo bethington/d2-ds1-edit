@@ -1455,6 +1455,18 @@ int misc_cmd_line_parse(int argc, char ** argv)
             return -1;
          }
       }
+      else if (stricmp(argv[i], "--headless") == 0)
+      {
+         // --headless <output.bmp> : render one frame and save, then exit
+         glb_ds1edit.cmd_line.headless_mode = TRUE;
+         i++;
+         if (i >= argc)
+         {
+            printf("misc_cmd_line_parse(), error : --headless requires an output filename\n");
+            return -1;
+         }
+         glb_ds1edit.cmd_line.headless_output = argv[i];
+      }
       else if (stricmp(argv[i], "-no_check_act") == 0)
       {
          // -no_check_act is a flag

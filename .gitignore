@@ -1,5 +1,6 @@
 # Build artifacts
 build/
+cmake-build/
 *.obj
 *.o
 *.lib

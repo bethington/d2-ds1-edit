@@ -400,6 +400,8 @@ void ds1edit_init(void)
    glb_ds1edit.cmd_line.force_pal_num = -1;
    glb_ds1edit.cmd_line.no_check_act  = FALSE;
    glb_ds1edit.cmd_line.dt1_list_num  = -1;
+   glb_ds1edit.cmd_line.headless_mode = FALSE;
+   glb_ds1edit.cmd_line.headless_output = NULL;
    for (i=0; i < DT1_IN_DS1_MAX; i++)
       glb_ds1edit.cmd_line.dt1_list_filename[i] = NULL;
 
@@ -1255,6 +1257,46 @@ int main(int argc, char * argv[])
    misc_make_cmaps();
    printf("done\n");
    fprintf(stderr, "done\n");
+
+   // headless mode : render one frame and save to file, then exit
+   if (glb_ds1edit.cmd_line.headless_mode == TRUE)
+   {
+      BITMAP * old_screen_buff;
+      int      pal_idx;
+
+      printf("headless mode : rendering to \"%s\"...\n", glb_ds1edit.cmd_line.headless_output);
+      fflush(stdout);
+
+      // determine palette
+      if (glb_ds1edit.cmd_line.force_pal_num == -1)
+         pal_idx = glb_ds1[ds1_idx].act - 1;
+      else
+         pal_idx = glb_ds1edit.cmd_line.force_pal_num - 1;
+
+      set_palette(glb_ds1edit.vga_pal[pal_idx]);
+
+      // render complete map
+      old_screen_buff = glb_ds1edit.screen_buff;
+      if (wpreview_draw_tiles_big_screenshot(ds1_idx) == 0)
+      {
+         save_bmp(glb_ds1edit.cmd_line.headless_output,
+                  glb_ds1edit.screen_buff,
+                  glb_ds1edit.vga_pal[pal_idx]);
+         printf("headless mode : saved %i x %i screenshot\n",
+                glb_ds1edit.screen_buff->w,
+                glb_ds1edit.screen_buff->h);
+         destroy_bitmap(glb_ds1edit.screen_buff);
+      }
+      else
+      {
+         printf("headless mode : render failed (empty map?)\n");
+      }
+      glb_ds1edit.screen_buff = old_screen_buff;
+
+      fflush(stdout);
+      fflush(stderr);
+      return DS1ERR_OK;
+   }
 
    // start
    fflush(stdout);
