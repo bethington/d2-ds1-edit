@@ -2,9 +2,9 @@
 
 #define _WPREVIEW_H_
 
-void wpreview_shape                     (BITMAP * tmp_bmp, int x0, int y0, int ds1_idx, COL_E col_idx);
-void wpreview_gouraud_f                 (BITMAP * tmp_bmp, int x0, int y0, int ds1_idx, int c1, int c2, int c3, int c4);
-void wpreview_gouraud_w                 (BITMAP * tmp_bmp, int x0, int y0, int ds1_idx, int c1, int c2, int c3, int c4);
+void wpreview_shape                     (ALLEGRO_BITMAP * tmp_bmp, int x0, int y0, int ds1_idx, COL_E col_idx);
+void wpreview_gouraud_f                 (ALLEGRO_BITMAP * tmp_bmp, int x0, int y0, int ds1_idx, int c1, int c2, int c3, int c4);
+void wpreview_gouraud_w                 (ALLEGRO_BITMAP * tmp_bmp, int x0, int y0, int ds1_idx, int c1, int c2, int c3, int c4);
 int  wpreview_light_dist                (int x0, int y0, int mx, int my);
 int  qsort_helper_order_data            (const void *e1, const void *e2);
 void wpreview_draw_s                    (int ds1_idx, int x, int y, int mx, int my, int z, int selected);

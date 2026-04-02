@@ -81,26 +81,26 @@ int wmsg_main(WMSG_S * wmsg)
    wx1 = wx0 + max_width;
    wy1 = wy0 + curr_height;
    by0 = wy1 - line_height * 4;
-   rectfill(glb_ds1edit.screen_buff, wx0, wy0, wx1, wy1, wmsg->col_win.bg);
+   a5_rectfill(glb_ds1edit.screen_buff, wx0, wy0, wx1, wy1, wmsg->col_win.bg);
    x = wx0 + wmsg->font_width;
    y = wy0 + wmsg->font_height;
 
    // title
    if (wmsg->title != NULL)
    {
-      rectfill(glb_ds1edit.screen_buff, wx0, wy0, wx1, wy0 + line_height*2, wmsg->col_title.bg);
-      rect(glb_ds1edit.screen_buff, wx0, wy0, wx1, wy0 + line_height*2, wmsg->col_title.fg);
-      hline(glb_ds1edit.screen_buff, wx0, wy0 + line_height*2, wx1, wmsg->col_win.fg);
+      a5_rectfill(glb_ds1edit.screen_buff, wx0, wy0, wx1, wy0 + line_height*2, wmsg->col_title.bg);
+      a5_rect(glb_ds1edit.screen_buff, wx0, wy0, wx1, wy0 + line_height*2, wmsg->col_title.fg);
+      a5_hline(glb_ds1edit.screen_buff, wx0, wy0 + line_height*2, wx1, wmsg->col_win.fg);
 
-      text_mode(wmsg->col_title.bg);
-      textout(glb_ds1edit.screen_buff, font, wmsg->title, x, y, wmsg->col_title.fg);
+      a5_text_mode(wmsg->col_title.bg);
+      a5_textout(glb_ds1edit.screen_buff, font, wmsg->title, x, y, wmsg->col_title.fg);
       y += line_height * 2;
    }
 
    // text
    tmp[1] = 0x00;
    n = strlen(wmsg->text) + 1;
-   text_mode(wmsg->col_text.bg);
+   a5_text_mode(wmsg->col_text.bg);
    for (i=0; i < n; i++)
    {
       if ( (wmsg->text[i] != 0x0A) &&
@@ -110,7 +110,7 @@ int wmsg_main(WMSG_S * wmsg)
       {
          // draw char
          tmp[0] = wmsg->text[i];
-         textout(glb_ds1edit.screen_buff, font, tmp, x, y, wmsg->col_text.fg);
+         a5_textout(glb_ds1edit.screen_buff, font, tmp, x, y, wmsg->col_text.fg);
          x += wmsg->font_width;
       }
       else
@@ -121,17 +121,17 @@ int wmsg_main(WMSG_S * wmsg)
    }
 
    // border of main window
-   rect(glb_ds1edit.screen_buff, wx0, wy0, wx1, wy1, wmsg->col_win.fg);
+   a5_rect(glb_ds1edit.screen_buff, wx0, wy0, wx1, wy1, wmsg->col_win.fg);
 
 
    // mouse background
    // show_mouse(NULL);
-   mx = mouse_x;
-   my = mouse_y;
-   mb = mouse_b;
+   mx = a5_mouse_x;
+   my = a5_mouse_y;
+   mb = a5_mouse_b;
 
    // main loop
-   text_mode(-1);
+   a5_text_mode(-1);
    while ( ! done)
    {
       // handle keyboard shortcuts
@@ -149,7 +149,7 @@ int wmsg_main(WMSG_S * wmsg)
                {
                   if (wmsg->button[i].shortcut[s].key[k])
                   {
-                     if ( ! key[ wmsg->button[i].shortcut[s].key[k] ])
+                     if ( ! key_pressed( wmsg->button[i].shortcut[s].key[k] ))
                         all_keys = FALSE;
                   }
                }
@@ -169,7 +169,7 @@ int wmsg_main(WMSG_S * wmsg)
                   {
                      if (wmsg->button[i].shortcut[s].key[k])
                      {
-                        if (key[ wmsg->button[i].shortcut[s].key[k] ])
+                        if (key_pressed( wmsg->button[i].shortcut[s].key[k] ))
                            all_keys = TRUE;
                      }
                   }
@@ -203,7 +203,7 @@ int wmsg_main(WMSG_S * wmsg)
             if (mb)
             {
                while (mb)
-                  mb = mouse_b;
+               { al_rest(0.01); al_get_mouse_state(&a5_ms_state); mb = a5_mouse_b; }
                done = TRUE;
                ret  = i;
             }
@@ -217,8 +217,8 @@ int wmsg_main(WMSG_S * wmsg)
          }
 
          // draw current button
-         rectfill(glb_ds1edit.screen_buff, x, y, x2, y2, bg);
-         textprintf(
+         a5_rectfill(glb_ds1edit.screen_buff, x, y, x2, y2, bg);
+         a5_textprintf(
             glb_ds1edit.screen_buff,
             font,
             x + wmsg->font_width,
@@ -226,7 +226,7 @@ int wmsg_main(WMSG_S * wmsg)
             fg,
             "%s", wmsg->button[i].text
          );
-         rect(glb_ds1edit.screen_buff, x, y, x2, y2, border);
+         a5_rect(glb_ds1edit.screen_buff, x, y, x2, y2, border);
          
          // next button
          x = x2 + (wmsg->font_width * wmsg->button[i].right_spaces);
@@ -236,12 +236,12 @@ int wmsg_main(WMSG_S * wmsg)
       misc_draw_screen(mx, my);
 
       // new mouse state
-      mx = mouse_x;
-      my = mouse_y;
-      mb = mouse_b;
+      mx = a5_mouse_x;
+      my = a5_mouse_y;
+      mb = a5_mouse_b;
    }
 
-   text_mode(-1);
+   a5_text_mode(-1);
 
    return ret;
 }

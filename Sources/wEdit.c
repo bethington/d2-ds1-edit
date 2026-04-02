@@ -11,9 +11,9 @@
 void wedit_draw_s(int ds1_idx, int x, int y)
 {
    WIN_ELEMENT_S * w_elm = & glb_ds1edit.win_edit.w_preview;
-   BITMAP        * sub;
+   ALLEGRO_BITMAP * sub;
    BLOCK_TABLE_S * bt_ptr;
-   BITMAP        * tmp_bmp;
+   ALLEGRO_BITMAP * tmp_bmp;
    CELL_S_S      * s_ptr;
    int           n, t, bt_idx, dt1_idx, block_idx, y1;
    int           ux1, ux2, ux3, ux4, uy1, uy2, uy3;
@@ -21,8 +21,8 @@ void wedit_draw_s(int ds1_idx, int x, int y)
    
    t     = (y * glb_ds1[ds1_idx].shadow_line) + (x * glb_ds1[ds1_idx].shadow_num);
    s_ptr = glb_ds1[ds1_idx].shadow_buff + t;
-   sub   = create_sub_bitmap(glb_ds1edit.screen_buff,
-              w_elm->i_x0, w_elm->i_y0, w_elm->inside->w, w_elm->inside->h);
+   sub   = al_create_sub_bitmap(glb_ds1edit.screen_buff,
+              w_elm->i_x0, w_elm->i_y0, al_get_bitmap_width(w_elm->inside), al_get_bitmap_height(w_elm->inside));
 
    for (n=0; n<glb_ds1[ds1_idx].shadow_num; n++)
    {
@@ -34,23 +34,23 @@ void wedit_draw_s(int ds1_idx, int x, int y)
          ux3 = ux1 + 80;
          ux4 = ux1 + 159;
 
-         uy1 = sub->h - 160;
+         uy1 = al_get_bitmap_height(sub) - 160;
          uy2 = uy1 + 39;
          uy3 = uy1 + 78;
 
-         line(sub, ux1, uy2, ux2, uy1, 168);
-         line(sub, ux3, uy1, ux4, uy2, 168);
-         line(sub, ux3, uy3, ux4, uy2, 168);
-         line(sub, ux1, uy2, ux2, uy3, 168);
+         a5_line(sub, ux1, uy2, ux2, uy1, 168);
+         a5_line(sub, ux3, uy1, ux4, uy2, 168);
+         a5_line(sub, ux3, uy3, ux4, uy2, 168);
+         a5_line(sub, ux1, uy2, ux2, uy3, 168);
 
-         textprintf(sub, font, ux1+8, uy2-2, 0,
+         a5_textprintf(sub, font, ux1+8, uy2-2, 0,
             "%u %u %u %u",
             s_ptr[n].prop1,
             s_ptr[n].prop2,
             s_ptr[n].prop3,
             s_ptr[n].prop4
          );
-         textprintf(sub, font, ux1+7, uy2-3, 255,
+         a5_textprintf(sub, font, ux1+7, uy2-3, 255,
             "%u %u %u %u",
             s_ptr[n].prop1,
             s_ptr[n].prop2,
@@ -72,34 +72,28 @@ void wedit_draw_s(int ds1_idx, int x, int y)
       if (tmp_bmp == NULL)
          continue;
 
-      y1 = sub->h - 160 - bt_ptr->zero_line;
+      y1 = al_get_bitmap_height(sub) - 160 - bt_ptr->zero_line;
       y1 += 80; // shadows, like walls are lower than floors
                 // (and than roofs) by 80 pixels
 
       switch(glb_ds1[ds1_idx].shadow_layer_mask[0])
       {
          case 1 :
-            draw_sprite(sub, tmp_bmp, 0, y1);
+            a5_draw_sprite(sub, tmp_bmp, 0, y1);
             break;
             
          case 2 :
-            if (glb_ds1edit.cmd_line.force_pal_num == -1)
-               color_map = & glb_ds1edit.cmap[CM_SELECT][glb_ds1[ds1_idx].act - 1];
-            else
-               color_map = & glb_ds1edit.cmap[CM_SELECT][glb_ds1edit.cmd_line.force_pal_num - 1];
-            draw_lit_sprite(sub, tmp_bmp, 0, y1, COL_SHADOW);
+            /* TODO: A5 color mapping for selection highlight */
+            a5_draw_sprite(sub, tmp_bmp, 0, y1);
             break;
-         
+
          case 3 :
-            if (glb_ds1edit.cmd_line.force_pal_num == -1)
-               color_map = & glb_ds1edit.cmap[CM_TRANS][glb_ds1[ds1_idx].act - 1];
-            else
-               color_map = & glb_ds1edit.cmap[CM_TRANS][glb_ds1edit.cmd_line.force_pal_num - 1];
-            draw_trans_sprite(sub, tmp_bmp, 0, y1);
+            /* TODO: A5 color mapping for transparency */
+            a5_draw_trans_sprite(sub, tmp_bmp, 0, y1);
             break;
       }
    }
-   destroy_bitmap(sub);
+   al_destroy_bitmap(sub);
 }
 
 
@@ -108,9 +102,9 @@ void wedit_draw_s(int ds1_idx, int x, int y)
 void wedit_draw_f(int ds1_idx, int x, int y)
 {
    WIN_ELEMENT_S * w_elm = & glb_ds1edit.win_edit.w_preview;
-   BITMAP        * sub;
+   ALLEGRO_BITMAP * sub;
    BLOCK_TABLE_S * bt_ptr;
-   BITMAP        * tmp_bmp;
+   ALLEGRO_BITMAP * tmp_bmp;
    CELL_F_S      * f_ptr;
    int           n, t, bt_idx, dt1_idx, block_idx, y1;
    ORDER_DATA_S  order_data[4];
@@ -119,8 +113,8 @@ void wedit_draw_f(int ds1_idx, int x, int y)
    
    t     = (y * glb_ds1[ds1_idx].floor_line) + (x * glb_ds1[ds1_idx].floor_num);
    f_ptr = glb_ds1[ds1_idx].floor_buff + t;
-   sub   = create_sub_bitmap(glb_ds1edit.screen_buff,
-              w_elm->i_x0, w_elm->i_y0, w_elm->inside->w, w_elm->inside->h);
+   sub   = al_create_sub_bitmap(glb_ds1edit.screen_buff,
+              w_elm->i_x0, w_elm->i_y0, al_get_bitmap_width(w_elm->inside), al_get_bitmap_height(w_elm->inside));
 
    for (n=0; n<glb_ds1[ds1_idx].floor_num; n++)
    {
@@ -140,23 +134,23 @@ void wedit_draw_f(int ds1_idx, int x, int y)
          ux3 = ux1 + 80;
          ux4 = ux1 + 159;
 
-         uy1 = sub->h - 160;
+         uy1 = al_get_bitmap_height(sub) - 160;
          uy2 = uy1 + 39;
          uy3 = uy1 + 78;
 
-         line(sub, ux1, uy2, ux2, uy1, 168);
-         line(sub, ux3, uy1, ux4, uy2, 168);
-         line(sub, ux3, uy3, ux4, uy2, 168);
-         line(sub, ux1, uy2, ux2, uy3, 168);
+         a5_line(sub, ux1, uy2, ux2, uy1, 168);
+         a5_line(sub, ux3, uy1, ux4, uy2, 168);
+         a5_line(sub, ux3, uy3, ux4, uy2, 168);
+         a5_line(sub, ux1, uy2, ux2, uy3, 168);
 
-         textprintf(sub, font, ux1+8, uy2-2, 0,
+         a5_textprintf(sub, font, ux1+8, uy2-2, 0,
             "%u %u %u %u",
             f_ptr[order_data[n].idx].prop1,
             f_ptr[order_data[n].idx].prop2,
             f_ptr[order_data[n].idx].prop3,
             f_ptr[order_data[n].idx].prop4
          );
-         textprintf(sub, font, ux1+7, uy2-3, 255,
+         a5_textprintf(sub, font, ux1+7, uy2-3, 255,
             "%u %u %u %u",
             f_ptr[order_data[n].idx].prop1,
             f_ptr[order_data[n].idx].prop2,
@@ -178,10 +172,10 @@ void wedit_draw_f(int ds1_idx, int x, int y)
       if (tmp_bmp == NULL)
          continue;
 
-      y1 = sub->h - 160 - bt_ptr->zero_line;
-      draw_sprite(sub, tmp_bmp, 0, y1);
+      y1 = al_get_bitmap_height(sub) - 160 - bt_ptr->zero_line;
+      a5_draw_sprite(sub, tmp_bmp, 0, y1);
    }
-   destroy_bitmap(sub);
+   al_destroy_bitmap(sub);
 }
 
 
@@ -190,9 +184,9 @@ void wedit_draw_f(int ds1_idx, int x, int y)
 void wedit_draw_w(int ds1_idx, int x, int y, int upper)
 {
    WIN_ELEMENT_S * w_elm = & glb_ds1edit.win_edit.w_preview;
-   BITMAP        * sub;
+   ALLEGRO_BITMAP * sub;
    BLOCK_TABLE_S * bt_ptr;
-   BITMAP        * tmp_bmp;
+   ALLEGRO_BITMAP * tmp_bmp;
    CELL_W_S      * w_ptr;
    int           n, t, bt_idx, dt1_idx, block_idx, m, s, y1;
    int           done, found, o;
@@ -202,8 +196,8 @@ void wedit_draw_w(int ds1_idx, int x, int y, int upper)
    
    t     = (y * glb_ds1[ds1_idx].wall_line) + (x * glb_ds1[ds1_idx].wall_num);
    w_ptr = glb_ds1[ds1_idx].wall_buff + t;
-   sub   = create_sub_bitmap(glb_ds1edit.screen_buff,
-              w_elm->i_x0, w_elm->i_y0, w_elm->inside->w, w_elm->inside->h);
+   sub   = al_create_sub_bitmap(glb_ds1edit.screen_buff,
+              w_elm->i_x0, w_elm->i_y0, al_get_bitmap_width(w_elm->inside), al_get_bitmap_height(w_elm->inside));
    
    for (n=0; n<glb_ds1[ds1_idx].wall_num; n++)
    {
@@ -248,16 +242,16 @@ void wedit_draw_w(int ds1_idx, int x, int y, int upper)
          ux3 = ux1 + 80;
          ux4 = ux1 + 159;
 
-         uy1 = sub->h - 160;
+         uy1 = al_get_bitmap_height(sub) - 160;
          uy2 = uy1 + 39;
          uy3 = uy1 + 78;
 
-         line(sub, ux1, uy2, ux2, uy1, 168);
-         line(sub, ux3, uy1, ux4, uy2, 168);
-         line(sub, ux3, uy3, ux4, uy2, 168);
-         line(sub, ux1, uy2, ux2, uy3, 168);
+         a5_line(sub, ux1, uy2, ux2, uy1, 168);
+         a5_line(sub, ux3, uy1, ux4, uy2, 168);
+         a5_line(sub, ux3, uy3, ux4, uy2, 168);
+         a5_line(sub, ux1, uy2, ux2, uy3, 168);
          
-         textprintf(sub, font, ux1+8, uy2-2, 0,
+         a5_textprintf(sub, font, ux1+8, uy2-2, 0,
             "(%u) %u %u %u %u",
             w_ptr[order_data[n].idx].orientation,
             w_ptr[order_data[n].idx].prop1,
@@ -265,7 +259,7 @@ void wedit_draw_w(int ds1_idx, int x, int y, int upper)
             w_ptr[order_data[n].idx].prop3,
             w_ptr[order_data[n].idx].prop4
          );
-         textprintf(sub, font, ux1+7, uy2-3, 255,
+         a5_textprintf(sub, font, ux1+7, uy2-3, 255,
             "(%u) %u %u %u %u",
             w_ptr[order_data[n].idx].orientation,
             w_ptr[order_data[n].idx].prop1,
@@ -293,9 +287,9 @@ void wedit_draw_w(int ds1_idx, int x, int y, int upper)
       if (tmp_bmp == NULL)
          continue;
 
-      y1 = sub->h - 160 - bt_ptr->zero_line;
+      y1 = al_get_bitmap_height(sub) - 160 - bt_ptr->zero_line;
       y1 += 80; // walls are lower than floors (and than roofs) by 80 pixels
-      draw_sprite(sub, tmp_bmp, 0, y1);
+      a5_draw_sprite(sub, tmp_bmp, 0, y1);
       
       if (bt_ptr->orientation == 3) // upper-left corner
       {
@@ -330,13 +324,13 @@ void wedit_draw_w(int ds1_idx, int x, int y, int upper)
             if (tmp_bmp == NULL)
                continue;
 
-            y1 = sub->h - 160 - bt_ptr->zero_line;
+            y1 = al_get_bitmap_height(sub) - 160 - bt_ptr->zero_line;
             y1 += 80;
-            draw_sprite(sub, tmp_bmp, 0, y1);
+            a5_draw_sprite(sub, tmp_bmp, 0, y1);
          }
       }
    }
-   destroy_bitmap(sub);
+   al_destroy_bitmap(sub);
 }
 
 // ==========================================================================
@@ -344,17 +338,17 @@ void wedit_draw_w(int ds1_idx, int x, int y, int upper)
 void wedit_draw_r(int ds1_idx, int x, int y)
 {
    WIN_ELEMENT_S * w_elm = & glb_ds1edit.win_edit.w_preview;
-   BITMAP        * sub;
+   ALLEGRO_BITMAP * sub;
    BLOCK_TABLE_S * bt_ptr;
-   BITMAP        * tmp_bmp;
+   ALLEGRO_BITMAP * tmp_bmp;
    CELL_W_S      * r_ptr;
    int           n, t, bt_idx, dt1_idx, block_idx, y1;
    ORDER_DATA_S  order_data[4];
    
    t     = (y * glb_ds1[ds1_idx].wall_line) + (x * glb_ds1[ds1_idx].wall_num);
    r_ptr = glb_ds1[ds1_idx].wall_buff + t;
-   sub   = create_sub_bitmap(glb_ds1edit.screen_buff,
-              w_elm->i_x0, w_elm->i_y0, w_elm->inside->w, w_elm->inside->h);
+   sub   = al_create_sub_bitmap(glb_ds1edit.screen_buff,
+              w_elm->i_x0, w_elm->i_y0, al_get_bitmap_width(w_elm->inside), al_get_bitmap_height(w_elm->inside));
    
    for (n=0; n<glb_ds1[ds1_idx].wall_num; n++)
    {
@@ -384,11 +378,11 @@ void wedit_draw_r(int ds1_idx, int x, int y)
       if (tmp_bmp == NULL)
          continue;
 
-      y1 = sub->h - 160 - bt_ptr->zero_line;
+      y1 = al_get_bitmap_height(sub) - 160 - bt_ptr->zero_line;
       y1 -= bt_ptr->roof_y;
-      draw_sprite(sub, tmp_bmp, 0, y1);
+      a5_draw_sprite(sub, tmp_bmp, 0, y1);
    }
-   destroy_bitmap(sub);
+   al_destroy_bitmap(sub);
 }
 
 
@@ -397,9 +391,9 @@ void wedit_draw_r(int ds1_idx, int x, int y)
 void wedit_draw_sp(int ds1_idx, int x, int y)
 {
    WIN_ELEMENT_S * w_elm = & glb_ds1edit.win_edit.w_preview;
-   BITMAP        * sub;
+   ALLEGRO_BITMAP * sub;
    BLOCK_TABLE_S * bt_ptr;
-   BITMAP        * tmp_bmp;
+   ALLEGRO_BITMAP * tmp_bmp;
    CELL_W_S      * w_ptr;
    int           n, t, bt_idx, dt1_idx, block_idx, y1, o;
    ORDER_DATA_S  order_data[4];
@@ -408,8 +402,8 @@ void wedit_draw_sp(int ds1_idx, int x, int y)
    
    t     = (y * glb_ds1[ds1_idx].wall_line) + (x * glb_ds1[ds1_idx].wall_num);
    w_ptr = glb_ds1[ds1_idx].wall_buff + t;
-   sub   = create_sub_bitmap(glb_ds1edit.screen_buff,
-              w_elm->i_x0, w_elm->i_y0, w_elm->inside->w, w_elm->inside->h);
+   sub   = al_create_sub_bitmap(glb_ds1edit.screen_buff,
+              w_elm->i_x0, w_elm->i_y0, al_get_bitmap_width(w_elm->inside), al_get_bitmap_height(w_elm->inside));
    
    for (n=0; n<glb_ds1[ds1_idx].wall_num; n++)
    {
@@ -447,16 +441,16 @@ void wedit_draw_sp(int ds1_idx, int x, int y)
             ux3 = ux1 + 80;
             ux4 = ux1 + 159;
 
-            uy1 = sub->h - 160;
+            uy1 = al_get_bitmap_height(sub) - 160;
             uy2 = uy1 + 39;
             uy3 = uy1 + 78;
 
-            line(glb_ds1edit.screen_buff, ux1, uy2, ux2, uy1, 168);
-            line(glb_ds1edit.screen_buff, ux3, uy1, ux4, uy2, 168);
-            line(glb_ds1edit.screen_buff, ux3, uy3, ux4, uy2, 168);
-            line(glb_ds1edit.screen_buff, ux1, uy2, ux2, uy3, 168);
+            a5_line(glb_ds1edit.screen_buff, ux1, uy2, ux2, uy1, 168);
+            a5_line(glb_ds1edit.screen_buff, ux3, uy1, ux4, uy2, 168);
+            a5_line(glb_ds1edit.screen_buff, ux3, uy3, ux4, uy2, 168);
+            a5_line(glb_ds1edit.screen_buff, ux1, uy2, ux2, uy3, 168);
          
-            textprintf(glb_ds1edit.screen_buff, font, ux1+8, uy2-2, 0,
+            a5_textprintf(glb_ds1edit.screen_buff, font, ux1+8, uy2-2, 0,
                "(%u) %u %u %u %u",
                w_ptr[order_data[n].idx].orientation,
                w_ptr[order_data[n].idx].prop1,
@@ -464,7 +458,7 @@ void wedit_draw_sp(int ds1_idx, int x, int y)
                w_ptr[order_data[n].idx].prop3,
                w_ptr[order_data[n].idx].prop4
             );
-            textprintf(glb_ds1edit.screen_buff, font, ux1+7, uy2-3, 255,
+            a5_textprintf(glb_ds1edit.screen_buff, font, ux1+7, uy2-3, 255,
                "(%u) %u %u %u %u",
                w_ptr[order_data[n].idx].orientation,
                w_ptr[order_data[n].idx].prop1,
@@ -489,11 +483,11 @@ void wedit_draw_sp(int ds1_idx, int x, int y)
       if (tmp_bmp == NULL)
          continue;
 
-      y1 = sub->h - 160 - bt_ptr->zero_line;
+      y1 = al_get_bitmap_height(sub) - 160 - bt_ptr->zero_line;
       y1 += 80; // walls are lower than floors (and than roofs) by 80 pixels
-      draw_sprite(sub, tmp_bmp, 0, y1);
+      a5_draw_sprite(sub, tmp_bmp, 0, y1);
    }
-   destroy_bitmap(sub);
+   al_destroy_bitmap(sub);
 }
 
 
@@ -502,18 +496,18 @@ void wedit_draw_sp(int ds1_idx, int x, int y)
 void wedit_make_2nd_buttons(void)
 {
    BUTTON_S * b;
-   BITMAP   * tmp;
+   ALLEGRO_BITMAP * tmp;
    int      i;
 
    for (i = BU_NULL+1; i<BU_MAX; i++)
    {
       b = & glb_ds1edit.win_edit.button[i];
-      tmp = create_bitmap(b->w, b->h);
+      tmp = al_create_bitmap(b->w, b->h);
       if (tmp == NULL)
          ds1edit_error("not enough mem for 1 button");
       b->bmp[1] = tmp;
-      clear_to_color(tmp, 172); // almost black (but NOT color of index 0)
-      blit(b->bmp[0], tmp, 0, 0, 2, 2, b->w, b->h);
+      a5_clear_to_color(tmp, 172); // almost black (but NOT color of index 0)
+      a5_blit(b->bmp[0], tmp, 0, 0, 2, 2, b->w, b->h);
    }
 }
 
@@ -523,8 +517,8 @@ void wedit_make_2nd_buttons(void)
 void wedit_read_pcx(void)
 {
    WIN_ELEMENT_S * w_elm;
-   BITMAP        * tmp_bmp;
-   BITMAP        * pcx[9];
+   ALLEGRO_BITMAP * tmp_bmp;
+   ALLEGRO_BITMAP * pcx[9];
    BUTTON_S      * b;
    static struct
    {
@@ -573,10 +567,15 @@ void wedit_read_pcx(void)
       {
          // button off
          b = & glb_ds1edit.win_edit.button[n1];
-         sprintf(filename, "pcx/%s.pcx", data[i].file);
-         b->bmp[0] = load_pcx(filename, glb_ds1edit.dummy_pal);
-         b->w = b->bmp[0]->w;
-         b->h = b->bmp[0]->h;
+         sprintf(filename, "pcx/%s.png", data[i].file);
+         b->bmp[0] = al_load_bitmap(filename);
+         if (b->bmp[0] == NULL) {
+            fprintf(stderr, "\nWARNING: can't load %s\n", filename);
+            b->w = 0; b->h = 0;
+         } else {
+            b->w = al_get_bitmap_width(b->bmp[0]);
+            b->h = al_get_bitmap_height(b->bmp[0]);
+         }
          b->x0 = data[i].x0;
          b->y0 = data[i].y0;
       }
@@ -584,14 +583,19 @@ void wedit_read_pcx(void)
       {
          // tab off
          b = & glb_ds1edit.win_edit.tab[n2];
-         sprintf(filename, "pcx/%s_off.pcx", data[i].file);
-         b->bmp[0] = load_pcx(filename, glb_ds1edit.dummy_pal);
-         b->w = b->bmp[0]->w;
-         b->h = b->bmp[0]->h;
+         sprintf(filename, "pcx/%s_off.png", data[i].file);
+         b->bmp[0] = al_load_bitmap(filename);
+         if (b->bmp[0] == NULL) {
+            fprintf(stderr, "\nWARNING: can't load %s\n", filename);
+            b->w = 0; b->h = 0;
+         } else {
+            b->w = al_get_bitmap_width(b->bmp[0]);
+            b->h = al_get_bitmap_height(b->bmp[0]);
+         }
 
           // tab on
-         sprintf(filename, "pcx/%s.pcx", data[i].file);
-         b->bmp[1] = load_pcx(filename, glb_ds1edit.dummy_pal);
+         sprintf(filename, "pcx/%s.png", data[i].file);
+         b->bmp[1] = al_load_bitmap(filename);
       }
       i++;
    }
@@ -601,53 +605,55 @@ void wedit_read_pcx(void)
    {
       fprintf(stderr, ".");
       fflush(stderr);
-      sprintf(filename, "pcx/preview/%s.pcx", pcx_name[i]);
-      pcx[i] = load_pcx(filename, glb_ds1edit.dummy_pal);
+      sprintf(filename, "pcx/preview/%s.png", pcx_name[i]);
+      pcx[i] = al_load_bitmap(filename);
+      if (pcx[i] == NULL)
+         fprintf(stderr, "\nWARNING: can't load %s\n", filename);
    }
    my_border = 8;
    x0 = my_border;
    y0 = 38;
-   w = 160 + pcx[0]->w + pcx[2]->w;
+   w = 160 + al_get_bitmap_width(pcx[0]) + al_get_bitmap_width(pcx[2]);
    h = glb_config.screen.height - y0 - my_border;
 
-   tmp_bmp = create_bitmap(w, h);
+   tmp_bmp = al_create_bitmap(w, h);
 
-   clear(tmp_bmp);
+   a5_clear(tmp_bmp);
 
-   for (x=0; x<w; x += pcx[1]->w)
-      blit(pcx[1], tmp_bmp, 0, 0, x, 0, pcx[1]->w, pcx[1]->h);
+   for (x=0; x<w; x += al_get_bitmap_width(pcx[1]))
+      a5_blit(pcx[1], tmp_bmp, 0, 0, x, 0, al_get_bitmap_width(pcx[1]), al_get_bitmap_height(pcx[1]));
       
-   for (x=0; x<w; x += pcx[7]->w)
-      blit(pcx[7], tmp_bmp, 0, 0, x, h - pcx[7]->h, pcx[7]->w, pcx[7]->h);
+   for (x=0; x<w; x += al_get_bitmap_width(pcx[7]))
+      a5_blit(pcx[7], tmp_bmp, 0, 0, x, h - al_get_bitmap_height(pcx[7]), al_get_bitmap_width(pcx[7]), al_get_bitmap_height(pcx[7]));
       
-   for (y=0; y<h; y += pcx[3]->h)
-      blit(pcx[3], tmp_bmp, 0, 0, 0, y, pcx[3]->w, pcx[3]->h);
+   for (y=0; y<h; y += al_get_bitmap_height(pcx[3]))
+      a5_blit(pcx[3], tmp_bmp, 0, 0, 0, y, al_get_bitmap_width(pcx[3]), al_get_bitmap_height(pcx[3]));
       
-   for (y=0; y<h; y += pcx[5]->h)
-      blit(pcx[5], tmp_bmp, 0, 0, w-pcx[5]->w, y, pcx[5]->w, pcx[5]->h);
+   for (y=0; y<h; y += al_get_bitmap_height(pcx[5]))
+      a5_blit(pcx[5], tmp_bmp, 0, 0, w-al_get_bitmap_width(pcx[5]), y, al_get_bitmap_width(pcx[5]), al_get_bitmap_height(pcx[5]));
 
-   blit(pcx[0], tmp_bmp, 0, 0, 0,                     0, pcx[0]->w, pcx[0]->h);
-   blit(pcx[2], tmp_bmp, 0, 0, w-pcx[2]->w,           0, pcx[2]->w, pcx[2]->h);
-   blit(pcx[6], tmp_bmp, 0, 0, 0,           h-pcx[6]->h, pcx[6]->w, pcx[6]->h);
-   blit(pcx[8], tmp_bmp, 0, 0, w-pcx[8]->w, h-pcx[8]->h, pcx[8]->w, pcx[8]->h);
+   a5_blit(pcx[0], tmp_bmp, 0, 0, 0,                     0, al_get_bitmap_width(pcx[0]), al_get_bitmap_height(pcx[0]));
+   a5_blit(pcx[2], tmp_bmp, 0, 0, w-al_get_bitmap_width(pcx[2]),           0, al_get_bitmap_width(pcx[2]), al_get_bitmap_height(pcx[2]));
+   a5_blit(pcx[6], tmp_bmp, 0, 0, 0,           h-al_get_bitmap_height(pcx[6]), al_get_bitmap_width(pcx[6]), al_get_bitmap_height(pcx[6]));
+   a5_blit(pcx[8], tmp_bmp, 0, 0, w-al_get_bitmap_width(pcx[8]), h-al_get_bitmap_height(pcx[8]), al_get_bitmap_width(pcx[8]), al_get_bitmap_height(pcx[8]));
 
    w_elm = & glb_ds1edit.win_edit.w_preview;
    w_elm->border = get_rle_sprite(tmp_bmp);
    w_elm->b_x0 = x0;
    w_elm->b_y0 = y0;
 
-   for (y=0; y<h; y += pcx[4]->h)
-      for (x=0; x<w; x += pcx[4]->w)
-         blit(pcx[4], tmp_bmp, 0, 0, x, y, pcx[4]->w, pcx[4]->h);
+   for (y=0; y<h; y += al_get_bitmap_height(pcx[4]))
+      for (x=0; x<w; x += al_get_bitmap_width(pcx[4]))
+         a5_blit(pcx[4], tmp_bmp, 0, 0, x, y, al_get_bitmap_width(pcx[4]), al_get_bitmap_height(pcx[4]));
 
-   w_elm->inside = create_bitmap(w - pcx[3]->w * 2, h - pcx[1]->h * 2);
-   blit(tmp_bmp, w_elm->inside, pcx[3]->w, pcx[1]->h, 0, 0, w - pcx[3]->w * 2, h - pcx[1]->h * 2);
-   w_elm->i_x0 = w_elm->b_x0 + pcx[3]->w;
-   w_elm->i_y0 = w_elm->b_y0 + pcx[1]->h;
+   w_elm->inside = al_create_bitmap(w - al_get_bitmap_width(pcx[3]) * 2, h - al_get_bitmap_height(pcx[1]) * 2);
+   a5_blit(tmp_bmp, w_elm->inside, al_get_bitmap_width(pcx[3]), al_get_bitmap_height(pcx[1]), 0, 0, w - al_get_bitmap_width(pcx[3]) * 2, h - al_get_bitmap_height(pcx[1]) * 2);
+   w_elm->i_x0 = w_elm->b_x0 + al_get_bitmap_width(pcx[3]);
+   w_elm->i_y0 = w_elm->b_y0 + al_get_bitmap_height(pcx[1]);
    
    for (i=0; i<9; i++)
-      destroy_bitmap(pcx[i]);
-   destroy_bitmap(tmp_bmp);
+      al_destroy_bitmap(pcx[i]);
+   al_destroy_bitmap(tmp_bmp);
    
 
    // make tiles window
@@ -655,50 +661,50 @@ void wedit_read_pcx(void)
    {
       fprintf(stderr, ".");
       fflush(stderr);
-      sprintf(filename, "pcx/tiles/%s.pcx", pcx_name[i]);
-      pcx[i] = load_pcx(filename, glb_ds1edit.dummy_pal);
+      sprintf(filename, "pcx/tiles/%s.png", pcx_name[i]);
+      pcx[i] = al_load_bitmap(filename);
    }
-   x0 = w_elm->b_x0 + w_elm->border->w + my_border;
+   x0 = w_elm->b_x0 + al_get_bitmap_width(w_elm->border) + my_border;
    y0 = 119;
    w = glb_config.screen.width  - x0 - my_border;
    h = glb_config.screen.height - y0 - my_border;
-   tmp_bmp = create_bitmap(w, h);
-   clear(tmp_bmp);
+   tmp_bmp = al_create_bitmap(w, h);
+   a5_clear(tmp_bmp);
 
-   for (x=0; x<w; x += pcx[1]->w)
-      blit(pcx[1], tmp_bmp, 0, 0, x, 0, pcx[1]->w, pcx[1]->h);
+   for (x=0; x<w; x += al_get_bitmap_width(pcx[1]))
+      a5_blit(pcx[1], tmp_bmp, 0, 0, x, 0, al_get_bitmap_width(pcx[1]), al_get_bitmap_height(pcx[1]));
       
-   for (x=0; x<w; x += pcx[7]->w)
-      blit(pcx[7], tmp_bmp, 0, 0, x, h - pcx[7]->h, pcx[7]->w, pcx[7]->h);
+   for (x=0; x<w; x += al_get_bitmap_width(pcx[7]))
+      a5_blit(pcx[7], tmp_bmp, 0, 0, x, h - al_get_bitmap_height(pcx[7]), al_get_bitmap_width(pcx[7]), al_get_bitmap_height(pcx[7]));
       
-   for (y=0; y<h; y += pcx[3]->h)
-      blit(pcx[3], tmp_bmp, 0, 0, 0, y, pcx[3]->w, pcx[3]->h);
+   for (y=0; y<h; y += al_get_bitmap_height(pcx[3]))
+      a5_blit(pcx[3], tmp_bmp, 0, 0, 0, y, al_get_bitmap_width(pcx[3]), al_get_bitmap_height(pcx[3]));
       
-   for (y=0; y<h; y += pcx[5]->h)
-      blit(pcx[5], tmp_bmp, 0, 0, w-pcx[5]->w, y, pcx[5]->w, pcx[5]->h);
+   for (y=0; y<h; y += al_get_bitmap_height(pcx[5]))
+      a5_blit(pcx[5], tmp_bmp, 0, 0, w-al_get_bitmap_width(pcx[5]), y, al_get_bitmap_width(pcx[5]), al_get_bitmap_height(pcx[5]));
 
-   blit(pcx[0], tmp_bmp, 0, 0, 0,                     0, pcx[0]->w, pcx[0]->h);
-   blit(pcx[2], tmp_bmp, 0, 0, w-pcx[2]->w,           0, pcx[2]->w, pcx[2]->h);
-   blit(pcx[6], tmp_bmp, 0, 0, 0,           h-pcx[6]->h, pcx[6]->w, pcx[6]->h);
-   blit(pcx[8], tmp_bmp, 0, 0, w-pcx[8]->w, h-pcx[8]->h, pcx[8]->w, pcx[8]->h);
+   a5_blit(pcx[0], tmp_bmp, 0, 0, 0,                     0, al_get_bitmap_width(pcx[0]), al_get_bitmap_height(pcx[0]));
+   a5_blit(pcx[2], tmp_bmp, 0, 0, w-al_get_bitmap_width(pcx[2]),           0, al_get_bitmap_width(pcx[2]), al_get_bitmap_height(pcx[2]));
+   a5_blit(pcx[6], tmp_bmp, 0, 0, 0,           h-al_get_bitmap_height(pcx[6]), al_get_bitmap_width(pcx[6]), al_get_bitmap_height(pcx[6]));
+   a5_blit(pcx[8], tmp_bmp, 0, 0, w-al_get_bitmap_width(pcx[8]), h-al_get_bitmap_height(pcx[8]), al_get_bitmap_width(pcx[8]), al_get_bitmap_height(pcx[8]));
 
    w_elm = & glb_ds1edit.win_edit.w_tiles;
    w_elm->border = get_rle_sprite(tmp_bmp);
    w_elm->b_x0 = x0;
    w_elm->b_y0 = y0;
 
-   for (y=0; y<h; y += pcx[4]->h)
-      for (x=0; x<w; x += pcx[4]->w)
-         blit(pcx[4], tmp_bmp, 0, 0, x, y, pcx[4]->w, pcx[4]->h);
+   for (y=0; y<h; y += al_get_bitmap_height(pcx[4]))
+      for (x=0; x<w; x += al_get_bitmap_width(pcx[4]))
+         a5_blit(pcx[4], tmp_bmp, 0, 0, x, y, al_get_bitmap_width(pcx[4]), al_get_bitmap_height(pcx[4]));
 
-   w_elm->inside = create_bitmap(w - pcx[3]->w * 2, h - pcx[1]->h * 2);
-   blit(tmp_bmp, w_elm->inside, pcx[3]->w, pcx[1]->h, 0, 0, w - pcx[3]->w * 2, h - pcx[1]->h * 2);
-   w_elm->i_x0 = w_elm->b_x0 + pcx[3]->w;
-   w_elm->i_y0 = w_elm->b_y0 + pcx[1]->h;
+   w_elm->inside = al_create_bitmap(w - al_get_bitmap_width(pcx[3]) * 2, h - al_get_bitmap_height(pcx[1]) * 2);
+   a5_blit(tmp_bmp, w_elm->inside, al_get_bitmap_width(pcx[3]), al_get_bitmap_height(pcx[1]), 0, 0, w - al_get_bitmap_width(pcx[3]) * 2, h - al_get_bitmap_height(pcx[1]) * 2);
+   w_elm->i_x0 = w_elm->b_x0 + al_get_bitmap_width(pcx[3]);
+   w_elm->i_y0 = w_elm->b_y0 + al_get_bitmap_height(pcx[1]);
    
    for (i=0; i<9; i++)
-      destroy_bitmap(pcx[i]);
-   destroy_bitmap(tmp_bmp);
+      al_destroy_bitmap(pcx[i]);
+   al_destroy_bitmap(tmp_bmp);
 
    fprintf(stderr, "\n");
    fflush(stderr);
@@ -721,7 +727,7 @@ void wedit_free(void)
       {
          if (b->bmp[n] != NULL)
          {
-            destroy_bitmap(b->bmp[n]);
+            al_destroy_bitmap(b->bmp[n]);
             b->bmp[n] = NULL;
          }
       }
@@ -735,7 +741,7 @@ void wedit_free(void)
       {
          if (t->bmp[n] != NULL)
          {
-            destroy_bitmap(t->bmp[n]);
+            al_destroy_bitmap(t->bmp[n]);
             t->bmp[n] = NULL;
          }
       }
@@ -760,7 +766,7 @@ void wedit_free(void)
       }
       if (w_elm->inside != NULL)
       {
-         destroy_bitmap(w_elm->inside);
+         al_destroy_bitmap(w_elm->inside);
         w_elm->inside = NULL;
       }
    }
@@ -780,8 +786,8 @@ void wedit_draw_button(BUT_TYP_E b_num)
    x2 = x1 + b->w - 1;
    y1 = b->y0;
    y2 = y1 + b->h - 1;
-   rectfill(glb_ds1edit.screen_buff, x1, y1, x2, y2, 0);
-   draw_sprite(glb_ds1edit.screen_buff, b->bmp[b->state], b->x0, b->y0);
+   a5_rectfill(glb_ds1edit.screen_buff, x1, y1, x2, y2, 0);
+   a5_draw_sprite(glb_ds1edit.screen_buff, b->bmp[b->state], b->x0, b->y0);
 }
 
 
@@ -798,8 +804,8 @@ void wedit_draw_tab(BLK_TYP_E t_num)
    x2 = x1 + t->w - 1;
    y1 = t->y0;
    y2 = y1 + t->h - 1;
-   rectfill(glb_ds1edit.screen_buff, x1, y1, x2, y2, 0);
-   draw_sprite(glb_ds1edit.screen_buff, t->bmp[t->state], t->x0, t->y0);
+   a5_rectfill(glb_ds1edit.screen_buff, x1, y1, x2, y2, 0);
+   a5_draw_sprite(glb_ds1edit.screen_buff, t->bmp[t->state], t->x0, t->y0);
 }
 
 
@@ -853,7 +859,7 @@ void wedit_tiles_free(void)
 // make the tiles tables for each tab
 void wedit_tiles_make(int ds1_idx)
 {
-   BITMAP        * tmp_bmp;
+   ALLEGRO_BITMAP * tmp_bmp;
    BLOCK_TABLE_S * bt_ptr = glb_ds1[ds1_idx].block_table;
    WIN_EDIT_S    * w = & glb_ds1edit.win_edit;
    MAIN_LINE_S   * m_ptr;
@@ -1028,8 +1034,8 @@ void wedit_tiles_make(int ds1_idx)
                      old_s = s;
 
                      // compare height
-                     if (tmp_bmp->h > max_height)
-                        max_height = tmp_bmp->h;
+                     if (al_get_bitmap_height(tmp_bmp) > max_height)
+                        max_height = al_get_bitmap_height(tmp_bmp);
                   }
                   else
                   {
@@ -1164,7 +1170,7 @@ void wedit_debug_tab_tiles(int ds1_idx, BLK_TYP_E t, int x0, int y0, int bt_sel)
    MAIN_LINE_S   * m_ptr;
    SUB_ELM_S     * s_ptr;
    BLOCK_TABLE_S * bt_ptr = glb_ds1[ds1_idx].block_table;
-   BITMAP        * tmp_bmp;
+   ALLEGRO_BITMAP * tmp_bmp;
    int           m, i, bt, dx, bx, x1, y1, x2, y2, c;
 
    // draw the tiles
@@ -1180,7 +1186,7 @@ printf("\nTYPE = %3i\n", t);
          x1 = s_ptr->x1 - x0;
          x2 = s_ptr->x2 - x0;
          printf("(x1, x2)=(%+5i, %+5i) ", x1, x2);
-         if ((x1 > -160) && (x1 < w->tmp_edit->w))
+         if ((x1 > -160) && (x1 < al_get_bitmap_width(w->tmp_edit)))
          {
             printf("OK ", m);
             bt = s_ptr->bt_idx_tab;
@@ -1188,10 +1194,10 @@ printf("\nTYPE = %3i\n", t);
             bx = bt_ptr[bt].block_idx;
             tmp_bmp = * (glb_dt1[dx].block_zoom[ZM_11] + bx);
             y1 = s_ptr->y1 - y0;
-            y2 = y1 + tmp_bmp->h - 1;
+            y2 = y1 + al_get_bitmap_height(tmp_bmp) - 1;
             printf("(bt dx bx tmp_bmp y1 y2)=(%3i %3i %3i %p %+5i %+5i) ",
                bt, dx, bx, tmp_bmp, y1, y2);
-            if (((y1 + m_ptr->max_height - 1) < 0) || (y1 >= w->tmp_edit->h))
+            if (((y1 + m_ptr->max_height - 1) < 0) || (y1 >= al_get_bitmap_height(w->tmp_edit)))
             {
                // nothing to draw
                printf("[NO draw] ", m);
@@ -1217,7 +1223,7 @@ void wedit_tab_tiles(int ds1_idx, BLK_TYP_E t, int x0, int y0, int bt_sel,
    MAIN_LINE_S   * m_ptr;
    SUB_ELM_S     * s_ptr;
    BLOCK_TABLE_S * bt_ptr = glb_ds1[ds1_idx].block_table;
-   BITMAP        * tmp_bmp;
+   ALLEGRO_BITMAP * tmp_bmp;
    int           m, i, bt, dx, bx, x1, y1, x2, y2, c, len, dt1_idx;
    char          * dt1name;
 
@@ -1225,10 +1231,10 @@ void wedit_tab_tiles(int ds1_idx, BLK_TYP_E t, int x0, int y0, int bt_sel,
 // wedit_debug_tab_tiles(ds1_idx, t, x0, y0, bt_sel);
 
    // clear the background
-   blit(wt->inside, w->tmp_edit, 0, 0, 0, 0, wt->inside->w, wt->inside->h);
+   a5_blit(wt->inside, w->tmp_edit, 0, 0, 0, 0, al_get_bitmap_width(wt->inside), al_get_bitmap_height(wt->inside));
 
    // draw the tiles
-   text_mode(-1);
+   a5_text_mode(-1);
    for (m=0; m < w->main_line_num[t]; m++)
    {
       m_ptr = w->main_line_tab[t] + m;
@@ -1237,7 +1243,7 @@ void wedit_tab_tiles(int ds1_idx, BLK_TYP_E t, int x0, int y0, int bt_sel,
       s_ptr = m_ptr->sub_elm;
       x1 = s_ptr->x1 - x0;
       y1 = s_ptr->y1 - y0 + (m_ptr->max_height / 2);
-      if ((y1 >= -8) && (y1 < w->tmp_edit->h) && (x1 > 0))
+      if ((y1 >= -8) && (y1 < al_get_bitmap_height(w->tmp_edit)) && (x1 > 0))
       {
          dt1_idx = bt_ptr[s_ptr->bt_idx_tab].dt1_idx;
          if (dt1_idx != -1)
@@ -1245,8 +1251,8 @@ void wedit_tab_tiles(int ds1_idx, BLK_TYP_E t, int x0, int y0, int bt_sel,
             dt1name = glb_dt1[dt1_idx].name;
             len = strlen(dt1name) + 2;
             x1 -= 8 * len;
-            textprintf(w->tmp_edit, font, x1+1, y1+1,   0, "%s", dt1name);
-            textprintf(w->tmp_edit, font, x1,   y1,   255, "%s", dt1name);
+            a5_textprintf(w->tmp_edit, font, x1+1, y1+1,   0, "%s", dt1name);
+            a5_textprintf(w->tmp_edit, font, x1,   y1,   255, "%s", dt1name);
          }
       }
       
@@ -1256,7 +1262,7 @@ void wedit_tab_tiles(int ds1_idx, BLK_TYP_E t, int x0, int y0, int bt_sel,
          s_ptr = m_ptr->sub_elm + i;
          x1 = s_ptr->x1 - x0;
          x2 = s_ptr->x2 - x0;
-         if ((x1 > -160) && (x1 < w->tmp_edit->w))
+         if ((x1 > -160) && (x1 < al_get_bitmap_width(w->tmp_edit)))
          {
             bt = s_ptr->bt_idx_tab;
             dx = bt_ptr[bt].dt1_idx;
@@ -1265,8 +1271,8 @@ void wedit_tab_tiles(int ds1_idx, BLK_TYP_E t, int x0, int y0, int bt_sel,
             if (tmp_bmp != NULL)
             {
                y1 = s_ptr->y1 - y0;
-               y2 = y1 + tmp_bmp->h - 1;
-               if (((y1 + m_ptr->max_height - 1) < 0) || (y1 >= w->tmp_edit->h))
+               y2 = y1 + al_get_bitmap_height(tmp_bmp) - 1;
+               if (((y1 + m_ptr->max_height - 1) < 0) || (y1 >= al_get_bitmap_height(w->tmp_edit)))
                {
                   // nothing to draw
                   s_ptr->is_draw = FALSE;
@@ -1274,7 +1280,7 @@ void wedit_tab_tiles(int ds1_idx, BLK_TYP_E t, int x0, int y0, int bt_sel,
                else
                {
                   s_ptr->is_draw = TRUE;
-                  rect(w->tmp_edit, x1-1, y1-1, x2+1, y1+m_ptr->max_height+1+10, 255);
+                  a5_rect(w->tmp_edit, x1-1, y1-1, x2+1, y1+m_ptr->max_height+1+10, 255);
                   c = 22;
                   if (bt_sel == bt)
                      c = 119;
@@ -1282,30 +1288,30 @@ void wedit_tab_tiles(int ds1_idx, BLK_TYP_E t, int x0, int y0, int bt_sel,
                      c = 255;
                   if (t == BT_WALL_DOWN)
                   {
-                     rectfill(w->tmp_edit, x1, y1, x2, y2+9, c);
-                     draw_sprite(w->tmp_edit, tmp_bmp, x1, y1);
+                     a5_rectfill(w->tmp_edit, x1, y1, x2, y2+9, c);
+                     a5_draw_sprite(w->tmp_edit, tmp_bmp, x1, y1);
                   }
                   else
                   {
-                     rectfill(w->tmp_edit,
-                        x1, y1 + m_ptr->max_height - tmp_bmp->h,
+                     a5_rectfill(w->tmp_edit,
+                        x1, y1 + m_ptr->max_height - al_get_bitmap_height(tmp_bmp),
                         x2, y1 + m_ptr->max_height + 10, c);
-                     draw_sprite(w->tmp_edit, tmp_bmp, x1,
-                        y1 + m_ptr->max_height - tmp_bmp->h);
+                     a5_draw_sprite(w->tmp_edit, tmp_bmp, x1,
+                        y1 + m_ptr->max_height - al_get_bitmap_height(tmp_bmp));
                   }
                   if (t == BT_WALL_DOWN)
                   {
-                     textprintf(w->tmp_edit, font, x1 +   2, y1 + 2,  96, "%2i", bt_ptr[bt].main_index);
-                     textprintf(w->tmp_edit, font, x1 +  26, y1 + 2,  96, "%2i", bt_ptr[bt].orientation);
-                     textprintf(w->tmp_edit, font, x1 +  82, y1 + 2, 158, "%2i", bt_ptr[bt].sub_index);
-                     textprintf(w->tmp_edit, font, x1 + 138, y1 + 2, 134, "%2i", bt_ptr[bt].rarity);
+                     a5_textprintf(w->tmp_edit, font, x1 +   2, y1 + 2,  96, "%2i", bt_ptr[bt].main_index);
+                     a5_textprintf(w->tmp_edit, font, x1 +  26, y1 + 2,  96, "%2i", bt_ptr[bt].orientation);
+                     a5_textprintf(w->tmp_edit, font, x1 +  82, y1 + 2, 158, "%2i", bt_ptr[bt].sub_index);
+                     a5_textprintf(w->tmp_edit, font, x1 + 138, y1 + 2, 134, "%2i", bt_ptr[bt].rarity);
                   }
                   else
                   {
-                     textprintf(w->tmp_edit, font, x1 +   2, y1 + m_ptr->max_height + 2,  96, "%2i", bt_ptr[bt].main_index);
-                     textprintf(w->tmp_edit, font, x1 +  26, y1 + m_ptr->max_height + 2,  96, "%2i", bt_ptr[bt].orientation);
-                     textprintf(w->tmp_edit, font, x1 +  82, y1 + m_ptr->max_height + 2, 158, "%2i", bt_ptr[bt].sub_index);
-                     textprintf(w->tmp_edit, font, x1 + 138, y1 + m_ptr->max_height + 2, 134, "%2i", bt_ptr[bt].rarity);
+                     a5_textprintf(w->tmp_edit, font, x1 +   2, y1 + m_ptr->max_height + 2,  96, "%2i", bt_ptr[bt].main_index);
+                     a5_textprintf(w->tmp_edit, font, x1 +  26, y1 + m_ptr->max_height + 2,  96, "%2i", bt_ptr[bt].orientation);
+                     a5_textprintf(w->tmp_edit, font, x1 +  82, y1 + m_ptr->max_height + 2, 158, "%2i", bt_ptr[bt].sub_index);
+                     a5_textprintf(w->tmp_edit, font, x1 + 138, y1 + m_ptr->max_height + 2, 134, "%2i", bt_ptr[bt].rarity);
                   }
                }
             }
@@ -1350,7 +1356,7 @@ void wedit_jump(int ds1_idx, int bt_idx, int * xn, int * yn)
             if (t == BT_WALL_DOWN)
                * yn = s_ptr->y1 - glb_config.scroll.edit.y;
             else
-               * yn = s_ptr->y2 + glb_config.scroll.edit.y - wt->inside->h;
+               * yn = s_ptr->y2 + glb_config.scroll.edit.y - al_get_bitmap_height(wt->inside);
             return;
          }
       }
@@ -1372,7 +1378,7 @@ void wedit_mouse_tile(int mx, int my, int x0, int y0, int t, int * m_idx, int * 
    // mouse inside the tile window ?
    x = mx - wt->i_x0;
    y = my - wt->i_y0;
-   if ((x >= 0) && (x < wt->inside->w) && (y >= 0) && (y < wt->inside->h))
+   if ((x >= 0) && (x < al_get_bitmap_width(wt->inside)) && (y >= 0) && (y < al_get_bitmap_height(wt->inside)))
    {
       // yes, so search the tile which is under the mouse
       x += x0;
@@ -1624,7 +1630,7 @@ void wedit_test(int ds1_idx, int tx, int ty)
 
    wedit_save_tile(ds1_idx, tx, ty, save_floor, save_wall, save_shadow);
    wedit_tiles_make(ds1_idx);
-   position_mouse(200, 70);
+   al_set_mouse_xy(a5_display, 200, 70);
    
    w->button[BU_WALL1].active  = 0 < d->wall_num ? TRUE : FALSE;
    w->button[BU_WALL2].active  = 1 < d->wall_num ? TRUE : FALSE;
@@ -1709,11 +1715,11 @@ void wedit_test(int ds1_idx, int tx, int ty)
    b->state          = BS_OFF;
    b->tab_have_tiles = b->active = wedit_tab_have(ds1_idx, BT_SPECIAL);
 
-   set_color_depth(8);
+/* set_color_depth removed */
 
-   w->tmp_edit = create_bitmap(w->w_tiles.inside->w, w->w_tiles.inside->h);
+   w->tmp_edit = al_create_bitmap(al_get_bitmap_width(w->w_tiles.inside), al_get_bitmap_height(w->w_tiles.inside));
 
-   set_color_depth(glb_config.screen.depth);
+/* set_color_depth removed */
 
    if (bt_sel >= 1)
    {
@@ -1749,26 +1755,26 @@ void wedit_test(int ds1_idx, int tx, int ty)
    // main loop
    while ( ! done)
    {
-      mx = mouse_x;
-      my = mouse_y;
-      mb = mouse_b;
+      mx = a5_mouse_x;
+      my = a5_mouse_y;
+      mb = a5_mouse_b;
 
       // always redraw whole screen
 
-      clear_to_color(glb_ds1edit.screen_buff, 27);
+      a5_clear_to_color(glb_ds1edit.screen_buff, 27);
       for (i = BU_NULL+1; i<BU_MAX; i++)
          wedit_draw_button(i);
 
       if (current_button != BU_NULL)
       {
          b = & glb_ds1edit.win_edit.button[current_button];
-         rect(glb_ds1edit.screen_buff,
+         a5_rect(glb_ds1edit.screen_buff,
             b->x0-2, b->y0-2, b->x0+b->w+1, b->y0+b->h+1, 133); // medium green
       }
 
       w_elm = & glb_ds1edit.win_edit.w_preview;
       draw_rle_sprite(glb_ds1edit.screen_buff, w_elm->border, w_elm->b_x0, w_elm->b_y0);
-      blit(w_elm->inside, glb_ds1edit.screen_buff, 0, 0, w_elm->i_x0, w_elm->i_y0, w_elm->inside->w, w_elm->inside->h);
+      a5_blit(w_elm->inside, glb_ds1edit.screen_buff, 0, 0, w_elm->i_x0, w_elm->i_y0, al_get_bitmap_width(w_elm->inside), al_get_bitmap_height(w_elm->inside));
 
       w_elm = & glb_ds1edit.win_edit.w_tiles;
       draw_rle_sprite(glb_ds1edit.screen_buff, w_elm->border, w_elm->b_x0, w_elm->b_y0);
@@ -1787,8 +1793,8 @@ void wedit_test(int ds1_idx, int tx, int ty)
             wedit_draw_tab(i);
       }
 
-      blit(w->tmp_edit, glb_ds1edit.screen_buff, 0, 0,
-            w_elm->i_x0, w_elm->i_y0, w->tmp_edit->w, w->tmp_edit->h);
+      a5_blit(w->tmp_edit, glb_ds1edit.screen_buff, 0, 0,
+            w_elm->i_x0, w_elm->i_y0, al_get_bitmap_width(w->tmp_edit), al_get_bitmap_height(w->tmp_edit));
 
       misc_draw_screen(mx, my);
 
@@ -1796,42 +1802,40 @@ void wedit_test(int ds1_idx, int tx, int ty)
       wedit_mouse_tile(mx, my, xn, yn, current_type, & m_idx, & s_idx);
 
       // scroll
-      if (key[KEY_UP]    || my == 0)                        yn -= glb_config.scroll.edit.y;
-      if (key[KEY_DOWN]  || my == glb_config.screen.height - 1) yn += glb_config.scroll.edit.y;
-      if (key[KEY_LEFT]  || mx == 0)                        xn -= glb_config.scroll.edit.x;
-      if (key[KEY_RIGHT] || mx == glb_config.screen.width - 1)  xn += glb_config.scroll.edit.x;
-      if (key[KEY_HOME])  xn = 0;
-      if (key[KEY_PGUP])
+      if (key_pressed(KEY_UP)    || my == 0)                        yn -= glb_config.scroll.edit.y;
+      if (key_pressed(KEY_DOWN)  || my == glb_config.screen.height - 1) yn += glb_config.scroll.edit.y;
+      if (key_pressed(KEY_LEFT)  || mx == 0)                        xn -= glb_config.scroll.edit.x;
+      if (key_pressed(KEY_RIGHT) || mx == glb_config.screen.width - 1)  xn += glb_config.scroll.edit.x;
+      if (key_pressed(KEY_HOME))  xn = 0;
+      if (key_pressed(KEY_PGUP))
       {
-         if (key[KEY_LCONTROL] || key[KEY_RCONTROL])
-            xn -= w->tmp_edit->w;
+         if (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
+            xn -= al_get_bitmap_width(w->tmp_edit);
          else
-            yn -= w->tmp_edit->h;
+            yn -= al_get_bitmap_height(w->tmp_edit);
          rest(80);
       }
-      if (key[KEY_PGDN])
+      if (key_pressed(KEY_PGDN))
       {
-         if (key[KEY_LCONTROL] || key[KEY_RCONTROL])
-            xn += w->tmp_edit->w;
+         if (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
+            xn += al_get_bitmap_width(w->tmp_edit);
          else
-            yn += w->tmp_edit->h;
+            yn += al_get_bitmap_height(w->tmp_edit);
          rest(80);
       }
 
       // special tiles layer
-      if (key[KEY_F9])
+      if (key_pressed(KEY_F9))
       {
-         while(key[KEY_F9])
-            ;
+         while(key_pressed(KEY_F9)) { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
          glb_ds1[ds1_idx].special_layer_mask = 1 - glb_ds1[ds1_idx].special_layer_mask;
       }
       
       // shadow mode
-      if (key[KEY_F11])
+      if (key_pressed(KEY_F11))
       {
-         while(key[KEY_F11])
-            ;
-         if (key[KEY_LSHIFT] || key[KEY_RSHIFT])
+         while(key_pressed(KEY_F11)) { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+         if (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT))
          {
             glb_ds1[ds1_idx].shadow_layer_mask[0]--;
             if (glb_ds1[ds1_idx].shadow_layer_mask[0] < 0)
@@ -1846,16 +1850,16 @@ void wedit_test(int ds1_idx, int tx, int ty)
       }
 
       // gamma correction
-      if (key[KEY_F12])
+      if (key_pressed(KEY_F12))
       {
-         if (key[KEY_LSHIFT] || key[KEY_RSHIFT])
+         if (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT))
          {
             if (glb_ds1edit.cur_gamma > GC_060)
             {
                rest(80);
                glb_ds1edit.cur_gamma--;
                misc_update_pal_with_gamma();
-               set_palette(glb_ds1edit.vga_pal[glb_ds1[ds1_idx].act - 1]);
+               a5_current_palette = &glb_ds1edit.vga_pal[glb_ds1[ds1_idx].act - 1];
             }
          }
          else
@@ -1865,35 +1869,34 @@ void wedit_test(int ds1_idx, int tx, int ty)
                rest(80);
                glb_ds1edit.cur_gamma++;
                misc_update_pal_with_gamma();
-               set_palette(glb_ds1edit.vga_pal[glb_ds1[ds1_idx].act - 1]);
+               a5_current_palette = &glb_ds1edit.vga_pal[glb_ds1[ds1_idx].act - 1];
             }
          }
       }
 
       // screenshot
-      if (key[KEY_P])
+      if (key_pressed(KEY_P))
       {
-         sprintf(tmp, "screenshot-%05i.pcx", glb_ds1edit.screenshot_num);
-         while (file_exists(tmp, -1, NULL))
+         sprintf(tmp, "screenshot-%05i.png", glb_ds1edit.screenshot_num);
+         while (a5_file_exists(tmp))
          {
             glb_ds1edit.screenshot_num++;
-            sprintf(tmp, "screenshot-%05i.pcx", glb_ds1edit.screenshot_num);
+            sprintf(tmp, "screenshot-%05i.png", glb_ds1edit.screenshot_num);
          }
 
          // draw the mouse cursor onto the buffer
-         draw_sprite(
+         a5_draw_sprite(
             glb_ds1edit.screen_buff,
             glb_ds1edit.mouse_cursor[glb_ds1edit.mode],
-            mouse_x - 1,
-            mouse_y - 1
+            a5_mouse_x - 1,
+            a5_mouse_y - 1
          );
 
          // save the buffer
-         save_pcx(tmp, glb_ds1edit.screen_buff, glb_ds1edit.vga_pal[glb_ds1[ds1_idx].act-1]);
+         al_save_bitmap(tmp, glb_ds1edit.screen_buff);
          misc_pcx_put_d2_palette(tmp, glb_ds1[ds1_idx].act-1);
          glb_ds1edit.screenshot_num++;
-         while (key[KEY_P])
-            ;
+         while (key_pressed(KEY_P)) { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
       }
 
       // focus for buttons
@@ -1996,13 +1999,12 @@ void wedit_test(int ds1_idx, int tx, int ty)
       // when no mouse button
       if (mb == 0)
       {
-         if (key[KEY_ENTER] || key[KEY_ENTER_PAD])
+         if (key_pressed(KEY_ENTER) || key_pressed(KEY_ENTER_PAD))
          {
             // keep changes
             done = TRUE;
             wedit_keep_tile(ds1_idx, tx, ty, save_floor, save_wall, save_shadow);
-            while (key[KEY_ENTER] || key[KEY_ENTER_PAD])
-            {}
+            while (key_pressed(KEY_ENTER) || key_pressed(KEY_ENTER_PAD)) { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
             focus_can_change = TRUE;
          }
 
@@ -2149,7 +2151,7 @@ void wedit_test(int ds1_idx, int tx, int ty)
       old_yn = yn;
    }
 
-   destroy_bitmap(w->tmp_edit);
+   al_destroy_bitmap(w->tmp_edit);
    w->tmp_edit = NULL;
    wedit_tiles_free();
 }

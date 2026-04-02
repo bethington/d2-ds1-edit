@@ -201,7 +201,7 @@ void editpath_enter_action(int ds1_idx, long * paction)
    int             x1, y1, w, h, x2, y2,
                    tx1, ty1, tx2, ty2, tw, th,
                    done, add_x, nb_char;
-   BITMAP          * bmp;
+   ALLEGRO_BITMAP  * bmp;
    long            lvalue = 0;
    char            svalue[30];
 
@@ -225,46 +225,46 @@ void editpath_enter_action(int ds1_idx, long * paction)
    nb_char = strlen(ltoa(lvalue, svalue, 10));
    
    // copy background
-   bmp = create_bitmap(w, h);
-   blit(glb_ds1edit.screen_buff, bmp, x1, y1, 0, 0, w, h);
+   bmp = al_create_bitmap(w, h);
+   a5_blit(glb_ds1edit.screen_buff, bmp, x1, y1, 0, 0, w, h);
 
    // draw window
-   rectfill(glb_ds1edit.screen_buff, x1, y1, x2, y2, pwin->c_black);
-   rect(glb_ds1edit.screen_buff, x1, y1, x2, y2, pwin->c_white);
+   a5_rectfill(glb_ds1edit.screen_buff, x1, y1, x2, y2, pwin->c_black);
+   a5_rect(glb_ds1edit.screen_buff, x1, y1, x2, y2, pwin->c_white);
 
    // draw title
-   rectfill(glb_ds1edit.screen_buff, x1, y1, x2, y1 + 18, pwin->c_green);
-   textout(glb_ds1edit.screen_buff, font, "Type new ACTION value", x1 + 8, y1+6, pwin->c_black);
-   rect(glb_ds1edit.screen_buff, x1, y1, x2, y1 + 18, pwin->c_white);
+   a5_rectfill(glb_ds1edit.screen_buff, x1, y1, x2, y1 + 18, pwin->c_green);
+   a5_textout(glb_ds1edit.screen_buff, font, "Type new ACTION value", x1 + 8, y1+6, pwin->c_black);
+   a5_rect(glb_ds1edit.screen_buff, x1, y1, x2, y1 + 18, pwin->c_white);
 
    // main loop
    done = FALSE;
    while ( ! done)
    {
-      if (key[KEY_ENTER] || key[KEY_ENTER_PAD])
+      if (key_pressed(KEY_ENTER) || key_pressed(KEY_ENTER_PAD))
       {
-         while (key[KEY_ENTER] || key[KEY_ENTER_PAD])
+         while (key_pressed(KEY_ENTER) || key_pressed(KEY_ENTER_PAD))
          {}
          done      = TRUE;
          * paction = lvalue;
       }
-      else if (key[KEY_ESC])
+      else if (key_pressed(KEY_ESC))
       {
-         while (key[KEY_ESC])
+         while (key_pressed(KEY_ESC))
          {}
          done = TRUE;
       }
-      else if (key[KEY_MINUS] || key[KEY_MINUS_PAD] || key[KEY_EQUALS])
+      else if (key_pressed(KEY_MINUS) || key_pressed(KEY_MINUS_PAD) || key_pressed(KEY_EQUALS))
       {
-         while (key[KEY_MINUS] || key[KEY_MINUS_PAD] || key[KEY_EQUALS])
+         while (key_pressed(KEY_MINUS) || key_pressed(KEY_MINUS_PAD) || key_pressed(KEY_EQUALS))
          {}
          lvalue = -lvalue;
       }
       else if ((lvalue >= -99999999) && (lvalue <= 99999999))
       {
-         if (key[KEY_1] || key[KEY_1_PAD])
+         if (key_pressed(KEY_1) || key_pressed(KEY_1_PAD))
          {
-            while (key[KEY_1] || key[KEY_1_PAD])
+            while (key_pressed(KEY_1) || key_pressed(KEY_1_PAD))
             {}
             lvalue *= 10;
             if (lvalue < 0)
@@ -272,9 +272,9 @@ void editpath_enter_action(int ds1_idx, long * paction)
             else
                lvalue += 1;
          }
-         else if (key[KEY_2] || key[KEY_2_PAD])
+         else if (key_pressed(KEY_2) || key_pressed(KEY_2_PAD))
          {
-            while (key[KEY_2] || key[KEY_2_PAD])
+            while (key_pressed(KEY_2) || key_pressed(KEY_2_PAD))
             {}
             lvalue *= 10;
             if (lvalue < 0)
@@ -282,9 +282,9 @@ void editpath_enter_action(int ds1_idx, long * paction)
             else
                lvalue += 2;
          }
-         else if (key[KEY_3] || key[KEY_3_PAD])
+         else if (key_pressed(KEY_3) || key_pressed(KEY_3_PAD))
          {
-            while (key[KEY_3] || key[KEY_3_PAD])
+            while (key_pressed(KEY_3) || key_pressed(KEY_3_PAD))
             {}
             lvalue *= 10;
             if (lvalue < 0)
@@ -292,9 +292,9 @@ void editpath_enter_action(int ds1_idx, long * paction)
             else
                lvalue += 3;
          }
-         else if (key[KEY_4] || key[KEY_4_PAD])
+         else if (key_pressed(KEY_4) || key_pressed(KEY_4_PAD))
          {
-            while (key[KEY_4] || key[KEY_4_PAD])
+            while (key_pressed(KEY_4) || key_pressed(KEY_4_PAD))
             {}
             lvalue *= 10;
             if (lvalue < 0)
@@ -302,9 +302,9 @@ void editpath_enter_action(int ds1_idx, long * paction)
             else
                lvalue += 4;
          }
-         else if (key[KEY_5] || key[KEY_5_PAD])
+         else if (key_pressed(KEY_5) || key_pressed(KEY_5_PAD))
          {
-            while (key[KEY_5] || key[KEY_5_PAD])
+            while (key_pressed(KEY_5) || key_pressed(KEY_5_PAD))
             {}
             lvalue *= 10;
             if (lvalue < 0)
@@ -312,9 +312,9 @@ void editpath_enter_action(int ds1_idx, long * paction)
             else
                lvalue += 5;
          }
-         else if (key[KEY_6] || key[KEY_6_PAD])
+         else if (key_pressed(KEY_6) || key_pressed(KEY_6_PAD))
          {
-            while (key[KEY_6] || key[KEY_6_PAD])
+            while (key_pressed(KEY_6) || key_pressed(KEY_6_PAD))
             {}
             lvalue *= 10;
             if (lvalue < 0)
@@ -322,9 +322,9 @@ void editpath_enter_action(int ds1_idx, long * paction)
             else
                lvalue += 6;
          }
-         else if (key[KEY_7] || key[KEY_7_PAD])
+         else if (key_pressed(KEY_7) || key_pressed(KEY_7_PAD))
          {
-            while (key[KEY_7] || key[KEY_7_PAD])
+            while (key_pressed(KEY_7) || key_pressed(KEY_7_PAD))
             {}
             lvalue *= 10;
             if (lvalue < 0)
@@ -332,9 +332,9 @@ void editpath_enter_action(int ds1_idx, long * paction)
             else
                lvalue += 7;
          }
-         else if (key[KEY_8] || key[KEY_8_PAD])
+         else if (key_pressed(KEY_8) || key_pressed(KEY_8_PAD))
          {
-            while (key[KEY_8] || key[KEY_8_PAD])
+            while (key_pressed(KEY_8) || key_pressed(KEY_8_PAD))
             {}
             lvalue *= 10;
             if (lvalue < 0)
@@ -342,9 +342,9 @@ void editpath_enter_action(int ds1_idx, long * paction)
             else
                lvalue += 8;
          }
-         else if (key[KEY_9] || key[KEY_9_PAD])
+         else if (key_pressed(KEY_9) || key_pressed(KEY_9_PAD))
          {
-            while (key[KEY_9] || key[KEY_9_PAD])
+            while (key_pressed(KEY_9) || key_pressed(KEY_9_PAD))
             {}
             lvalue *= 10;
             if (lvalue < 0)
@@ -352,9 +352,9 @@ void editpath_enter_action(int ds1_idx, long * paction)
             else
                lvalue += 9;
          }
-         else if (key[KEY_0] || key[KEY_0_PAD])
+         else if (key_pressed(KEY_0) || key_pressed(KEY_0_PAD))
          {
-            while (key[KEY_0] || key[KEY_0_PAD])
+            while (key_pressed(KEY_0) || key_pressed(KEY_0_PAD))
             {}
             lvalue *= 10;
             if (lvalue < 0)
@@ -367,8 +367,8 @@ void editpath_enter_action(int ds1_idx, long * paction)
       // draw user input field
       nb_char = strlen(ltoa(lvalue, svalue, 10));
       add_x = 2 + (11 - nb_char) * 8;
-      rectfill(glb_ds1edit.screen_buff, tx1, ty1, tx2, ty2, pwin->c_darkgray);
-      textprintf(glb_ds1edit.screen_buff, font,
+      a5_rectfill(glb_ds1edit.screen_buff, tx1, ty1, tx2, ty2, pwin->c_darkgray);
+      a5_textprintf(glb_ds1edit.screen_buff, font,
          tx1 + add_x,
          ty1 + 4,
          pwin->c_white,
@@ -378,18 +378,17 @@ void editpath_enter_action(int ds1_idx, long * paction)
 
       // draw screen
       if ( ! done)
-      {         
-         vsync();
-         blit(glb_ds1edit.screen_buff, screen, x1, y1, x1, y1, w, h);
+      {
+         /* vsync removed - handled in misc_draw_screen */
+         a5_blit(glb_ds1edit.screen_buff, al_get_backbuffer(a5_display), x1, y1, x1, y1, w, h);
       }
    }
 
    // restore backgpound
-   vsync();
-   blit(bmp, screen, 0, 0, x1, y1, w, h);
+   a5_blit(bmp, al_get_backbuffer(a5_display), 0, 0, x1, y1, w, h);
 
    // show_mouse(screen);
-   destroy_bitmap(bmp);
+   al_destroy_bitmap(bmp);
 }
 
 
@@ -428,8 +427,8 @@ void editpath_draw(int ds1_idx, int mx, int my, int mb, long tx, long ty)
                   if (editpath_mouse_in(ds1_idx, mx, my) == FALSE)
                   {
                      // wait until left mouse button is not pressed anymore
-                     while (mouse_b & 1)
-                     {}
+                     while (a5_mouse_b & 1)
+                     { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
                      mb = 0;
 
                      // add this sub-tile to the path list of the object
@@ -456,18 +455,18 @@ void editpath_draw(int ds1_idx, int mx, int my, int mb, long tx, long ty)
    y1 = pwin->but_y0;
    x2 = x1 + pwin->but_w;
    y2 = y1 + pwin->but_h;
-   rectfill(glb_ds1edit.screen_buff, x1, y1, x2, y2, pwin->c_black);
+   a5_rectfill(glb_ds1edit.screen_buff, x1, y1, x2, y2, pwin->c_black);
    if (editpath_mouse_cmdbut_in(ds1_idx, mx, my))
-      rect(glb_ds1edit.screen_buff, x1, y1, x2, y2, pwin->c_yellow);
+      a5_rect(glb_ds1edit.screen_buff, x1, y1, x2, y2, pwin->c_yellow);
    else
-      rect(glb_ds1edit.screen_buff, x1, y1, x2, y2, pwin->c_white);
+      a5_rect(glb_ds1edit.screen_buff, x1, y1, x2, y2, pwin->c_white);
 
    // process the command of the left click mouse
    if (mb & 1)
    {
       // wait until no mouse button is pressed anymore
-      while (mouse_b & 1)
-      {}
+      while (a5_mouse_b & 1)
+      { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
       mb = 0;
 
       // search which button to update
@@ -564,15 +563,15 @@ void editpath_draw(int ds1_idx, int mx, int my, int mb, long tx, long ty)
       }
    }
 
-   if (key[KEY_ENTER] || key[KEY_ENTER_PAD])
+   if (key_pressed(KEY_ENTER) || key_pressed(KEY_ENTER_PAD))
    {
-      while (key[KEY_ENTER] || key[KEY_ENTER_PAD])
+      while (key_pressed(KEY_ENTER) || key_pressed(KEY_ENTER_PAD))
       {}
       editpath_enter_action(ds1_idx, & pwin->curr_action);
    }
 
    // draw action value
-   textprintf(glb_ds1edit.screen_buff, font,
+   a5_textprintf(glb_ds1edit.screen_buff, font,
       pwin->x0 + 160,
       pwin->x0 + 27,
       pwin->c_gray,
@@ -596,15 +595,15 @@ void editpath_draw(int ds1_idx, int mx, int my, int mb, long tx, long ty)
 
       if ((mx >= x1) && (mx <= x2) && (my >= y1) && (my <= y2))
       {
-         rectfill(glb_ds1edit.screen_buff, x1, y1, x2, y2, pbut->col_on.bg);
-         textout(glb_ds1edit.screen_buff, font, pbut->text, xt, y1+7, pbut->col_on.fg);
-         rect(glb_ds1edit.screen_buff, x1, y1, x2, y2, pbut->col_on.border);
+         a5_rectfill(glb_ds1edit.screen_buff, x1, y1, x2, y2, pbut->col_on.bg);
+         a5_textout(glb_ds1edit.screen_buff, font, pbut->text, xt, y1+7, pbut->col_on.fg);
+         a5_rect(glb_ds1edit.screen_buff, x1, y1, x2, y2, pbut->col_on.border);
       }
       else
       {
-         rectfill(glb_ds1edit.screen_buff, x1, y1, x2, y2, pbut->col_off.bg);
-         textout(glb_ds1edit.screen_buff, font, pbut->text, xt, y1+7, pbut->col_off.fg);
-         rect(glb_ds1edit.screen_buff, x1, y1, x2, y2, pbut->col_off.border);
+         a5_rectfill(glb_ds1edit.screen_buff, x1, y1, x2, y2, pbut->col_off.bg);
+         a5_textout(glb_ds1edit.screen_buff, font, pbut->text, xt, y1+7, pbut->col_off.fg);
+         a5_rect(glb_ds1edit.screen_buff, x1, y1, x2, y2, pbut->col_off.border);
       }
    }
 
@@ -615,55 +614,55 @@ void editpath_draw(int ds1_idx, int mx, int my, int mb, long tx, long ty)
    y1 = pwin->y0;
    x2 = x1 + pwin->w;
    y2 = y1 + pwin->h;
-   rectfill(glb_ds1edit.screen_buff, x1, y1, x2, y2, pwin->c_black);
+   a5_rectfill(glb_ds1edit.screen_buff, x1, y1, x2, y2, pwin->c_black);
    if (editpath_mouse_in(ds1_idx, mx, my))
-      rect(glb_ds1edit.screen_buff, x1, y1, x2, y2, pwin->c_yellow);
+      a5_rect(glb_ds1edit.screen_buff, x1, y1, x2, y2, pwin->c_yellow);
    else
-      rect(glb_ds1edit.screen_buff, x1, y1, x2, y2, pwin->c_white);
+      a5_rect(glb_ds1edit.screen_buff, x1, y1, x2, y2, pwin->c_white);
 
    // draw labels
    pwin->c_green = makecol(0, 255, 0);
-   textout(glb_ds1edit.screen_buff, font,
+   a5_textout(glb_ds1edit.screen_buff, font,
       "Path    X    Y Action",
       x1 + 8, y1 + 10, pwin->c_green
    );
-   textout(glb_ds1edit.screen_buff, font,
+   a5_textout(glb_ds1edit.screen_buff, font,
       "---- ---- ---- ------",
       x1 + 8, y1 + 20, pwin->c_green
    );
 
 /*
-textprintf(glb_ds1edit.screen_buff, font,
+a5_textprintf(glb_ds1edit.screen_buff, font,
    pwin->x0 + 8, 400,
    pwin->c_white,
    "obj_idx   = %i",
    pwin->obj_idx
 );
-textprintf(glb_ds1edit.screen_buff, font,
+a5_textprintf(glb_ds1edit.screen_buff, font,
    pwin->x0 + 8, 415,
    pwin->c_white,
    "obj_dirty = %i",
    pwin->obj_dirty
 );
-textprintf(glb_ds1edit.screen_buff, font,
+a5_textprintf(glb_ds1edit.screen_buff, font,
    pwin->x0 + 8, 435,
    pwin->c_white,
    "OK.show     = %i",
    pwin->button[PEB_OK].show
 );
-textprintf(glb_ds1edit.screen_buff, font,
+a5_textprintf(glb_ds1edit.screen_buff, font,
    pwin->x0 + 8, 445,
    pwin->c_white,
    "CANCEL.show = %i",
    pwin->button[PEB_CANCEL].show
 );
-textprintf(glb_ds1edit.screen_buff, font,
+a5_textprintf(glb_ds1edit.screen_buff, font,
    pwin->x0 + 8, 455,
    pwin->c_white,
    "ALLNEW.show = %i",
    pwin->button[PEB_ALLNEW].show
 );
-textprintf(glb_ds1edit.screen_buff, font,
+a5_textprintf(glb_ds1edit.screen_buff, font,
    pwin->x0 + 8, 465,
    pwin->c_white,
    "STOP.show   = %i",
@@ -689,7 +688,7 @@ textprintf(glb_ds1edit.screen_buff, font,
       if (y + 10 < pwin->y0 + pwin->h)
       {
          // can be draw
-         textprintf(glb_ds1edit.screen_buff, font,
+         a5_textprintf(glb_ds1edit.screen_buff, font,
             pwin->x0 + 8, y,
             pwin->c_white,
             "%4i %4li %4li %6li",

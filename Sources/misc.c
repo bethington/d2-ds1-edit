@@ -12,33 +12,12 @@
 // make a palette from the original one, with the current gamma correction
 void misc_pal_d2_2_vga(int pal_idx)
 {
-   UBYTE r, g, b;
-   int   i, ridx;
-
-   if (glb_ds1edit.d2_pal[pal_idx] == NULL)
-   {
-      for (i=0; i<256; i++)
-      {
-         glb_ds1edit.vga_pal[pal_idx][i].r = i >> 2;
-         glb_ds1edit.vga_pal[pal_idx][i].g = i >> 2;
-         glb_ds1edit.vga_pal[pal_idx][i].b = i >> 2;
-      }
-      return;
-   }
-      
-   for (i=0; i<256; i++)
-   {
-      ridx = 4 * i;
-      r = glb_ds1edit.d2_pal[pal_idx][ridx];
-      g = glb_ds1edit.d2_pal[pal_idx][ridx + 1];
-      b = glb_ds1edit.d2_pal[pal_idx][ridx + 2];
-      r = glb_ds1edit.gamma_table[glb_ds1edit.cur_gamma][r];
-      g = glb_ds1edit.gamma_table[glb_ds1edit.cur_gamma][g];
-      b = glb_ds1edit.gamma_table[glb_ds1edit.cur_gamma][b];
-      glb_ds1edit.vga_pal[pal_idx][i].r = r >> 2;
-      glb_ds1edit.vga_pal[pal_idx][i].g = g >> 2;
-      glb_ds1edit.vga_pal[pal_idx][i].b = b >> 2;
-   }   
+   palette_d2_to_rgba(
+      glb_ds1edit.d2_pal[pal_idx],
+      glb_ds1edit.pal_size[pal_idx],
+      glb_ds1edit.gamma_table[glb_ds1edit.cur_gamma],
+      &glb_ds1edit.vga_pal[pal_idx]
+   );
 }
 
       
@@ -501,35 +480,8 @@ void misc_pcx_put_d2_palette(char * name, int pal_idx)
 
 
 // ==========================================================================
-// color map helper
-void misc_make_cmaps_helper(const PALETTE pal, int x, int y, RGB * rgb)
-{
-   if (x == COL_SHADOW)
-   {
-      // full white
-      rgb->r = 63;
-      rgb->g = 63;
-      rgb->b = 63;
-   }
-   else if (x == COL_MOUSE)
-   {
-      // half way between 2/3 of (2 * src) & 1/3 dst
-      // result is brighter & have more white
-      rgb->r = (pal[x].r + pal[y].r * 4) / 3;
-      rgb->g = (pal[x].g + pal[y].g * 4) / 3;
-      rgb->b = (pal[x].b + pal[y].b * 4) / 3;
-      if (rgb->r > 63) rgb->r = 63;
-      if (rgb->g > 63) rgb->g = 63;
-      if (rgb->b > 63) rgb->b = 63;
-   }
-   else
-   {
-      // common transparency, half way between src & dst
-      rgb->r = (pal[x].r + pal[y].r) >> 1;
-      rgb->g = (pal[x].g + pal[y].g) >> 1;
-      rgb->b = (pal[x].b + pal[y].b) >> 1;
-   }
-}
+// color map helper (no longer called directly; kept for reference)
+// The logic has been moved into palette_build_select_colormap() in palette.c.
 
 
 // ==========================================================================
@@ -537,7 +489,7 @@ void misc_make_cmaps_helper(const PALETTE pal, int x, int y, RGB * rgb)
 void misc_make_cmaps(void)
 {
    CMAP_E cm;
-   int    a, cmap_ok, i, c, start;
+   int    a, cmap_ok;
    char   tmp[100];
    FILE   * out, * in;
 
@@ -549,7 +501,7 @@ void misc_make_cmaps(void)
          fprintf(stderr, ".");
          sprintf(tmp, "%scmap%i_%i.bin", glb_ds1edit_data_dir, a, cm);
          cmap_ok = FALSE;
-         if (file_exists(tmp, -1, NULL) && (glb_ds1edit.pal_loaded[a] == TRUE))
+         if (a5_file_exists(tmp) && (glb_ds1edit.pal_loaded[a] == TRUE))
          {
             // load the colormap from disk, instead of making it
             in = fopen(tmp, "rb");
@@ -558,52 +510,43 @@ void misc_make_cmaps(void)
             else
             {
                printf("loading %s\n", tmp);
-               fread(& glb_ds1edit.cmap[cm][a], sizeof(COLOR_MAP), 1, in);
+               fread(& glb_ds1edit.cmap[cm][a], sizeof(INDEX_COLORMAP), 1, in);
                fclose(in);
                cmap_ok = TRUE;
             }
          }
-         
+
          if (cmap_ok == FALSE)
          {
             // not found or can't be open, so create it
 
             if (cm == CM_SELECT)
             {
-               // color table
-               create_color_table(& glb_ds1edit.cmap[cm][a],
-                               glb_ds1edit.vga_pal[a],
-                               misc_make_cmaps_helper,
-                               NULL);
-
+               palette_build_select_colormap(
+                  &glb_ds1edit.vga_pal[a],
+                  &glb_ds1edit.cmap[cm][a]);
             }
             else if (cm == CM_TRANS)
             {
-               create_trans_table(& glb_ds1edit.cmap[cm][a],
-                               glb_ds1edit.vga_pal[a],
-                               128, 128, 128,
-                               NULL);
+               palette_build_trans_colormap(
+                  &glb_ds1edit.vga_pal[a],
+                  &glb_ds1edit.cmap[cm][a]);
             }
             else if (cm == CM_SHADOW)
             {
-               for (c=0; c < 256; c++)
-               {
-                  start = 1024 + (256 * (c/8));
-                  for (i=0; i<256; i++)
-                  {
-                     glb_ds1edit.cmap[cm][a].data[c][i] =
-                        glb_ds1edit.d2_pal[a][start + i];
-                  }
-               }
+               palette_build_shadow_colormap(
+                  glb_ds1edit.d2_pal[a],
+                  glb_ds1edit.pal_size[a],
+                  &glb_ds1edit.cmap[cm][a]);
             }
-            
+
             out = fopen(tmp, "wb");
             if (out == NULL)
                printf("can't write %s\n", tmp);
             else
             {
                printf("saving %s\n", tmp);
-               fwrite(& glb_ds1edit.cmap[cm][a], sizeof(COLOR_MAP), 1, out);
+               fwrite(& glb_ds1edit.cmap[cm][a], sizeof(INDEX_COLORMAP), 1, out);
                fclose(out);
             }
          }
@@ -621,7 +564,7 @@ int misc_load_pal_from_disk(int pal_idx)
    long size;
    
    sprintf(tmp, "%spal%i.bin", glb_ds1edit_data_dir, pal_idx);
-   if (file_exists(tmp, -1, NULL))
+   if (a5_file_exists(tmp))
    {
       // load the palette from disk, instead of mpq
       in = fopen(tmp, "rb");
@@ -887,30 +830,30 @@ void misc_open_several_ds1(char * filename)
 void misc_walkable_tile_info_pcx(void)
 {
    static char pcxname[11][30] = {
-             {"pcx\\bit0.pcx"},
-             {"pcx\\bit1.pcx"},
-             {"pcx\\bit2.pcx"},
-             {"pcx\\bit3.pcx"},
-             {"pcx\\bit4.pcx"},
-             {"pcx\\bit5.pcx"},
-             {"pcx\\bit6.pcx"},
-             {"pcx\\bit7.pcx"},
-             {"pcx\\bit8.pcx"},
-             {"pcx\\st_nowalk.pcx"},
-             {"pcx\\st_nojump.pcx"}
+             {"pcx\\bit0.png"},
+             {"pcx\\bit1.png"},
+             {"pcx\\bit2.png"},
+             {"pcx\\bit3.png"},
+             {"pcx\\bit4.png"},
+             {"pcx\\bit5.png"},
+             {"pcx\\bit6.png"},
+             {"pcx\\bit7.png"},
+             {"pcx\\bit8.png"},
+             {"pcx\\st_nowalk.png"},
+             {"pcx\\st_nojump.png"}
           };
    int    loop, i, x0, y0, z, w=0, h=0;
-   BITMAP * tmpbmp, * subtile, * subtile2;
+   ALLEGRO_BITMAP * tmpbmp, * subtile, * subtile2;
    char   tmp[150];
    int    b=0;
 
 
    fprintf(stderr, "walkable tile infos");
    fflush(stderr);
-   glb_ds1edit.subtile_help = load_pcx("pcx/st_help.pcx", glb_ds1edit.dummy_pal);
+   glb_ds1edit.subtile_help = al_load_bitmap("pcx/st_help.png");
    if (glb_ds1edit.subtile_help == NULL)
    {
-      sprintf(tmp, "misc_walkable_tile_info_pcx(), can't open pcx/st_help.pcx");
+      sprintf(tmp, "misc_walkable_tile_info_pcx(), can't open pcx/st_help.png");
       ds1edit_error(tmp);
    }
 
@@ -918,7 +861,7 @@ void misc_walkable_tile_info_pcx(void)
    {
       fprintf(stderr, ".");
       fflush(stderr);
-      tmpbmp = load_pcx(pcxname[loop], glb_ds1edit.dummy_pal);
+      tmpbmp = al_load_bitmap(pcxname[loop]);
       if (tmpbmp == NULL)
       {
          sprintf(tmp, "misc_walkable_tile_info_pcx(), can't open %s",
@@ -927,24 +870,24 @@ void misc_walkable_tile_info_pcx(void)
       }
       for (i=0; i<25; i++)
       {
-         subtile = create_bitmap(160, 80);
+         subtile = al_create_bitmap(160, 80);
          if (subtile == NULL)
          {
             sprintf(tmp, "misc_walkable_tile_info_pcx(), can't create "
                "the (%i - %i) bitmap ", loop, i);
             ds1edit_error(tmp);
          }
-         clear(subtile);
+         a5_clear(subtile);
          x0 = 64 - ((i/5) * 16) + ((i%5) * 16);
          y0 = ((i/5) * 8) + ((i%5) * 8);
-         draw_sprite(subtile, tmpbmp, x0, y0);
+         a5_draw_sprite(subtile, tmpbmp, x0, y0);
 
          if (loop < 9)
-            glb_ds1edit.subtile_flag[loop][ZM_11][i] = get_rle_sprite(subtile);
+            glb_ds1edit.subtile_flag[loop][ZM_11][i] = subtile;
          else if (loop == 9)
-            glb_ds1edit.subtile_nowalk[ZM_11][i] = get_rle_sprite(subtile);
+            glb_ds1edit.subtile_nowalk[ZM_11][i] = subtile;
          else
-            glb_ds1edit.subtile_nojump[ZM_11][i] = get_rle_sprite(subtile);
+            glb_ds1edit.subtile_nojump[ZM_11][i] = subtile;
             
          for (z=0; z<ZM_MAX; z++)
          {
@@ -957,28 +900,27 @@ void misc_walkable_tile_info_pcx(void)
                case ZM_18  : w = 160 /  8; h = 80 /  8; break;
                case ZM_116 : w = 160 / 16; h = 80 / 16; break;
             }
-            subtile2 = create_bitmap(w, h);
-            clear(subtile2);
+            subtile2 = al_create_bitmap(w, h);
             if (subtile2 == NULL)
             {
                sprintf(tmp, "misc_walkable_tile_info_pcx(), can't create "
                   "the (%i - %i) bitmap at zoom %i", loop, i, z);
                ds1edit_error(tmp);
             }
-            stretch_blit(subtile, subtile2, 0, 0, 160, 80, 0, 0, w, h);
+            a5_clear(subtile2);
+            a5_stretch_blit(subtile, subtile2, 0, 0, 160, 80, 0, 0, w, h);
 
             if (loop < 9)
-               glb_ds1edit.subtile_flag[loop][z][i] = get_rle_sprite(subtile2);
+               glb_ds1edit.subtile_flag[loop][z][i] = subtile2;
             else if (loop == 9)
-               glb_ds1edit.subtile_nowalk[z][i] = get_rle_sprite(subtile2);
+               glb_ds1edit.subtile_nowalk[z][i] = subtile2;
             else
-               glb_ds1edit.subtile_nojump[z][i] = get_rle_sprite(subtile2);
-               
-            destroy_bitmap(subtile2);
+               glb_ds1edit.subtile_nojump[z][i] = subtile2;
          }
-         destroy_bitmap(subtile);
+         /* subtile is now stored directly as subtile_flag/nowalk/nojump[ZM_11],
+            so do NOT destroy it here */
       }
-      destroy_bitmap(tmpbmp);
+      al_destroy_bitmap(tmpbmp);
    }
 
    // walkable tile infos combinations
@@ -990,26 +932,26 @@ void misc_walkable_tile_info_pcx(void)
       fflush(stderr);
       for (z=0; z<ZM_MAX; z++)
       {
-         w = glb_ds1edit.subtile_flag[0][z][i]->w;
-         h = glb_ds1edit.subtile_flag[0][z][i]->h;
+         w = al_get_bitmap_width(glb_ds1edit.subtile_flag[0][z][i]);
+         h = al_get_bitmap_height(glb_ds1edit.subtile_flag[0][z][i]);
 
          for (loop=0; loop<256; loop++)
          {
-            subtile2 = create_bitmap(w, h);
-            clear(subtile2);
+            subtile2 = al_create_bitmap(w, h);
             if (subtile2 == NULL)
             {
                sprintf(tmp, "misc_walkable_tile_info_pcx(), can't create "
                   "the (%i - %i) bitmap at zoom %i", loop, i, z);
                ds1edit_error(tmp);
             }
+            a5_clear(subtile2);
 
-            draw_rle_sprite(subtile2, glb_ds1edit.subtile_flag[0][z][i], 0, 0);
+            a5_draw_sprite(subtile2, glb_ds1edit.subtile_flag[0][z][i], 0, 0);
             for (b=0; b < 8; b++)
             {
                if (loop & (1 << b))
                {
-                  draw_rle_sprite(
+                  a5_draw_sprite(
                      subtile2,
                      glb_ds1edit.subtile_flag[b+1][z][i],
                      0, 0
@@ -1017,15 +959,12 @@ void misc_walkable_tile_info_pcx(void)
                }
             }
 
-            glb_ds1edit.subtile_flag_combination[loop][z][i] =
-               get_rle_sprite(subtile2);
-
-            destroy_bitmap(subtile2);
+            glb_ds1edit.subtile_flag_combination[loop][z][i] = subtile2;
          }
       }
    }
 
-   // we don't need the non-combination RLE anymore
+   // we don't need the non-combination bitmaps anymore
    for (b=0; b<9; b++)
    {
       for (z=0; z<ZM_MAX; z++)
@@ -1034,7 +973,7 @@ void misc_walkable_tile_info_pcx(void)
          {
             if (glb_ds1edit.subtile_flag[b][z][i] != NULL)
             {
-               destroy_rle_sprite(glb_ds1edit.subtile_flag[b][z][i]);
+               al_destroy_bitmap(glb_ds1edit.subtile_flag[b][z][i]);
                glb_ds1edit.subtile_flag[b][z][i] = NULL;
             }
          }
@@ -1305,32 +1244,32 @@ int misc_is_numerical(char * str)
 
 
 // ==========================================================================
-// correct the pl2, for making allegro draw_sprite work as expected
+// correct the pl2, for making draw_sprite work as expected
 void misc_pl2_correct(int i)
 {
-   UBYTE     * bptr;
-   int       c;
-   COLOR_MAP * cmap;
+   UBYTE          * bptr;
+   int            c;
+   INDEX_COLORMAP * cmap;
 
    bptr = glb_ds1edit.d2_pal[i];
    for (c=0; c < 256; c++)
    {
-      cmap = (COLOR_MAP *) & bptr[COF_75TRANS * 256];
+      cmap = (INDEX_COLORMAP *) & bptr[COF_75TRANS * 256];
       cmap->data[0][c] = c;
 
-      cmap = (COLOR_MAP *) & bptr[COF_50TRANS * 256];
+      cmap = (INDEX_COLORMAP *) & bptr[COF_50TRANS * 256];
       cmap->data[0][c] = c;
 
-      cmap = (COLOR_MAP *) & bptr[COF_25TRANS * 256];
+      cmap = (INDEX_COLORMAP *) & bptr[COF_25TRANS * 256];
       cmap->data[0][c] = c;
 
-      cmap = (COLOR_MAP *) & bptr[COF_ALPHA * 256];
+      cmap = (INDEX_COLORMAP *) & bptr[COF_ALPHA * 256];
       cmap->data[0][c] = c;
 
-      cmap = (COLOR_MAP *) & bptr[COF_LUMINANCE * 256];
+      cmap = (INDEX_COLORMAP *) & bptr[COF_LUMINANCE * 256];
       cmap->data[0][c] = c;
 
-      cmap = (COLOR_MAP *) & bptr[COF_ALPHABRIGHT * 256];
+      cmap = (INDEX_COLORMAP *) & bptr[COF_ALPHABRIGHT * 256];
       cmap->data[0][c] = c;
    }
 }
@@ -1343,7 +1282,7 @@ int misc_cmd_line_parse(int argc, char ** argv)
 {
    int  i                  = 0;
    int  force_dt1_present  = FALSE;
-   char * ext              = NULL;
+   const char * ext        = NULL;
    int  n                  = 0;
    int  lvltype_id_found   = 0;
    int  lvlprest_def_found = 0;
@@ -1362,7 +1301,7 @@ int misc_cmd_line_parse(int argc, char ** argv)
       if (i == 1)
       {
          // .ini or .ds1 ?
-         ext = get_extension(argv[i]);
+         ext = a5_get_extension(argv[i]);
          if (stricmp(ext, "ini") == 0)
             glb_ds1edit.cmd_line.ini_filename = argv[i];
          else if (stricmp(ext, "ds1") == 0)
@@ -1387,7 +1326,7 @@ int misc_cmd_line_parse(int argc, char ** argv)
       {
          // -force_dt1, folowed by 1 to 32 .dt1 files
          i++;
-         for (n=0; ((i + n) < argc) && (stricmp(get_extension(argv[i + n]), "dt1") == 0); n++)
+         for (n=0; ((i + n) < argc) && (stricmp(a5_get_extension(argv[i + n]), "dt1") == 0); n++)
          {}
          if ((n < 1) || (n > DT1_IN_DS1_MAX))
          {
@@ -1513,21 +1452,13 @@ int misc_cmd_line_parse(int argc, char ** argv)
 // ==========================================================================
 void misc_draw_screen(int mx, int my)
 {
-   BITMAP * video_bmp    = glb_ds1edit.video_page[glb_ds1edit.video_page_num];
-   BITMAP * mouse_sprite = glb_ds1edit.mouse_cursor[glb_ds1edit.mode];
+   ALLEGRO_BITMAP * mouse_sprite = glb_ds1edit.mouse_cursor[glb_ds1edit.mode];
 
-
-   blit(
-      glb_ds1edit.screen_buff,
-      video_bmp,
-      0, 0,
-      0, 0,
-      glb_config.screen.width,
-      glb_config.screen.height
-   );
-   draw_sprite(video_bmp, mouse_sprite, mx, my);
-   show_video_bitmap(video_bmp);
-   glb_ds1edit.video_page_num = (glb_ds1edit.video_page_num + 1) % 2;
+   al_set_target_backbuffer(a5_display);
+   al_draw_bitmap(glb_ds1edit.screen_buff, 0, 0, 0);
+   if (mouse_sprite != NULL)
+      al_draw_bitmap(mouse_sprite, (float)mx, (float)my, 0);
+   al_flip_display();
 }
 
 // ==================================================================================

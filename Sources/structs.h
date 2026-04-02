@@ -8,9 +8,13 @@
 #include "types.h"
 #include <stdio.h>
 #include <string.h>
-#include <allegro.h>
+#include <stdlib.h>
+#include "a5_compat.h"
 #include "mpq\\mpqtypes.h"
 #include "rgba_cache.h"
+
+/* Allegro 5 does not have PAL_SIZE; define for COLOR_MAP compat */
+#define PAL_SIZE 256
 
 #define MAX_MPQ_FILE           4
 #define MAX_MOD_DIR            1
@@ -182,7 +186,7 @@ typedef struct BUTTON_S
    int         tab_have_tiles;
    BUT_STATE_E state;
    int         mouse_over;  // TRUE / FALSE
-   BITMAP      * bmp[2];    // [0]=OFF, [1]=ON
+   ALLEGRO_BITMAP * bmp[2];    // [0]=OFF, [1]=ON
 } BUTTON_S;
 
 typedef enum BLK_TYP_E
@@ -209,11 +213,11 @@ typedef struct WIN_ELEMENT_S
 {
    // border (outside)
    int        b_x0, b_y0; // upper-left corner, in the screen
-   RLE_SPRITE * border;
+   ALLEGRO_BITMAP * border;
 
    // inside
    int        i_x0, i_y0; // upper-left corner, in the screen
-   BITMAP     * inside;
+   ALLEGRO_BITMAP * inside;
 } WIN_ELEMENT_S;
 
 
@@ -242,7 +246,7 @@ typedef struct WIN_EDIT_S
    WIN_ELEMENT_S w_tiles;
    MAIN_LINE_S   * main_line_tab[BT_MAX];
    int           main_line_num[BT_MAX];
-   BITMAP        * tmp_edit;
+   ALLEGRO_BITMAP * tmp_edit;
 } WIN_EDIT_S;
 
 typedef enum ZOOM_E
@@ -300,7 +304,7 @@ typedef struct LAY_INF_S
 
    // editor only
    int    bmp_num;
-   BITMAP ** bmp;              // legacy frame bitmaps (palette indices)
+   ALLEGRO_BITMAP ** bmp;      // legacy frame bitmaps (palette indices)
    CACHED_TILE ** cache;       // cached tiles with indices + RGBA (Allegro 5 migration)
    int    off_x;
    int    off_y;
@@ -467,15 +471,15 @@ typedef struct GLB_DS1EDIT_S
 {
    UBYTE         * d2_pal [ACT_MAX];
    long          pal_size [ACT_MAX];
-   PALETTE       vga_pal  [ACT_MAX];
-   PALETTE       dummy_pal;
+   RGBA_PALETTE  vga_pal  [ACT_MAX];
+   RGBA_PALETTE  dummy_pal;
    int           pal_loaded[ACT_MAX];
-   BITMAP        * mouse_cursor[MOD_MAX];
+   ALLEGRO_BITMAP * mouse_cursor[MOD_MAX];
    WIN_PREVIEW_S win_preview;
    WIN_EDIT_S    win_edit;
-   BITMAP        * big_screen_buff; // for safety about cliping
-   BITMAP        * screen_buff;
-   BITMAP        * video_page[2];
+   ALLEGRO_BITMAP * big_screen_buff; // for safety about cliping
+   ALLEGRO_BITMAP * screen_buff;
+   ALLEGRO_BITMAP * video_page[2];
    int           video_page_num;
    UBYTE         gamma_table[GC_MAX][256];
    GC_ENUM       cur_gamma;
@@ -483,15 +487,15 @@ typedef struct GLB_DS1EDIT_S
    volatile int  fps;
    volatile int  ticks_elapsed;
    int           screenshot_num;
-   COLOR_MAP     cmap[CM_MAX][ACT_MAX];
+   INDEX_COLORMAP cmap[CM_MAX][ACT_MAX];
    OBJ_DESC_S    * obj_desc;
    int           obj_desc_num; // # of objects's description
    MODE_E        mode;
-   RLE_SPRITE    * subtile_flag[9][ZM_MAX][25];
-   RLE_SPRITE    * subtile_flag_combination[256][ZM_MAX][25];
-   RLE_SPRITE    * subtile_nowalk[ZM_MAX][25];
-   RLE_SPRITE    * subtile_nojump[ZM_MAX][25];
-   BITMAP        * subtile_help;
+   ALLEGRO_BITMAP * subtile_flag[9][ZM_MAX][25];
+   ALLEGRO_BITMAP * subtile_flag_combination[256][ZM_MAX][25];
+   ALLEGRO_BITMAP * subtile_nowalk[ZM_MAX][25];
+   ALLEGRO_BITMAP * subtile_nojump[ZM_MAX][25];
+   ALLEGRO_BITMAP * subtile_help;
    int           night_mode;
    TXT_S         * lvltypes_buff;
    TXT_S         * lvlprest_buff;
@@ -922,8 +926,8 @@ typedef struct DT1_S
    int        bh_buff_len;
 
    // all blocks in differents zoom format
-   BITMAP     ** block_zoom[ZM_MAX]; // ZM_MAX tables of table of pointers
-                                     //   to BITMAP (legacy, used by rendering)
+   ALLEGRO_BITMAP ** block_zoom[ZM_MAX]; // ZM_MAX tables of table of pointers
+                                     //   to ALLEGRO_BITMAP (legacy, used by rendering)
    int        bz_size[ZM_MAX];
 
    // cached tiles with palette indices + RGBA (for Allegro 5 migration)

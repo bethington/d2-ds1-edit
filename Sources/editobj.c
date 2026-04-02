@@ -235,33 +235,33 @@ void editobj_draw_obj_lab(int ds1_idx, int is_shadow)
                y2 = y1 + glb_ds1[ds1_idx].tile_h / 10 - 1;
                y3 = y1 + glb_ds1[ds1_idx].tile_h / 5 - 2;
    
-               line(glb_ds1edit.screen_buff, x1, y2, x2, y1, color2);
-               line(glb_ds1edit.screen_buff, x3, y1, x4, y2, color2);
-               line(glb_ds1edit.screen_buff, x3, y3, x4, y2, color2);
-               line(glb_ds1edit.screen_buff, x1, y2, x2, y3, color2);
+               a5_line(glb_ds1edit.screen_buff, x1, y2, x2, y1, color2);
+               a5_line(glb_ds1edit.screen_buff, x3, y1, x4, y2, color2);
+               a5_line(glb_ds1edit.screen_buff, x3, y3, x4, y2, color2);
+               a5_line(glb_ds1edit.screen_buff, x1, y2, x2, y3, color2);
                break;
 
 
             case 1 :
                // draw shadow lines
-               line(glb_ds1edit.screen_buff, ox0+1, oy0+17, ox0+1, oy0+1, 0);
-               line(glb_ds1edit.screen_buff, ox0+1, oy0+1,  lx0+1, ly0+1, 0);
-               line(glb_ds1edit.screen_buff, lx0+1, ly0+1,  lx0+1, ly0-8, 0);
+               a5_line(glb_ds1edit.screen_buff, ox0+1, oy0+17, ox0+1, oy0+1, 0);
+               a5_line(glb_ds1edit.screen_buff, ox0+1, oy0+1,  lx0+1, ly0+1, 0);
+               a5_line(glb_ds1edit.screen_buff, lx0+1, ly0+1,  lx0+1, ly0-8, 0);
                
                // draw lines
-               line(glb_ds1edit.screen_buff, ox0, oy0+16, ox0, oy0,   color2);
-               line(glb_ds1edit.screen_buff, ox0, oy0,    lx0, ly0,   color2);
-               line(glb_ds1edit.screen_buff, lx0, ly0,    lx0, ly0-9, color2);
+               a5_line(glb_ds1edit.screen_buff, ox0, oy0+16, ox0, oy0,   color2);
+               a5_line(glb_ds1edit.screen_buff, ox0, oy0,    lx0, ly0,   color2);
+               a5_line(glb_ds1edit.screen_buff, lx0, ly0,    lx0, ly0-9, color2);
 
                if (IS_SELECTED(f1))
                {
-                  line(glb_ds1edit.screen_buff, ox0-1, oy0+16, ox0-1, oy0,   color2);
-                  line(glb_ds1edit.screen_buff, ox0-1, oy0,    lx0-1, ly0,   color2);
-                  line(glb_ds1edit.screen_buff, lx0-1, ly0,    lx0-1, ly0-9, color2);
-                  rectfill(glb_ds1edit.screen_buff, ox0-2, oy0+14, ox0+1, oy0+16, color2);
+                  a5_line(glb_ds1edit.screen_buff, ox0-1, oy0+16, ox0-1, oy0,   color2);
+                  a5_line(glb_ds1edit.screen_buff, ox0-1, oy0,    lx0-1, ly0,   color2);
+                  a5_line(glb_ds1edit.screen_buff, lx0-1, ly0,    lx0-1, ly0-9, color2);
+                  a5_rectfill(glb_ds1edit.screen_buff, ox0-2, oy0+14, ox0+1, oy0+16, color2);
                }
                else
-                  rectfill(glb_ds1edit.screen_buff, ox0-1, oy0+14, ox0+1, oy0+16, color2);
+                  a5_rectfill(glb_ds1edit.screen_buff, ox0-1, oy0+14, ox0+1, oy0+16, color2);
 
                break;
             
@@ -285,25 +285,25 @@ void editobj_draw_obj_lab(int ds1_idx, int is_shadow)
                    (x2 < 0) || (y2 < 0))
                   break;
                
-               rectfill(glb_ds1edit.screen_buff, x1, y1, x2, y2, color1);
-               rect    (glb_ds1edit.screen_buff, x1, y1, x2, y2, color3);
+               a5_rectfill(glb_ds1edit.screen_buff, x1, y1, x2, y2, color1);
+               a5_rect (glb_ds1edit.screen_buff, x1, y1, x2, y2, color3);
       
                // desc
                x2 = x1 + 2 + (w/2);
                y2 = y1 + 2;
                if (d == -1)
-                  textprintf(glb_ds1edit.screen_buff, font, x2 - 8, y2, 255, "??");
+                  a5_textprintf(glb_ds1edit.screen_buff, font, x2 - 8, y2, 255, "??");
                else
                {
                   x2 -= (8 * strlen(glb_ds1edit.obj_desc[d].desc) / 2);
-                  textprintf(glb_ds1edit.screen_buff, font, x2, y2, 255, "%s",
+                  a5_textprintf(glb_ds1edit.screen_buff, font, x2, y2, 255, "%s",
                      glb_ds1edit.obj_desc[d].desc);
                }
                   
                // object number
                x2 = x1 + 2;
                y2 += 8 + 2;
-               textprintf(glb_ds1edit.screen_buff, font, x2, y2, is_shadow ? 255 : 111, "#%i", o);
+               a5_textprintf(glb_ds1edit.screen_buff, font, x2, y2, is_shadow ? 255 : 111, "#%i", o);
 
                // Type
                if (id <= -100)     x2 = lx0 - 3 * 8;
@@ -312,12 +312,12 @@ void editobj_draw_obj_lab(int ds1_idx, int is_shadow)
                else if (id < 10)   x2 = lx0 - 8 - 4;
                else if (id < 100)  x2 = lx0 - 2 * 8;
                else                x2 = lx0 - 2 * 8 - 4;
-               textprintf(glb_ds1edit.screen_buff, font, x2, y2, is_shadow ? 255 : 11, "%i", type);
+               a5_textprintf(glb_ds1edit.screen_buff, font, x2, y2, is_shadow ? 255 : 11, "%i", type);
 
 
                // Id
                x2 += 1*8;
-               textprintf(glb_ds1edit.screen_buff, font, x2, y2, is_shadow ? 255 : 255, " %i", id);
+               a5_textprintf(glb_ds1edit.screen_buff, font, x2, y2, is_shadow ? 255 : 255, " %i", id);
 
                // paths number
                if (p < 10)
@@ -325,9 +325,9 @@ void editobj_draw_obj_lab(int ds1_idx, int is_shadow)
                else
                   x2 = x1 + w + 4 - 3 * 8;
                if (p == 0)
-                  textprintf(glb_ds1edit.screen_buff, font, x2, y2, is_shadow ? 255 : 208, "P-");
+                  a5_textprintf(glb_ds1edit.screen_buff, font, x2, y2, is_shadow ? 255 : 208, "P-");
                else
-                  textprintf(glb_ds1edit.screen_buff, font, x2, y2, is_shadow ? 255 : 133, "P%i", p);
+                  a5_textprintf(glb_ds1edit.screen_buff, font, x2, y2, is_shadow ? 255 : 133, "P%i", p);
                break;
          }
       }
@@ -905,8 +905,8 @@ int editobj_center_before_copy(int ds1_idx, int * cx0, int * cy0,
 
    * cx0 = cx;
    * cy0 = cy;
-   * mx = mouse_x;
-   * my = mouse_y;
+   * mx = a5_mouse_x;
+   * my = a5_mouse_y;
 
    return nb;
 }
@@ -1166,8 +1166,8 @@ void editobj_draw_edit_obj(int ds1_idx)
    y1 = ptr_w->y0;
    x2 = x1 + ptr_w->w;
    y2 = y1 + ptr_w->h;
-   rectfill(glb_ds1edit.screen_buff, x1, y1, x2, y2, 0);
-   rect    (glb_ds1edit.screen_buff, x1, y1, x2, y2, 255);
+   a5_rectfill(glb_ds1edit.screen_buff, x1, y1, x2, y2, 0);
+   a5_rect (glb_ds1edit.screen_buff, x1, y1, x2, y2, 255);
    
    for (i=0; i < EB_MAX; i++)
    {
@@ -1180,44 +1180,44 @@ void editobj_draw_edit_obj(int ds1_idx)
       y  = b->txt.y;
       if (IS_ACTIVATED(b->flags))
       {
-         rect(glb_ds1edit.screen_buff, x1, y1, x2, y2, 129);
+         a5_rect(glb_ds1edit.screen_buff, x1, y1, x2, y2, 129);
          if (IS_SELECTED(b->flags))
          {
-            rectfill(glb_ds1edit.screen_buff, x1+2, y1+2, x2-2, y2-2, 116);
-            textprintf(glb_ds1edit.screen_buff, font, x+1, y + 1, 0, b->name);
+            a5_rectfill(glb_ds1edit.screen_buff, x1+2, y1+2, x2-2, y2-2, 116);
+            a5_textprintf(glb_ds1edit.screen_buff, font, x+1, y + 1, 0, b->name);
          }
-         textprintf(glb_ds1edit.screen_buff, font, x, y, 132, b->name);
+         a5_textprintf(glb_ds1edit.screen_buff, font, x, y, 132, b->name);
       }
       else
       {
-         rect(glb_ds1edit.screen_buff, x1, y1, x2, y2, 186);
+         a5_rect(glb_ds1edit.screen_buff, x1, y1, x2, y2, 186);
          if (IS_SELECTED(b->flags))
          {
-            rectfill(glb_ds1edit.screen_buff, x1+2, y1+2, x2-2, y2-2, 209);
-            textprintf(glb_ds1edit.screen_buff, font, x+1, y + 1, 0, b->name);
+            a5_rectfill(glb_ds1edit.screen_buff, x1+2, y1+2, x2-2, y2-2, 209);
+            a5_textprintf(glb_ds1edit.screen_buff, font, x+1, y + 1, 0, b->name);
          }
-         textprintf(glb_ds1edit.screen_buff, font, x, y, 214, b->name);
+         a5_textprintf(glb_ds1edit.screen_buff, font, x, y, 214, b->name);
       }
    }
 
    x1 = ptr_w->x0 + (8 * 2);
    y1 = ptr_w->y0 + 69;
-   textprintf(glb_ds1edit.screen_buff, font, x1, y1, 11, "Type");
+   a5_textprintf(glb_ds1edit.screen_buff, font, x1, y1, 11, "Type");
    
    x1 += 8 * 5;
-   textprintf(glb_ds1edit.screen_buff, font, x1, y1, 255, " Id");
+   a5_textprintf(glb_ds1edit.screen_buff, font, x1, y1, 255, " Id");
    x1 += 8 * 4;
-   textprintf(glb_ds1edit.screen_buff, font, x1, y1, 255, " Description");
+   a5_textprintf(glb_ds1edit.screen_buff, font, x1, y1, 255, " Description");
 
    x1 = ptr_w->x0 + (8 * 2);
    y1 += 10;
-   textprintf(glb_ds1edit.screen_buff, font, x1, y1, 210, "---- ---  -----------");
+   a5_textprintf(glb_ds1edit.screen_buff, font, x1, y1, 210, "---- ---  -----------");
 
    strcpy(minus_tmp, "");
    for (c=0; c < ptr_w->desc_char - 11; c++)
       strcat(minus_tmp, "-");
    x1 += 20 * 8;
-   textprintf(glb_ds1edit.screen_buff, font, x1, y1, 210, "%s", minus_tmp);
+   a5_textprintf(glb_ds1edit.screen_buff, font, x1, y1, 210, "%s", minus_tmp);
 
    // desc themselves
    for (line=0; line < ptr_w->num; line++)
@@ -1238,20 +1238,20 @@ void editobj_draw_edit_obj(int ds1_idx)
          else
             bg_color = 0;
          if (bg_color)
-            rectfill(glb_ds1edit.screen_buff, ptr_w->x0+8, y1-1, ptr_w->x0 + ptr_w->w - 8, y1+8, bg_color);
+            a5_rectfill(glb_ds1edit.screen_buff, ptr_w->x0+8, y1-1, ptr_w->x0 + ptr_w->w - 8, y1+8, bg_color);
 
          ptr_d = & glb_ds1edit.obj_desc[d];
 
-         textprintf(glb_ds1edit.screen_buff, font, x1, y1, 11, "%3i", ptr_d->type);
+         a5_textprintf(glb_ds1edit.screen_buff, font, x1, y1, 11, "%3i", ptr_d->type);
          x1 += 8 * 5;
-         textprintf(glb_ds1edit.screen_buff, font, x1, y1, 255, "%3i", ptr_d->id);
+         a5_textprintf(glb_ds1edit.screen_buff, font, x1, y1, 255, "%3i", ptr_d->id);
          x1 += 8 * 4;
-         textprintf(glb_ds1edit.screen_buff, font, x1, y1, 255, " %s", ptr_d->desc);
+         a5_textprintf(glb_ds1edit.screen_buff, font, x1, y1, 255, " %s", ptr_d->desc);
       }
    }
    x1 = ptr_w->x0 + (8 * 2);
    y1 += 25;
-   textprintf(glb_ds1edit.screen_buff, font, x1, y1, 214, "(scroll down here)");
+   a5_textprintf(glb_ds1edit.screen_buff, font, x1, y1, 214, "(scroll down here)");
 
    free(minus_tmp);
 }
@@ -1294,11 +1294,10 @@ int editobj_edit_obj(int ds1_idx, int * edit_end, int mx, int my, int mb)
          glb_ds1[ds1_idx].obj[ptr_w->obj_idx].label.w = w;
       }
    }
-   else if (key[KEY_ENTER] || key[KEY_ENTER_PAD])
+   else if (key_pressed(KEY_ENTER) || key_pressed(KEY_ENTER_PAD))
    {
       // simulate the click on the OK button
-      while (key[KEY_ENTER] || key[KEY_ENTER_PAD])
-      {}
+      while (key_pressed(KEY_ENTER) || key_pressed(KEY_ENTER_PAD)) { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
       glb_ds1[ds1_idx].draw_edit_obj = FALSE;
       redraw = TRUE;
       * edit_end = TRUE;
@@ -1315,7 +1314,7 @@ int editobj_edit_obj(int ds1_idx, int * edit_end, int mx, int my, int mb)
       }
       glb_ds1[ds1_idx].obj[ptr_w->obj_idx].label.w = w;
    }
-   else if ((glb_config.winobj_scroll_keyb == FALSE) && key[KEY_UP])
+   else if ((glb_config.winobj_scroll_keyb == FALSE) && key_pressed(KEY_UP))
    {
       // scroll the list, up
       ptr_w->start -= glb_config.scroll.obj_edit;
@@ -1324,7 +1323,7 @@ int editobj_edit_obj(int ds1_idx, int * edit_end, int mx, int my, int mb)
       ptr_w->cur = -1;
       redraw = TRUE;
    }
-   else if ((glb_config.winobj_scroll_keyb == FALSE) && key[KEY_DOWN])
+   else if ((glb_config.winobj_scroll_keyb == FALSE) && key_pressed(KEY_DOWN))
    {
       // scroll the list, down
       ptr_w->start += glb_config.scroll.obj_edit;
@@ -1358,8 +1357,8 @@ int editobj_edit_obj(int ds1_idx, int * edit_end, int mx, int my, int mb)
       // over TYPE1 button
       if (mb & 1)
       {
-         while (mouse_b & 1)
-         {
+         while (a5_mouse_b & 1)
+         { al_rest(0.01); al_get_mouse_state(&a5_ms_state);
             // wait until the left mouse button is released
          }
          if (ptr_w->cur_type != 1)
@@ -1378,8 +1377,8 @@ int editobj_edit_obj(int ds1_idx, int * edit_end, int mx, int my, int mb)
       // over TYPE2 button
       if (mb & 1)
       {
-         while (mouse_b & 1)
-         {
+         while (a5_mouse_b & 1)
+         { al_rest(0.01); al_get_mouse_state(&a5_ms_state);
             // wait until the left mouse button is released
          }
          ptr_w->cur_type = 2;
@@ -1397,8 +1396,8 @@ int editobj_edit_obj(int ds1_idx, int * edit_end, int mx, int my, int mb)
       // over ACT1 button
       if ((mb & 1) && (IS_ACTIVATED(ptr_w->button[EB_ACT1].flags)))
       {
-         while (mouse_b & 1)
-         {
+         while (a5_mouse_b & 1)
+         { al_rest(0.01); al_get_mouse_state(&a5_ms_state);
             // wait until the left mouse button is released
          }
          ptr_w->cur_act = 1;
@@ -1415,8 +1414,8 @@ int editobj_edit_obj(int ds1_idx, int * edit_end, int mx, int my, int mb)
       // over ACT2 button
       if ((mb & 1) && (IS_ACTIVATED(ptr_w->button[EB_ACT2].flags)))
       {
-         while (mouse_b & 1)
-         {
+         while (a5_mouse_b & 1)
+         { al_rest(0.01); al_get_mouse_state(&a5_ms_state);
             // wait until the left mouse button is released
          }
          ptr_w->cur_act = 2;
@@ -1433,8 +1432,8 @@ int editobj_edit_obj(int ds1_idx, int * edit_end, int mx, int my, int mb)
       // over ACT3 button
       if ((mb & 1) && (IS_ACTIVATED(ptr_w->button[EB_ACT3].flags)))
       {
-         while (mouse_b & 1)
-         {
+         while (a5_mouse_b & 1)
+         { al_rest(0.01); al_get_mouse_state(&a5_ms_state);
             // wait until the left mouse button is released
          }
          ptr_w->cur_act = 3;
@@ -1451,8 +1450,8 @@ int editobj_edit_obj(int ds1_idx, int * edit_end, int mx, int my, int mb)
       // over ACT4 button
       if ((mb & 1) && (IS_ACTIVATED(ptr_w->button[EB_ACT4].flags)))
       {
-         while (mouse_b & 1)
-         {
+         while (a5_mouse_b & 1)
+         { al_rest(0.01); al_get_mouse_state(&a5_ms_state);
             // wait until the left mouse button is released
          }
          ptr_w->cur_act = 4;
@@ -1469,8 +1468,8 @@ int editobj_edit_obj(int ds1_idx, int * edit_end, int mx, int my, int mb)
       // over ACT5 button
       if ((mb & 1) && (IS_ACTIVATED(ptr_w->button[EB_ACT5].flags)))
       {
-         while (mouse_b & 1)
-         {
+         while (a5_mouse_b & 1)
+         { al_rest(0.01); al_get_mouse_state(&a5_ms_state);
             // wait until the left mouse button is released
          }
          ptr_w->cur_act = 5;
@@ -1791,8 +1790,8 @@ int editobj_handler(int ds1_idx, int cx, int cy, int mx, int my, int mb)
       if (edit_end)
       {
          old_mode = OM_NONE;
-         while (mouse_b & 1)
-         {
+         while (a5_mouse_b & 1)
+         { al_rest(0.01); al_get_mouse_state(&a5_ms_state);
             // wait until the left mouse button is released
          }
          anim_update_gfx(FALSE);
@@ -1809,7 +1808,7 @@ int editobj_handler(int ds1_idx, int cx, int cy, int mx, int my, int mb)
       {
          // button 1 pressed (& not moving obj or label)
 
-         if (key[KEY_ALT] || key[KEY_ALTGR])
+         if (key_pressed(KEY_ALT) || key_pressed(KEY_ALTGR))
          {
             if (o != -1)
             {
@@ -1826,8 +1825,8 @@ int editobj_handler(int ds1_idx, int cx, int cy, int mx, int my, int mb)
                      editobj_prepare_undo(ds1_idx);
                      editobj_prepare_moving(ds1_idx);
                      old_mode = OM_MOV;
-                     while (mouse_b & 1)
-                     {
+                     while (a5_mouse_b & 1)
+         { al_rest(0.01); al_get_mouse_state(&a5_ms_state);
                         // wait until the left mouse button is released
                      }
                   }
@@ -1839,15 +1838,15 @@ int editobj_handler(int ds1_idx, int cx, int cy, int mx, int my, int mb)
                      editobj_prepare_undo(ds1_idx);
                      editobj_prepare_moving(ds1_idx);
                      old_mode = OM_MOV;
-                     while (mouse_b & 1)
-                     {
+                     while (a5_mouse_b & 1)
+         { al_rest(0.01); al_get_mouse_state(&a5_ms_state);
                         // wait until the left mouse button is released
                      }
                   }
                }
             }
          }
-         else if (key[KEY_LSHIFT] || key[KEY_RSHIFT])
+         else if (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT))
          {
             // add to selection
             if ((cur_type == 0) || (t == cur_type))
@@ -1858,7 +1857,7 @@ int editobj_handler(int ds1_idx, int cx, int cy, int mx, int my, int mb)
                   if (t == 1)
                   {
                      // add all identical labels ?
-                     if (key[KEY_I])
+                     if (key_pressed(KEY_I))
                      {
                         // add all same labels to the selection
                         if (editobj_identical_lab_add(ds1_idx, o))
@@ -1882,7 +1881,7 @@ int editobj_handler(int ds1_idx, int cx, int cy, int mx, int my, int mb)
                   else
                   {
                      // add all identical objects ?
-                     if (key[KEY_I])
+                     if (key_pressed(KEY_I))
                      {
                         // add all same object to the selection
                         if (editobj_identical_obj_add(ds1_idx, o))
@@ -1906,7 +1905,7 @@ int editobj_handler(int ds1_idx, int cx, int cy, int mx, int my, int mb)
                }
             }
          }
-         else if (key[KEY_LCONTROL] || key[KEY_RCONTROL])
+         else if (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
          {
             // remove from selection
             if (o != -1)
@@ -1914,7 +1913,7 @@ int editobj_handler(int ds1_idx, int cx, int cy, int mx, int my, int mb)
                if ((old_t == 1) && (t == 1))
                {
                   // delete all identical labels from the selection ?
-                  if (key[KEY_I])
+                  if (key_pressed(KEY_I))
                   {
                      // delete all same labels from the selection
                      if (editobj_identical_lab_del(ds1_idx, o))
@@ -1936,7 +1935,7 @@ int editobj_handler(int ds1_idx, int cx, int cy, int mx, int my, int mb)
                else if ((old_t == 2) && (t == 2))
                {
                   // delete all identical objects from the selection ?
-                  if (key[KEY_I])
+                  if (key_pressed(KEY_I))
                   {
                      // delete all same object from the selection
                      if (editobj_identical_obj_del(ds1_idx, o))
@@ -1974,7 +1973,7 @@ int editobj_handler(int ds1_idx, int cx, int cy, int mx, int my, int mb)
                   if (t == 1)
                   {
                      // select all identical labels to make a new selection ?
-                     if (key[KEY_I])
+                     if (key_pressed(KEY_I))
                         editobj_identical_lab_new(ds1_idx, o);
                      else
                      {
@@ -1985,7 +1984,7 @@ int editobj_handler(int ds1_idx, int cx, int cy, int mx, int my, int mb)
                   else
                   {
                      // select all identical objects to make a new selection ?
-                     if (key[KEY_I])
+                     if (key_pressed(KEY_I))
                      {
                         // yep
                         editobj_identical_obj_new(ds1_idx, o);
@@ -2044,33 +2043,29 @@ int editobj_handler(int ds1_idx, int cx, int cy, int mx, int my, int mb)
       {
          // NO button 1 or 2 pressed (& not moving obj nor label)
 
-         if (key[KEY_DEL] || key[KEY_DEL_PAD])
+         if (key_pressed(KEY_DEL) || key_pressed(KEY_DEL_PAD))
          {
             // delete objects
-            while (key[KEY_DEL] || key[KEY_DEL_PAD])
-            {
-               // wait until both DEL keys are released
-            }
+            while (key_pressed(KEY_DEL) || key_pressed(KEY_DEL_PAD))
+            { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
             editobj_prepare_undo(ds1_idx);
             editobj_del_obj(ds1_idx);
             redraw = TRUE;
             anim_update_gfx(FALSE);
          }
-         else if (key[KEY_U] && (key[KEY_LCONTROL] || key[KEY_RCONTROL]))
+         else if (key_pressed(KEY_U) && (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)))
          {
             // undo last modification (movement / copy / delete / edit)
             if (glb_ds1[ds1_idx].can_undo_obj)
             {
-               while (key[KEY_U])
-               {
-                  // wait until the 'U' key is released
-               }
+               while (key_pressed(KEY_U))
+               { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
                editobj_undo(ds1_idx);
                redraw = TRUE;
             }
             anim_update_gfx(FALSE);
          }
-         else if (key[KEY_C] && (key[KEY_LCONTROL] || key[KEY_RCONTROL]))
+         else if (key_pressed(KEY_C) && (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)))
          {
             // copy objects (only if at least 1 obj (no label) is selected)
 // TODO
@@ -2078,10 +2073,8 @@ int editobj_handler(int ds1_idx, int cx, int cy, int mx, int my, int mb)
 //
             if (editobj_count_sel_obj(ds1_idx))
             {
-               while (key[KEY_C])
-               {
-                  // wait until the 'C' key is released
-               }
+               while (key_pressed(KEY_C))
+               { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
                editobj_prepare_undo(ds1_idx);
                editobj_copy_obj(ds1_idx);
                old_mode = OM_MOV;
@@ -2093,11 +2086,10 @@ int editobj_handler(int ds1_idx, int cx, int cy, int mx, int my, int mb)
                editobj_prepare_moving(ds1_idx);
             }
          }
-         else if (key[KEY_INSERT])
+         else if (key_pressed(KEY_INSERT))
          {
             // create a new object
-            while (key[KEY_INSERT])
-            {}
+            while (key_pressed(KEY_INSERT)) { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
             editobj_prepare_undo(ds1_idx);
             editobj_clear_obj_lab_sel(ds1_idx);
             if (editobj_insert_obj(ds1_idx, cx, cy) == 0)
@@ -2131,8 +2123,8 @@ int editobj_handler(int ds1_idx, int cx, int cy, int mx, int my, int mb)
          editobj_end_move_obj_lab(ds1_idx);
          old_mode = OM_NONE;
          redraw   = TRUE;
-         while (mouse_b & 1)
-         {
+         while (a5_mouse_b & 1)
+         { al_rest(0.01); al_get_mouse_state(&a5_ms_state);
             // wait until the left mouse button is released
          }
       }

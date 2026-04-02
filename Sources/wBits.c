@@ -29,7 +29,7 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
    int           w_width = 545, w_height= 270;
 
 
-   text_mode(-1);
+   a5_text_mode(-1);
 
    w_x0 = (glb_config.screen.width  - w_width) / 2;
    w_y0 = (glb_config.screen.height - w_height) / 2;
@@ -40,54 +40,54 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
    ok_y0 = w_y0 + w_height - 24;
    cancel_x0 = ok_x0 + 70;
 
-   rectfill(glb_ds1edit.screen_buff, w_x0, w_y0, w_x1, w_y1, c_black);
-   rect(glb_ds1edit.screen_buff, w_x0, w_y0, w_x1, w_y1, c_white);
+   a5_rectfill(glb_ds1edit.screen_buff, w_x0, w_y0, w_x1, w_y1, c_black);
+   a5_rect(glb_ds1edit.screen_buff, w_x0, w_y0, w_x1, w_y1, c_white);
 
    if (glb_ds1[ds1_idx].floor_num >= 1)
-      textout(glb_ds1edit.screen_buff, font, "F1", w_x0 + 2, w_y0 +  2, c_yellow);
+      a5_textout(glb_ds1edit.screen_buff, font, "F1", w_x0 + 2, w_y0 +  2, c_yellow);
    if (glb_ds1[ds1_idx].floor_num >= 2)
-      textout(glb_ds1edit.screen_buff, font, "F2", w_x0 + 2, w_y0 + 12, c_yellow);
+      a5_textout(glb_ds1edit.screen_buff, font, "F2", w_x0 + 2, w_y0 + 12, c_yellow);
 
    if (glb_ds1[ds1_idx].shadow_num >= 1)
-      textout(glb_ds1edit.screen_buff, font, "SH", w_x0 + 2, w_y0 + 32, c_yellow);
+      a5_textout(glb_ds1edit.screen_buff, font, "SH", w_x0 + 2, w_y0 + 32, c_yellow);
 
    if (glb_ds1[ds1_idx].wall_num >= 1)
-      textout(glb_ds1edit.screen_buff, font, "W1", w_x0 + 2, w_y0 + 52, c_yellow);
+      a5_textout(glb_ds1edit.screen_buff, font, "W1", w_x0 + 2, w_y0 + 52, c_yellow);
    if (glb_ds1[ds1_idx].wall_num >= 2)
-      textout(glb_ds1edit.screen_buff, font, "W2", w_x0 + 2, w_y0 + 62, c_yellow);
+      a5_textout(glb_ds1edit.screen_buff, font, "W2", w_x0 + 2, w_y0 + 62, c_yellow);
    if (glb_ds1[ds1_idx].wall_num >= 3)
-      textout(glb_ds1edit.screen_buff, font, "W3", w_x0 + 2, w_y0 + 72, c_yellow);
+      a5_textout(glb_ds1edit.screen_buff, font, "W3", w_x0 + 2, w_y0 + 72, c_yellow);
    if (glb_ds1[ds1_idx].wall_num >= 4)
-      textout(glb_ds1edit.screen_buff, font, "W4", w_x0 + 2, w_y0 + 82, c_yellow);
+      a5_textout(glb_ds1edit.screen_buff, font, "W4", w_x0 + 2, w_y0 + 82, c_yellow);
 
    if (glb_ds1[ds1_idx].tag_num >= 1)
-      textout(glb_ds1edit.screen_buff, font, "SUB", w_x0 + 2, w_y0 + 200, c_yellow);
+      a5_textout(glb_ds1edit.screen_buff, font, "SUB", w_x0 + 2, w_y0 + 200, c_yellow);
 
-   vline(glb_ds1edit.screen_buff, w_x0 + 237, w_y0 + 92, w_y0 + 105, c_yellow);
-   textout(glb_ds1edit.screen_buff, font, "Unwalkable", w_x0 + 200, w_y0 + 110, c_yellow);
+   a5_vline(glb_ds1edit.screen_buff, w_x0 + 237, w_y0 + 92, w_y0 + 105, c_yellow);
+   a5_textout(glb_ds1edit.screen_buff, font, "Unwalkable", w_x0 + 200, w_y0 + 110, c_yellow);
 
-   vline(glb_ds1edit.screen_buff, w_x0 + 27, w_y0 + 92, w_y0 + 105, c_yellow);
-   textout(glb_ds1edit.screen_buff, font, "Hidden", w_x0 + 10, w_y0 + 110, c_yellow);
+   a5_vline(glb_ds1edit.screen_buff, w_x0 + 27, w_y0 + 92, w_y0 + 105, c_yellow);
+   a5_textout(glb_ds1edit.screen_buff, font, "Hidden", w_x0 + 10, w_y0 + 110, c_yellow);
 
-   vline(glb_ds1edit.screen_buff, w_x0 + 87, w_y0 + 92, w_y0 + 105, c_yellow);
-   textout(glb_ds1edit.screen_buff, font, "?", w_x0 + 82, w_y0 + 110, c_yellow);
+   a5_vline(glb_ds1edit.screen_buff, w_x0 + 87, w_y0 + 92, w_y0 + 105, c_yellow);
+   a5_textout(glb_ds1edit.screen_buff, font, "?", w_x0 + 82, w_y0 + 110, c_yellow);
 
-   vline(glb_ds1edit.screen_buff, w_x0 + 97, w_y0 + 92, w_y0 + 125, c_yellow);
-   textout(glb_ds1edit.screen_buff, font, "IsShadow", w_x0 + 60, w_y0 + 130, c_yellow);
+   a5_vline(glb_ds1edit.screen_buff, w_x0 + 97, w_y0 + 92, w_y0 + 125, c_yellow);
+   a5_textout(glb_ds1edit.screen_buff, font, "IsShadow", w_x0 + 60, w_y0 + 130, c_yellow);
 
-   vline(glb_ds1edit.screen_buff, w_x0 + 162, w_y0 + 92, w_y0 + 140, c_yellow);
-   textout(glb_ds1edit.screen_buff, font, "Main-index", w_x0 + 130, w_y0 + 145, c_yellow);
+   a5_vline(glb_ds1edit.screen_buff, w_x0 + 162, w_y0 + 92, w_y0 + 140, c_yellow);
+   a5_textout(glb_ds1edit.screen_buff, font, "Main-index", w_x0 + 130, w_y0 + 145, c_yellow);
 
-   vline(glb_ds1edit.screen_buff, w_x0 + 333, w_y0 + 92, w_y0 + 140, c_yellow);
-   textout(glb_ds1edit.screen_buff, font, "Sub-index", w_x0 + 300, w_y0 + 145, c_yellow);
+   a5_vline(glb_ds1edit.screen_buff, w_x0 + 333, w_y0 + 92, w_y0 + 140, c_yellow);
+   a5_textout(glb_ds1edit.screen_buff, font, "Sub-index", w_x0 + 300, w_y0 + 145, c_yellow);
 
-   vline(glb_ds1edit.screen_buff, w_x0 + 413, w_y0 + 92, w_y0 + 100, c_yellow);
-   textout(glb_ds1edit.screen_buff, font, "Layers priority,", w_x0 + 360, w_y0 + 105, c_yellow);
-   textout(glb_ds1edit.screen_buff, font, "Type of layers,",  w_x0 + 360, w_y0 + 115, c_yellow);
-   textout(glb_ds1edit.screen_buff, font, "   and unknown",   w_x0 + 360, w_y0 + 125, c_yellow);
+   a5_vline(glb_ds1edit.screen_buff, w_x0 + 413, w_y0 + 92, w_y0 + 100, c_yellow);
+   a5_textout(glb_ds1edit.screen_buff, font, "Layers priority,", w_x0 + 360, w_y0 + 105, c_yellow);
+   a5_textout(glb_ds1edit.screen_buff, font, "Type of layers,",  w_x0 + 360, w_y0 + 115, c_yellow);
+   a5_textout(glb_ds1edit.screen_buff, font, "   and unknown",   w_x0 + 360, w_y0 + 125, c_yellow);
 
-   vline(glb_ds1edit.screen_buff, w_x0 + 503, w_y0 + 92, w_y0 + 140, c_yellow);
-   textout(glb_ds1edit.screen_buff, font, "Orientation", w_x0 + 455, w_y0 + 145, c_yellow);
+   a5_vline(glb_ds1edit.screen_buff, w_x0 + 503, w_y0 + 92, w_y0 + 140, c_yellow);
+   a5_textout(glb_ds1edit.screen_buff, font, "Orientation", w_x0 + 455, w_y0 + 145, c_yellow);
 
    // save props
    t     = (ty * glb_ds1[ds1_idx].floor_line) + (tx * glb_ds1[ds1_idx].floor_num);
@@ -128,14 +128,14 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
 
    // mouse background
    // show_mouse(NULL);
-   mx = mouse_x;
-   my = mouse_y;
-   mb = mouse_b;
+   mx = a5_mouse_x;
+   my = a5_mouse_y;
+   mb = a5_mouse_b;
 
    // main loop
    while ( ! done)
    {
-      text_mode(-1);
+      a5_text_mode(-1);
 
       // OK button
       c1 = c_darkgreen;
@@ -151,20 +151,20 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
             // OK button selected
             save = TRUE;
             done = TRUE;
-            while (mouse_b & 1)
+            while (a5_mouse_b & 1)
             {
-               // wait until left mouse button is not pressed anymore
+               al_rest(0.01); al_get_mouse_state(&a5_ms_state);
             }
          }
       }
-      if (key[KEY_ENTER] || key[KEY_ENTER_PAD])
+      if (key_pressed(KEY_ENTER) || key_pressed(KEY_ENTER_PAD))
       {
          save = TRUE;
          done = TRUE;
       }
-      rectfill(glb_ds1edit.screen_buff, ok_x0, ok_y0-3, ok_x0 + 64, ok_y0 + 20, c1);
-      rect(glb_ds1edit.screen_buff,     ok_x0, ok_y0-3, ok_x0 + 64, ok_y0 + 20, c2);
-      textout(glb_ds1edit.screen_buff, font, "OK", ok_x0+25, ok_y0+5, c3);
+      a5_rectfill(glb_ds1edit.screen_buff, ok_x0, ok_y0-3, ok_x0 + 64, ok_y0 + 20, c1);
+      a5_rect(glb_ds1edit.screen_buff,     ok_x0, ok_y0-3, ok_x0 + 64, ok_y0 + 20, c2);
+      a5_textout(glb_ds1edit.screen_buff, font, "OK", ok_x0+25, ok_y0+5, c3);
 
       // CANCEL button
       c1 = c_darkgreen;
@@ -180,22 +180,22 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
             // CANCEL button selected
             save = FALSE;
             done = TRUE;
-            while (mouse_b & 1)
+            while (a5_mouse_b & 1)
             {
-               // wait until left mouse button is not pressed anymore
+               al_rest(0.01); al_get_mouse_state(&a5_ms_state);
             }
          }
       }
-      if (key[KEY_ESC])
+      if (key_pressed(KEY_ESC))
       {
          save = FALSE;
          done = TRUE;
       }
-      rectfill(glb_ds1edit.screen_buff, cancel_x0, ok_y0-3, cancel_x0 + 64, ok_y0 + 20, c1);
-      rect(glb_ds1edit.screen_buff,     cancel_x0, ok_y0-3, cancel_x0 + 64, ok_y0 + 20, c2);
-      textout(glb_ds1edit.screen_buff, font, "CANCEL", cancel_x0+10, ok_y0+5, c3);
+      a5_rectfill(glb_ds1edit.screen_buff, cancel_x0, ok_y0-3, cancel_x0 + 64, ok_y0 + 20, c1);
+      a5_rect(glb_ds1edit.screen_buff,     cancel_x0, ok_y0-3, cancel_x0 + 64, ok_y0 + 20, c2);
+      a5_textout(glb_ds1edit.screen_buff, font, "CANCEL", cancel_x0+10, ok_y0+5, c3);
 
-      text_mode(0);
+      a5_text_mode(0);
 
       // floors
       y = w_y0 + 2;
@@ -229,8 +229,8 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
                      }
                      while (mb & 1)
                      {
-                        // wait until no mouse button pressed
-                        mb = mouse_b;
+                        al_rest(0.01); al_get_mouse_state(&a5_ms_state); // wait until no mouse button pressed
+                        mb = a5_mouse_b;
                      }
                      switch(b)
                      {
@@ -242,9 +242,9 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
                   }
                }
                if (val[b] & (1 << i))
-                  textout(glb_ds1edit.screen_buff, font, "1", x, y, c);
+                  a5_textout(glb_ds1edit.screen_buff, font, "1", x, y, c);
                else
-                  textout(glb_ds1edit.screen_buff, font, "0", x, y, c);
+                  a5_textout(glb_ds1edit.screen_buff, font, "0", x, y, c);
                x += 10;
 
                if ((b==3) && ((i==7) || (i==6) || (i==5) || (i==3) || (i==2)))
@@ -291,8 +291,8 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
                      }
                      while (mb & 1)
                      {
-                        // wait until no mouse button pressed
-                        mb = mouse_b;
+                        al_rest(0.01); al_get_mouse_state(&a5_ms_state); // wait until no mouse button pressed
+                        mb = a5_mouse_b;
                      }
                      switch(b)
                      {
@@ -304,9 +304,9 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
                   }
                }
                if (shad[b] & (1 << i))
-                  textout(glb_ds1edit.screen_buff, font, "1", x, y, c);
+                  a5_textout(glb_ds1edit.screen_buff, font, "1", x, y, c);
                else
-                  textout(glb_ds1edit.screen_buff, font, "0", x, y, c);
+                  a5_textout(glb_ds1edit.screen_buff, font, "0", x, y, c);
                x += 10;
 
                if ((b==3) && ((i==7) || (i==6) || (i==5) || (i==3) || (i==2)))
@@ -354,8 +354,8 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
                      }
                      while (mb & 1)
                      {
-                        // wait until no mouse button pressed
-                        mb = mouse_b;
+                        al_rest(0.01); al_get_mouse_state(&a5_ms_state); // wait until no mouse button pressed
+                        mb = a5_mouse_b;
                      }
                      switch(b)
                      {
@@ -367,9 +367,9 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
                   }
                }
                if (val[b] & (1 << i))
-                  textout(glb_ds1edit.screen_buff, font, "1", x, y, c);
+                  a5_textout(glb_ds1edit.screen_buff, font, "1", x, y, c);
                else
-                  textout(glb_ds1edit.screen_buff, font, "0", x, y, c);
+                  a5_textout(glb_ds1edit.screen_buff, font, "0", x, y, c);
                x += 10;
 
                if ((b==3) && ((i==7) || (i==6) || (i==5) || (i==3) || (i==2)))
@@ -404,16 +404,16 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
                      w_ptr[n].orientation = w_ptr[n].orientation + (1 << i);
                   }
                   while (mb & 1)
-                  {
-                     // wait until no mouse button pressed
-                     mb = mouse_b;
+                     {
+                        al_rest(0.01); al_get_mouse_state(&a5_ms_state); // wait until no mouse button pressed
+                     mb = a5_mouse_b;
                   }
                }
             }
             if (w_ptr[n].orientation & (1 << i))
-               textout(glb_ds1edit.screen_buff, font, "1", x, y, c);
+               a5_textout(glb_ds1edit.screen_buff, font, "1", x, y, c);
             else
-               textout(glb_ds1edit.screen_buff, font, "0", x, y, c);
+               a5_textout(glb_ds1edit.screen_buff, font, "0", x, y, c);
             x += 10;
          }
 
@@ -447,17 +447,17 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
                      tag_dw = tag_dw + (1 << i);
                   }
                   while (mb & 1)
-                  {
-                     // wait until no mouse button pressed
-                     mb = mouse_b;
+                     {
+                        al_rest(0.01); al_get_mouse_state(&a5_ms_state); // wait until no mouse button pressed
+                     mb = a5_mouse_b;
                   }
                   t_ptr->num = tag_dw;
                }
             }
             if (tag_dw & (1 << i))
-               textout(glb_ds1edit.screen_buff, font, "1", x, y, c);
+               a5_textout(glb_ds1edit.screen_buff, font, "1", x, y, c);
             else
-               textout(glb_ds1edit.screen_buff, font, "0", x, y, c);
+               a5_textout(glb_ds1edit.screen_buff, font, "0", x, y, c);
             x += 10;
 
             if ((i==8) || (i==16) || (i==24))
@@ -465,18 +465,18 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
          }
          y += 10;
          x = w_x0 + 48;
-         textprintf(glb_ds1edit.screen_buff, font, x,       y, c_lightgreen, "%8lu", (tag_dw & 0xFF000000LU) >> 24);
-         textprintf(glb_ds1edit.screen_buff, font, x + 90,  y, c_lightgreen, "%8lu", (tag_dw & 0x00FF0000LU) >> 16);
-         textprintf(glb_ds1edit.screen_buff, font, x + 180, y, c_lightgreen, "%8lu", (tag_dw & 0x0000FF00LU) >> 8);
-         textprintf(glb_ds1edit.screen_buff, font, x + 270, y, c_lightgreen, "%8lu",  tag_dw & 0x000000FFLU);
+         a5_textprintf(glb_ds1edit.screen_buff, font, x,       y, c_lightgreen, "%8lu", (tag_dw & 0xFF000000LU) >> 24);
+         a5_textprintf(glb_ds1edit.screen_buff, font, x + 90,  y, c_lightgreen, "%8lu", (tag_dw & 0x00FF0000LU) >> 16);
+         a5_textprintf(glb_ds1edit.screen_buff, font, x + 180, y, c_lightgreen, "%8lu", (tag_dw & 0x0000FF00LU) >> 8);
+         a5_textprintf(glb_ds1edit.screen_buff, font, x + 270, y, c_lightgreen, "%8lu",  tag_dw & 0x000000FFLU);
       }
 
       misc_draw_screen(mx, my);
 
       // new mouse state
-      mx = mouse_x;
-      my = mouse_y;
-      mb = mouse_b;
+      mx = a5_mouse_x;
+      my = a5_mouse_y;
+      mb = a5_mouse_b;
    }
 
    if (save == FALSE)
@@ -512,23 +512,17 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
       ds1_make_prop_2_block(ds1_idx);
    }
 
-   if (key[KEY_ESC])
+   if (key_pressed(KEY_ESC))
    {
-      while (key[KEY_ESC])
-      {
-         // wait until Escape is released
-      }
+      while (key_pressed(KEY_ESC)) { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
    }
-   if (key[KEY_ENTER] || key[KEY_ENTER_PAD])
+   if (key_pressed(KEY_ENTER) || key_pressed(KEY_ENTER_PAD))
    {
-      while (key[KEY_ENTER] || key[KEY_ENTER_PAD])
-      {
-         // wait until Enter is released
-      }
+      while (key_pressed(KEY_ENTER) || key_pressed(KEY_ENTER_PAD)) { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
    }
 
    // end
-   text_mode(-1);
+   a5_text_mode(-1);
 }
 
 
@@ -870,7 +864,7 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
    UBYTE         shad[4];
 
 
-   text_mode(-1);
+   a5_text_mode(-1);
 
    w_x0 = (glb_config.screen.width  - w_width) / 2;
    w_y0 = (glb_config.screen.height - w_height) / 2;
@@ -881,65 +875,65 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
    ok_y0 = w_y0 + w_height - 24;
    cancel_x0 = ok_x0 + 70;
 
-   rectfill(glb_ds1edit.screen_buff, w_x0, w_y0, w_x1, w_y1, c_black);
-   rect(glb_ds1edit.screen_buff, w_x0, w_y0, w_x1, w_y1, c_white);
+   a5_rectfill(glb_ds1edit.screen_buff, w_x0, w_y0, w_x1, w_y1, c_black);
+   a5_rect(glb_ds1edit.screen_buff, w_x0, w_y0, w_x1, w_y1, c_white);
 
    if (glb_ds1[ds1_idx].floor_num >= 1)
-      textout(glb_ds1edit.screen_buff, font, "F1", w_x0 + 2, w_y0 +  2, c_yellow);
+      a5_textout(glb_ds1edit.screen_buff, font, "F1", w_x0 + 2, w_y0 +  2, c_yellow);
    if (glb_ds1[ds1_idx].floor_num >= 2)
-      textout(glb_ds1edit.screen_buff, font, "F2", w_x0 + 2, w_y0 + 12, c_yellow);
+      a5_textout(glb_ds1edit.screen_buff, font, "F2", w_x0 + 2, w_y0 + 12, c_yellow);
 
    if (glb_ds1[ds1_idx].shadow_num >= 1)
-      textout(glb_ds1edit.screen_buff, font, "SH", w_x0 + 2, w_y0 + 32, c_yellow);
+      a5_textout(glb_ds1edit.screen_buff, font, "SH", w_x0 + 2, w_y0 + 32, c_yellow);
 
    if (glb_ds1[ds1_idx].wall_num >= 1)
-      textout(glb_ds1edit.screen_buff, font, "W1", w_x0 + 2, w_y0 + 52, c_yellow);
+      a5_textout(glb_ds1edit.screen_buff, font, "W1", w_x0 + 2, w_y0 + 52, c_yellow);
    if (glb_ds1[ds1_idx].wall_num >= 2)
-      textout(glb_ds1edit.screen_buff, font, "W2", w_x0 + 2, w_y0 + 62, c_yellow);
+      a5_textout(glb_ds1edit.screen_buff, font, "W2", w_x0 + 2, w_y0 + 62, c_yellow);
    if (glb_ds1[ds1_idx].wall_num >= 3)
-      textout(glb_ds1edit.screen_buff, font, "W3", w_x0 + 2, w_y0 + 72, c_yellow);
+      a5_textout(glb_ds1edit.screen_buff, font, "W3", w_x0 + 2, w_y0 + 72, c_yellow);
    if (glb_ds1[ds1_idx].wall_num >= 4)
-      textout(glb_ds1edit.screen_buff, font, "W4", w_x0 + 2, w_y0 + 82, c_yellow);
+      a5_textout(glb_ds1edit.screen_buff, font, "W4", w_x0 + 2, w_y0 + 82, c_yellow);
 
    if (glb_ds1[ds1_idx].tag_num >= 1)
-      textout(glb_ds1edit.screen_buff, font, "SUB", w_x0 + 2, w_y0 + 200, c_yellow);
+      a5_textout(glb_ds1edit.screen_buff, font, "SUB", w_x0 + 2, w_y0 + 200, c_yellow);
 
-   vline(glb_ds1edit.screen_buff, w_x0 + 237, w_y0 + 92, w_y0 + 105, c_yellow);
-   textout(glb_ds1edit.screen_buff, font, "Unwalkable", w_x0 + 200, w_y0 + 110, c_yellow);
+   a5_vline(glb_ds1edit.screen_buff, w_x0 + 237, w_y0 + 92, w_y0 + 105, c_yellow);
+   a5_textout(glb_ds1edit.screen_buff, font, "Unwalkable", w_x0 + 200, w_y0 + 110, c_yellow);
 
-   vline(glb_ds1edit.screen_buff, w_x0 + 27, w_y0 + 92, w_y0 + 105, c_yellow);
-   textout(glb_ds1edit.screen_buff, font, "Hidden", w_x0 + 10, w_y0 + 110, c_yellow);
+   a5_vline(glb_ds1edit.screen_buff, w_x0 + 27, w_y0 + 92, w_y0 + 105, c_yellow);
+   a5_textout(glb_ds1edit.screen_buff, font, "Hidden", w_x0 + 10, w_y0 + 110, c_yellow);
 
-   vline(glb_ds1edit.screen_buff, w_x0 + 87, w_y0 + 92, w_y0 + 105, c_yellow);
-   textout(glb_ds1edit.screen_buff, font, "?", w_x0 + 82, w_y0 + 110, c_yellow);
+   a5_vline(glb_ds1edit.screen_buff, w_x0 + 87, w_y0 + 92, w_y0 + 105, c_yellow);
+   a5_textout(glb_ds1edit.screen_buff, font, "?", w_x0 + 82, w_y0 + 110, c_yellow);
 
-   vline(glb_ds1edit.screen_buff, w_x0 + 97, w_y0 + 92, w_y0 + 125, c_yellow);
-   textout(glb_ds1edit.screen_buff, font, "IsShadow", w_x0 + 60, w_y0 + 130, c_yellow);
+   a5_vline(glb_ds1edit.screen_buff, w_x0 + 97, w_y0 + 92, w_y0 + 125, c_yellow);
+   a5_textout(glb_ds1edit.screen_buff, font, "IsShadow", w_x0 + 60, w_y0 + 130, c_yellow);
 
-   vline(glb_ds1edit.screen_buff, w_x0 + 162, w_y0 + 92, w_y0 + 140, c_yellow);
-   textout(glb_ds1edit.screen_buff, font, "Main-index", w_x0 + 130, w_y0 + 145, c_yellow);
+   a5_vline(glb_ds1edit.screen_buff, w_x0 + 162, w_y0 + 92, w_y0 + 140, c_yellow);
+   a5_textout(glb_ds1edit.screen_buff, font, "Main-index", w_x0 + 130, w_y0 + 145, c_yellow);
 
-   vline(glb_ds1edit.screen_buff, w_x0 + 333, w_y0 + 92, w_y0 + 140, c_yellow);
-   textout(glb_ds1edit.screen_buff, font, "Sub-index", w_x0 + 300, w_y0 + 145, c_yellow);
+   a5_vline(glb_ds1edit.screen_buff, w_x0 + 333, w_y0 + 92, w_y0 + 140, c_yellow);
+   a5_textout(glb_ds1edit.screen_buff, font, "Sub-index", w_x0 + 300, w_y0 + 145, c_yellow);
 
-   vline(glb_ds1edit.screen_buff, w_x0 + 413, w_y0 + 92, w_y0 + 100, c_yellow);
-   textout(glb_ds1edit.screen_buff, font, "Layers priority,", w_x0 + 360, w_y0 + 105, c_yellow);
-   textout(glb_ds1edit.screen_buff, font, "Type of layers,",  w_x0 + 360, w_y0 + 115, c_yellow);
-   textout(glb_ds1edit.screen_buff, font, "   and unknown",   w_x0 + 360, w_y0 + 125, c_yellow);
+   a5_vline(glb_ds1edit.screen_buff, w_x0 + 413, w_y0 + 92, w_y0 + 100, c_yellow);
+   a5_textout(glb_ds1edit.screen_buff, font, "Layers priority,", w_x0 + 360, w_y0 + 105, c_yellow);
+   a5_textout(glb_ds1edit.screen_buff, font, "Type of layers,",  w_x0 + 360, w_y0 + 115, c_yellow);
+   a5_textout(glb_ds1edit.screen_buff, font, "   and unknown",   w_x0 + 360, w_y0 + 125, c_yellow);
 
-   vline(glb_ds1edit.screen_buff, w_x0 + 503, w_y0 + 92, w_y0 + 140, c_yellow);
-   textout(glb_ds1edit.screen_buff, font, "Orientation", w_x0 + 455, w_y0 + 145, c_yellow);
+   a5_vline(glb_ds1edit.screen_buff, w_x0 + 503, w_y0 + 92, w_y0 + 140, c_yellow);
+   a5_textout(glb_ds1edit.screen_buff, font, "Orientation", w_x0 + 455, w_y0 + 145, c_yellow);
 
    // mouse background
    // show_mouse(NULL);
-   mx = mouse_x;
-   my = mouse_y;
-   mb = mouse_b;
+   mx = a5_mouse_x;
+   my = a5_mouse_y;
+   mb = a5_mouse_b;
 
    // main loop
    while ( ! done)
    {
-      text_mode(-1);
+      a5_text_mode(-1);
 
       // OK button
       c1 = c_darkgreen;
@@ -955,20 +949,20 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
             // OK button selected
             save = TRUE;
             done = TRUE;
-            while (mouse_b & 1)
+            while (a5_mouse_b & 1)
             {
-               // wait until left mouse button is not pressed anymore
+               al_rest(0.01); al_get_mouse_state(&a5_ms_state);
             }
          }
       }
-      if (key[KEY_ENTER] || key[KEY_ENTER_PAD])
+      if (key_pressed(KEY_ENTER) || key_pressed(KEY_ENTER_PAD))
       {
          save = TRUE;
          done = TRUE;
       }
-      rectfill(glb_ds1edit.screen_buff, ok_x0, ok_y0-3, ok_x0 + 64, ok_y0 + 20, c1);
-      rect(glb_ds1edit.screen_buff,     ok_x0, ok_y0-3, ok_x0 + 64, ok_y0 + 20, c2);
-      textout(glb_ds1edit.screen_buff, font, "OK", ok_x0+25, ok_y0+5, c3);
+      a5_rectfill(glb_ds1edit.screen_buff, ok_x0, ok_y0-3, ok_x0 + 64, ok_y0 + 20, c1);
+      a5_rect(glb_ds1edit.screen_buff,     ok_x0, ok_y0-3, ok_x0 + 64, ok_y0 + 20, c2);
+      a5_textout(glb_ds1edit.screen_buff, font, "OK", ok_x0+25, ok_y0+5, c3);
 
       // CANCEL button
       c1 = c_darkgreen;
@@ -984,22 +978,22 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
             // CANCEL button selected
             save = FALSE;
             done = TRUE;
-            while (mouse_b & 1)
+            while (a5_mouse_b & 1)
             {
-               // wait until left mouse button is not pressed anymore
+               al_rest(0.01); al_get_mouse_state(&a5_ms_state);
             }
          }
       }
-      if (key[KEY_ESC])
+      if (key_pressed(KEY_ESC))
       {
          save = FALSE;
          done = TRUE;
       }
-      rectfill(glb_ds1edit.screen_buff, cancel_x0, ok_y0-3, cancel_x0 + 64, ok_y0 + 20, c1);
-      rect(glb_ds1edit.screen_buff,     cancel_x0, ok_y0-3, cancel_x0 + 64, ok_y0 + 20, c2);
-      textout(glb_ds1edit.screen_buff, font, "CANCEL", cancel_x0+10, ok_y0+5, c3);
+      a5_rectfill(glb_ds1edit.screen_buff, cancel_x0, ok_y0-3, cancel_x0 + 64, ok_y0 + 20, c1);
+      a5_rect(glb_ds1edit.screen_buff,     cancel_x0, ok_y0-3, cancel_x0 + 64, ok_y0 + 20, c2);
+      a5_textout(glb_ds1edit.screen_buff, font, "CANCEL", cancel_x0+10, ok_y0+5, c3);
 
-      text_mode(0);
+      a5_text_mode(0);
 
       // floors
       y = w_y0 + 2;
@@ -1039,8 +1033,8 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
                      }
                      while (mb & 1)
                      {
-                        // wait until no mouse left button pressed
-                        mb = mouse_b;
+                        al_rest(0.01); al_get_mouse_state(&a5_ms_state); // wait until no mouse button pressed
+                        mb = a5_mouse_b;
                      }
                      switch(b)
                      {
@@ -1055,14 +1049,14 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
                }
                if (ptr_wbitsdata->bit_type_f[n][b][i] == WBITSTYPE_UNKNOWN)
                {
-                  textout(glb_ds1edit.screen_buff, font, "-", x, y, c);
+                  a5_textout(glb_ds1edit.screen_buff, font, "-", x, y, c);
                }
                else
                {
                   if (val[b] & (1 << i))
-                     textout(glb_ds1edit.screen_buff, font, "1", x, y, c);
+                     a5_textout(glb_ds1edit.screen_buff, font, "1", x, y, c);
                   else
-                     textout(glb_ds1edit.screen_buff, font, "0", x, y, c);
+                     a5_textout(glb_ds1edit.screen_buff, font, "0", x, y, c);
                }
 
                x += 10;
@@ -1116,8 +1110,8 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
                      }
                      while (mb & 1)
                      {
-                        // wait until no mouse button pressed
-                        mb = mouse_b;
+                        al_rest(0.01); al_get_mouse_state(&a5_ms_state); // wait until no mouse button pressed
+                        mb = a5_mouse_b;
                      }
                      switch(b)
                      {
@@ -1132,14 +1126,14 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
                }
                if (ptr_wbitsdata->bit_type_s[n][b][i] == WBITSTYPE_UNKNOWN)
                {
-                  textout(glb_ds1edit.screen_buff, font, "-", x, y, c);
+                  a5_textout(glb_ds1edit.screen_buff, font, "-", x, y, c);
                }
                else
                {
                   if (shad[b] & (1 << i))
-                     textout(glb_ds1edit.screen_buff, font, "1", x, y, c);
+                     a5_textout(glb_ds1edit.screen_buff, font, "1", x, y, c);
                   else
-                     textout(glb_ds1edit.screen_buff, font, "0", x, y, c);
+                     a5_textout(glb_ds1edit.screen_buff, font, "0", x, y, c);
                }
 
                x += 10;
@@ -1194,8 +1188,8 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
                      }
                      while (mb & 1)
                      {
-                        // wait until no mouse button pressed
-                        mb = mouse_b;
+                        al_rest(0.01); al_get_mouse_state(&a5_ms_state); // wait until no mouse button pressed
+                        mb = a5_mouse_b;
                      }
                      switch(b)
                      {
@@ -1210,14 +1204,14 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
                }
                if (ptr_wbitsdata->bit_type_w[n][b][i] == WBITSTYPE_UNKNOWN)
                {
-                  textout(glb_ds1edit.screen_buff, font, "-", x, y, c);
+                  a5_textout(glb_ds1edit.screen_buff, font, "-", x, y, c);
                }
                else
                {
                   if (val[b] & (1 << i))
-                     textout(glb_ds1edit.screen_buff, font, "1", x, y, c);
+                     a5_textout(glb_ds1edit.screen_buff, font, "1", x, y, c);
                   else
-                     textout(glb_ds1edit.screen_buff, font, "0", x, y, c);
+                     a5_textout(glb_ds1edit.screen_buff, font, "0", x, y, c);
                }
 
                x += 10;
@@ -1261,9 +1255,9 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
                         ptr_wbitsdata->mix_w[n].orientation + (1 << i);
                   }
                   while (mb & 1)
-                  {
-                     // wait until no mouse button pressed
-                     mb = mouse_b;
+                     {
+                        al_rest(0.01); al_get_mouse_state(&a5_ms_state); // wait until no mouse button pressed
+                     mb = a5_mouse_b;
                   }
 
                   if (ptr_wbitsdata->bit_type_w[n][4][i] == WBITSTYPE_DIFFERENT)
@@ -1272,14 +1266,14 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
             }
             if (ptr_wbitsdata->bit_type_w[n][4][i] == WBITSTYPE_UNKNOWN)
             {
-               textout(glb_ds1edit.screen_buff, font, "-", x, y, c);
+               a5_textout(glb_ds1edit.screen_buff, font, "-", x, y, c);
             }
             else
             {
                if (ptr_wbitsdata->mix_w[n].orientation & (1 << i))
-                  textout(glb_ds1edit.screen_buff, font, "1", x, y, c);
+                  a5_textout(glb_ds1edit.screen_buff, font, "1", x, y, c);
                else
-                  textout(glb_ds1edit.screen_buff, font, "0", x, y, c);
+                  a5_textout(glb_ds1edit.screen_buff, font, "0", x, y, c);
             }
             x += 10;
          }
@@ -1320,9 +1314,9 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
                      tag_dw = tag_dw + (1 << i);
                   }
                   while (mb & 1)
-                  {
-                     // wait until no mouse button pressed
-                     mb = mouse_b;
+                     {
+                        al_rest(0.01); al_get_mouse_state(&a5_ms_state); // wait until no mouse button pressed
+                     mb = a5_mouse_b;
                   }
 
                   ptr_wbitsdata->mix_t[n].num = tag_dw;
@@ -1333,14 +1327,14 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
             }
             if (ptr_wbitsdata->bit_type_t[n][i] == WBITSTYPE_UNKNOWN)
             {
-               textout(glb_ds1edit.screen_buff, font, "-", x, y, c);
+               a5_textout(glb_ds1edit.screen_buff, font, "-", x, y, c);
             }
             else
             {
                if (tag_dw & (1 << i))
-                  textout(glb_ds1edit.screen_buff, font, "1", x, y, c);
+                  a5_textout(glb_ds1edit.screen_buff, font, "1", x, y, c);
                else
-                  textout(glb_ds1edit.screen_buff, font, "0", x, y, c);
+                  a5_textout(glb_ds1edit.screen_buff, font, "0", x, y, c);
             }
             x += 10;
 
@@ -1349,18 +1343,18 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
          }
          y += 10;
          x = w_x0 + 48;
-         textprintf(glb_ds1edit.screen_buff, font, x,       y, c_lightgreen, "%8lu", (tag_dw & 0xFF000000LU) >> 24);
-         textprintf(glb_ds1edit.screen_buff, font, x + 90,  y, c_lightgreen, "%8lu", (tag_dw & 0x00FF0000LU) >> 16);
-         textprintf(glb_ds1edit.screen_buff, font, x + 180, y, c_lightgreen, "%8lu", (tag_dw & 0x0000FF00LU) >> 8);
-         textprintf(glb_ds1edit.screen_buff, font, x + 270, y, c_lightgreen, "%8lu",  tag_dw & 0x000000FFLU);
+         a5_textprintf(glb_ds1edit.screen_buff, font, x,       y, c_lightgreen, "%8lu", (tag_dw & 0xFF000000LU) >> 24);
+         a5_textprintf(glb_ds1edit.screen_buff, font, x + 90,  y, c_lightgreen, "%8lu", (tag_dw & 0x00FF0000LU) >> 16);
+         a5_textprintf(glb_ds1edit.screen_buff, font, x + 180, y, c_lightgreen, "%8lu", (tag_dw & 0x0000FF00LU) >> 8);
+         a5_textprintf(glb_ds1edit.screen_buff, font, x + 270, y, c_lightgreen, "%8lu",  tag_dw & 0x000000FFLU);
       }
 
       misc_draw_screen(mx, my);
 
       // new mouse state
-      mx = mouse_x;
-      my = mouse_y;
-      mb = mouse_b;
+      mx = a5_mouse_x;
+      my = a5_mouse_y;
+      mb = a5_mouse_b;
    }
 
    if (save == FALSE)
@@ -1376,23 +1370,17 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
       ds1_make_prop_2_block(ds1_idx);
    }
 
-   if (key[KEY_ESC])
+   if (key_pressed(KEY_ESC))
    {
-      while (key[KEY_ESC])
-      {
-         // wait until Escape is released
-      }
+      while (key_pressed(KEY_ESC)) { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
    }
-   if (key[KEY_ENTER] || key[KEY_ENTER_PAD])
+   if (key_pressed(KEY_ENTER) || key_pressed(KEY_ENTER_PAD))
    {
-      while (key[KEY_ENTER] || key[KEY_ENTER_PAD])
-      {
-         // wait until Enter is released
-      }
+      while (key_pressed(KEY_ENTER) || key_pressed(KEY_ENTER_PAD)) { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
    }
 
    // end
-   text_mode(-1);
+   a5_text_mode(-1);
 }
 
 

@@ -30,8 +30,8 @@ void anim_build_layer_cache(LAY_INF_S *lay)
       if (lay->bmp[i] == NULL)
          continue;
 
-      w = lay->bmp[i]->w;
-      h = lay->bmp[i]->h;
+      w = al_get_bitmap_width(lay->bmp[i]);
+      h = al_get_bitmap_height(lay->bmp[i]);
       lay->cache[i] = cache_tile_create(w, h);
       if (lay->cache[i] == NULL)
          continue;
@@ -39,7 +39,7 @@ void anim_build_layer_cache(LAY_INF_S *lay)
       // copy palette indices from BITMAP to CACHED_TILE
       for (y = 0; y < h; y++)
          for (x = 0; x < w; x++)
-            lay->cache[i]->indices[y * w + x] = (uint8_t) getpixel(lay->bmp[i], x, y);
+            lay->cache[i]->indices[y * w + x] = (uint8_t) a5_getpixel(lay->bmp[i], x, y);
    }
 }
 
@@ -94,9 +94,9 @@ int anim_load_dcc(
    }
 
    // allocate the bitmaps
-   size = dcc->header.frames_per_dir * sizeof(BITMAP *);
+   size = dcc->header.frames_per_dir * sizeof(ALLEGRO_BITMAP *);
    lay->bmp_num = dcc->header.frames_per_dir;
-   lay->bmp = (BITMAP **) malloc(size);
+   lay->bmp = (ALLEGRO_BITMAP **) malloc(size);
    if (lay->bmp == NULL)
    {
       dcc_destroy(dcc);
@@ -105,19 +105,19 @@ int anim_load_dcc(
    memset(lay->bmp, 0, size);
    
    // copy the bitmaps
-   w = dcc->frame[dir][0].bmp->w;
-   h = dcc->frame[dir][0].bmp->h;
+   w = al_get_bitmap_width(dcc->frame[dir][0].bmp);
+   h = al_get_bitmap_height(dcc->frame[dir][0].bmp);
    lay->off_x = dcc->direction[dir].box.xmin;
    lay->off_y = dcc->direction[dir].box.ymin;
    for (i=0; i < dcc->header.frames_per_dir; i++)
    {
-      lay->bmp[i] = create_bitmap(w, h);
+      lay->bmp[i] = al_create_bitmap(w, h);
       if (lay->bmp[i] == NULL)
       {
          while (i)
          {
             i--;
-            destroy_bitmap(lay->bmp[i]);
+            al_destroy_bitmap(lay->bmp[i]);
          }
          dcc_destroy(dcc);
          return 1;
@@ -126,11 +126,11 @@ int anim_load_dcc(
       {
          for (y=0; y<h; y++)
             for (x=0; x<w; x++)
-               putpixel(lay->bmp[i], x, y, palshift[
-                  getpixel(dcc->frame[dir][i].bmp, x, y)]);
+               a5_putpixel(lay->bmp[i], x, y, palshift[
+                  a5_getpixel(dcc->frame[dir][i].bmp, x, y)]);
       }
       else
-         blit(dcc->frame[dir][i].bmp, lay->bmp[i], 0, 0, 0, 0, w, h);
+         a5_blit(dcc->frame[dir][i].bmp, lay->bmp[i], 0, 0, 0, 0, w, h);
    }
 
    // build CACHED_TILE array from the BITMAP frames
@@ -514,12 +514,12 @@ COF_S * anim_load_desc_gfx(int i, int progress)
 // ==========================================================================
 int anim_destroy_cof(COF_S * cof)
 {
-   BITMAP ** bmp;
+   ALLEGRO_BITMAP ** bmp;
    int    b, max_b, c, size = 0;
-   
+
    if (cof == NULL)
       return 0;
-      
+
    // free bitmaps and cached tiles
    for (c=0; c < COMPOSIT_NB; c++)
    {
@@ -531,12 +531,12 @@ int anim_destroy_cof(COF_S * cof)
          {
             if (bmp[b] != NULL)
             {
-               size += sizeof(BITMAP);
-               size += bmp[b]->w * bmp[b]->h;
-               destroy_bitmap(bmp[b]);
+               size += 64 /* approx sizeof bitmap header */;
+               size += al_get_bitmap_width(bmp[b]) * al_get_bitmap_height(bmp[b]);
+               al_destroy_bitmap(bmp[b]);
             }
          }
-         size += max_b * sizeof (BITMAP *);
+         size += max_b * sizeof (ALLEGRO_BITMAP *);
          free(bmp);
       }
 

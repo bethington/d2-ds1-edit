@@ -10,8 +10,6 @@ October 30 2011 :
 
 #define COMPILER_NAME              "Visual C++ 2010 Express Edition"
 #define WINDS1EDIT_GUI_LOADER_LINK "http://d2mods.com/forum/viewtopic.php?f=81&t=21281"
-#define DS1EDIT_GOOD_DLL           "Allegro 4.4.2, MSVC"
-#define DS1EDIT_DLL_LINK           "http://paul.siramy.free.fr/_divers/ds1/allegro-4.4.2-monolith-md.zip"
 
 #ifdef WIN32
    #define DS1EDIT_BUILD __DATE__
@@ -249,10 +247,10 @@ void ds1edit_init(void)
       char   name[40];
       MODE_E idx;
    } cursor[MOD_MAX] = {
-        {"pcx\\cursor_t.pcx", MOD_T}, // tiles
-        {"pcx\\cursor_o.pcx", MOD_O}, // objects
-        {"pcx\\cursor_p.pcx", MOD_P}, // paths
-        {"pcx\\cursor_l.pcx", MOD_L}  // lights
+        {"pcx\\cursor_t.png", MOD_T}, // tiles
+        {"pcx\\cursor_o.png", MOD_O}, // objects
+        {"pcx\\cursor_p.png", MOD_P}, // paths
+        {"pcx\\cursor_l.png", MOD_L}  // lights
      };
    int  i, o;
    static int
@@ -313,7 +311,7 @@ void ds1edit_init(void)
 
    // set the version
    glb_ds1edit.version_build = DS1EDIT_BUILD;
-   glb_ds1edit.version_dll   = DS1EDIT_GOOD_DLL;
+   glb_ds1edit.version_dll   = "Allegro 5";
    strcpy(glb_ds1edit.version, DS1EDIT_BUILD);
    printf(".exe version : %s", COMPILER_NAME);
    printf(
@@ -342,7 +340,7 @@ void ds1edit_init(void)
    for (i=0; i<MOD_MAX; i++)
    {
       glb_ds1edit.mouse_cursor[i] =
-         load_pcx(cursor[i].name, glb_ds1edit.dummy_pal);
+         al_load_bitmap(cursor[i].name);
       if (glb_ds1edit.mouse_cursor[i] == NULL)
       {
          sprintf(
@@ -414,26 +412,19 @@ void ds1edit_init(void)
 
 
 // ==========================================================================
-UDWORD ds1edit_get_bitmap_size(BITMAP * bmp)
+UDWORD ds1edit_get_bitmap_size(ALLEGRO_BITMAP * bmp)
 {
    UDWORD size = 0;
-   
+   int w, h;
+
    if (bmp == NULL)
       return 0;
-   
-   size += sizeof(BITMAP);
-   size += (sizeof(UBYTE *) * bmp->h);
 
-   switch (bitmap_color_depth(bmp))
-   {
-      case  8 : size += bmp->w * bmp->h; break;
-      case 15 :
-      case 16 : size += 2 * (bmp->w * bmp->h); break;
-      case 24 : size += 3 * (bmp->w * bmp->h); break;
-      case 32 : size += 4 * (bmp->w * bmp->h); break;
-      default :
-         break;
-   }
+   w = al_get_bitmap_width(bmp);
+   h = al_get_bitmap_height(bmp);
+
+   /* Allegro 5 bitmaps are always 32bpp internally */
+   size += 4 * (w * h);
 
    return size;
 }
@@ -441,17 +432,15 @@ UDWORD ds1edit_get_bitmap_size(BITMAP * bmp)
 
 
 // ==========================================================================
-UDWORD ds1edit_get_RLE_bitmap_size(RLE_SPRITE * rle)
+// RLE sprites no longer exist in Allegro 5 -- this is kept as a stub
+// that treats the pointer as an ALLEGRO_BITMAP for callers that still
+// reference it during the migration period.
+UDWORD ds1edit_get_RLE_bitmap_size(ALLEGRO_BITMAP * bmp)
 {
-   UDWORD size = 0;
-   
-   if (rle == NULL)
+   if (bmp == NULL)
       return 0;
-   
-   size += sizeof(RLE_SPRITE);
-   size += rle->size;
 
-   return size;
+   return (UDWORD)(4 * al_get_bitmap_width(bmp) * al_get_bitmap_height(bmp));
 }
 
 
@@ -487,12 +476,11 @@ void ds1edit_exit(void)
    // mouse cursor
    fprintf(stderr, "   * mouse cursor...\n");
    fflush(stderr);
-   show_mouse(NULL);
    for (i=0; i<MOD_MAX; i++)
    {
       if (glb_ds1edit.mouse_cursor[i] != NULL)
       {
-         destroy_bitmap(glb_ds1edit.mouse_cursor[i]);
+         al_destroy_bitmap(glb_ds1edit.mouse_cursor[i]);
          glb_ds1edit.mouse_cursor[i] = NULL;
       }
    }
@@ -502,13 +490,13 @@ void ds1edit_exit(void)
    fflush(stderr);
    if (glb_ds1edit.screen_buff != NULL)
    {
-      destroy_bitmap(glb_ds1edit.screen_buff);
+      al_destroy_bitmap(glb_ds1edit.screen_buff);
       glb_ds1edit.screen_buff = NULL;
    }
 
    if (glb_ds1edit.big_screen_buff != NULL)
    {
-      destroy_bitmap(glb_ds1edit.big_screen_buff);
+      al_destroy_bitmap(glb_ds1edit.big_screen_buff);
       glb_ds1edit.big_screen_buff = NULL;
    }
    
@@ -592,13 +580,13 @@ void ds1edit_exit(void)
       {
          if (glb_ds1edit.subtile_nowalk[z][i] != NULL)
          {
-            destroy_rle_sprite(glb_ds1edit.subtile_nowalk[z][i]);
+            al_destroy_bitmap(glb_ds1edit.subtile_nowalk[z][i]);
             glb_ds1edit.subtile_nowalk[z][i] = NULL;
          }
 
          if (glb_ds1edit.subtile_nojump[z][i] != NULL)
          {
-            destroy_rle_sprite(glb_ds1edit.subtile_nojump[z][i]);
+            al_destroy_bitmap(glb_ds1edit.subtile_nojump[z][i]);
             glb_ds1edit.subtile_nojump[z][i] = NULL;
          }
       }
@@ -606,7 +594,7 @@ void ds1edit_exit(void)
 
    if (glb_ds1edit.subtile_help != NULL)
    {
-      destroy_bitmap(glb_ds1edit.subtile_help);
+      al_destroy_bitmap(glb_ds1edit.subtile_help);
       glb_ds1edit.subtile_help = NULL;
    }
 
@@ -622,7 +610,7 @@ void ds1edit_exit(void)
          {
             if (glb_ds1edit.subtile_flag[b][z][i] != NULL)
             {
-               destroy_rle_sprite(glb_ds1edit.subtile_flag[b][z][i]);
+               al_destroy_bitmap(glb_ds1edit.subtile_flag[b][z][i]);
                glb_ds1edit.subtile_flag[b][z][i] = NULL;
             }
          }
@@ -720,23 +708,8 @@ void ds1edit_debug(void)
 }
 
 
-// ==========================================================================
-// 1 tick each 1/25 of a second
-void ds1edit_counter_tick(void)
-{
-   glb_ds1edit.ticks_elapsed++;
-}
-END_OF_FUNCTION(ds1edit_counter_tick);
-
-
-// ==========================================================================
-// 1 tick each second
-void ds1edit_counter_fps(void)
-{
-   glb_ds1edit.old_fps = glb_ds1edit.fps;
-   glb_ds1edit.fps = 0;
-}
-END_OF_FUNCTION(ds1edit_counter_fps);
+// Timer callbacks removed -- Allegro 5 uses event-based timers.
+// Tick and FPS counting is now handled in the main event loop.
 
 
 // ==========================================================================
@@ -829,174 +802,42 @@ int main(int argc, char * argv[])
 {
    int         i, mpq_num=0, mod_num=0, ds1_idx=0;
    char        * ininame = "ds1edit.ini";
-   int         res_w, res_h;
    static char tmp  [512];
    static char tmp2 [512];
 
    // init
    srand(time(NULL));
-   allegro_init();
+   if (!al_init())
+      ds1edit_error("main(), error.\nCan't initialize Allegro 5.");
 
-   set_gfx_mode(GFX_TEXT, 80, 25, 0, 0);
-   
-   if (install_keyboard() != 0)
+   al_init_image_addon();
+   al_init_font_addon();
+   al_init_primitives_addon();
+   a5_font = al_create_builtin_font();
+
+   if (!al_install_keyboard())
       ds1edit_error("main(), error.\nCan't install the Keyboard Handler.");
-   if (install_timer() != 0)
-      ds1edit_error("main(), error.\nCan't install the Timer Handler.");
 
-   set_color_depth(8);
    if (atexit(ds1edit_exit) != 0)
       ds1edit_error("main(), error.\nCan't install the 'atexit' Handler.");
 
+   // Use memory bitmaps until display is created (needed for headless mode
+   // and for loading bitmaps before display setup)
+   al_set_new_bitmap_flags(ALLEGRO_MEMORY_BITMAP);
+
    ds1edit_init();
 
-   // some allegro infos
-   printf("\n[allegro var]\n");
-   printf("allegro_id          = \"%s\"\n", allegro_id);
-   printf("os_type             = ");
-   switch(os_type)
-   {
-       case OSTYPE_UNKNOWN  : printf("unknown, or regular MSDOS\n"); break;
-       case OSTYPE_WIN3     : printf("Windows 3.1 or earlier\n");    break;
-       case OSTYPE_WIN95    : printf("Windows 95\n");                break;
-       case OSTYPE_WIN98    : printf("Windows 98\n");                break;
-       case OSTYPE_WINME    : printf("Windows ME\n");                break;
-       case OSTYPE_WINNT    : printf("Windows NT\n");                break;
-       case OSTYPE_WIN2000  : printf("Windows 2000\n");              break;
-       case OSTYPE_WINXP    : printf("Windows XP\n");                break;
-       case OSTYPE_WIN2003  : printf("Windows 2003\n");              break;
-       case OSTYPE_WINVISTA : printf("Windows Vista\n");             break;
-       case OSTYPE_WIN7     : printf("Windows Seven\n");             break;
-       case OSTYPE_OS2      : printf("OS/2\n");                      break;
-       case OSTYPE_WARP     : printf("OS/2 Warp 3\n");               break;
-       case OSTYPE_DOSEMU   : printf("Linux DOSEMU\n");              break;
-       case OSTYPE_OPENDOS  : printf("Caldera OpenDOS\n");           break;
-       case OSTYPE_LINUX    : printf("Linux\n");                     break;
-       case OSTYPE_SUNOS    : printf("SunOS/Solaris\n");             break;
-       case OSTYPE_FREEBSD  : printf("FreeBSD\n");                   break;
-       case OSTYPE_NETBSD   : printf("NetBSD\n");                    break;
-       case OSTYPE_IRIX     : printf("IRIX\n");                      break;
-       case OSTYPE_DARWIN   : printf("Darwin\n");                    break;
-       case OSTYPE_QNX      : printf("QNX\n");                       break;
-       case OSTYPE_UNIX     : printf("Unknown Unix variant\n");      break;
-       case OSTYPE_BEOS     : printf("BeOS\n");                      break;
-       case OSTYPE_HAIKU    : printf("Haiku\n");                     break;
-       case OSTYPE_MACOS    : printf("MacOS\n");                     break;
-       case OSTYPE_MACOSX   : printf("MacOS X\n");                   break;
-       case OSTYPE_PSP      : printf("Psp\n");                       break;
-       default : printf("?\n"); break;
-   }
-   printf("os_version          = %i\n", os_version);
-   printf("os_revision         = %i\n", os_revision);
-   printf("os_multitasking     = %s\n", os_multitasking ? "TRUE" : "FALSE");
-   printf("cpu_vendor          = %s\n", cpu_vendor);
-   printf("cpu_family          = ");
-   switch(cpu_family)
-   {
-       case CPU_FAMILY_UNKNOWN  : printf("unknown\n");                             break;
-       case CPU_FAMILY_I386     : printf("Intel-compatible 386\n");                break;
-       case CPU_FAMILY_I486     : printf("Intel-compatible 486\n");                break;
-       case CPU_FAMILY_I586     : printf("Pentium or equivalent\n");               break;
-       case CPU_FAMILY_I686     : printf("Pentium Pro, II, III or equivalent\n");  break;
-       case CPU_FAMILY_ITANIUM  : printf("Itanium processor\n");                   break;
-       case CPU_FAMILY_POWERPC  : printf("PowerPC processor\n");                   break;
-       case CPU_FAMILY_EXTENDED : printf("needs to be read from the cpu_model\n"); break;
-       default : printf("?\n"); break;
-   }
-   printf("cpu_model           = ");
-   if (cpu_family == CPU_FAMILY_I586)
-   {
-      switch(cpu_model)
-      {
-         case CPU_MODEL_PENTIUM : printf("CPU_MODEL_PENTIUM\n"); break;
-         case CPU_MODEL_K5      : printf("CPU_MODEL_K5\n");      break;
-         case CPU_MODEL_K6      : printf("CPU_MODEL_K6\n");      break;
-         default : printf("?\n"); break;
-      }
-   }
-   else if (cpu_family == CPU_FAMILY_I686)
-   {
-      switch(cpu_model)
-      {
-         case CPU_MODEL_PENTIUMPRO           : printf("CPU_MODEL_PENTIUMPRO\n");           break;
-         case CPU_MODEL_PENTIUMII            : printf("CPU_MODEL_PENTIUMII\n");            break;
-         case CPU_MODEL_PENTIUMIIIKATMAI     : printf("CPU_MODEL_PENTIUMIIIKATMAI\n");     break;
-         case CPU_MODEL_PENTIUMIIICOPPERMINE : printf("CPU_MODEL_PENTIUMIIICOPPERMINE\n"); break;
-         case CPU_MODEL_ATHLON               : printf("CPU_MODEL_ATHLON\n");               break;
-         case CPU_MODEL_DURON                : printf("CPU_MODEL_DURON\n");                break;
-         default : printf("?\n"); break;
-      }
-   }
-   else if (cpu_family == CPU_FAMILY_EXTENDED)
-   {
-      switch(cpu_model)
-      {
-         case CPU_MODEL_PENTIUMIV : printf("CPU_MODEL_PENTIUMIV\n"); break;
-         case CPU_MODEL_XEON      : printf("CPU_MODEL_XEON\n");      break;
-         case CPU_MODEL_ATHLON64  : printf("CPU_MODEL_ATHLON64\n");  break;
-         case CPU_MODEL_OPTERON   : printf("CPU_MODEL_OPTERON\n");   break;
-         default : printf("?\n"); break;
-      }
-   }
-   else if (cpu_family == CPU_FAMILY_POWERPC)
-   {
-      switch(cpu_model)
-      {
-         case CPU_MODEL_POWERPC_601  : printf("CPU_MODEL_POWERPC_601\n");  break;
-         case CPU_MODEL_POWERPC_602  : printf("CPU_MODEL_POWERPC_602\n");  break;
-         case CPU_MODEL_POWERPC_603  : printf("CPU_MODEL_POWERPC_603\n");  break;
-         case CPU_MODEL_POWERPC_604  : printf("CPU_MODEL_POWERPC_604\n");  break;
-         case CPU_MODEL_POWERPC_620  : printf("CPU_MODEL_POWERPC_620\n");  break;
-         case CPU_MODEL_POWERPC_750  : printf("CPU_MODEL_POWERPC_750\n");  break;
-         case CPU_MODEL_POWERPC_7400 : printf("CPU_MODEL_POWERPC_7400\n"); break;
-         case CPU_MODEL_POWERPC_7450 : printf("CPU_MODEL_POWERPC_7450\n"); break;
-         default : printf("?\n"); break;
-      }
-   }
-   else
-      printf("-\n");
-   printf("cpu_capabilities    = 0x%08X\n", cpu_capabilities);
-   printf("desktop_color_depth = %ibpp\n", desktop_color_depth());
-   get_desktop_resolution( & res_w, & res_h);
-   printf("desktop_resolution  = %i * %i\n", res_w, res_h);
+   // Allegro 5 version info
+   printf("\n[allegro]\n");
+   printf("allegro_version     = %i.%i.%i\n",
+      al_get_allegro_version() >> 24,
+      (al_get_allegro_version() >> 16) & 0xFF,
+      (al_get_allegro_version() >> 8) & 0xFF);
    printf("\n");
-
-   sprintf(
-      tmp,
-      "DS1 Editor, %s Build %s, %s",
-      DS1EDIT_BUILD_MODE,
-      glb_ds1edit.version,
-      allegro_id
-   );
-   set_window_title(tmp);
-
-   // allegro dll safety check
-   if (strcmp(allegro_id, DS1EDIT_GOOD_DLL) != 0)
-   {
-      sprintf(tmp,
-         "main(), error.\n"
-         "\n"
-         "The current Allegro DLL that you're using is :\n"
-         "   * %s\n"
-         "\n"
-         "It should be :\n"
-         "   * %s\n"
-         "\n"
-         "Download the good Allegro DLL from :\n"
-         "\n"
-         "   %s\n"
-         "\n"
-         "Then extract the DLL into the Ds1edit directory and restart the program.",
-         allegro_id,
-         DS1EDIT_GOOD_DLL,
-         DS1EDIT_DLL_LINK
-      );
-      ds1edit_error(tmp);
-   }
 
    // check data\tmp directory
    sprintf(tmp, "%s%s\\.", glb_ds1edit_data_dir, glb_ds1edit_tmp_dir);
-   if (file_exists(tmp, -1, NULL) == 0)
+   if (a5_file_exists(tmp) == 0)
    {
       // create tmp directory
       sprintf(tmp, "%s%s", glb_ds1edit_data_dir, glb_ds1edit_tmp_dir);
@@ -1017,14 +858,14 @@ int main(int argc, char * argv[])
    
    // check if ds1edit.ini exists
    sprintf(tmp, "ds1edit.ini");
-   if (file_exists(tmp, -1, NULL) == 0)
+   if (a5_file_exists(tmp) == 0)
    {
       ini_create(tmp);
-      allegro_message(
+      printf(
          "main(), error.\n"
          "There was no 'Ds1edit.ini' file in the Ds1edit directory.\n"
          "A new one with default values was created.\n"
-         "Edit it to fit your configuration, then restart the program."
+         "Edit it to fit your configuration, then restart the program.\n"
       );
       exit(DS1ERR_INICREATE);
    }
@@ -1038,7 +879,7 @@ int main(int argc, char * argv[])
    if (glb_config.mod_dir[0] != NULL)
    {
       sprintf(tmp, "%s\\.", glb_config.mod_dir[0]);
-      if (file_exists(tmp, -1, NULL) == 0)
+      if (a5_file_exists(tmp) == 0)
       {
          sprintf(
             tmp2,
@@ -1048,7 +889,6 @@ int main(int argc, char * argv[])
             tmp
          );
          printf("%s\n", tmp2);
-         allegro_message(tmp2);
       }
       else
          mod_num = 1;
@@ -1058,7 +898,7 @@ int main(int argc, char * argv[])
    {
       if (glb_config.mpq_file[i] != NULL)
       {
-         if (file_exists(glb_config.mpq_file[i], -1, NULL) == 0)
+         if (a5_file_exists(glb_config.mpq_file[i]) == 0)
          {
             sprintf(
                tmp2,
@@ -1068,7 +908,6 @@ int main(int argc, char * argv[])
                glb_config.mpq_file[i]
             );
             printf("%s\n", tmp2);
-            allegro_message(tmp2);
          }
          else
             mpq_num++;
@@ -1081,7 +920,6 @@ int main(int argc, char * argv[])
          "main(), error.\n"
          "No Mod Directory and no MPQ files available : it can't work.");
       ds1edit_error(tmp);
-      allegro_message(tmp);
    }
    else if (mpq_num < 4)
       printf("warning : not all the 4 mpq have been found\n");
@@ -1101,17 +939,15 @@ int main(int argc, char * argv[])
    wedit_make_2nd_buttons();
    misc_walkable_tile_info_pcx();
 
-   // screen buffer (we're still in 8bpp color depth !)
-
+   // screen buffer
    // we're making a big buffer, with 300 pixels on each 4 borders,
    // and then we'll make the true screen buffer be a sub-bitmap of this buffer
    // this is to avoid potential problems with clipings, especially when using
    // the functions from gfx_custom.c
-   // yes, I'm hidding the problem under the carpet
 
    glb_config.screen.width  += 600;
    glb_config.screen.height += 600;
-   glb_ds1edit.big_screen_buff = create_bitmap(
+   glb_ds1edit.big_screen_buff = al_create_bitmap(
       glb_config.screen.width,
       glb_config.screen.height
    );
@@ -1126,7 +962,7 @@ int main(int argc, char * argv[])
    glb_config.screen.width  -= 600;
    glb_config.screen.height -= 600;
 
-   glb_ds1edit.screen_buff = create_sub_bitmap(
+   glb_ds1edit.screen_buff = al_create_sub_bitmap(
       glb_ds1edit.big_screen_buff,
       300,
       300,
@@ -1220,13 +1056,13 @@ int main(int argc, char * argv[])
              "\n"
              "   file.ini in syntaxe 2 is a text file, each line for 1 ds1 to load,\n"
              "   3 elements : <lvlTypes.txt Id> <lvlPrest.txt Def> <file.ds1>\n");
-      allegro_message(
+      printf(
          "main(), error.\n"
          "This program needs to get parameters by the command-line.\n"
          "\n"
          "Check the README.txt to know how to make .bat files,\n"
-         "or use a front-end tool like \"ds1edit Loader\" :\n"         
-         WINDS1EDIT_GUI_LOADER_LINK
+         "or use a front-end tool like \"ds1edit Loader\" :\n"
+         WINDS1EDIT_GUI_LOADER_LINK "\n"
       );
       exit(DS1ERR_CMDLINE);
    }
@@ -1261,8 +1097,8 @@ int main(int argc, char * argv[])
    // headless mode : render one frame and save to file, then exit
    if (glb_ds1edit.cmd_line.headless_mode == TRUE)
    {
-      BITMAP * old_screen_buff;
-      int      pal_idx;
+      ALLEGRO_BITMAP * old_screen_buff;
+      int              pal_idx;
 
       printf("headless mode : rendering to \"%s\"...\n", glb_ds1edit.cmd_line.headless_output);
       fflush(stdout);
@@ -1273,19 +1109,19 @@ int main(int argc, char * argv[])
       else
          pal_idx = glb_ds1edit.cmd_line.force_pal_num - 1;
 
-      set_palette(glb_ds1edit.vga_pal[pal_idx]);
+      a5_current_palette = &glb_ds1edit.vga_pal[pal_idx];
 
       // render complete map
       old_screen_buff = glb_ds1edit.screen_buff;
+      // TODO: wpreview_draw_tiles_big_screenshot still uses A4 internally -- needs migration
       if (wpreview_draw_tiles_big_screenshot(ds1_idx) == 0)
       {
-         save_bmp(glb_ds1edit.cmd_line.headless_output,
-                  glb_ds1edit.screen_buff,
-                  glb_ds1edit.vga_pal[pal_idx]);
+         al_save_bitmap(glb_ds1edit.cmd_line.headless_output,
+                        glb_ds1edit.screen_buff);
          printf("headless mode : saved %i x %i screenshot\n",
-                glb_ds1edit.screen_buff->w,
-                glb_ds1edit.screen_buff->h);
-         destroy_bitmap(glb_ds1edit.screen_buff);
+                al_get_bitmap_width(glb_ds1edit.screen_buff),
+                al_get_bitmap_height(glb_ds1edit.screen_buff));
+         al_destroy_bitmap(glb_ds1edit.screen_buff);
       }
       else
       {
@@ -1301,124 +1137,39 @@ int main(int argc, char * argv[])
    // start
    fflush(stdout);
    fflush(stderr);
-   if ( (glb_config.screen.depth !=  8) &&
-        (glb_config.screen.depth != 15) &&
-        (glb_config.screen.depth != 16) &&
-        (glb_config.screen.depth != 24) &&
-        (glb_config.screen.depth != 32)
-      )
-   {
-      sprintf(
-         tmp,
-         "main(), error.\nInvalid color depth (%i).\nValid values are : 8, 15, 16, 24 and 32.\nCheck the 'Ds1edit.ini' file, at the 'screen_depth' line",
-         glb_config.screen.depth
-      );
-      ds1edit_error(tmp);
-   }
 
-   // set color depth for the screen
-   set_color_depth(glb_config.screen.depth);
-
-   request_refresh_rate(glb_config.screen.refresh);
+   // display setup
    if (glb_config.fullscreen == TRUE)
-   {
-      if (set_gfx_mode(GFX_AUTODETECT_FULLSCREEN, glb_config.screen.width,
-             glb_config.screen.height, 0, 0) != 0)
-      {
-         sprintf(
-            tmp,
-            "main(), error.\nCan't initialize this graphical mode : "
-            "%i*%i %ibpp %iHz %s.\nAllegro_error = \"%s\".",
-            glb_config.screen.width,
-            glb_config.screen.height,
-            glb_config.screen.depth,
-            glb_config.screen.refresh,
-            "Fullscreen",
-            allegro_error
-         );
-         ds1edit_error(tmp);
-      }
-   }
+      al_set_new_display_flags(ALLEGRO_FULLSCREEN);
    else
-   {
-      if (set_gfx_mode(GFX_AUTODETECT_WINDOWED, glb_config.screen.width,
-             glb_config.screen.height, 0, 0) != 0)
-      {
-         sprintf(
-            tmp,
-            "main(), error.\nCan't initialize this graphical mode : "
-            "%i*%i %ibpp %iHz %s.\nAllegro_error = \"%s\".",
-            glb_config.screen.width,
-            glb_config.screen.height,
-            glb_config.screen.depth,
-            glb_config.screen.refresh,
-            "Windowed",
-            allegro_error
-         );
-         ds1edit_error(tmp);
-      }
-   }
-   glb_ds1edit.current_refresh_rate = get_refresh_rate();
+      al_set_new_display_flags(ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE);
 
-   // video pages
-   glb_ds1edit.video_page[0] = create_video_bitmap(
-      glb_config.screen.width,
-      glb_config.screen.height
-   );
-   if (glb_ds1edit.video_page[0] == NULL)
-   {
-      sprintf(tmp, "main(), error.\nCan't create video page 1.",
-         glb_config.screen.width,
-         glb_config.screen.height
-      );
-      ds1edit_error(tmp);
-   }
-
-   glb_ds1edit.video_page[1] = create_video_bitmap(
-      glb_config.screen.width,
-      glb_config.screen.height
-   );
-   if (glb_ds1edit.video_page[1] == NULL)
-   {
-      sprintf(tmp, "main(), error.\nCan't create video page 2.",
-         glb_config.screen.width,
-         glb_config.screen.height
-      );
-      ds1edit_error(tmp);
-   }
-
-   // when the editor is minimized, stop it until the user returns
-   set_display_switch_mode(SWITCH_PAUSE);
-
-   // get back to a 8bpp color depth, for all the next BITMAP creation
-   set_color_depth(8);
-
-   text_mode(-1); // draw text as sprite, no background color
-
-   LOCK_VARIABLE(glb_ds1edit.old_fps);
-   LOCK_VARIABLE(glb_ds1edit.fps);
-   LOCK_VARIABLE(glb_ds1edit.ticks_elapsed);
-   LOCK_FUNCTION(ds1edit_counter_tick);
-   LOCK_FUNCTION(ds1edit_counter_fps);
-
-   if (install_int(ds1edit_counter_tick, 1000 / 25) != 0)
+   a5_display = al_create_display(glb_config.screen.width, glb_config.screen.height);
+   if (a5_display == NULL)
    {
       sprintf(
          tmp,
-         "main(), error.\nCan't install the 'counter_tick' timer handler at 25Hz."
-      );
-      ds1edit_error(tmp);
-   }
-   if (install_int(ds1edit_counter_fps, 1000) != 0)
-   {
-      sprintf(
-         tmp,
-         "main(), error.\nCan't install the 'counter_fps' timer handler at 1Hz."
+         "main(), error.\nCan't create display (%i*%i %s).",
+         glb_config.screen.width,
+         glb_config.screen.height,
+         glb_config.fullscreen ? "Fullscreen" : "Windowed"
       );
       ds1edit_error(tmp);
    }
 
-   if (install_mouse() == -1)
+   sprintf(
+      tmp,
+      "DS1 Editor, %s Build %s, Allegro %i.%i.%i",
+      DS1EDIT_BUILD_MODE,
+      glb_ds1edit.version,
+      al_get_allegro_version() >> 24,
+      (al_get_allegro_version() >> 16) & 0xFF,
+      (al_get_allegro_version() >> 8) & 0xFF
+   );
+   al_set_window_title(a5_display, tmp);
+
+   // mouse
+   if (!al_install_mouse())
    {
       sprintf(
          tmp,
@@ -1426,9 +1177,21 @@ int main(int argc, char * argv[])
       );
       ds1edit_error(tmp);
    }
-   set_mouse_speed(glb_config.mouse_speed.x, glb_config.mouse_speed.y);
 
-   // show_mouse(screen);
+   // event queue
+   a5_event_queue = al_create_event_queue();
+   al_register_event_source(a5_event_queue, al_get_keyboard_event_source());
+   al_register_event_source(a5_event_queue, al_get_mouse_event_source());
+   al_register_event_source(a5_event_queue, al_get_display_event_source(a5_display));
+
+   // timers (Allegro 5 event-based timers replace the old interrupt callbacks)
+   a5_tick_timer = al_create_timer(1.0 / 25.0);
+   al_register_event_source(a5_event_queue, al_get_timer_event_source(a5_tick_timer));
+   al_start_timer(a5_tick_timer);
+
+   a5_fps_timer = al_create_timer(1.0);
+   al_register_event_source(a5_event_queue, al_get_timer_event_source(a5_fps_timer));
+   al_start_timer(a5_fps_timer);
 
    glb_ds1edit.win_preview.x0 = glb_ds1[ds1_idx].own_wpreview.x0;
    glb_ds1edit.win_preview.y0 = glb_ds1[ds1_idx].own_wpreview.y0;
@@ -1440,17 +1203,17 @@ int main(int argc, char * argv[])
    freopen("stderr.txt", "wt", stderr);
    interfac_user_handler(ds1_idx);
 
-   if (glb_ds1edit.video_page[0] != NULL)
-      destroy_bitmap(glb_ds1edit.video_page[0]);
+   // cleanup
+   if (a5_tick_timer != NULL)
+      al_destroy_timer(a5_tick_timer);
+   if (a5_fps_timer != NULL)
+      al_destroy_timer(a5_fps_timer);
+   if (a5_event_queue != NULL)
+      al_destroy_event_queue(a5_event_queue);
+   al_destroy_display(a5_display);
 
-   if (glb_ds1edit.video_page[1] != NULL)
-      destroy_bitmap(glb_ds1edit.video_page[1]);
-
-   // end
-   set_gfx_mode(GFX_TEXT, 80, 25, 0, 0);
    // fclose(stdout);
    fflush(stdout);
    fflush(stderr);
    return DS1ERR_OK;
 }
-END_OF_MAIN();

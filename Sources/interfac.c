@@ -20,7 +20,7 @@
 void interfac_user_handler(int start_ds1_idx)
 {
    int  ds1_idx, done, cx, cy, n, i, dx, dy, old_ds1_idx=0;
-   int  old_mouse_x = mouse_x, old_mouse_y=mouse_y, old_mouse_b=0;
+   int  old_mouse_x = a5_mouse_x, old_mouse_y=a5_mouse_y, old_mouse_b=0;
    int  cur_mouse_z = 0, old_mouse_z = 0;
    int  old_cell_x = -1, old_cell_y = -1;
    int  old_identical_x = -1, old_identical_y = -1;
@@ -33,7 +33,7 @@ void interfac_user_handler(int start_ds1_idx)
    MODE_E      old_mode = 0;
    IT_ENUM     itype = IT_NULL;
    int         group_changed, old_group, found;
-   BITMAP      * old_screen_buff = NULL;
+   ALLEGRO_BITMAP * old_screen_buff = NULL;
  
 
    // init
@@ -57,6 +57,28 @@ void interfac_user_handler(int start_ds1_idx)
    // main loop
    while (! done)
    {
+      // drain Allegro 5 event queue
+      {
+          ALLEGRO_EVENT event;
+          while (al_get_next_event(a5_event_queue, &event)) {
+              if (event.type == ALLEGRO_EVENT_TIMER) {
+                  if (event.timer.source == a5_tick_timer)
+                      glb_ds1edit.ticks_elapsed++;
+                  else if (event.timer.source == a5_fps_timer) {
+                      glb_ds1edit.old_fps = glb_ds1edit.fps;
+                      glb_ds1edit.fps = 0;
+                  }
+              }
+              else if (event.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
+                  done = TRUE;
+              }
+          }
+      }
+
+      // poll input state
+      al_get_keyboard_state(&a5_kb_state);
+      al_get_mouse_state(&a5_ms_state);
+
       can_swich_mode = TRUE;
       if (glb_ds1edit.mode == MOD_P)
       {
@@ -66,11 +88,11 @@ void interfac_user_handler(int start_ds1_idx)
             can_swich_mode = FALSE;
       }
 
-      old_mouse_x = mouse_x;
-      old_mouse_y = mouse_y;
-      old_mouse_b = mouse_b;
+      old_mouse_x = a5_mouse_x;
+      old_mouse_y = a5_mouse_y;
+      old_mouse_b = a5_mouse_b;
 
-      cur_mouse_z = mouse_z;
+      cur_mouse_z = a5_mouse_z;
 
       // keep the current mouse coordinates for the entire loop process
       
@@ -144,19 +166,19 @@ void interfac_user_handler(int start_ds1_idx)
          if (glb_config.winobj_scroll_keyb == TRUE)
          {
             // can scroll by keyboard
-            if (key[KEY_UP])
+            if (key_pressed(KEY_UP))
             {
                glb_ds1edit.win_preview.y0 -= glb_ds1[ds1_idx].cur_scroll.keyb.y;
             }
-            if (key[KEY_DOWN])
+            if (key_pressed(KEY_DOWN))
             {
                glb_ds1edit.win_preview.y0 += glb_ds1[ds1_idx].cur_scroll.keyb.y;
             }
-            if (key[KEY_LEFT])
+            if (key_pressed(KEY_LEFT))
             {
                glb_ds1edit.win_preview.x0 -= glb_ds1[ds1_idx].cur_scroll.keyb.x;
             }
-            if (key[KEY_RIGHT])
+            if (key_pressed(KEY_RIGHT))
             {
                glb_ds1edit.win_preview.x0 += glb_ds1[ds1_idx].cur_scroll.keyb.x;
             }
@@ -185,7 +207,7 @@ void interfac_user_handler(int start_ds1_idx)
       }
       else
       {
-         if (key[KEY_UP])
+         if (key_pressed(KEY_UP))
          {
             glb_ds1edit.win_preview.y0 -= glb_ds1[ds1_idx].cur_scroll.keyb.y;
          }
@@ -194,7 +216,7 @@ void interfac_user_handler(int start_ds1_idx)
             glb_ds1edit.win_preview.y0 -= glb_ds1[ds1_idx].cur_scroll.mouse.y;
          }
 
-         if (key[KEY_DOWN])
+         if (key_pressed(KEY_DOWN))
          {
             glb_ds1edit.win_preview.y0 += glb_ds1[ds1_idx].cur_scroll.keyb.y;
          }
@@ -203,7 +225,7 @@ void interfac_user_handler(int start_ds1_idx)
             glb_ds1edit.win_preview.y0 += glb_ds1[ds1_idx].cur_scroll.mouse.y;
          }
 
-         if (key[KEY_LEFT])
+         if (key_pressed(KEY_LEFT))
          {
             glb_ds1edit.win_preview.x0 -= glb_ds1[ds1_idx].cur_scroll.keyb.x;
          }
@@ -212,7 +234,7 @@ void interfac_user_handler(int start_ds1_idx)
             glb_ds1edit.win_preview.x0 -= glb_ds1[ds1_idx].cur_scroll.mouse.x;
          }
 
-         if (key[KEY_RIGHT])
+         if (key_pressed(KEY_RIGHT))
          {
             glb_ds1edit.win_preview.x0 += glb_ds1[ds1_idx].cur_scroll.keyb.x;
          }
@@ -223,14 +245,14 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       // zoom
-      if ( (key[KEY_MINUS_PAD] || key[KEY_MINUS] || (cur_mouse_z < old_mouse_z) ) &&
+      if ( (key_pressed(KEY_MINUS_PAD) || key_pressed(KEY_MINUS) || (cur_mouse_z < old_mouse_z) ) &&
            glb_ds1[ds1_idx].cur_zoom < ZM_116)
       {
-         if (key[KEY_MINUS_PAD] || key[KEY_MINUS])
+         if (key_pressed(KEY_MINUS_PAD) || key_pressed(KEY_MINUS))
          {
-            while(key[KEY_MINUS_PAD] || key[KEY_MINUS])
+            while(key_pressed(KEY_MINUS_PAD) || key_pressed(KEY_MINUS))
             {
-               // wait until the MINUS key is released
+               al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
             }
          }
          glb_ds1[ds1_idx].own_wpreview.x0 = glb_ds1edit.win_preview.x0;
@@ -242,14 +264,14 @@ void interfac_user_handler(int start_ds1_idx)
          glb_ds1edit.win_preview.y0 = glb_ds1[ds1_idx].own_wpreview.y0;
       }
 
-      if ( (key[KEY_PLUS_PAD] || key[KEY_EQUALS] || (cur_mouse_z > old_mouse_z) ) &&
+      if ( (key_pressed(KEY_PLUS_PAD) || key_pressed(KEY_EQUALS) || (cur_mouse_z > old_mouse_z) ) &&
            glb_ds1[ds1_idx].cur_zoom > ZM_11)
       {
-         if (key[KEY_PLUS_PAD] || key[KEY_EQUALS])
+         if (key_pressed(KEY_PLUS_PAD) || key_pressed(KEY_EQUALS))
          {
-            while(key[KEY_PLUS_PAD] || key[KEY_EQUALS])
+            while(key_pressed(KEY_PLUS_PAD) || key_pressed(KEY_EQUALS))
             {
-               // wait until the '+' and '=' key are released
+               al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
             }
          }
          glb_ds1[ds1_idx].own_wpreview.x0 = glb_ds1edit.win_preview.x0;
@@ -264,7 +286,7 @@ void interfac_user_handler(int start_ds1_idx)
       if (old_mouse_z != cur_mouse_z)
       {
          old_mouse_z = cur_mouse_z;
-         if (mouse_b & 4)
+         if (a5_mouse_b & 4)
          {
             if (glb_ds1edit.mode == MOD_T)
             {
@@ -281,7 +303,7 @@ void interfac_user_handler(int start_ds1_idx)
                glb_ds1[ds1_idx].own_wpreview.h  = glb_ds1edit.win_preview.h;
                glb_ds1edit.win_preview.x0   = glb_ds1[ds1_idx].own_wpreview.x0;
                glb_ds1edit.win_preview.y0   = glb_ds1[ds1_idx].own_wpreview.y0;
-               position_mouse(glb_ds1edit.win_preview.w / 2, glb_ds1edit.win_preview.h / 2);
+               al_set_mouse_xy(a5_display, glb_ds1edit.win_preview.w / 2, glb_ds1edit.win_preview.h / 2);
             }
             else
             {
@@ -302,23 +324,23 @@ void interfac_user_handler(int start_ds1_idx)
                glb_ds1[ds1_idx].own_wpreview.h  = glb_ds1edit.win_preview.h;
                glb_ds1edit.win_preview.x0   = glb_ds1[ds1_idx].own_wpreview.x0;
                glb_ds1edit.win_preview.y0   = glb_ds1[ds1_idx].own_wpreview.y0;
-               position_mouse(glb_ds1edit.win_preview.w / 2, glb_ds1edit.win_preview.h / 2);
+               al_set_mouse_xy(a5_display, glb_ds1edit.win_preview.w / 2, glb_ds1edit.win_preview.h / 2);
             }
          }
       }
 
       // layers toggle
-      if (key[KEY_LSHIFT] || key[KEY_RSHIFT])
+      if (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT))
       {
          // if shift pressed, just 1 layer will be active
          for (n=0; n<7; n++)
          {
-            if (key[key_func_code[n]])
+            if (key_pressed(key_func_code[n]))
             {
                for (i=0; i<FLOOR_MAX_LAYER; i++)
                   glb_ds1[ds1_idx].floor_layer_mask[i] = 0;
 
-               if (key[KEY_F11])
+               if (key_pressed(KEY_F11))
                {
                   for (i=0; i<SHADOW_MAX_LAYER; i++)
                      glb_ds1[ds1_idx].shadow_layer_mask[i] = 3;
@@ -336,12 +358,12 @@ void interfac_user_handler(int start_ds1_idx)
             }
          }
       }
-      if (key[KEY_LCONTROL] || key[KEY_RCONTROL])
+      if (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
       {
          // if control pressed, just 1 layer will be inactive
          for (n=0; n<7; n++)
          {
-            if (key[key_func_code[n]])
+            if (key_pressed(key_func_code[n]))
             {
                for (i=0; i<FLOOR_MAX_LAYER; i++)
                   glb_ds1[ds1_idx].floor_layer_mask[i] = 1;
@@ -356,71 +378,71 @@ void interfac_user_handler(int start_ds1_idx)
             }
          }
       }
-      if (key[KEY_F1])
+      if (key_pressed(KEY_F1))
       {
-         while(key[KEY_F1])
+         while(key_pressed(KEY_F1))
          {
-            // wait until the 'F' key is released
+            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
          }
          glb_ds1[ds1_idx].floor_layer_mask[0] = 1 - glb_ds1[ds1_idx].floor_layer_mask[0];
       }
-      if (key[KEY_F2])
+      if (key_pressed(KEY_F2))
       {
-         while(key[KEY_F2])
+         while(key_pressed(KEY_F2))
          {
-            // wait until the 'F2' key is released
+            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
          }
          glb_ds1[ds1_idx].floor_layer_mask[1] = 1 - glb_ds1[ds1_idx].floor_layer_mask[1];
       }
-      if (key[KEY_F5])
+      if (key_pressed(KEY_F5))
       {
-         while(key[KEY_F5])
+         while(key_pressed(KEY_F5))
          {
-            // wait until the 'F5' key is released
+            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
          }
          glb_ds1[ds1_idx].wall_layer_mask[0] = 1 - glb_ds1[ds1_idx].wall_layer_mask[0];
       }
-      if (key[KEY_F6])
+      if (key_pressed(KEY_F6))
       {
-         while(key[KEY_F6])
+         while(key_pressed(KEY_F6))
          {
-            // wait until the 'F6' key is released
+            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
          }
          glb_ds1[ds1_idx].wall_layer_mask[1] = 1 - glb_ds1[ds1_idx].wall_layer_mask[1];
       }
-      if (key[KEY_F7])
+      if (key_pressed(KEY_F7))
       {
-         while(key[KEY_F7])
+         while(key_pressed(KEY_F7))
          {
-            // wait until the 'F7' key is released
+            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
          }
          glb_ds1[ds1_idx].wall_layer_mask[2] = 1 - glb_ds1[ds1_idx].wall_layer_mask[2];
       }
-      if (key[KEY_F8])
+      if (key_pressed(KEY_F8))
       {
-         while(key[KEY_F8])
+         while(key_pressed(KEY_F8))
          {
-            // wait until the 'F8' key is released
+            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
          }
          glb_ds1[ds1_idx].wall_layer_mask[3] = 1 - glb_ds1[ds1_idx].wall_layer_mask[3];
       }
 
       // special tiles layer
-      if (key[KEY_F9])
+      if (key_pressed(KEY_F9))
       {
-         while(key[KEY_F9])
+         while(key_pressed(KEY_F9))
          {
-            // wait until the 'F9' key is released
+            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
          }
          glb_ds1[ds1_idx].special_layer_mask = 1 - glb_ds1[ds1_idx].special_layer_mask;
       }
       
       // animation layer
-      if (key[KEY_F3])
+      if (key_pressed(KEY_F3))
       {
-         while(key[KEY_F3])
+         while(key_pressed(KEY_F3))
          {
-            // wait until the 'F3' key is released
+            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
          }
          glb_ds1[ds1_idx].animations_layer_mask++;
          if (glb_ds1[ds1_idx].animations_layer_mask == 3)
@@ -428,11 +450,11 @@ void interfac_user_handler(int start_ds1_idx)
       }
       
       // objects layer
-      if (key[KEY_F4] && (glb_ds1edit.mode != MOD_O))
+      if (key_pressed(KEY_F4) && (glb_ds1edit.mode != MOD_O))
       {
-         while(key[KEY_F4])
+         while(key_pressed(KEY_F4))
          {
-            // wait until the 'F4' key is released
+            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
          }
          glb_ds1[ds1_idx].objects_layer_mask++;
          if (glb_ds1[ds1_idx].objects_layer_mask >= OL_MAX)
@@ -440,23 +462,23 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       // paths layer
-      if (key[KEY_F10] && (glb_ds1edit.mode != MOD_P))
+      if (key_pressed(KEY_F10) && (glb_ds1edit.mode != MOD_P))
       {
-         while(key[KEY_F10])
+         while(key_pressed(KEY_F10))
          {
-            // wait until the 'F10' key is released
+            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
          }
          glb_ds1[ds1_idx].paths_layer_mask = 1 - glb_ds1[ds1_idx].paths_layer_mask;
       }
 
       // shadow mode
-      if (key[KEY_F11])
+      if (key_pressed(KEY_F11))
       {
-         while(key[KEY_F11])
+         while(key_pressed(KEY_F11))
          {
-            // wait until the 'F11' key is released
+            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
          }
-         if (key[KEY_LSHIFT] || key[KEY_RSHIFT])
+         if (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT))
          {
             glb_ds1[ds1_idx].shadow_layer_mask[0]--;
             if (glb_ds1[ds1_idx].shadow_layer_mask[0] < 0)
@@ -471,37 +493,37 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       // walkable infos
-      if (key[KEY_SPACE])
+      if (key_pressed(KEY_SPACE))
       {
-         while(key[KEY_SPACE])
+         while(key_pressed(KEY_SPACE))
          {
-            // wait until the SPACE key is released
+            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
          }
          glb_ds1[ds1_idx].walkable_layer_mask++;
          if (glb_ds1[ds1_idx].walkable_layer_mask >= 3)
             glb_ds1[ds1_idx].walkable_layer_mask = 0;
       }
-      if (key[KEY_T])
+      if (key_pressed(KEY_T))
       {
-         while(key[KEY_T])
+         while(key_pressed(KEY_T))
          {
-            // wait until the 'T' key is released
+            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
          }
          glb_ds1[ds1_idx].subtile_help_display =
             1 - glb_ds1[ds1_idx].subtile_help_display;
       }
 
       // gamma correction
-      if (key[KEY_F12])
+      if (key_pressed(KEY_F12))
       {
-         if (key[KEY_LSHIFT] || key[KEY_RSHIFT])
+         if (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT))
          {
             if (glb_ds1edit.cur_gamma > GC_060)
             {
                rest(80);
                glb_ds1edit.cur_gamma--;
                misc_update_pal_with_gamma();
-               set_palette(glb_ds1edit.vga_pal[glb_ds1[ds1_idx].act - 1]);
+               a5_current_palette = &glb_ds1edit.vga_pal[glb_ds1[ds1_idx].act - 1];
             }
          }
          else
@@ -511,17 +533,17 @@ void interfac_user_handler(int start_ds1_idx)
                rest(80);
                glb_ds1edit.cur_gamma++;
                misc_update_pal_with_gamma();
-               set_palette(glb_ds1edit.vga_pal[glb_ds1[ds1_idx].act - 1]);
+               a5_current_palette = &glb_ds1edit.vga_pal[glb_ds1[ds1_idx].act - 1];
             }
          }
       }
 
       // Home (center the map)
-      if (key[KEY_HOME])
+      if (key_pressed(KEY_HOME))
       {
-         while (key[KEY_HOME])
+         while (key_pressed(KEY_HOME))
          {
-            // wait until the HOME key is released
+            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
          }
          cx = glb_ds1[ds1_idx].width/2 + 1;
          cy = glb_ds1[ds1_idx].height/2;
@@ -532,11 +554,11 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       // Backspace (show all layers)
-      if (key[KEY_BACKSPACE])
+      if (key_pressed(KEY_BACKSPACE))
       {
-         while (key[KEY_BACKSPACE])
+         while (key_pressed(KEY_BACKSPACE))
          {
-            // wait until the BACKSPACE key is released
+            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
          }
          for (i=0; i<FLOOR_MAX_LAYER; i++)
             glb_ds1[ds1_idx].floor_layer_mask[i]  = 1;
@@ -547,9 +569,9 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       // P ('P'rintscreen = screenshot)
-      if (key[KEY_P])
+      if (key_pressed(KEY_P))
       {
-         if ((key[KEY_LSHIFT] || key[KEY_RSHIFT]))
+         if ((key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT)))
          {
             // BIG screenshot (complete map)
             old_screen_buff = glb_ds1edit.screen_buff;
@@ -557,7 +579,7 @@ void interfac_user_handler(int start_ds1_idx)
             {
                // big screenshot is ready
                sprintf(tmp, "screenshot-%05i.bmp", glb_ds1edit.screenshot_num);
-               while (file_exists(tmp, -1, NULL))
+               while (a5_file_exists(tmp))
                {
                   glb_ds1edit.screenshot_num++;
                   sprintf(tmp, "screenshot-%05i.bmp", glb_ds1edit.screenshot_num);
@@ -567,35 +589,35 @@ void interfac_user_handler(int start_ds1_idx)
                if (glb_ds1edit.cmd_line.force_pal_num == -1)
                {
                   // use .ds1 act value for palette
-                  save_bmp(tmp, glb_ds1edit.screen_buff, glb_ds1edit.vga_pal[glb_ds1[ds1_idx].act - 1]);
+                  al_save_bitmap(tmp, glb_ds1edit.screen_buff);
                }
                else
                {
                   // use force_pal value for palette
-                  save_bmp(tmp, glb_ds1edit.screen_buff, glb_ds1edit.vga_pal[glb_ds1edit.cmd_line.force_pal_num - 1]);
+                  al_save_bitmap(tmp, glb_ds1edit.screen_buff);
                }
 
                // free temp bitmap
-               destroy_bitmap(glb_ds1edit.screen_buff);
+               al_destroy_bitmap(glb_ds1edit.screen_buff);
             }
-            while ((key[KEY_LSHIFT] || key[KEY_RSHIFT]))
+            while ((key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT)))
             {
-               // wait until Shift key is relased
+               al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
             }
             glb_ds1edit.screen_buff = old_screen_buff;
          }
          else
          {
             // normal screenshot (visible screen only)
-            sprintf(tmp, "screenshot-%05i.pcx", glb_ds1edit.screenshot_num);
-            while (file_exists(tmp, -1, NULL))
+            sprintf(tmp, "screenshot-%05i.png", glb_ds1edit.screenshot_num);
+            while (a5_file_exists(tmp))
             {
                glb_ds1edit.screenshot_num++;
-               sprintf(tmp, "screenshot-%05i.pcx", glb_ds1edit.screenshot_num);
+               sprintf(tmp, "screenshot-%05i.png", glb_ds1edit.screenshot_num);
             }
 
             // draw the mouse cursor onto the buffer
-            draw_sprite(
+            a5_draw_sprite(
                glb_ds1edit.screen_buff,
                glb_ds1edit.mouse_cursor[glb_ds1edit.mode],
                old_mouse_x - 1,
@@ -606,19 +628,17 @@ void interfac_user_handler(int start_ds1_idx)
             if (glb_ds1edit.cmd_line.force_pal_num == -1)
             {
                // use .ds1 act value for palette
-               save_pcx(tmp, glb_ds1edit.screen_buff, glb_ds1edit.vga_pal[glb_ds1[ds1_idx].act - 1]);
-               misc_pcx_put_d2_palette(tmp, glb_ds1[ds1_idx].act - 1);
+               al_save_bitmap(tmp, glb_ds1edit.screen_buff);
             }
             else
             {
                // use force_pal value for palette
-               save_pcx(tmp, glb_ds1edit.screen_buff, glb_ds1edit.vga_pal[glb_ds1edit.cmd_line.force_pal_num - 1]);
-               misc_pcx_put_d2_palette(tmp, glb_ds1edit.cmd_line.force_pal_num - 1);
+               al_save_bitmap(tmp, glb_ds1edit.screen_buff);
             }
          }
-         while (key[KEY_P])
+         while (key_pressed(KEY_P))
          {
-            // wait until P is released
+            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
          }
 
          // the buffer was saved
@@ -626,15 +646,15 @@ void interfac_user_handler(int start_ds1_idx)
       }
       
       // S
-      if (key[KEY_S])
+      if (key_pressed(KEY_S))
       {
-         if (key[KEY_LCONTROL] || key[KEY_RCONTROL])
+         if (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
          {
             // CTRL + S : save the ds1, in the current state, incremental save
             ds1_save(ds1_idx, FALSE);
-            while (key[KEY_S])
+            while (key_pressed(KEY_S))
             {
-               // wait until the S key is not pressed anymore
+               al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
             }
             ret = msg_save_main();
             switch (ret)
@@ -652,21 +672,21 @@ void interfac_user_handler(int start_ds1_idx)
          else if (glb_ds1edit.mode == MOD_T)
          {
             // (Show all precedently hiden tiles)
-            while (key[KEY_S])
+            while (key_pressed(KEY_S))
             {
-               // wait until the 'S' key is released
+               al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
             }
             edittile_unhide_all(ds1_idx);
          }
       }
       
       // 'C' : either Copy or Center
-      if (key[KEY_C])
+      if (key_pressed(KEY_C))
       {
          if (glb_ds1edit.mode == MOD_T)
          {
             // TILE mode
-            if (key[KEY_LCONTROL] || key[KEY_RCONTROL])
+            if (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
             {
                // CTRL + C : copy selected layers (copy / paste)
                if (paste_pos.start == FALSE)
@@ -694,18 +714,18 @@ void interfac_user_handler(int start_ds1_idx)
                      & paste_pos
                   );
 
-                  while (key[KEY_C])
+                  while (key_pressed(KEY_C))
                   {
-                     // wait until the 'C' key is released
+                     al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
                   }
                }
             }
             else
             {
                // Center to mouse in TILE mode
-               while (key[KEY_C])
+               while (key_pressed(KEY_C))
                {
-                  // wait until 'C' is released
+                  al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
                }
                cx++;
                dx = (cy * -glb_ds1[ds1_idx].tile_w / 2) + (cx * glb_ds1[ds1_idx].tile_w / 2);
@@ -721,17 +741,17 @@ void interfac_user_handler(int start_ds1_idx)
                   change_zoom(ds1_idx, glb_config.center_zoom);
                glb_ds1edit.win_preview.x0   = glb_ds1[ds1_idx].own_wpreview.x0;
                glb_ds1edit.win_preview.y0   = glb_ds1[ds1_idx].own_wpreview.y0;
-               position_mouse(glb_ds1edit.win_preview.w / 2, glb_ds1edit.win_preview.h / 2);
+               al_set_mouse_xy(a5_display, glb_ds1edit.win_preview.w / 2, glb_ds1edit.win_preview.h / 2);
             }
          }
          else
          {
-            if ( ! key[KEY_LCONTROL] && ! key[KEY_RCONTROL])
+            if ( ! key_pressed(KEY_LCONTROL) && ! key_pressed(KEY_RCONTROL))
             {
                // Center to mouse in OBJECT / PATH mode
-               while (key[KEY_C])
+               while (key_pressed(KEY_C))
                {
-                  // wait until the 'C' key is released
+                  al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
                }
                cx /= 5;
                cy /= 5;
@@ -751,13 +771,13 @@ void interfac_user_handler(int start_ds1_idx)
                   change_zoom(ds1_idx, glb_config.center_zoom);
                glb_ds1edit.win_preview.x0   = glb_ds1[ds1_idx].own_wpreview.x0;
                glb_ds1edit.win_preview.y0   = glb_ds1[ds1_idx].own_wpreview.y0;
-               position_mouse(glb_ds1edit.win_preview.w / 2, glb_ds1edit.win_preview.h / 2);
+               al_set_mouse_xy(a5_display, glb_ds1edit.win_preview.w / 2, glb_ds1edit.win_preview.h / 2);
             }
          }
       }
 
       // CTRL + X : Copy selected tiles, WITH CUT (crop / paste)
-      if (key[KEY_X] && (key[KEY_LCONTROL] || key[KEY_RCONTROL]))
+      if (key_pressed(KEY_X) && (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)))
       {
          if (glb_ds1edit.mode == MOD_T)
          {
@@ -786,50 +806,50 @@ void interfac_user_handler(int start_ds1_idx)
                   cy - paste_pos.start_y,
                   & paste_pos
                );
-               while (key[KEY_X])
+               while (key_pressed(KEY_X))
                {
-                  // wait until the X key is released
+                  al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
                }
             }
          }
       }
 
       // DEL key (regular or keypad) : delete all selected layers of all tiles
-      if (key[KEY_DEL] || key[KEY_DEL_PAD])
+      if (key_pressed(KEY_DEL) || key_pressed(KEY_DEL_PAD))
       {
          if (glb_ds1edit.mode == MOD_T)
          {
             if (paste_pos.start == FALSE)
             {
                edittile_delete_selected_tiles(ds1_idx);
-               while (key[KEY_DEL] || key[KEY_DEL_PAD])
+               while (key_pressed(KEY_DEL) || key_pressed(KEY_DEL_PAD))
                {
-                  // wait until both DEL keys are released
+                  al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
                }
             }
          }
       }
 
       // CTRL + U : undo tiles modification
-      if (key[KEY_U] && (key[KEY_LCONTROL] || key[KEY_RCONTROL]))
+      if (key_pressed(KEY_U) && (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)))
       {
          if (glb_ds1edit.mode == MOD_T)
          {
             if (paste_pos.start == FALSE)
             {
                undo_apply_tile_buffer(ds1_idx);
-               while (key[KEY_U])
+               while (key_pressed(KEY_U))
                {
-                  // wait until the 'U' key is released
+                  al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
                }
             }
          }
       }
 
       // G : toggle tile grid
-      if (key[KEY_G])
+      if (key_pressed(KEY_G))
       {
-         if (key[KEY_LSHIFT] || key[KEY_RSHIFT])
+         if (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT))
             glb_ds1edit.display_tile_grid --;
          else
             glb_ds1edit.display_tile_grid ++;
@@ -837,9 +857,9 @@ void interfac_user_handler(int start_ds1_idx)
             glb_ds1edit.display_tile_grid = TG_MAX - 1;
          if (glb_ds1edit.display_tile_grid >= TG_MAX)
             glb_ds1edit.display_tile_grid = TG_OFF;
-         while(key[KEY_G])
+         while(key_pressed(KEY_G))
          {
-            // wait
+            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
          }
       }
 
@@ -848,94 +868,94 @@ void interfac_user_handler(int start_ds1_idx)
       old_group     = glb_ds1edit.ds1_group_idx;
       if (can_swich_mode)
       {
-         if (key[KEY_LCONTROL] || key[KEY_RCONTROL])
+         if (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
          {
-            if (key[KEY_1])
+            if (key_pressed(KEY_1))
             {
-               while (key[KEY_1] || key[KEY_LCONTROL] || key[KEY_RCONTROL])
+               while (key_pressed(KEY_1) || key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
                {
-                  // wait
+                  al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
                }
                glb_ds1edit.ds1_group_idx = 0;
                group_changed = TRUE;
             }
-            else if (key[KEY_2])
+            else if (key_pressed(KEY_2))
             {
-               while (key[KEY_2] || key[KEY_LCONTROL] || key[KEY_RCONTROL])
+               while (key_pressed(KEY_2) || key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
                {
-                  // wait
+                  al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
                }
                glb_ds1edit.ds1_group_idx = 1;
                group_changed = TRUE;
             }
-            else if (key[KEY_3])
+            else if (key_pressed(KEY_3))
             {
-               while (key[KEY_3] || key[KEY_LCONTROL] || key[KEY_RCONTROL])
+               while (key_pressed(KEY_3) || key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
                {
-                  // wait
+                  al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
                }
                glb_ds1edit.ds1_group_idx = 2;
                group_changed = TRUE;
             }
-            else if (key[KEY_4])
+            else if (key_pressed(KEY_4))
             {
-               while (key[KEY_4] || key[KEY_LCONTROL] || key[KEY_RCONTROL])
+               while (key_pressed(KEY_4) || key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
                {
-                  // wait
+                  al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
                }
                glb_ds1edit.ds1_group_idx = 3;
                group_changed = TRUE;
             }
-            else if (key[KEY_5])
+            else if (key_pressed(KEY_5))
             {
-               while (key[KEY_5] || key[KEY_LCONTROL] || key[KEY_RCONTROL])
+               while (key_pressed(KEY_5) || key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
                {
-                  // wait
+                  al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
                }
                glb_ds1edit.ds1_group_idx = 4;
                group_changed = TRUE;
             }
-            else if (key[KEY_6])
+            else if (key_pressed(KEY_6))
             {
-               while (key[KEY_6] || key[KEY_LCONTROL] || key[KEY_RCONTROL])
+               while (key_pressed(KEY_6) || key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
                {
-                  // wait
+                  al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
                }
                glb_ds1edit.ds1_group_idx = 5;
                group_changed = TRUE;
             }
-            else if (key[KEY_7])
+            else if (key_pressed(KEY_7))
             {
-               while (key[KEY_7] || key[KEY_LCONTROL] || key[KEY_RCONTROL])
+               while (key_pressed(KEY_7) || key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
                {
-                  // wait
+                  al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
                }
                glb_ds1edit.ds1_group_idx = 6;
                group_changed = TRUE;
             }
-            else if (key[KEY_8])
+            else if (key_pressed(KEY_8))
             {
-               while (key[KEY_8] || key[KEY_LCONTROL] || key[KEY_RCONTROL])
+               while (key_pressed(KEY_8) || key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
                {
-                  // wait
+                  al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
                }
                glb_ds1edit.ds1_group_idx = 7;
                group_changed = TRUE;
             }
-            else if (key[KEY_9])
+            else if (key_pressed(KEY_9))
             {
-               while (key[KEY_9] || key[KEY_LCONTROL] || key[KEY_RCONTROL])
+               while (key_pressed(KEY_9) || key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
                {
-                  // wait
+                  al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
                }
                glb_ds1edit.ds1_group_idx = 8;
                group_changed = TRUE;
             }
-            else if (key[KEY_0])
+            else if (key_pressed(KEY_0))
             {
-               while (key[KEY_0] || key[KEY_LCONTROL] || key[KEY_RCONTROL])
+               while (key_pressed(KEY_0) || key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
                {
-                  // wait
+                  al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
                }
                glb_ds1edit.ds1_group_idx = 9;
                group_changed = TRUE;
@@ -966,94 +986,94 @@ void interfac_user_handler(int start_ds1_idx)
          }
 
          // swap to a different ds1 ?
-         if (key[KEY_1] && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10].name))
+         if (key_pressed(KEY_1) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10].name))
          {
             old_ds1_idx = ds1_idx;
             ds1_idx = glb_ds1edit.ds1_group_idx * 10;
-            while (key[KEY_1])
+            while (key_pressed(KEY_1))
             {
-               // wait
+               al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
             }
          }
-         if (key[KEY_2] && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 1].name))
+         if (key_pressed(KEY_2) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 1].name))
          {
             old_ds1_idx = ds1_idx;
             ds1_idx = glb_ds1edit.ds1_group_idx * 10 + 1;
-            while (key[KEY_2])
+            while (key_pressed(KEY_2))
             {
-               // wait
+               al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
             }
          }
-         if (key[KEY_3] && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 2].name))
+         if (key_pressed(KEY_3) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 2].name))
          {
             old_ds1_idx = ds1_idx;
             ds1_idx = glb_ds1edit.ds1_group_idx * 10 + 2;
-            while (key[KEY_3])
+            while (key_pressed(KEY_3))
             {
-               // wait
+               al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
             }
          }
-         if (key[KEY_4] && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 3].name))
+         if (key_pressed(KEY_4) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 3].name))
          {
             old_ds1_idx = ds1_idx;
             ds1_idx = glb_ds1edit.ds1_group_idx * 10 + 3;
-            while (key[KEY_4])
+            while (key_pressed(KEY_4))
             {
-               // wait
+               al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
             }
          }
-         if (key[KEY_5] && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 4].name))
+         if (key_pressed(KEY_5) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 4].name))
          {
             old_ds1_idx = ds1_idx;
             ds1_idx = glb_ds1edit.ds1_group_idx * 10 + 4;
-            while (key[KEY_5])
+            while (key_pressed(KEY_5))
             {
-               // wait
+               al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
             }
          }
-         if (key[KEY_6] && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 5].name))
+         if (key_pressed(KEY_6) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 5].name))
          {
             old_ds1_idx = ds1_idx;
             ds1_idx = glb_ds1edit.ds1_group_idx * 10 + 5;
-            while (key[KEY_6])
+            while (key_pressed(KEY_6))
             {
-               // wait
+               al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
             }
          }
-         if (key[KEY_7] && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 6].name))
+         if (key_pressed(KEY_7) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 6].name))
          {
             old_ds1_idx = ds1_idx;
             ds1_idx = glb_ds1edit.ds1_group_idx * 10 + 6;
-            while (key[KEY_7])
+            while (key_pressed(KEY_7))
             {
-               // wait
+               al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
             }
          }
-         if (key[KEY_8] && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 7].name))
+         if (key_pressed(KEY_8) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 7].name))
          {
             old_ds1_idx = ds1_idx;
             ds1_idx = glb_ds1edit.ds1_group_idx * 10 + 7;
-            while (key[KEY_8])
+            while (key_pressed(KEY_8))
             {
-               // wait
+               al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
             }
          }
-         if (key[KEY_9] && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 8].name))
+         if (key_pressed(KEY_9) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 8].name))
          {
             old_ds1_idx = ds1_idx;
             ds1_idx = glb_ds1edit.ds1_group_idx * 10 + 8;
-            while (key[KEY_9])
+            while (key_pressed(KEY_9))
             {
-               // wait
+               al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
             }
          }
-         if (key[KEY_0] && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 9].name))
+         if (key_pressed(KEY_0) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 9].name))
          {
             old_ds1_idx = ds1_idx;
             ds1_idx = glb_ds1edit.ds1_group_idx * 10 + 9;
-            while (key[KEY_0])
+            while (key_pressed(KEY_0))
             {
-               // wait
+               al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
             }
          }
       }
@@ -1077,11 +1097,11 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       // toggle 2nd row
-      if (key[KEY_TILDE])
+      if (key_pressed(KEY_TILDE))
       {
-         while (key[KEY_TILDE])
+         while (key_pressed(KEY_TILDE))
          {
-            // wait until TILDE is not pressed
+            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
          }
          if (glb_ds1edit.show_2nd_row == FALSE)
             glb_ds1edit.show_2nd_row = TRUE;
@@ -1090,11 +1110,11 @@ void interfac_user_handler(int start_ds1_idx)
       }
       
       // TAB : change edit mode
-      if (key[KEY_TAB])
+      if (key_pressed(KEY_TAB))
       {
-         while (key[KEY_TAB])
+         while (key_pressed(KEY_TAB))
          {
-            // wait until TAB is not pressed
+            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
          }
          if (glb_ds1edit.mode == MOD_L)
             glb_ds1edit.mode = old_mode;
@@ -1102,7 +1122,7 @@ void interfac_user_handler(int start_ds1_idx)
          {
             if (can_swich_mode)
             {
-               if ((key[KEY_LSHIFT]) || (key[KEY_RSHIFT]))
+               if ((key_pressed(KEY_LSHIFT)) || (key_pressed(KEY_RSHIFT)))
                   glb_ds1edit.mode--;
                else
                   glb_ds1edit.mode++;
@@ -1120,11 +1140,11 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       // N : Toggle Night mode
-      if (key[KEY_N])
+      if (key_pressed(KEY_N))
       {
-         while (key[KEY_N])
+         while (key_pressed(KEY_N))
          {
-            // wait until the 'N' key is released
+            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
          }
          if (glb_ds1edit.mode == MOD_L)
          {
@@ -1146,11 +1166,11 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       // R : Refresh obj.txt
-      if (key[KEY_R])
+      if (key_pressed(KEY_R))
       {
-         while (key[KEY_R])
+         while (key_pressed(KEY_R))
          {
-            // wait until the 'R' key is released
+            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
          }
             
          // refresh animdata.d2
@@ -1185,25 +1205,25 @@ void interfac_user_handler(int start_ds1_idx)
                // end a paste
                edittile_paste_final(ds1_idx);
                paste_pos.start = FALSE;
-               while (mouse_b & 1) // NOT old_mouse_b else infinite loop
+               while (a5_mouse_b & 1) // NOT old_mouse_b else infinite loop
                {
-                  // wait until the left mouse button is released
+                  al_rest(0.01); al_get_mouse_state(&a5_ms_state);
                }
             }
             else if (tmp_sel.start == FALSE)
             {
-               if ( (key[KEY_I]) &&
+               if ( (key_pressed(KEY_I)) &&
                     (cx != old_identical_x) && (cy != old_identical_y)
                   )
                {
                   // for all the tiles Identical to the visible ones
 
-                  if (key[KEY_LSHIFT] || key[KEY_RSHIFT])
+                  if (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT))
                   {
                      // add to selection
                      itype = IT_ADD;
                   }
-                  else if (key[KEY_LCONTROL] || key[KEY_RCONTROL])
+                  else if (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
                   {
                      // delete from previous selection
                      itype = IT_DEL;
@@ -1217,7 +1237,7 @@ void interfac_user_handler(int start_ds1_idx)
                   old_identical_x = cx;
                   old_identical_y = cy;
                }
-               else if ( ! key[KEY_I])
+               else if ( ! key_pressed(KEY_I))
                {
                   // starting a temp selection
                   old_identical_x = -1;
@@ -1251,11 +1271,11 @@ void interfac_user_handler(int start_ds1_idx)
             if (tmp_sel.start == TRUE)
             {
                // end of tmp sel, process it
-               if (key[KEY_H])
+               if (key_pressed(KEY_H))
                   tmp_sel.type = TMP_HIDE;
-               else if (key[KEY_LSHIFT] || key[KEY_RSHIFT])
+               else if (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT))
                   tmp_sel.type = TMP_ADD;
-               else if (key[KEY_LCONTROL] || key[KEY_RCONTROL])
+               else if (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
                   tmp_sel.type = TMP_DEL;
                else
                   tmp_sel.type = TMP_NEW;
@@ -1324,32 +1344,31 @@ void interfac_user_handler(int start_ds1_idx)
       {
          if (glb_ds1edit.mode == MOD_T)
          {
-            while (mouse_b & 2) // NOT old_mouse_b else infinite loop
+            while (a5_mouse_b & 2) // NOT old_mouse_b else infinite loop
             {
-               // wait until the right mouse button is released
+               al_rest(0.01); al_get_mouse_state(&a5_ms_state);
             }
-            if ( (key[KEY_LCONTROL] || key[KEY_RCONTROL]) &&
-                 (key[KEY_LSHIFT]   || key[KEY_RSHIFT]) )
+            if ( (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)) &&
+                 (key_pressed(KEY_LSHIFT)   || key_pressed(KEY_RSHIFT)) )
             {
                // advanced tile editing window (bits)
                wbits_main(ds1_idx, cx, cy);
-               position_mouse(old_mouse_x, old_mouse_y);
+               al_set_mouse_xy(a5_display, old_mouse_x, old_mouse_y);
             }
             else
             {
                wedit_test(ds1_idx, cx, cy);
-               set_color_depth(8); // back to a 8bpp color depth for duture BITMAP creation
-               position_mouse(old_mouse_x, old_mouse_y);
+               al_set_mouse_xy(a5_display, old_mouse_x, old_mouse_y);
             }
          }
       }
 
       // quit
-      if (key[KEY_ESC] && (glb_ds1[ds1_idx].draw_edit_obj == FALSE))
+      if (key_pressed(KEY_ESC) && (glb_ds1[ds1_idx].draw_edit_obj == FALSE))
       {
-         while (key[KEY_ESC])
+         while (key_pressed(KEY_ESC))
          {
-            // wait until ESC is not pressed anymore
+            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
          }
          ret = msg_quit_main();
          switch (ret)

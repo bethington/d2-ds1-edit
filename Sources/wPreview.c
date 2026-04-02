@@ -14,20 +14,20 @@
 
 // ==========================================================================
 // draw a sprite with a tint
-void wpreview_shape(BITMAP * tmp_bmp, int x0, int y0, int ds1_idx,
+void wpreview_shape(ALLEGRO_BITMAP * tmp_bmp, int x0, int y0, int ds1_idx,
                     COL_E col_idx)
 {
    if (glb_ds1edit.cmd_line.force_pal_num == -1)
-      color_map = & glb_ds1edit.cmap[CM_SELECT][glb_ds1[ds1_idx].act - 1];
+      /* TODO A5: color_map = & glb_ds1edit.cmap[CM_SELECT][glb_ds1[ds1_idx].act - 1]; */ ((void)0);
    else
-      color_map = & glb_ds1edit.cmap[CM_SELECT][glb_ds1edit.cmd_line.force_pal_num - 1];
+      /* TODO A5: color_map = & glb_ds1edit.cmap[CM_SELECT][glb_ds1edit.cmd_line.force_pal_num - 1]; */ ((void)0);
    draw_lit_sprite(glb_ds1edit.screen_buff, tmp_bmp, x0, y0, col_idx);
 }
 
 
 // ==========================================================================
 // draw a gouraud floor sprite
-void wpreview_gouraud_f(BITMAP * tmp_bmp, int x0, int y0, int ds1_idx,
+void wpreview_gouraud_f(ALLEGRO_BITMAP * tmp_bmp, int x0, int y0, int ds1_idx,
                         int c1, int c2, int c3, int c4)
 {
    if ((c1 == c2) && (c2 == c3) && (c3 == c4))
@@ -35,22 +35,22 @@ void wpreview_gouraud_f(BITMAP * tmp_bmp, int x0, int y0, int ds1_idx,
       if (c1 <= 7)
          return;
       if (c1 >= 248)
-         draw_sprite(glb_ds1edit.screen_buff, tmp_bmp, x0, y0);
+         a5_draw_sprite(glb_ds1edit.screen_buff, tmp_bmp, x0, y0);
       else
       {
          if (glb_ds1edit.cmd_line.force_pal_num == -1)
-            color_map = & glb_ds1edit.cmap[CM_SHADOW][glb_ds1[ds1_idx].act - 1];
+            /* TODO A5: color_map = & glb_ds1edit.cmap[CM_SHADOW][glb_ds1[ds1_idx].act - 1]; */ ((void)0);
          else
-            color_map = & glb_ds1edit.cmap[CM_SHADOW][glb_ds1edit.cmd_line.force_pal_num - 1];
+            /* TODO A5: color_map = & glb_ds1edit.cmap[CM_SHADOW][glb_ds1edit.cmd_line.force_pal_num - 1]; */ ((void)0);
          draw_lit_sprite(glb_ds1edit.screen_buff, tmp_bmp, x0, y0, c1);
       }
    }
    else
    {
       if (glb_ds1edit.cmd_line.force_pal_num == -1)
-         color_map = & glb_ds1edit.cmap[CM_SHADOW][glb_ds1[ds1_idx].act - 1];
+         /* TODO A5: color_map = & glb_ds1edit.cmap[CM_SHADOW][glb_ds1[ds1_idx].act - 1]; */ ((void)0);
       else
-         color_map = & glb_ds1edit.cmap[CM_SHADOW][glb_ds1edit.cmd_line.force_pal_num - 1];
+         /* TODO A5: color_map = & glb_ds1edit.cmap[CM_SHADOW][glb_ds1edit.cmd_line.force_pal_num - 1]; */ ((void)0);
       if (glb_ds1edit.night_mode == 1)
       {
          draw_gouraud_sprite(glb_ds1edit.screen_buff, tmp_bmp, x0, y0,
@@ -67,24 +67,24 @@ void wpreview_gouraud_f(BITMAP * tmp_bmp, int x0, int y0, int ds1_idx,
 
 // ==========================================================================
 // draw a gouraud wall sprite
-void wpreview_gouraud_w(BITMAP * tmp_bmp, int x0, int y0, int ds1_idx,
+void wpreview_gouraud_w(ALLEGRO_BITMAP * tmp_bmp, int x0, int y0, int ds1_idx,
                         int c1, int c2, int c3, int c4)
 {
    if (glb_ds1edit.cmd_line.force_pal_num == -1)
-      color_map = & glb_ds1edit.cmap[CM_SHADOW][glb_ds1[ds1_idx].act - 1];
+      /* TODO A5: color_map = & glb_ds1edit.cmap[CM_SHADOW][glb_ds1[ds1_idx].act - 1]; */ ((void)0);
    else
-      color_map = & glb_ds1edit.cmap[CM_SHADOW][glb_ds1edit.cmd_line.force_pal_num - 1];
+      /* TODO A5: color_map = & glb_ds1edit.cmap[CM_SHADOW][glb_ds1edit.cmd_line.force_pal_num - 1]; */ ((void)0);
    
    if ((c1 == c2) && (c2 == c3) && (c3 == c4))
    {
       if (c1 >= 248)
-         draw_sprite(glb_ds1edit.screen_buff, tmp_bmp, x0, y0);
+         a5_draw_sprite(glb_ds1edit.screen_buff, tmp_bmp, x0, y0);
       else
       {
          if (glb_ds1edit.cmd_line.force_pal_num == -1)
-            color_map = & glb_ds1edit.cmap[CM_SHADOW][glb_ds1[ds1_idx].act - 1];
+            /* TODO A5: color_map = & glb_ds1edit.cmap[CM_SHADOW][glb_ds1[ds1_idx].act - 1]; */ ((void)0);
          else
-            color_map = & glb_ds1edit.cmap[CM_SHADOW][glb_ds1edit.cmd_line.force_pal_num - 1];
+            /* TODO A5: color_map = & glb_ds1edit.cmap[CM_SHADOW][glb_ds1edit.cmd_line.force_pal_num - 1]; */ ((void)0);
          draw_lit_sprite(glb_ds1edit.screen_buff, tmp_bmp, x0, y0, c1);
       }
    }
@@ -143,7 +143,7 @@ void wpreview_draw_s(int ds1_idx, int x, int y, int mx, int my, int z,
                      int selected)
 {
    BLOCK_TABLE_S * bt_ptr;
-   BITMAP        * tmp_bmp;
+   ALLEGRO_BITMAP * tmp_bmp;
    CELL_S_S      * s_ptr;
    int           n, t, bt_idx, dt1_idx, block_idx, y1, color;
    int           ux1, ux2, ux3, ux4, uy1, uy2, uy3;
@@ -151,21 +151,21 @@ void wpreview_draw_s(int ds1_idx, int x, int y, int mx, int my, int z,
 
    t     = (y * glb_ds1[ds1_idx].shadow_line) + (x * glb_ds1[ds1_idx].shadow_num);
    s_ptr = glb_ds1[ds1_idx].shadow_buff + t;
-   
+
    for (n=0; n<glb_ds1[ds1_idx].shadow_num; n++)
    {
       color = -1;
       if (glb_ds1[ds1_idx].shadow_layer_mask[n] == 0)
          continue;
-      
+
       if (IS_HIDE(s_ptr[n].flags))
          continue;
-      
+
       bt_idx = s_ptr[n].bt_idx; // index in block table
 
       if (s_ptr[n].prop4 & 0x80) // binary : 1000-0000
            bt_idx = -1; // consider that tile as "unknown"
-           
+
       if (bt_idx == -1)
       {
          ux1 = mx - glb_ds1edit.win_preview.x0;
@@ -176,22 +176,22 @@ void wpreview_draw_s(int ds1_idx, int x, int y, int mx, int my, int z,
          uy1 = my - glb_ds1edit.win_preview.y0;
          uy2 = uy1 + glb_ds1[ds1_idx].tile_h / 2 - 1;
          uy3 = uy1 + glb_ds1[ds1_idx].tile_h - 2;
-   
-         line(glb_ds1edit.screen_buff, ux1, uy2, ux2, uy1, 168);
-         line(glb_ds1edit.screen_buff, ux3, uy1, ux4, uy2, 168);
-         line(glb_ds1edit.screen_buff, ux3, uy3, ux4, uy2, 168);
-         line(glb_ds1edit.screen_buff, ux1, uy2, ux2, uy3, 168);
+
+         a5_line(glb_ds1edit.screen_buff, ux1, uy2, ux2, uy1, 168);
+         a5_line(glb_ds1edit.screen_buff, ux3, uy1, ux4, uy2, 168);
+         a5_line(glb_ds1edit.screen_buff, ux3, uy3, ux4, uy2, 168);
+         a5_line(glb_ds1edit.screen_buff, ux1, uy2, ux2, uy3, 168);
 
          if (glb_ds1[ds1_idx].cur_zoom == ZM_11)
          {
-            textprintf(glb_ds1edit.screen_buff, font, ux1+8, uy2-2, 0,
+            a5_textprintf(glb_ds1edit.screen_buff, font, ux1+8, uy2-2, 0,
                "%u %u %u %u",
                s_ptr[n].prop1,
                s_ptr[n].prop2,
                s_ptr[n].prop3,
                s_ptr[n].prop4
             );
-            textprintf(glb_ds1edit.screen_buff, font, ux1+7, uy2-3, 255,
+            a5_textprintf(glb_ds1edit.screen_buff, font, ux1+7, uy2-3, 255,
                "%u %u %u %u",
                s_ptr[n].prop1,
                s_ptr[n].prop2,
@@ -221,7 +221,7 @@ void wpreview_draw_s(int ds1_idx, int x, int y, int mx, int my, int z,
       y1 += glb_ds1[ds1_idx].tile_h; // shadow, like walls, are lower than floors
                                  //    (and than roofs) by 80 pixels
 
-      if ( (y1 + tmp_bmp->h) < 0)
+      if ( (y1 + al_get_bitmap_height(tmp_bmp)) < 0)
          continue;
       if (y1 >= glb_ds1edit.win_preview.h)
          continue;
@@ -268,7 +268,7 @@ void wpreview_draw_s(int ds1_idx, int x, int y, int mx, int my, int z,
                break;
 
             case 1 : // normal sprite
-               draw_sprite(glb_ds1edit.screen_buff, tmp_bmp,
+               a5_draw_sprite(glb_ds1edit.screen_buff, tmp_bmp,
                            mx - glb_ds1edit.win_preview.x0, y1);
                break;
 
@@ -280,10 +280,10 @@ void wpreview_draw_s(int ds1_idx, int x, int y, int mx, int my, int z,
 
             case 3 : // transparent
                if (glb_ds1edit.cmd_line.force_pal_num == -1)
-                  color_map = & glb_ds1edit.cmap[CM_TRANS][glb_ds1[ds1_idx].act - 1];
+                  /* TODO A5: color_map = & glb_ds1edit.cmap[CM_TRANS][glb_ds1[ds1_idx].act - 1]; */ ((void)0);
                else
-                  color_map = & glb_ds1edit.cmap[CM_TRANS][glb_ds1edit.cmd_line.force_pal_num - 1];
-               draw_trans_sprite(
+                  /* TODO A5: color_map = & glb_ds1edit.cmap[CM_TRANS][glb_ds1edit.cmd_line.force_pal_num - 1]; */ ((void)0);
+               a5_draw_trans_sprite(
                   glb_ds1edit.screen_buff,
                   tmp_bmp,
                   mx - glb_ds1edit.win_preview.x0,
@@ -319,7 +319,7 @@ void wpreview_reiinit_animated_floor(int ds1_idx)
 void wpreview_draw_f(int ds1_idx, int x, int y, int mx, int my, int z, int selected)
 {
    BLOCK_TABLE_S * bt_ptr;
-   BITMAP        * tmp_bmp;
+   ALLEGRO_BITMAP        * tmp_bmp;
    CELL_F_S      * f_ptr;
    int           n, t, bt_idx, dt1_idx, block_idx, y1, color;
    ORDER_DATA_S  order_data[4];
@@ -367,21 +367,21 @@ void wpreview_draw_f(int ds1_idx, int x, int y, int mx, int my, int z, int selec
          uy2 = uy1 + glb_ds1[ds1_idx].tile_h / 2 - 1;
          uy3 = uy1 + glb_ds1[ds1_idx].tile_h - 2;
    
-         line(glb_ds1edit.screen_buff, ux1, uy2, ux2, uy1, 168);
-         line(glb_ds1edit.screen_buff, ux3, uy1, ux4, uy2, 168);
-         line(glb_ds1edit.screen_buff, ux3, uy3, ux4, uy2, 168);
-         line(glb_ds1edit.screen_buff, ux1, uy2, ux2, uy3, 168);
+         a5_line(glb_ds1edit.screen_buff, ux1, uy2, ux2, uy1, 168);
+         a5_line(glb_ds1edit.screen_buff, ux3, uy1, ux4, uy2, 168);
+         a5_line(glb_ds1edit.screen_buff, ux3, uy3, ux4, uy2, 168);
+         a5_line(glb_ds1edit.screen_buff, ux1, uy2, ux2, uy3, 168);
 
          if (glb_ds1[ds1_idx].cur_zoom == ZM_11)
          {
-            textprintf(glb_ds1edit.screen_buff, font, ux1+8, uy2-2, 0,
+            a5_textprintf(glb_ds1edit.screen_buff, font, ux1+8, uy2-2, 0,
                "%u %u %u %u",
                f_ptr[order_data[n].idx].prop1,
                f_ptr[order_data[n].idx].prop2,
                f_ptr[order_data[n].idx].prop3,
                f_ptr[order_data[n].idx].prop4
             );
-            textprintf(glb_ds1edit.screen_buff, font, ux1+7, uy2-3, 255,
+            a5_textprintf(glb_ds1edit.screen_buff, font, ux1+7, uy2-3, 255,
                "%u %u %u %u",
                f_ptr[order_data[n].idx].prop1,
                f_ptr[order_data[n].idx].prop2,
@@ -420,7 +420,7 @@ void wpreview_draw_f(int ds1_idx, int x, int y, int mx, int my, int z, int selec
 
       y1 = my - glb_ds1edit.win_preview.y0 -
            bt_ptr->zero_line * glb_ds1[ds1_idx].height_mul / glb_ds1[ds1_idx].height_div;
-      if ( (y1 + tmp_bmp->h) < 0)
+      if ( (y1 + al_get_bitmap_height(tmp_bmp)) < 0)
          continue;
       if (y1 >= glb_ds1edit.win_preview.h)
          continue;
@@ -431,8 +431,8 @@ void wpreview_draw_f(int ds1_idx, int x, int y, int mx, int my, int z, int selec
          dist = wpreview_light_dist(
                    mx,
                    my,
-                   glb_ds1edit.win_preview.x0 + mouse_x,
-                   glb_ds1edit.win_preview.y0 + mouse_y
+                   glb_ds1edit.win_preview.x0 + a5_mouse_x,
+                   glb_ds1edit.win_preview.y0 + a5_mouse_y
                 );
          if (dist < 200)
             c1 = 255;
@@ -443,10 +443,10 @@ void wpreview_draw_f(int ds1_idx, int x, int y, int mx, int my, int z, int selec
 
          // c2
          dist = wpreview_light_dist(
-                   mx + tmp_bmp->w,
+                   mx + al_get_bitmap_width(tmp_bmp),
                    my,
-                   glb_ds1edit.win_preview.x0 + mouse_x,
-                   glb_ds1edit.win_preview.y0 + mouse_y
+                   glb_ds1edit.win_preview.x0 + a5_mouse_x,
+                   glb_ds1edit.win_preview.y0 + a5_mouse_y
                 );
          if (dist < 200)
             c2 = 255;
@@ -457,10 +457,10 @@ void wpreview_draw_f(int ds1_idx, int x, int y, int mx, int my, int z, int selec
 
          // c3
          dist = wpreview_light_dist(
-                   mx + tmp_bmp->w,
+                   mx + al_get_bitmap_width(tmp_bmp),
                    my + glb_ds1[ds1_idx].tile_h,
-                   glb_ds1edit.win_preview.x0 + mouse_x,
-                   glb_ds1edit.win_preview.y0 + mouse_y
+                   glb_ds1edit.win_preview.x0 + a5_mouse_x,
+                   glb_ds1edit.win_preview.y0 + a5_mouse_y
                 );
          if (dist < 200)
             c3 = 255;
@@ -473,8 +473,8 @@ void wpreview_draw_f(int ds1_idx, int x, int y, int mx, int my, int z, int selec
          dist = wpreview_light_dist(
                    mx,
                    my + glb_ds1[ds1_idx].tile_h,
-                   glb_ds1edit.win_preview.x0 + mouse_x,
-                   glb_ds1edit.win_preview.y0 + mouse_y
+                   glb_ds1edit.win_preview.x0 + a5_mouse_x,
+                   glb_ds1edit.win_preview.y0 + a5_mouse_y
                 );
          if (dist < 200)
             c4 = 255;
@@ -528,7 +528,7 @@ void wpreview_draw_f(int ds1_idx, int x, int y, int mx, int my, int z, int selec
          }
          else
          {
-            draw_sprite(glb_ds1edit.screen_buff, tmp_bmp,
+            a5_draw_sprite(glb_ds1edit.screen_buff, tmp_bmp,
                         mx - glb_ds1edit.win_preview.x0, y1);
          }
       }
@@ -542,7 +542,7 @@ void wpreview_draw_w(int ds1_idx, int x, int y, int mx, int my, int z,
                      int selected, int upper)
 {
    BLOCK_TABLE_S * bt_ptr;
-   BITMAP        * tmp_bmp;
+   ALLEGRO_BITMAP        * tmp_bmp;
    CELL_W_S      * w_ptr;
    int           n, t, bt_idx, dt1_idx, block_idx, m, s, y1;
    int           done, found, o, color;
@@ -609,14 +609,14 @@ void wpreview_draw_w(int ds1_idx, int x, int y, int mx, int my, int z,
          uy2 = uy1 + glb_ds1[ds1_idx].tile_h / 2 - 1;
          uy3 = uy1 + glb_ds1[ds1_idx].tile_h - 2;
    
-         line(glb_ds1edit.screen_buff, ux1, uy2, ux2, uy1, 168);
-         line(glb_ds1edit.screen_buff, ux3, uy1, ux4, uy2, 168);
-         line(glb_ds1edit.screen_buff, ux3, uy3, ux4, uy2, 168);
-         line(glb_ds1edit.screen_buff, ux1, uy2, ux2, uy3, 168);
+         a5_line(glb_ds1edit.screen_buff, ux1, uy2, ux2, uy1, 168);
+         a5_line(glb_ds1edit.screen_buff, ux3, uy1, ux4, uy2, 168);
+         a5_line(glb_ds1edit.screen_buff, ux3, uy3, ux4, uy2, 168);
+         a5_line(glb_ds1edit.screen_buff, ux1, uy2, ux2, uy3, 168);
          
          if (glb_ds1[ds1_idx].cur_zoom == ZM_11)
          {
-            textprintf(glb_ds1edit.screen_buff, font, ux1+8, uy2-2, 0,
+            a5_textprintf(glb_ds1edit.screen_buff, font, ux1+8, uy2-2, 0,
                "(%u) %u %u %u %u",
                w_ptr[order_data[n].idx].orientation,
                w_ptr[order_data[n].idx].prop1,
@@ -624,7 +624,7 @@ void wpreview_draw_w(int ds1_idx, int x, int y, int mx, int my, int z,
                w_ptr[order_data[n].idx].prop3,
                w_ptr[order_data[n].idx].prop4
             );
-            textprintf(glb_ds1edit.screen_buff, font, ux1+7, uy2-3, 255,
+            a5_textprintf(glb_ds1edit.screen_buff, font, ux1+7, uy2-3, 255,
                "(%u) %u %u %u %u",
                w_ptr[order_data[n].idx].orientation,
                w_ptr[order_data[n].idx].prop1,
@@ -656,7 +656,7 @@ void wpreview_draw_w(int ds1_idx, int x, int y, int mx, int my, int z,
       y1 = my - glb_ds1edit.win_preview.y0 -
            bt_ptr->zero_line * glb_ds1[ds1_idx].height_mul / glb_ds1[ds1_idx].height_div;
       y1 += glb_ds1[ds1_idx].tile_h; // walls are lower than floors (and than roofs) by 80 pixels
-      if ( (y1 + tmp_bmp->h) < 0)
+      if ( (y1 + al_get_bitmap_height(tmp_bmp)) < 0)
          continue;
       if (y1 >= glb_ds1edit.win_preview.h)
          continue;
@@ -667,8 +667,8 @@ void wpreview_draw_w(int ds1_idx, int x, int y, int mx, int my, int z,
          dist = wpreview_light_dist(
                    mx,
                    my + (glb_ds1[ds1_idx].tile_h / 2),
-                   glb_ds1edit.win_preview.x0 + mouse_x,
-                   glb_ds1edit.win_preview.y0 + mouse_y
+                   glb_ds1edit.win_preview.x0 + a5_mouse_x,
+                   glb_ds1edit.win_preview.y0 + a5_mouse_y
                 );
          if (dist < 200)
             c1 = 255;
@@ -679,10 +679,10 @@ void wpreview_draw_w(int ds1_idx, int x, int y, int mx, int my, int z,
 
          // c2
          dist = wpreview_light_dist(
-                   mx + tmp_bmp->w,
+                   mx + al_get_bitmap_width(tmp_bmp),
                    my + (glb_ds1[ds1_idx].tile_h / 2),
-                   glb_ds1edit.win_preview.x0 + mouse_x,
-                   glb_ds1edit.win_preview.y0 + mouse_y
+                   glb_ds1edit.win_preview.x0 + a5_mouse_x,
+                   glb_ds1edit.win_preview.y0 + a5_mouse_y
                 );
          if (dist < 200)
             c2 = 255;
@@ -732,7 +732,7 @@ void wpreview_draw_w(int ds1_idx, int x, int y, int mx, int my, int z,
                            mx - glb_ds1edit.win_preview.x0, y1,
                            ds1_idx, color);
          else
-            draw_sprite(glb_ds1edit.screen_buff, tmp_bmp,
+            a5_draw_sprite(glb_ds1edit.screen_buff, tmp_bmp,
                         mx - glb_ds1edit.win_preview.x0, y1);
       }
 
@@ -773,7 +773,7 @@ void wpreview_draw_w(int ds1_idx, int x, int y, int mx, int my, int z,
             y1 = my - glb_ds1edit.win_preview.y0 -
                  bt_ptr->zero_line * glb_ds1[ds1_idx].height_mul / glb_ds1[ds1_idx].height_div;
             y1 += glb_ds1[ds1_idx].tile_h; // walls are lower than floors (and than roofs) by 80 pixels
-            if ( (y1 + tmp_bmp->h) < 0)
+            if ( (y1 + al_get_bitmap_height(tmp_bmp)) < 0)
                continue;
             if (y1 >= glb_ds1edit.win_preview.h)
                continue;
@@ -792,7 +792,7 @@ void wpreview_draw_w(int ds1_idx, int x, int y, int mx, int my, int z,
                                  mx - glb_ds1edit.win_preview.x0, y1,
                                  ds1_idx, color);
                else
-                  draw_sprite(glb_ds1edit.screen_buff, tmp_bmp,
+                  a5_draw_sprite(glb_ds1edit.screen_buff, tmp_bmp,
                               mx - glb_ds1edit.win_preview.x0, y1);
             }
          }
@@ -807,7 +807,7 @@ void wpreview_draw_r(int ds1_idx, int x, int y, int mx, int my, int z,
                      int selected)
 {
    BLOCK_TABLE_S * bt_ptr;
-   BITMAP        * tmp_bmp;
+   ALLEGRO_BITMAP        * tmp_bmp;
    CELL_W_S      * r_ptr;
    int           n, t, bt_idx, dt1_idx, block_idx, y1, color;
    ORDER_DATA_S  order_data[4];
@@ -863,7 +863,7 @@ void wpreview_draw_r(int ds1_idx, int x, int y, int mx, int my, int z,
       // roof height
       y1 -= bt_ptr->roof_y * glb_ds1[ds1_idx].height_mul / glb_ds1[ds1_idx].height_div;
       
-      if ( (y1 + tmp_bmp->h) < 0)
+      if ( (y1 + al_get_bitmap_height(tmp_bmp)) < 0)
          continue;
       if (y1 >= glb_ds1edit.win_preview.h)
          continue;
@@ -872,9 +872,9 @@ void wpreview_draw_r(int ds1_idx, int x, int y, int mx, int my, int z,
       {
          // draw it
          if (glb_ds1edit.cmd_line.force_pal_num == -1)
-            color_map = & glb_ds1edit.cmap[CM_SHADOW][glb_ds1[ds1_idx].act - 1];
+            /* TODO A5: color_map = & glb_ds1edit.cmap[CM_SHADOW][glb_ds1[ds1_idx].act - 1]; */ ((void)0);
          else
-            color_map = & glb_ds1edit.cmap[CM_SHADOW][glb_ds1edit.cmd_line.force_pal_num - 1];
+            /* TODO A5: color_map = & glb_ds1edit.cmap[CM_SHADOW][glb_ds1edit.cmd_line.force_pal_num - 1]; */ ((void)0);
          draw_lit_sprite(glb_ds1edit.screen_buff,
                          tmp_bmp,
                          mx - glb_ds1edit.win_preview.x0,
@@ -917,7 +917,7 @@ void wpreview_draw_r(int ds1_idx, int x, int y, int mx, int my, int z,
                            mx - glb_ds1edit.win_preview.x0, y1,
                            ds1_idx, color);
          else
-            draw_sprite(glb_ds1edit.screen_buff, tmp_bmp,
+            a5_draw_sprite(glb_ds1edit.screen_buff, tmp_bmp,
                         mx - glb_ds1edit.win_preview.x0, y1);
       }
    }
@@ -930,7 +930,7 @@ void wpreview_draw_sp(int ds1_idx, int x, int y, int mx, int my, int z,
                      int selected)
 {
    BLOCK_TABLE_S * bt_ptr;
-   BITMAP        * tmp_bmp;
+   ALLEGRO_BITMAP        * tmp_bmp;
    CELL_W_S      * w_ptr;
    int           n, t, bt_idx, dt1_idx, block_idx, y1, o;
    int           color;
@@ -989,14 +989,14 @@ void wpreview_draw_sp(int ds1_idx, int x, int y, int mx, int my, int z,
             uy2 = uy1 + glb_ds1[ds1_idx].tile_h / 2 - 1;
             uy3 = uy1 + glb_ds1[ds1_idx].tile_h - 2;
    
-            line(glb_ds1edit.screen_buff, ux1, uy2, ux2, uy1, 168);
-            line(glb_ds1edit.screen_buff, ux3, uy1, ux4, uy2, 168);
-            line(glb_ds1edit.screen_buff, ux3, uy3, ux4, uy2, 168);
-            line(glb_ds1edit.screen_buff, ux1, uy2, ux2, uy3, 168);
+            a5_line(glb_ds1edit.screen_buff, ux1, uy2, ux2, uy1, 168);
+            a5_line(glb_ds1edit.screen_buff, ux3, uy1, ux4, uy2, 168);
+            a5_line(glb_ds1edit.screen_buff, ux3, uy3, ux4, uy2, 168);
+            a5_line(glb_ds1edit.screen_buff, ux1, uy2, ux2, uy3, 168);
          
             if (glb_ds1[ds1_idx].cur_zoom == ZM_11)
             {
-               textprintf(glb_ds1edit.screen_buff, font, ux1+8, uy2-2, 0,
+               a5_textprintf(glb_ds1edit.screen_buff, font, ux1+8, uy2-2, 0,
                   "(%u) %u %u %u %u",
                   w_ptr[order_data[n].idx].orientation,
                   w_ptr[order_data[n].idx].prop1,
@@ -1004,7 +1004,7 @@ void wpreview_draw_sp(int ds1_idx, int x, int y, int mx, int my, int z,
                   w_ptr[order_data[n].idx].prop3,
                   w_ptr[order_data[n].idx].prop4
                );
-               textprintf(glb_ds1edit.screen_buff, font, ux1+7, uy2-3, 255,
+               a5_textprintf(glb_ds1edit.screen_buff, font, ux1+7, uy2-3, 255,
                   "(%u) %u %u %u %u",
                   w_ptr[order_data[n].idx].orientation,
                   w_ptr[order_data[n].idx].prop1,
@@ -1029,7 +1029,7 @@ void wpreview_draw_sp(int ds1_idx, int x, int y, int mx, int my, int z,
       y1 = my - glb_ds1edit.win_preview.y0 -
            bt_ptr->zero_line * glb_ds1[ds1_idx].height_mul / glb_ds1[ds1_idx].height_div;
       y1 += glb_ds1[ds1_idx].tile_h; // walls are lower than floors (and than roofs) by 80 pixels
-      if ( (y1 + tmp_bmp->h) < 0)
+      if ( (y1 + al_get_bitmap_height(tmp_bmp)) < 0)
          continue;
       if (y1 >= glb_ds1edit.win_preview.h)
          continue;
@@ -1040,8 +1040,8 @@ void wpreview_draw_sp(int ds1_idx, int x, int y, int mx, int my, int z,
          dist = wpreview_light_dist(
                    mx,
                    my + (glb_ds1[ds1_idx].tile_h / 2),
-                   glb_ds1edit.win_preview.x0 + mouse_x,
-                   glb_ds1edit.win_preview.y0 + mouse_y
+                   glb_ds1edit.win_preview.x0 + a5_mouse_x,
+                   glb_ds1edit.win_preview.y0 + a5_mouse_y
                 );
          if (dist < 200)
             c1 = 255;
@@ -1052,10 +1052,10 @@ void wpreview_draw_sp(int ds1_idx, int x, int y, int mx, int my, int z,
 
          // c2
          dist = wpreview_light_dist(
-                   mx + tmp_bmp->w,
+                   mx + al_get_bitmap_width(tmp_bmp),
                    my + (glb_ds1[ds1_idx].tile_h / 2),
-                   glb_ds1edit.win_preview.x0 + mouse_x,
-                   glb_ds1edit.win_preview.y0 + mouse_y
+                   glb_ds1edit.win_preview.x0 + a5_mouse_x,
+                   glb_ds1edit.win_preview.y0 + a5_mouse_y
                 );
          if (dist < 200)
             c2 = 255;
@@ -1105,7 +1105,7 @@ void wpreview_draw_sp(int ds1_idx, int x, int y, int mx, int my, int z,
                            mx - glb_ds1edit.win_preview.x0, y1,
                            ds1_idx, color);
          else
-            draw_sprite(glb_ds1edit.screen_buff, tmp_bmp,
+            a5_draw_sprite(glb_ds1edit.screen_buff, tmp_bmp,
                         mx - glb_ds1edit.win_preview.x0, y1);
       }
    }
@@ -1164,8 +1164,8 @@ void mouse_to_tile(int ds1_idx, int * layer_x, int * layer_y)
    int ax, ay;
 
    // tile under mouse
-   ax = glb_ds1edit.win_preview.x0 + mouse_x;
-   ay = glb_ds1edit.win_preview.y0 + mouse_y;
+   ax = glb_ds1edit.win_preview.x0 + a5_mouse_x;
+   ay = glb_ds1edit.win_preview.y0 + a5_mouse_y;
 
    coord_to_tile(ds1_idx, ax, ay, layer_x, layer_y);
 }
@@ -1274,8 +1274,8 @@ void wpreview_draw_paths(int ds1_idx)
          y2 = dy - glb_ds1edit.win_preview.y0 - 1;
 
          // line
-         line(glb_ds1edit.screen_buff, x1+1, y1+1, x2+1, y2+1, 0);
-         line(glb_ds1edit.screen_buff, x1, y1, x2, y2, color1);
+         a5_line(glb_ds1edit.screen_buff, x1+1, y1+1, x2+1, y2+1, 0);
+         a5_line(glb_ds1edit.screen_buff, x1, y1, x2, y2, color1);
       }
       
       // paths
@@ -1310,12 +1310,12 @@ void wpreview_draw_paths(int ds1_idx)
          y2 = dy - glb_ds1edit.win_preview.y0 - 1;
 
          // line
-         line(glb_ds1edit.screen_buff, x1+1, y1+1, x2+1, y2+1, 0);
-         line(glb_ds1edit.screen_buff, x1, y1, x2, y2, color2);
+         a5_line(glb_ds1edit.screen_buff, x1+1, y1+1, x2+1, y2+1, 0);
+         a5_line(glb_ds1edit.screen_buff, x1, y1, x2, y2, color2);
 
          // big point
-         rectfill(glb_ds1edit.screen_buff, x1, y1, x1+2, y1+2, 0);
-         rectfill(glb_ds1edit.screen_buff, x1-1, y1-1, x1+1, y1+1, 157);
+         a5_rectfill(glb_ds1edit.screen_buff, x1, y1, x1+2, y1+2, 0);
+         a5_rectfill(glb_ds1edit.screen_buff, x1-1, y1-1, x1+1, y1+1, 157);
       }
    }
 }
@@ -1359,8 +1359,8 @@ void wpreview_draw_paths_1obj(int ds1_idx, int o)
 
       // line
       color = 219; // grey
-      line(glb_ds1edit.screen_buff, x1+1, y1+1, x2+1, y2+1, 0);
-      line(glb_ds1edit.screen_buff, x1, y1, x2, y2, color);
+      a5_line(glb_ds1edit.screen_buff, x1+1, y1+1, x2+1, y2+1, 0);
+      a5_line(glb_ds1edit.screen_buff, x1, y1, x2, y2, color);
    }
       
    // paths
@@ -1396,12 +1396,12 @@ void wpreview_draw_paths_1obj(int ds1_idx, int o)
 
       // line
       color = 155; // dark magenta
-      line(glb_ds1edit.screen_buff, x1+1, y1+1, x2+1, y2+1, 0);
-      line(glb_ds1edit.screen_buff, x1, y1, x2, y2, color);
+      a5_line(glb_ds1edit.screen_buff, x1+1, y1+1, x2+1, y2+1, 0);
+      a5_line(glb_ds1edit.screen_buff, x1, y1, x2, y2, color);
 
       // big point
-      rectfill(glb_ds1edit.screen_buff, x1, y1, x1+2, y1+2, 0);
-      rectfill(glb_ds1edit.screen_buff, x1-1, y1-1, x1+1, y1+1, 157);
+      a5_rectfill(glb_ds1edit.screen_buff, x1, y1, x1+2, y1+2, 0);
+      a5_rectfill(glb_ds1edit.screen_buff, x1-1, y1-1, x1+1, y1+1, 157);
    }
 }
 
@@ -1475,10 +1475,10 @@ void wpreview_draw_objects(int ds1_idx)
                   (8 * strlen(glb_ds1edit.obj_desc[d].desc) / 2);
                y1 = dy - glb_ds1edit.win_preview.y0 - 4;
 
-               textprintf(glb_ds1edit.screen_buff, font, x1+1, y1+1, 0, "%s",
+               a5_textprintf(glb_ds1edit.screen_buff, font, x1+1, y1+1, 0, "%s",
                   glb_ds1edit.obj_desc[d].desc);
 
-               textprintf(glb_ds1edit.screen_buff, font, x1, y1, 255, "%s",
+               a5_textprintf(glb_ds1edit.screen_buff, font, x1, y1, 255, "%s",
                  glb_ds1edit.obj_desc[d].desc);
             }
          }
@@ -1490,13 +1490,13 @@ void wpreview_draw_objects(int ds1_idx)
          x1 = dx - glb_ds1edit.win_preview.x0 - 20;
          y1 = dy - glb_ds1edit.win_preview.y0 - 4;
 
-         textprintf(glb_ds1edit.screen_buff, font, x1+1, y1+1, 0, "%i,%3i",
+         a5_textprintf(glb_ds1edit.screen_buff, font, x1+1, y1+1, 0, "%i,%3i",
            glb_ds1[ds1_idx].obj[o].type, glb_ds1[ds1_idx].obj[o].id);
 
-         textprintf(glb_ds1edit.screen_buff, font, x1, y1, 11, "%i",
+         a5_textprintf(glb_ds1edit.screen_buff, font, x1, y1, 11, "%i",
            glb_ds1[ds1_idx].obj[o].type);
 
-         textprintf(glb_ds1edit.screen_buff, font, x1+8, y1, 255, ",%3i",
+         a5_textprintf(glb_ds1edit.screen_buff, font, x1+8, y1, 255, ",%3i",
             glb_ds1[ds1_idx].obj[o].id);
       }
    }
@@ -1557,7 +1557,7 @@ void wpreview_draw_an_object(int ds1_idx, int o)
 {
    COF_S     * cof;
    LAY_INF_S * lay;
-   BITMAP    ** bmp_ptr, * bmp;
+   ALLEGRO_BITMAP    ** bmp_ptr, * bmp;
    int       c, f, x, y, d, dx0, dy0, dx, dy, p, col_black, col_white;
    UBYTE     * bptr;
    UBYTE     new_frame;
@@ -1586,8 +1586,8 @@ void wpreview_draw_an_object(int ds1_idx, int o)
    dx0 = ((y-2) * -glb_ds1[ds1_idx].tile_w / 10) + ((x+3) * glb_ds1[ds1_idx].tile_w / 10);
    dy0 = 4 + ((y-2) *  glb_ds1[ds1_idx].tile_h / 10) + ((x+3) * glb_ds1[ds1_idx].tile_h / 10);
 
-   col_black = makecol(  0,   0,   0);
-   col_white = makecol(255, 255, 255);
+   col_black = 0;   /* palette index for black */
+   col_white = 255; /* palette index for white */
 
    // body
    for (c=0; c < cof->lay; c++)
@@ -1613,7 +1613,7 @@ void wpreview_draw_an_object(int ds1_idx, int o)
          continue;
       dx = dx0 - glb_ds1edit.win_preview.x0 + cof->xoffset + lay->off_x;
       dy = dy0 - glb_ds1edit.win_preview.y0 + cof->yoffset + lay->off_y;
-      if (((dx + bmp->w) < 0) || ((dy + bmp->h) < 0))
+      if (((dx + al_get_bitmap_width(bmp)) < 0) || ((dy + al_get_bitmap_height(bmp)) < 0))
          continue;
       if ( (dx >= glb_ds1edit.win_preview.w) ||
            (dy >= glb_ds1edit.win_preview.h))
@@ -1638,13 +1638,13 @@ void wpreview_draw_an_object(int ds1_idx, int o)
                case 4 : bptr += (256 * COF_LUMINANCE);   break;
                case 6 : bptr += (256 * COF_ALPHABRIGHT); break;
             }
-            color_map = (COLOR_MAP *) bptr;
-            draw_trans_sprite(glb_ds1edit.screen_buff, bmp, dx, dy);
+            /* TODO A5: color_map = (COLOR_MAP *) bptr; */
+            a5_draw_trans_sprite(glb_ds1edit.screen_buff, bmp, dx, dy);
          }
          else
          {
             // normal colors
-            draw_sprite(glb_ds1edit.screen_buff, bmp, dx, dy);
+            a5_draw_sprite(glb_ds1edit.screen_buff, bmp, dx, dy);
          }
       }
       else
@@ -1674,12 +1674,12 @@ void wpreview_draw_an_object(int ds1_idx, int o)
                case 4 : bptr += (256 * COF_LUMINANCE);   break;
                case 6 : bptr += (256 * COF_ALPHABRIGHT); break;
             }
-            color_map = (COLOR_MAP *) bptr;
+            /* TODO A5: color_map = (COLOR_MAP *) bptr; */
          }
          else
          {
             // normal colors
-            color_map = NULL;
+            /* TODO A5: color_map = NULL; */ ((void)0);
          }
 
          stretch_trans_sprite_8bpp(
@@ -1706,10 +1706,10 @@ void wpreview_draw_an_object(int ds1_idx, int o)
       dx = dx0 - glb_ds1edit.win_preview.x0 - 44;
       dy = dy0 - glb_ds1edit.win_preview.y0 - 8; // + cof->yoffset;
 
-      textprintf(glb_ds1edit.screen_buff, font, dx+1, dy+1, col_black,
+      a5_textprintf(glb_ds1edit.screen_buff, font, dx+1, dy+1, col_black,
          "speed = %3li", cof->spd_mul);
 
-      textprintf(glb_ds1edit.screen_buff, font, dx, dy, col_white,
+      a5_textprintf(glb_ds1edit.screen_buff, font, dx, dy, col_white,
          "speed = %3li", cof->spd_mul);
    }
 }
@@ -1720,7 +1720,7 @@ void wpreview_draw_an_object_shad(int ds1_idx, int o)
 {
    COF_S     * cof;
    LAY_INF_S * lay;
-   BITMAP    ** bmp_ptr, * bmp;
+   ALLEGRO_BITMAP    ** bmp_ptr, * bmp;
    int       c, f, x, y, d, dx0, dy0, dx, dy, p, offx, offy;
    UBYTE     * bptr;
    UBYTE     new_frame;
@@ -1778,7 +1778,7 @@ void wpreview_draw_an_object_shad(int ds1_idx, int o)
          continue;
       dx = dx0 - glb_ds1edit.win_preview.x0 + cof->xoffset + lay->off_x;
       dy = dy0 - glb_ds1edit.win_preview.y0 + cof->yoffset + lay->off_y;
-      if (((dx + bmp->w) < 0) || ((dy + bmp->h) < 0))
+      if (((dx + al_get_bitmap_width(bmp)) < 0) || ((dy + al_get_bitmap_height(bmp)) < 0))
          continue;
       if ( (dx >= glb_ds1edit.win_preview.w) ||
            (dy >= glb_ds1edit.win_preview.h))
@@ -2059,7 +2059,7 @@ void wpreview_draw_tile_grid(int ds1_idx)
    dh = glb_ds1[ds1_idx].height;
    px = glb_ds1edit.win_preview.x0;
    py = glb_ds1edit.win_preview.y0;
-   c  = makecol(255, 255, 255);
+   c  = 255; /* palette index for white */
 
    base_x = tw/2 - px - 1;
    base_y = - py - 1;
@@ -2101,7 +2101,7 @@ void wpreview_draw_tile_grid(int ds1_idx)
       y1 = base_y + i * th / 2;
       x2 = mx + i * tw / 2;
       y2 = my + i * th / 2;
-      line(glb_ds1edit.screen_buff, x1, y1, x2, y2, c);
+      a5_line(glb_ds1edit.screen_buff, x1, y1, x2, y2, c);
    }
 
    base_x = tw/2 - px - 1;
@@ -2114,7 +2114,7 @@ void wpreview_draw_tile_grid(int ds1_idx)
       y1 = base_y + i * th / 2;
       x2 = mx - i * tw / 2;
       y2 = my + i * th / 2;
-      line(glb_ds1edit.screen_buff, x1, y1, x2, y2, c);
+      a5_line(glb_ds1edit.screen_buff, x1, y1, x2, y2, c);
    }
 }
 
@@ -2134,7 +2134,7 @@ void wpreview_draw_tiles(int ds1_idx)
 
 
    z = glb_ds1[ds1_idx].cur_zoom;
-   clear(glb_ds1edit.screen_buff);
+   a5_clear(glb_ds1edit.screen_buff);
 
    // handle palette
    if (glb_ds1edit.cmd_line.force_pal_num == -1)
@@ -2143,7 +2143,7 @@ void wpreview_draw_tiles(int ds1_idx)
       if (old_pal != glb_ds1[ds1_idx].act - 1)
       {
          old_pal = glb_ds1[ds1_idx].act - 1;
-         set_palette(glb_ds1edit.vga_pal[old_pal]);
+         a5_current_palette = &glb_ds1edit.vga_pal[old_pal];
       }
    }
    else
@@ -2152,7 +2152,7 @@ void wpreview_draw_tiles(int ds1_idx)
       if (old_pal != glb_ds1edit.cmd_line.force_pal_num - 1)
       {
          old_pal = glb_ds1edit.cmd_line.force_pal_num - 1;
-         set_palette(glb_ds1edit.vga_pal[old_pal]);
+         a5_current_palette = &glb_ds1edit.vga_pal[old_pal];
       }
    }
 
@@ -2390,10 +2390,10 @@ void wpreview_draw_tiles(int ds1_idx)
       y2 = y1 + glb_ds1[ds1_idx].tile_h / 2 - 1;
       y3 = y1 + glb_ds1[ds1_idx].tile_h - 2;
    
-      line(glb_ds1edit.screen_buff, x1, y2, x2, y1, 129);
-      line(glb_ds1edit.screen_buff, x3, y1, x4, y2, 129);
-      line(glb_ds1edit.screen_buff, x3, y3, x4, y2, 129);
-      line(glb_ds1edit.screen_buff, x1, y2, x2, y3, 129);
+      a5_line(glb_ds1edit.screen_buff, x1, y2, x2, y1, 129);
+      a5_line(glb_ds1edit.screen_buff, x3, y1, x4, y2, 129);
+      a5_line(glb_ds1edit.screen_buff, x3, y3, x4, y2, 129);
+      a5_line(glb_ds1edit.screen_buff, x1, y2, x2, y3, 129);
    }
    else // if (glb_ds1edit.mode != MOD_L)
    {
@@ -2420,10 +2420,10 @@ void wpreview_draw_tiles(int ds1_idx)
       y2 = y1 + glb_ds1[ds1_idx].tile_h / 10 - 1;
       y3 = y1 + glb_ds1[ds1_idx].tile_h / 5 - 2;
    
-      line(glb_ds1edit.screen_buff, x1, y2, x2, y1, 129);
-      line(glb_ds1edit.screen_buff, x3, y1, x4, y2, 129);
-      line(glb_ds1edit.screen_buff, x3, y3, x4, y2, 129);
-      line(glb_ds1edit.screen_buff, x1, y2, x2, y3, 129);
+      a5_line(glb_ds1edit.screen_buff, x1, y2, x2, y1, 129);
+      a5_line(glb_ds1edit.screen_buff, x3, y1, x4, y2, 129);
+      a5_line(glb_ds1edit.screen_buff, x3, y3, x4, y2, 129);
+      a5_line(glb_ds1edit.screen_buff, x1, y2, x2, y3, 129);
    }
    
    // npc paths
@@ -2446,74 +2446,74 @@ void wpreview_draw_tiles(int ds1_idx)
    // path infos window
    if (glb_ds1edit.mode == MOD_P)
    {
-      editpath_draw(ds1_idx, mouse_x, mouse_y, mouse_b, cx, cy);
+      editpath_draw(ds1_idx, a5_mouse_x, a5_mouse_y, a5_mouse_b, cx, cy);
    }
 
    // help window for accurate sub-tile flags
    if ((glb_ds1[ds1_idx].walkable_layer_mask == 2) &&
        (glb_ds1[ds1_idx].subtile_help_display))
    {
-      x1 = glb_ds1edit.screen_buff->w - glb_ds1edit.subtile_help->w - 10;
-      x2 = x1 + glb_ds1edit.subtile_help->w;
-      y1 = glb_ds1edit.screen_buff->h - glb_ds1edit.subtile_help->h - 20;
-      y2 = y1 + glb_ds1edit.subtile_help->h;
-      blit(glb_ds1edit.subtile_help, glb_ds1edit.screen_buff,
+      x1 = al_get_bitmap_width(glb_ds1edit.screen_buff) - al_get_bitmap_width(glb_ds1edit.subtile_help) - 10;
+      x2 = x1 + al_get_bitmap_width(glb_ds1edit.subtile_help);
+      y1 = al_get_bitmap_height(glb_ds1edit.screen_buff) - al_get_bitmap_height(glb_ds1edit.subtile_help) - 20;
+      y2 = y1 + al_get_bitmap_height(glb_ds1edit.subtile_help);
+      a5_blit(glb_ds1edit.subtile_help, glb_ds1edit.screen_buff,
          0, 0, x1, y1, x2, y2);
-      rect(glb_ds1edit.screen_buff, x1-1, y1-1, x2+1, y2+1, 255);
+      a5_rect(glb_ds1edit.screen_buff, x1-1, y1-1, x2+1, y2+1, 255);
    }
    
    // make up & bottom border black, with white line
    if (glb_ds1edit.show_2nd_row == TRUE)
    {
-      rectfill(glb_ds1edit.screen_buff, 0,  0, glb_config.screen.width, 19, 0);
-      hline(glb_ds1edit.screen_buff,    0,  9, glb_config.screen.width, 29);
-      hline(glb_ds1edit.screen_buff,    0, 20, glb_config.screen.width, 255);
+      a5_rectfill(glb_ds1edit.screen_buff, 0,  0, glb_config.screen.width, 19, 0);
+      a5_hline(glb_ds1edit.screen_buff,    0,  9, glb_config.screen.width, 29);
+      a5_hline(glb_ds1edit.screen_buff,    0, 20, glb_config.screen.width, 255);
 
       // 2nd row datas
-      textprintf(glb_ds1edit.screen_buff, font,   0, 11, 255, "Set:");
-      textprintf(glb_ds1edit.screen_buff, font,  32, 11, 109, "%i", glb_ds1edit.ds1_group_idx + 1);
+      a5_textprintf(glb_ds1edit.screen_buff, font,   0, 11, 255, "Set:");
+      a5_textprintf(glb_ds1edit.screen_buff, font,  32, 11, 109, "%i", glb_ds1edit.ds1_group_idx + 1);
 
-      textprintf(glb_ds1edit.screen_buff, font,  65, 11, 255, "Ds1Index:");
-      textprintf(glb_ds1edit.screen_buff, font, 137, 11, 109, "%i", ds1_idx + 1);
+      a5_textprintf(glb_ds1edit.screen_buff, font,  65, 11, 255, "Ds1Index:");
+      a5_textprintf(glb_ds1edit.screen_buff, font, 137, 11, 109, "%i", ds1_idx + 1);
 
-      textprintf(glb_ds1edit.screen_buff, font, 175, 11, 255, "File:");
-      textprintf(glb_ds1edit.screen_buff, font, 215, 11, 109, "%s", glb_ds1[ds1_idx].name);
+      a5_textprintf(glb_ds1edit.screen_buff, font, 175, 11, 255, "File:");
+      a5_textprintf(glb_ds1edit.screen_buff, font, 215, 11, 109, "%s", glb_ds1[ds1_idx].name);
    }
    else
    {
-      rectfill(glb_ds1edit.screen_buff, 0, 0, glb_config.screen.width, 8, 0);
-      hline(glb_ds1edit.screen_buff,    0, 9, glb_config.screen.width, 255);
+      a5_rectfill(glb_ds1edit.screen_buff, 0, 0, glb_config.screen.width, 8, 0);
+      a5_hline(glb_ds1edit.screen_buff,    0, 9, glb_config.screen.width, 255);
    }
 
    // bottom row background
-   rectfill(glb_ds1edit.screen_buff, 0, glb_config.screen.height-9,  glb_config.screen.width, glb_config.screen.height, 0);
-   hline(glb_ds1edit.screen_buff,    0, glb_config.screen.height-10, glb_config.screen.width, 255);
+   a5_rectfill(glb_ds1edit.screen_buff, 0, glb_config.screen.height-9,  glb_config.screen.width, glb_config.screen.height, 0);
+   a5_hline(glb_ds1edit.screen_buff,    0, glb_config.screen.height-10, glb_config.screen.width, 255);
 
    // layers toggle
-   text_mode(-1);
+   a5_text_mode(-1);
 
    // floor layers (F1, F2)
    for (i=0; i < glb_ds1[ds1_idx].floor_num; i++)
    {
       if (glb_ds1[ds1_idx].floor_layer_mask[i] == 0)
-         textprintf(glb_ds1edit.screen_buff, font, 20*i, 0,  98, "f%i", i+1);
+         a5_textprintf(glb_ds1edit.screen_buff, font, 20*i, 0,  98, "f%i", i+1);
       else
-         textprintf(glb_ds1edit.screen_buff, font, 20*i, 0, 132, "f%i", i+1);
+         a5_textprintf(glb_ds1edit.screen_buff, font, 20*i, 0, 132, "f%i", i+1);
    }
 
    // animation layer (F3)
    switch(glb_ds1[ds1_idx].animations_layer_mask)
    {
       case 0 :
-         textprintf(glb_ds1edit.screen_buff, font, 50, 0, 98, "anims");
+         a5_textprintf(glb_ds1edit.screen_buff, font, 50, 0, 98, "anims");
          break;
          
       case 1 :
-         textprintf(glb_ds1edit.screen_buff, font, 50, 0, 132, "anims");
+         a5_textprintf(glb_ds1edit.screen_buff, font, 50, 0, 132, "anims");
          break;
          
       default :
-         textprintf(glb_ds1edit.screen_buff, font, 50, 0, 108, "anims");
+         a5_textprintf(glb_ds1edit.screen_buff, font, 50, 0, 108, "anims");
          break;
    }
 
@@ -2521,19 +2521,19 @@ void wpreview_draw_tiles(int ds1_idx)
    switch(glb_ds1[ds1_idx].objects_layer_mask)
    {
       case OL_NONE :
-         textprintf(glb_ds1edit.screen_buff, font, 100, 0, 98, "obj");
+         a5_textprintf(glb_ds1edit.screen_buff, font, 100, 0, 98, "obj");
          break;
          
       case OL_TYPEID :
-         textprintf(glb_ds1edit.screen_buff, font, 100, 0, 210, "obj");
+         a5_textprintf(glb_ds1edit.screen_buff, font, 100, 0, 210, "obj");
          break;
          
       case OL_SPEED :
-         textprintf(glb_ds1edit.screen_buff, font, 100, 0, 108, "obj");
+         a5_textprintf(glb_ds1edit.screen_buff, font, 100, 0, 108, "obj");
          break;
          
       case OL_DESC :
-         textprintf(glb_ds1edit.screen_buff, font, 100, 0, 132, "obj");
+         a5_textprintf(glb_ds1edit.screen_buff, font, 100, 0, 132, "obj");
          break;
          
       default :
@@ -2544,11 +2544,11 @@ void wpreview_draw_tiles(int ds1_idx)
    switch(glb_ds1[ds1_idx].special_layer_mask)
    {
       case 0 :
-         textprintf(glb_ds1edit.screen_buff, font, 240, 0, 98, "spl");
+         a5_textprintf(glb_ds1edit.screen_buff, font, 240, 0, 98, "spl");
          break;
          
       default :
-         textprintf(glb_ds1edit.screen_buff, font, 240, 0, 132, "spl");
+         a5_textprintf(glb_ds1edit.screen_buff, font, 240, 0, 132, "spl");
          break;
    }
 
@@ -2556,34 +2556,34 @@ void wpreview_draw_tiles(int ds1_idx)
    for (i=0; i < glb_ds1[ds1_idx].wall_num; i++)
    {
       if (glb_ds1[ds1_idx].wall_layer_mask[i] == 0)
-         textprintf(glb_ds1edit.screen_buff, font, 140+20*i, 0,  98, "w%i", i+1);
+         a5_textprintf(glb_ds1edit.screen_buff, font, 140+20*i, 0,  98, "w%i", i+1);
       else
-         textprintf(glb_ds1edit.screen_buff, font, 140+20*i, 0, 132, "w%i", i+1);
+         a5_textprintf(glb_ds1edit.screen_buff, font, 140+20*i, 0, 132, "w%i", i+1);
    }
 
    // paths layer (F10)
    if (glb_ds1[ds1_idx].paths_layer_mask == 0)
-      textprintf(glb_ds1edit.screen_buff, font, 280, 0, 98, "path");
+      a5_textprintf(glb_ds1edit.screen_buff, font, 280, 0, 98, "path");
    else
-      textprintf(glb_ds1edit.screen_buff, font, 280, 0, 132, "path");
+      a5_textprintf(glb_ds1edit.screen_buff, font, 280, 0, 132, "path");
 
    // shadow layer (F11)
    switch(glb_ds1[ds1_idx].shadow_layer_mask[0])
    {
       case 1 :
-         textprintf(glb_ds1edit.screen_buff, font, 340, 0, 210, "shad");
+         a5_textprintf(glb_ds1edit.screen_buff, font, 340, 0, 210, "shad");
          break;
          
       case 2 :
-         textprintf(glb_ds1edit.screen_buff, font, 340, 0, 255, "shad");
+         a5_textprintf(glb_ds1edit.screen_buff, font, 340, 0, 255, "shad");
          break;
          
       case 3 :
-         textprintf(glb_ds1edit.screen_buff, font, 340, 0, 132, "shad");
+         a5_textprintf(glb_ds1edit.screen_buff, font, 340, 0, 132, "shad");
          break;
 
       default :
-         textprintf(glb_ds1edit.screen_buff, font, 340, 0, 98, "shad");
+         a5_textprintf(glb_ds1edit.screen_buff, font, 340, 0, 98, "shad");
          break;
          
    }
@@ -2591,22 +2591,22 @@ void wpreview_draw_tiles(int ds1_idx)
    // other infos
 
    // zoom (+, -)
-   textprintf(glb_ds1edit.screen_buff, font, 390, 0, 255, "zoom=%i:%i",
+   a5_textprintf(glb_ds1edit.screen_buff, font, 390, 0, 255, "zoom=%i:%i",
       glb_ds1[ds1_idx].height_mul, glb_ds1[ds1_idx].height_div);
 
    // gamma (F12)
-   textprintf(glb_ds1edit.screen_buff, font, 490, 0, 255, "gamma=%s",
+   a5_textprintf(glb_ds1edit.screen_buff, font, 490, 0, 255, "gamma=%s",
       glb_gamma_str[glb_ds1edit.cur_gamma].str);
 
    // ds1 file name
-   textprintf(glb_ds1edit.screen_buff, font, 606, 0, 109, "%s",
+   a5_textprintf(glb_ds1edit.screen_buff, font, 606, 0, 109, "%s",
       glb_ds1[ds1_idx].filename);
 
    // cell coordinates
    if (glb_ds1edit.mode == MOD_T)
    {
       // mode Tiles, 1 cell = 1 Tile
-      textprintf(
+      a5_textprintf(
          glb_ds1edit.screen_buff, font, 0, glb_config.screen.height-8, 255,
          "Cell (%3i, %3i)",
          cx, cy
@@ -2615,7 +2615,7 @@ void wpreview_draw_tiles(int ds1_idx)
    else
    {
       // mode Objects or Paths, 1 cell = 1 sub-Tile
-      textprintf(
+      a5_textprintf(
          glb_ds1edit.screen_buff, font, 0, glb_config.screen.height-8, 255,
          "Sub-Cell (%3i, %3i)",
          cx, cy
@@ -2623,14 +2623,14 @@ void wpreview_draw_tiles(int ds1_idx)
    }
 
    // frames per second
-   textprintf(
+   a5_textprintf(
       glb_ds1edit.screen_buff, font, glb_config.screen.width-80, 0, 255,
       "  fps=%i",
       glb_ds1edit.old_fps
    );
 
    // refresh rate
-   textprintf(
+   a5_textprintf(
       glb_ds1edit.screen_buff, font,
       glb_config.screen.width-168, glb_config.screen.height-8,
       92,
@@ -2639,7 +2639,7 @@ void wpreview_draw_tiles(int ds1_idx)
    );
 
    // current number of objects / max number of objects
-   textprintf(
+   a5_textprintf(
       glb_ds1edit.screen_buff, font,
       200, glb_config.screen.height-8,
       92,
@@ -2663,22 +2663,22 @@ void wpreview_draw_tiles(int ds1_idx)
          
       default    : mode = "?      "; break;
    }
-   textprintf(glb_ds1edit.screen_buff, font,
+   a5_textprintf(glb_ds1edit.screen_buff, font,
       glb_config.screen.width-112, glb_config.screen.height-8, 255, "Mode :");
-   textprintf(glb_ds1edit.screen_buff, font,
+   a5_textprintf(glb_ds1edit.screen_buff, font,
       glb_config.screen.width-56, glb_config.screen.height-8, 108, "%s", mode);
 
    // uncomment this part to understand the axis and
    // glb_ds1edit.win_preview.x0 (and y0) relations, at different zooms
 /*
-   textprintf(glb_ds1edit.screen_buff, font, 0, 40, 255, "prev x0, y0  = "
+   a5_textprintf(glb_ds1edit.screen_buff, font, 0, 40, 255, "prev x0, y0  = "
       "%i, %i", glb_ds1edit.win_preview.x0, glb_ds1edit.win_preview.y0);
-   hline(glb_ds1edit.screen_buff, 0, - glb_ds1edit.win_preview.y0, glb_config.screen.width, 255);
-   vline(glb_ds1edit.screen_buff, - glb_ds1edit.win_preview.x0, 0, glb_config.screen.height, 255);
+   a5_hline(glb_ds1edit.screen_buff, 0, - glb_ds1edit.win_preview.y0, glb_config.screen.width, 255);
+   a5_vline(glb_ds1edit.screen_buff, - glb_ds1edit.win_preview.x0, 0, glb_config.screen.height, 255);
 */
 
    // draw screen
-   misc_draw_screen(mouse_x, mouse_y);
+   misc_draw_screen(a5_mouse_x, a5_mouse_y);
 
    wpreview_reiinit_animated_floor(ds1_idx);
 }
@@ -2698,7 +2698,7 @@ int wpreview_draw_tiles_big_screenshot(int ds1_idx)
 
    long              minx, miny, maxx, maxy, tmpw, tmph;
    BLOCK_TABLE_S     * bt_ptr;
-   BITMAP            * tmp_bmp;
+   ALLEGRO_BITMAP            * tmp_bmp;
    CELL_S_S          * s_ptr;
    CELL_F_S          * f_ptr;
    CELL_W_S          * w_ptr;
@@ -2752,9 +2752,9 @@ int wpreview_draw_tiles_big_screenshot(int ds1_idx)
                     bt_ptr->zero_line * glb_ds1[ds1_idx].height_mul / glb_ds1[ds1_idx].height_div;
                y1 += glb_ds1[ds1_idx].tile_h; // shadow, like walls, are lower than floors
                                           //    (and than roofs) by 80 pixels
-               y2 = y1 + tmp_bmp->h;
+               y2 = y1 + al_get_bitmap_height(tmp_bmp);
                x1 = mx;
-               x2 = x1 + tmp_bmp->w;
+               x2 = x1 + al_get_bitmap_width(tmp_bmp);
                if (x1 < minx)
                   minx = x1;
                if (x2 > maxx)
@@ -2790,9 +2790,9 @@ int wpreview_draw_tiles_big_screenshot(int ds1_idx)
 
                y1 = my -
                     bt_ptr->zero_line * glb_ds1[ds1_idx].height_mul / glb_ds1[ds1_idx].height_div;
-               y2 = y1 + tmp_bmp->h;
+               y2 = y1 + al_get_bitmap_height(tmp_bmp);
                x1 = mx;
-               x2 = x1 + tmp_bmp->w;
+               x2 = x1 + al_get_bitmap_width(tmp_bmp);
                if (x1 < minx)
                   minx = x1;
                if (x2 > maxx)
@@ -2837,9 +2837,9 @@ int wpreview_draw_tiles_big_screenshot(int ds1_idx)
                     bt_ptr->zero_line * glb_ds1[ds1_idx].height_mul / glb_ds1[ds1_idx].height_div;
                y1 += glb_ds1[ds1_idx].tile_h; // shadow, like walls, are lower than floors
                                           //    (and than roofs) by 80 pixels
-               y2 = y1 + tmp_bmp->h;
+               y2 = y1 + al_get_bitmap_height(tmp_bmp);
                x1 = mx;
-               x2 = x1 + tmp_bmp->w;
+               x2 = x1 + al_get_bitmap_width(tmp_bmp);
                if (x1 < minx)
                   minx = x1;
                if (x2 > maxx)
@@ -2865,7 +2865,7 @@ int wpreview_draw_tiles_big_screenshot(int ds1_idx)
    // make a temporary new screen buffer
    if ((tmpw <= 0) || (tmph <= 0))
       return -1;
-   tmp_bmp = create_bitmap_ex(8, tmpw, tmph);
+   tmp_bmp = al_create_bitmap(tmpw, tmph);
    if (tmp_bmp == NULL)
       return -1;
 
@@ -2885,7 +2885,7 @@ int wpreview_draw_tiles_big_screenshot(int ds1_idx)
    glb_config.screen.height       = tmph;
 
    // let's go
-   clear(glb_ds1edit.screen_buff);
+   a5_clear(glb_ds1edit.screen_buff);
 
    // handle palette
    if (glb_ds1edit.cmd_line.force_pal_num == -1)
@@ -2894,7 +2894,7 @@ int wpreview_draw_tiles_big_screenshot(int ds1_idx)
       if (old_pal != glb_ds1[ds1_idx].act - 1)
       {
          old_pal = glb_ds1[ds1_idx].act - 1;
-         set_palette(glb_ds1edit.vga_pal[old_pal]);
+         a5_current_palette = &glb_ds1edit.vga_pal[old_pal];
       }
    }
    else
@@ -2903,7 +2903,7 @@ int wpreview_draw_tiles_big_screenshot(int ds1_idx)
       if (old_pal != glb_ds1edit.cmd_line.force_pal_num - 1)
       {
          old_pal = glb_ds1edit.cmd_line.force_pal_num - 1;
-         set_palette(glb_ds1edit.vga_pal[old_pal]);
+         a5_current_palette = &glb_ds1edit.vga_pal[old_pal];
       }
    }
 
@@ -3101,20 +3101,20 @@ int wpreview_draw_tiles_big_screenshot(int ds1_idx)
    // path infos window
    if (glb_ds1edit.mode == MOD_P)
    {
-      editpath_draw(ds1_idx, mouse_x, mouse_y, mouse_b, cx, cy);
+      editpath_draw(ds1_idx, a5_mouse_x, a5_mouse_y, a5_mouse_b, cx, cy);
    }
 
    // help window for accurate sub-tile flags
    if ((glb_ds1[ds1_idx].walkable_layer_mask == 2) &&
        (glb_ds1[ds1_idx].subtile_help_display))
    {
-      x1 = glb_ds1edit.screen_buff->w - glb_ds1edit.subtile_help->w - 10;
-      x2 = x1 + glb_ds1edit.subtile_help->w;
-      y1 = glb_ds1edit.screen_buff->h - glb_ds1edit.subtile_help->h - 20;
-      y2 = y1 + glb_ds1edit.subtile_help->h;
-      blit(glb_ds1edit.subtile_help, glb_ds1edit.screen_buff,
+      x1 = al_get_bitmap_width(glb_ds1edit.screen_buff) - al_get_bitmap_width(glb_ds1edit.subtile_help) - 10;
+      x2 = x1 + al_get_bitmap_width(glb_ds1edit.subtile_help);
+      y1 = al_get_bitmap_height(glb_ds1edit.screen_buff) - al_get_bitmap_height(glb_ds1edit.subtile_help) - 20;
+      y2 = y1 + al_get_bitmap_height(glb_ds1edit.subtile_help);
+      a5_blit(glb_ds1edit.subtile_help, glb_ds1edit.screen_buff,
          0, 0, x1, y1, x2, y2);
-      rect(glb_ds1edit.screen_buff, x1-1, y1-1, x2+1, y2+1, 255);
+      a5_rect(glb_ds1edit.screen_buff, x1-1, y1-1, x2+1, y2+1, 255);
    }
    
    glb_ds1edit.win_preview.w  = old_screen_width;

@@ -32,7 +32,7 @@ int dt1_already_loaded(char * dt1name, int * idx)
 // memory free of a dt1
 int dt1_free(int i)
 {
-   BITMAP  * bmp_ptr;
+   ALLEGRO_BITMAP  * bmp_ptr;
    int     size = glb_dt1[i].buff_len + glb_dt1[i].bh_buff_len;
    int     z, b;
 
@@ -53,8 +53,8 @@ fflush(stderr);
             bmp_ptr = * (glb_dt1[i].block_zoom[z] + b);
             if (bmp_ptr != NULL)
             {
-               size += bmp_ptr->w * bmp_ptr->h + sizeof(BITMAP);
-               destroy_bitmap(bmp_ptr);
+               size += al_get_bitmap_width(bmp_ptr) * al_get_bitmap_height(bmp_ptr) + 64 /* approx sizeof bitmap header */;
+               al_destroy_bitmap(bmp_ptr);
             }
          }
          size += glb_dt1[i].bz_size[z];
@@ -173,10 +173,10 @@ void dt1_fill_subt(SUB_TILE_S * ptr, int i, long tiles_ptr, int s)
 // ==========================================================================
 // make the bitmap of 1 tile, for 1 zoom
 // also creates a CACHED_TILE from the source index buffer
-void dt1_zoom(BITMAP * src, int i, int b, int z,
+void dt1_zoom(ALLEGRO_BITMAP * src, int i, int b, int z,
               const uint8_t *src_indices, int src_w, int src_h)
 {
-   BITMAP * dst;
+   ALLEGRO_BITMAP * dst;
    CACHED_TILE * ct;
    int    w = src_w, h = src_h, d=1;
    char   tmp_str[100];
@@ -193,14 +193,14 @@ void dt1_zoom(BITMAP * src, int i, int b, int z,
    h /= d;
 
    // legacy BITMAP (for rendering until Phase 4)
-   dst = create_bitmap(w, h);
+   dst = al_create_bitmap(w, h);
    if (dst == NULL)
    {
       sprintf(tmp_str, "dt1_zoom(%i, %i, %i), can't make a bitmap "
          "of %i * %i pixels\n", i, b, z, w, h);
       ds1edit_error(tmp_str);
    }
-   stretch_blit(src, dst, 0, 0, src->w, src->h, 0, 0, w, h);
+   a5_stretch_blit(src, dst, 0, 0, al_get_bitmap_width(src), al_get_bitmap_height(src), 0, 0, w, h);
    * (glb_dt1[i].block_zoom[z] + b) = dst;
 
    // CACHED_TILE with index data
@@ -229,7 +229,7 @@ void dt1_all_zoom_make(int i)
 {
    BLOCK_S       * b_ptr, * my_b_ptr; // pointers to current block header
    SUB_TILE_S    st_ptr;  // current sub-tile header
-   BITMAP        * tmp_bmp, * sprite;
+   ALLEGRO_BITMAP        * tmp_bmp, * sprite;
    int           b, w, h, s, x0, y0, length, y_add, z, mem_size;
    UBYTE         * data;
    WORD          format;
@@ -245,8 +245,8 @@ void dt1_all_zoom_make(int i)
    // get mem for table of pointers
    for (z=0; z<ZM_MAX; z++)
    {
-      mem_size = sizeof(BITMAP *) * glb_dt1[i].block_num;
-      glb_dt1[i].block_zoom[z] = (BITMAP **) malloc(mem_size);
+      mem_size = sizeof(ALLEGRO_BITMAP *) * glb_dt1[i].block_num;
+      glb_dt1[i].block_zoom[z] = (ALLEGRO_BITMAP **) malloc(mem_size);
       if (glb_dt1[i].block_zoom[z] == NULL)
       {
          sprintf(tmp_str, "dt1_all_zoom_make(%i), zoom %i, not enough mem "
@@ -308,14 +308,14 @@ void dt1_all_zoom_make(int i)
       }
 
       // normal block (non-empty)
-      tmp_bmp = create_bitmap(w, h);
+      tmp_bmp = al_create_bitmap(w, h);
       if (tmp_bmp == NULL)
       {
          sprintf(tmp_str, "dt1_all_zoom_make(%i), can't make a bitmap "
             "of %i * %i pixels\n", i, w, h);
          ds1edit_error(tmp_str);
       }
-      clear(tmp_bmp);
+      a5_clear(tmp_bmp);
 
       // allocate index buffer for parallel decode
       idx_buf = (uint8_t *) calloc(w * h, 1);
@@ -370,7 +370,7 @@ void dt1_all_zoom_make(int i)
                // found it, draw that tile over the game's gfx
                sprite = * (glb_dt1[0].block_zoom[ZM_11] + my_idx);
                if (sprite != NULL)
-                  draw_sprite(tmp_bmp, sprite, 0, tmp_bmp->h - sprite->h);
+                  a5_draw_sprite(tmp_bmp, sprite, 0, al_get_bitmap_height(tmp_bmp) - al_get_bitmap_height(sprite));
 
                // also overlay in the index buffer from the cached tile
                if (idx_buf != NULL && glb_dt1[0].block_cache[ZM_11] != NULL)
@@ -402,7 +402,7 @@ void dt1_all_zoom_make(int i)
          dt1_zoom(tmp_bmp, i, b, z, idx_buf, w, h);
 
       // destroy tmp bitmap and index buffer
-      destroy_bitmap(tmp_bmp);
+      al_destroy_bitmap(tmp_bmp);
       free(idx_buf);
       idx_buf = NULL;
 

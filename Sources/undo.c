@@ -27,8 +27,7 @@ void undo_reset_flags(int ds1_idx)
 void undo_exit(void)
 {
    UNDO_S * u;
-   struct al_ffblk f;
-   int    done, i;
+   int    i;
    char   tmp[150];
 
    for (i=0; i<DS1_MAX; i++)
@@ -50,14 +49,29 @@ void undo_exit(void)
    fprintf(stderr, "      . removing tmp undo buffers (%s)...", tmp);
    fflush(stderr);
    fflush(stdout);
-   done = al_findfirst(tmp, &f, -1);
-   while ( ! done)
    {
-      sprintf(tmp, "%s%s%s", glb_ds1edit_data_dir, glb_ds1edit_tmp_dir, f.name);
-      remove(tmp);
-      done = al_findnext(&f);
+      /* Use Allegro 5 filesystem to find and remove undo files */
+      char dir_path[150];
+      ALLEGRO_FS_ENTRY *dir_entry;
+      sprintf(dir_path, "%s%s", glb_ds1edit_data_dir, glb_ds1edit_tmp_dir);
+      dir_entry = al_create_fs_entry(dir_path);
+      if (dir_entry && al_open_directory(dir_entry))
+      {
+         ALLEGRO_FS_ENTRY *file;
+         while ((file = al_read_directory(dir_entry)) != NULL)
+         {
+            const char *name = al_get_fs_entry_name(file);
+            const char *base = strrchr(name, '/');
+            if (base == NULL) base = strrchr(name, '\\');
+            if (base == NULL) base = name; else base++;
+            if (strncmp(base, "undo", 4) == 0 && strstr(base, ".bin") != NULL)
+               remove(name);
+            al_destroy_fs_entry(file);
+         }
+         al_close_directory(dir_entry);
+      }
+      if (dir_entry) al_destroy_fs_entry(dir_entry);
    }
-   al_findclose(&f);
    printf("done\n");
    fprintf(stderr, "done\n");
    fflush(stderr);

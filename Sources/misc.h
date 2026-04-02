@@ -10,7 +10,7 @@ void   misc_make_block_table           (int ds1_idx);
 void   misc_read_gamma                 (void);
 void   misc_update_pal_with_gamma      (void);
 void   misc_pcx_put_d2_palette         (char * name, int pal_idx);
-void   misc_make_cmaps_helper          (const PALETTE pal, int x, int y, RGB * rgb);
+/* misc_make_cmaps_helper removed — logic moved to palette_build_select_colormap() */
 void   misc_make_cmaps                 (void);
 int    misc_load_pal_from_disk         (int pal_idx);
 void   misc_save_pal_on_disk           (int pal_idx, UBYTE * d2_pal_ptr);

@@ -2,6 +2,8 @@
 
 #define _DCC_INFO_H_
 
+#include "a5_compat.h"
+
 
 #define DCC_MAX_DIR    32
 #define DCC_MAX_FRAME 256
@@ -35,7 +37,7 @@ typedef struct DCC_CELL_S
                             // this buffer cell (for stage 2)
    int    last_x0, last_y0;
    
-   BITMAP * bmp;   // sub-bitmap in the buffer bitmap
+   ALLEGRO_BITMAP * bmp;   // sub-bitmap in the buffer bitmap
 } DCC_CELL_S; // maybe I'll make 2 kind of cells, 1 for frame-buffer cells,
               // the other for the frame cells...
 
@@ -64,7 +66,7 @@ typedef struct DCC_FRAME_S
    DCC_BOX_S box;
 
    // final bitmap
-   BITMAP * bmp;
+   ALLEGRO_BITMAP * bmp;
    
 } DCC_FRAME_S;
 
@@ -116,7 +118,7 @@ typedef struct DCC_DIRECTION_S
    // frame buffer size, in # of cells, used in stage 2
    int             nb_cells_w;
    int             nb_cells_h;
-   BITMAP          * bmp;        // frame buffer bitmap
+   ALLEGRO_BITMAP  * bmp;        // frame buffer bitmap
    DCC_CELL_S      * buffer_ptr; // frame buffer cells
    
    // pixel buffer (1 entry = 4 pixels code & some other datas)
@@ -165,7 +167,7 @@ int     dcc_pixel_values_key       (DCC_S * dcc, DCC_BITSTREAM_S * bs, int d);
 int     dcc_prepare_buffer_cells   (DCC_S * dcc, int d);
 int     dcc_prepare_frame_cells    (DCC_S * dcc, int d, int f);
 int     dcc_fill_pixel_buffer      (DCC_S * dcc, int d);
-int     dcc_save_frame             (DCC_S * dcc, int d, int f, BITMAP * frm_bmp);
+int     dcc_save_frame             (DCC_S * dcc, int d, int f, ALLEGRO_BITMAP * frm_bmp);
 int     dcc_make_frames            (DCC_S * dcc, int d);
 int     dcc_dir_bitstream          (DCC_S * dcc, int d);
 int     dcc_file_header            (DCC_S * dcc);

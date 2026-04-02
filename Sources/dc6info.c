@@ -5,7 +5,7 @@
 
 
 // ==========================================================================
-void dc6_decomp_norm(void * src, BITMAP * dst, long size, int x0, int y0)
+void dc6_decomp_norm(void * src, ALLEGRO_BITMAP * dst, long size, int x0, int y0)
 {
    UBYTE * ptr = (UBYTE *) src;
    long  i;
@@ -29,7 +29,7 @@ void dc6_decomp_norm(void * src, BITMAP * dst, long size, int x0, int y0)
          {
             c2 = * (ptr ++);
             i++;
-            putpixel(dst, x, y, c2);
+            a5_putpixel(dst, x, y, c2);
             x++;
          }
       }
@@ -39,7 +39,7 @@ void dc6_decomp_norm(void * src, BITMAP * dst, long size, int x0, int y0)
 
 // ==========================================================================
 // cmap must point to a table of 256 bytes
-void dc6_decomp_cmap(void * src, BITMAP * dst, long size, int x0, int y0,
+void dc6_decomp_cmap(void * src, ALLEGRO_BITMAP * dst, long size, int x0, int y0,
                      UBYTE * cmap)
 {
    UBYTE * ptr = (UBYTE *) src;
@@ -64,7 +64,7 @@ void dc6_decomp_cmap(void * src, BITMAP * dst, long size, int x0, int y0,
          {
             c2 = * (ptr ++);
             i++;
-            putpixel(dst, x, y, cmap[c2]);
+            a5_putpixel(dst, x, y, cmap[c2]);
             x++;
          }
       }
@@ -175,9 +175,9 @@ int anim_load_dc6(char * name, COF_S * cof, int lay_idx, long user_dir,
    lay->off_y = y1;
    
    // allocate the bitmaps
-   size = dc6_fpd * sizeof(BITMAP *);
+   size = dc6_fpd * sizeof(ALLEGRO_BITMAP *);
    lay->bmp_num = dc6_fpd;
-   lay->bmp = (BITMAP **) malloc(size);
+   lay->bmp = (ALLEGRO_BITMAP **) malloc(size);
    if (lay->bmp == NULL)
    {
       free(buff);
@@ -195,7 +195,7 @@ int anim_load_dc6(char * name, COF_S * cof, int lay_idx, long user_dir,
          while (i)
          {
             i--;
-            destroy_bitmap(lay->bmp[i]);
+            al_destroy_bitmap(lay->bmp[i]);
          }
          free(buff);
          return 1;
@@ -211,18 +211,18 @@ int anim_load_dc6(char * name, COF_S * cof, int lay_idx, long user_dir,
       f_data = (UBYTE *) (& lptr[8]);
 
       // make a BITMAP
-      lay->bmp[i] = create_bitmap(w, h);
+      lay->bmp[i] = al_create_bitmap(w, h);
       if (lay->bmp[i] == NULL)
       {
          while (i)
          {
             i--;
-            destroy_bitmap(lay->bmp[i]);
+            al_destroy_bitmap(lay->bmp[i]);
          }
          free(buff);
          return 1;
       }
-      clear(lay->bmp[i]);
+      a5_clear(lay->bmp[i]);
 
       // decode dc6 datas
       if (palshift == NULL)

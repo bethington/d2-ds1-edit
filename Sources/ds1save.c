@@ -40,7 +40,7 @@ void ds1_save(int ds1_idx, int is_tmp_file)
    {
       // save a ds1 with the extension .tmp
       sprintf(tmp_name, "%s.tmp", tmp);
-      if (file_exists(tmp_name, -1, NULL))
+      if (a5_file_exists(tmp_name))
          remove(tmp_name);
    }
    else
@@ -50,7 +50,7 @@ void ds1_save(int ds1_idx, int is_tmp_file)
 
       // find the 1st free slot
       sprintf(tmp_name, "%s-%03i.ds1", tmp, i);
-      while (file_exists(tmp_name, -1, NULL))
+      while (a5_file_exists(tmp_name))
       {
          i++;
          sprintf(tmp_name, "%s-%03i.ds1", tmp, i);

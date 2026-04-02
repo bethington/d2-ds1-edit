@@ -22,7 +22,7 @@ void ds1edit_error(const char * text)
    fflush(stderr);
 
    // window GUI, if possible
-   allegro_message(text);
+   printf("%s\n", text);
 
    // exit
    exit(DS1ERR_OTHER);

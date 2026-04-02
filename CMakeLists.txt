@@ -4,8 +4,21 @@ project(d2-ds1-edit C)
 # Options
 option(USE_SOFTWARE_RENDERER "Force software rendering (no GPU)" OFF)
 
+# vcpkg integration
+set(VCPKG_ROOT "C:/vcpkg" CACHE PATH "vcpkg root directory")
+if(EXISTS "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake")
+    set(CMAKE_TOOLCHAIN_FILE "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
+endif()
+
+# Find Allegro 5 packages (installed via vcpkg)
+find_package(PkgConfig QUIET)
+
+# Allegro 5 - find via vcpkg installed paths
+set(ALLEGRO5_ROOT "${VCPKG_ROOT}/installed/x86-windows" CACHE PATH "Allegro 5 installation root")
+
 # Source files
 set(SOURCES
+    Sources/a5_globals.c
     Sources/anim.c
     Sources/animdata.c
     Sources/dc6info.c
@@ -27,6 +40,8 @@ set(SOURCES
     Sources/misc.c
     Sources/msg_quit.c
     Sources/msg_save.c
+    Sources/palette.c
+    Sources/rgba_cache.c
     Sources/txtread.c
     Sources/undo.c
     Sources/wBits.c
@@ -45,20 +60,21 @@ add_executable(ds1edit ${SOURCES})
 target_include_directories(ds1edit PRIVATE
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/Sources
+    ${ALLEGRO5_ROOT}/include
 )
 
 # Platform-specific configuration
 if(WIN32)
     target_compile_definitions(ds1edit PRIVATE WIN32 USE_CONSOLE)
 
-    # Allegro 4 (temporary - will be replaced with Allegro 5)
-    target_include_directories(ds1edit PRIVATE
-        ${CMAKE_SOURCE_DIR}/third_party/allegro-4.4.3.1/include
-        ${CMAKE_SOURCE_DIR}/third_party/allegro-build/include
-    )
+    # Allegro 5 libraries
+    target_link_directories(ds1edit PRIVATE ${ALLEGRO5_ROOT}/lib)
     target_link_libraries(ds1edit PRIVATE
-        ${CMAKE_SOURCE_DIR}/bin/allegro-4.4.2-monolith-md.lib
-        user32 gdi32 ole32 dinput8 ddraw dxguid winmm dsound
+        allegro
+        allegro_image
+        allegro_font
+        allegro_primitives
+        allegro_main
     )
 endif()
 
@@ -80,6 +96,15 @@ set_target_properties(ds1edit PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/bin
     OUTPUT_NAME "ds1edit"
 )
+
+# Copy Allegro 5 DLLs to output directory
+if(WIN32 AND EXISTS "${ALLEGRO5_ROOT}/bin")
+    file(GLOB ALLEGRO5_DLLS "${ALLEGRO5_ROOT}/bin/*.dll")
+    foreach(DLL ${ALLEGRO5_DLLS})
+        get_filename_component(DLL_NAME ${DLL} NAME)
+        configure_file(${DLL} ${CMAKE_SOURCE_DIR}/bin/${DLL_NAME} COPYONLY)
+    endforeach()
+endif()
 
 # Unit tests
 enable_testing()

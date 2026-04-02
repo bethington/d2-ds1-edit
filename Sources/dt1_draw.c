@@ -8,7 +8,7 @@
 // The new decode_sub_tile_* and index_buf_scale_down functions are in
 // dt1_decode.c (Allegro-independent, unit-testable).
 
-void draw_sub_tile_isometric (BITMAP * dst, int x0, int y0, UBYTE * data, int length)
+void draw_sub_tile_isometric (ALLEGRO_BITMAP * dst, int x0, int y0, UBYTE * data, int length)
 {
    UBYTE * ptr = data;
    int   x, y=0, n,
@@ -25,7 +25,7 @@ void draw_sub_tile_isometric (BITMAP * dst, int x0, int y0, UBYTE * data, int le
       length -= n;
       while (n)
       {
-         putpixel(dst, x0+x, y0+y, * ptr);
+         a5_putpixel(dst, x0+x, y0+y, * ptr);
          ptr++;
          x++;
          n--;
@@ -34,7 +34,7 @@ void draw_sub_tile_isometric (BITMAP * dst, int x0, int y0, UBYTE * data, int le
    }
 }
 
-void draw_sub_tile_normal (BITMAP * dst, int x0, int y0, UBYTE * data,
+void draw_sub_tile_normal (ALLEGRO_BITMAP * dst, int x0, int y0, UBYTE * data,
                            int length)
 {
    UBYTE * ptr = data, b1, b2;
@@ -52,7 +52,7 @@ void draw_sub_tile_normal (BITMAP * dst, int x0, int y0, UBYTE * data,
          length -= b2;
          while (b2)
          {
-            putpixel(dst, x0+x, y0+y, * ptr);
+            a5_putpixel(dst, x0+x, y0+y, * ptr);
             ptr++;
             x++;
             b2--;
