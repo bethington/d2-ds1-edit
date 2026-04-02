@@ -457,12 +457,10 @@ void ds1edit_exit(void)
 
    printf("\nds1edit_exit()\n");
 
-   /* If Allegro is already shut down, skip bitmap cleanup */
-   if (!al_is_system_installed())
-   {
-      printf("(Allegro already shut down, skipping cleanup)\n");
-      return;
-   }
+   /* Skip Allegro bitmap cleanup — the heap corruption from the Allegro 4->5
+    * migration makes al_destroy_bitmap unsafe during shutdown. The OS reclaims
+    * all process memory on exit anyway. We still close file handles and free
+    * non-bitmap allocations. */
 
    // close all mpq
    for (i=0; i<MAX_MPQ_FILE; i++)
@@ -480,37 +478,12 @@ void ds1edit_exit(void)
       }
    }
    
-   // free all mem
+   // free non-bitmap memory (skip al_destroy_bitmap — causes heap corruption
+   // during shutdown due to Allegro 4->5 migration issues; OS reclaims all
+   // process memory on exit)
    fprintf(stderr, "exit, memory free :\n");
    fflush(stderr);
 
-   // mouse cursor
-   fprintf(stderr, "   * mouse cursor...\n");
-   fflush(stderr);
-   for (i=0; i<MOD_MAX; i++)
-   {
-      if (glb_ds1edit.mouse_cursor[i] != NULL)
-      {
-         al_destroy_bitmap(glb_ds1edit.mouse_cursor[i]);
-         glb_ds1edit.mouse_cursor[i] = NULL;
-      }
-   }
-      
-   // screen buffer
-   fprintf(stderr, "   * screen buffer...\n");
-   fflush(stderr);
-   if (glb_ds1edit.screen_buff != NULL)
-   {
-      al_destroy_bitmap(glb_ds1edit.screen_buff);
-      glb_ds1edit.screen_buff = NULL;
-   }
-
-   if (glb_ds1edit.big_screen_buff != NULL)
-   {
-      al_destroy_bitmap(glb_ds1edit.big_screen_buff);
-      glb_ds1edit.big_screen_buff = NULL;
-   }
-   
    // config, mpq name
    fprintf(stderr, "   * config, mpq names...\n");
    fflush(stderr);
@@ -542,107 +515,12 @@ void ds1edit_exit(void)
       }
    }
 
-   // dt1
-   fprintf(stderr, "   * DT1 files...\n");
-   fflush(stderr);
-   if (glb_dt1 != NULL)
-   {
-      for (i=0; i<DT1_MAX; i++)
-         dt1_free(i);
-   }
-
-   // ds1
-   fprintf(stderr, "   * DS1 files...\n");
-   fflush(stderr);
-   if (glb_ds1 != NULL)
-   {
-      for (i=0; i<DS1_MAX; i++)
-         ds1_free(i);
-   }
-
-   // objects descriptions
-   fprintf(stderr, "   * objects descriptions...\n");
-   fflush(stderr);
-   if (glb_ds1edit.obj_desc != NULL)
-   {
-      anim_exit();
-      free(glb_ds1edit.obj_desc);
-      glb_ds1edit.obj_desc = NULL;
-      glb_ds1edit.obj_desc_num = 0;
-   }
-
-   // buttons & tab
-   fprintf(stderr, "   * buttons & tab...\n");
-   fflush(stderr);
-   wedit_free();
-
-   // undo buffers
+   // skip DT1/DS1/object/bitmap cleanup (contains al_destroy_bitmap calls)
+   // undo buffers — close file handles
    fprintf(stderr, "   * undo buffers...\n");
    fflush(stderr);
    if (glb_ds1 != NULL)
       undo_exit();
-
-   // walkable infos tiles
-   fprintf(stderr, "   * walkable info tiles...\n");
-   fflush(stderr);
-   for (z=0; z<ZM_MAX; z++)
-   {
-      for (i=0; i<25; i++)
-      {
-         if (glb_ds1edit.subtile_nowalk[z][i] != NULL)
-         {
-            al_destroy_bitmap(glb_ds1edit.subtile_nowalk[z][i]);
-            glb_ds1edit.subtile_nowalk[z][i] = NULL;
-         }
-
-         if (glb_ds1edit.subtile_nojump[z][i] != NULL)
-         {
-            al_destroy_bitmap(glb_ds1edit.subtile_nojump[z][i]);
-            glb_ds1edit.subtile_nojump[z][i] = NULL;
-         }
-      }
-   }
-
-   if (glb_ds1edit.subtile_help != NULL)
-   {
-      al_destroy_bitmap(glb_ds1edit.subtile_help);
-      glb_ds1edit.subtile_help = NULL;
-   }
-
-
-   // walkable infos tiles, flag overlays (9 flag types)
-   for (b=0; b<9; b++)
-   {
-      for (z=0; z<ZM_MAX; z++)
-      {
-         for (i=0; i<25; i++)
-         {
-            if (glb_ds1edit.subtile_flag[b][z][i] != NULL)
-            {
-               al_destroy_bitmap(glb_ds1edit.subtile_flag[b][z][i]);
-               glb_ds1edit.subtile_flag[b][z][i] = NULL;
-            }
-         }
-      }
-   }
-
-   // walkable infos tiles, combinations (256 combinations)
-   fprintf(stderr, "   * walkable info tiles combinations...\n");
-   fflush(stderr);
-   for (b=0; b<256; b++)
-   {
-      for (z=0; z<ZM_MAX; z++)
-      {
-         for (i=0; i<25; i++)
-         {
-            if (glb_ds1edit.subtile_flag_combination[b][z][i] != NULL)
-            {
-               al_destroy_bitmap(glb_ds1edit.subtile_flag_combination[b][z][i]);
-               glb_ds1edit.subtile_flag_combination[b][z][i] = NULL;
-            }
-         }
-      }
-   }
 
    // .txt buffers
    fprintf(stderr, "   * .txt buffers ...\n");
