@@ -1030,6 +1030,10 @@ int dcc_save_frame(DCC_S * dcc, int d, int f, ALLEGRO_BITMAP * frm_bmp)
                          al_get_bitmap_width(frm_bmp), al_get_bitmap_height(frm_bmp));
       return 1;
    }
+   /* Clear then copy: frm_bmp has transparent (alpha=0) background pixels.
+    * a5_blit uses alpha blending, so transparent source pixels won't overwrite
+    * uninitialized destination content. Clear first to ensure clean background. */
+   a5_clear(fptr->bmp);
    a5_blit(frm_bmp, fptr->bmp, 0, 0, 0, 0, al_get_bitmap_width(frm_bmp), al_get_bitmap_height(frm_bmp));
 
 

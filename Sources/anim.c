@@ -122,6 +122,7 @@ int anim_load_dcc(
          dcc_destroy(dcc);
          return 1;
       }
+      a5_clear(lay->bmp[i]);
       if (palshift)
       {
          for (y=0; y<h; y++)

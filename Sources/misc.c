@@ -924,8 +924,11 @@ void misc_walkable_tile_info_pcx(void)
    }
 
    // walkable tile infos combinations
-   fprintf(stderr, "\nwalkable tile infos combinations");
+   // TODO: Creates 32,000 bitmaps — extremely slow with A5 memory bitmaps.
+   // Skipped until GPU bitmap path is implemented.
+   fprintf(stderr, "\nwalkable tile infos combinations (skipped - slow with A5)");
    fflush(stderr);
+#if 0
    for (i=0; i<25; i++)
    {
       fprintf(stderr, ".");
@@ -963,6 +966,8 @@ void misc_walkable_tile_info_pcx(void)
          }
       }
    }
+
+#endif
 
    // we don't need the non-combination bitmaps anymore
    for (b=0; b<9; b++)
@@ -1455,7 +1460,14 @@ void misc_draw_screen(int mx, int my)
    ALLEGRO_BITMAP * mouse_sprite = glb_ds1edit.mouse_cursor[glb_ds1edit.mode];
 
    al_set_target_backbuffer(a5_display);
+   al_clear_to_color(al_map_rgb(0, 0, 0));
+
+   /* Draw screen_buff with blending off — copies all pixels including
+    * transparent ones as opaque black (prevents frame bleed-through) */
+   al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_ZERO);
    al_draw_bitmap(glb_ds1edit.screen_buff, 0, 0, 0);
+   al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
+
    if (mouse_sprite != NULL)
       al_draw_bitmap(mouse_sprite, (float)mx, (float)my, 0);
    al_flip_display();

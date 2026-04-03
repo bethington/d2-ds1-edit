@@ -97,7 +97,9 @@ static inline void a5_clear(ALLEGRO_BITMAP *bmp)
 {
     ALLEGRO_BITMAP *old_target = al_get_target_bitmap();
     al_set_target_bitmap(bmp);
+    al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_ZERO);
     al_clear_to_color(al_map_rgba(0, 0, 0, 0));
+    al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
     al_set_target_bitmap(old_target);
 }
 
