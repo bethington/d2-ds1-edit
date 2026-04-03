@@ -726,8 +726,8 @@ int main(int argc, char * argv[])
    if (atexit(ds1edit_exit) != 0)
       ds1edit_error("main(), error.\nCan't install the 'atexit' Handler.");
 
-   // Use memory bitmaps until display is created (needed for headless mode
-   // and for loading bitmaps before display setup)
+   // Use memory bitmaps until display is created
+   // TODO: move display creation earlier for GPU-accelerated bitmaps (FPS fix)
    al_set_new_bitmap_flags(ALLEGRO_MEMORY_BITMAP);
 
    ds1edit_init();

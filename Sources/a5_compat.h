@@ -65,12 +65,14 @@ static inline void a5_draw_sprite(ALLEGRO_BITMAP *dst, ALLEGRO_BITMAP *src, int 
 
 static inline void a5_draw_trans_sprite(ALLEGRO_BITMAP *dst, ALLEGRO_BITMAP *src, int x, int y)
 {
-    /* Allegro 4 draw_trans_sprite used color_map for blending (typically 50%).
-     * In Allegro 5, we use al_draw_tinted_bitmap with 50% alpha to approximate
-     * the same effect for smoke/shadow/transparency overlays. */
+    /* D2 shadow/smoke uses palette-based darkening via 256x256 lookup tables.
+     * Approximate with alpha-blended draw at ~40% opacity. The original game
+     * blended dark smoke pixels with the background using color_map tables
+     * producing a darkening effect. Alpha blend at reduced opacity is the
+     * closest match in true-color rendering. */
     ALLEGRO_BITMAP *old_target = al_get_target_bitmap();
     al_set_target_bitmap(dst);
-    al_draw_tinted_bitmap(src, al_map_rgba_f(1, 1, 1, 0.5f),
+    al_draw_tinted_bitmap(src, al_map_rgba_f(0.6f, 0.6f, 0.6f, 0.4f),
                           (float)x, (float)y, 0);
     al_set_target_bitmap(old_target);
 }
