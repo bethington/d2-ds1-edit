@@ -65,10 +65,13 @@ static inline void a5_draw_sprite(ALLEGRO_BITMAP *dst, ALLEGRO_BITMAP *src, int 
 
 static inline void a5_draw_trans_sprite(ALLEGRO_BITMAP *dst, ALLEGRO_BITMAP *src, int x, int y)
 {
+    /* Allegro 4 draw_trans_sprite used color_map for blending (typically 50%).
+     * In Allegro 5, we use al_draw_tinted_bitmap with 50% alpha to approximate
+     * the same effect for smoke/shadow/transparency overlays. */
     ALLEGRO_BITMAP *old_target = al_get_target_bitmap();
     al_set_target_bitmap(dst);
-    /* TODO: proper transparency blending via tint or blend mode */
-    al_draw_bitmap(src, (float)x, (float)y, 0);
+    al_draw_tinted_bitmap(src, al_map_rgba_f(1, 1, 1, 0.5f),
+                          (float)x, (float)y, 0);
     al_set_target_bitmap(old_target);
 }
 
@@ -340,8 +343,10 @@ static inline int get_config_int(const char *section, const char *key, int def) 
 #define get_rle_sprite(bmp) (bmp) /* just keep the bitmap as-is */
 
 /* Specialty sprite functions — stubbed for now */
-#define draw_lit_sprite(dst, src, x, y, color) a5_draw_sprite(dst, src, x, y)
-#define draw_gouraud_sprite(dst, src, x, y, c1, c2, c3, c4) a5_draw_sprite(dst, src, x, y)
+/* draw_lit_sprite: used for shadow/highlight overlays — draw with 50% alpha */
+#define draw_lit_sprite(dst, src, x, y, color) a5_draw_trans_sprite(dst, src, x, y)
+/* draw_gouraud_sprite: used for lighting effects — draw with 50% alpha */
+#define draw_gouraud_sprite(dst, src, x, y, c1, c2, c3, c4) a5_draw_trans_sprite(dst, src, x, y)
 
 /* stricmp is MSVC-specific, may be needed on other platforms */
 #ifndef stricmp
