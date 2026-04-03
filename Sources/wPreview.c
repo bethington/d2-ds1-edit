@@ -279,11 +279,8 @@ void wpreview_draw_s(int ds1_idx, int x, int y, int mx, int my, int z,
                               ds1_idx, COL_SHADOW);
                break;
 
-            case 3 : // transparent
-               if (glb_ds1edit.cmd_line.force_pal_num == -1)
-                  /* TODO A5: color_map = & glb_ds1edit.cmap[CM_TRANS][glb_ds1[ds1_idx].act - 1]; */ ((void)0);
-               else
-                  /* TODO A5: color_map = & glb_ds1edit.cmap[CM_TRANS][glb_ds1edit.cmd_line.force_pal_num - 1]; */ ((void)0);
+            case 3 : // transparent (CM_TRANS = 50% blend)
+               a5_trans_alpha = 0.50f;
                a5_draw_trans_sprite(
                   glb_ds1edit.screen_buff,
                   tmp_bmp,
@@ -1639,7 +1636,16 @@ void wpreview_draw_an_object(int ds1_idx, int o)
                case 4 : bptr += (256 * COF_LUMINANCE);   break;
                case 6 : bptr += (256 * COF_ALPHABRIGHT); break;
             }
-            /* TODO A5: color_map = (COLOR_MAP *) bptr; */
+            /* Set transparency level based on D2's trans_b value:
+             * 0=75% transparent (25% src), 1=50%, 2=25% transparent (75% src)
+             * 3/4/6 = screen/luminance/alphabright (approximate at 50%) */
+            switch(lay->trans_b)
+            {
+               case 0 : a5_trans_alpha = 0.25f; break; /* 75% transparent */
+               case 1 : a5_trans_alpha = 0.50f; break; /* 50% transparent */
+               case 2 : a5_trans_alpha = 0.75f; break; /* 25% transparent */
+               default: a5_trans_alpha = 0.50f; break;
+            }
             a5_draw_trans_sprite(glb_ds1edit.screen_buff, bmp, dx, dy);
          }
          else

@@ -63,16 +63,21 @@ static inline void a5_draw_sprite(ALLEGRO_BITMAP *dst, ALLEGRO_BITMAP *src, int 
     al_set_target_bitmap(old_target);
 }
 
+/* Global: set before calling a5_draw_trans_sprite to control blend level.
+ * D2 uses trans_b: 0=75% transparent, 1=50%, 2=25%, 3+=screen/luminance */
+extern float a5_trans_alpha;
+
 static inline void a5_draw_trans_sprite(ALLEGRO_BITMAP *dst, ALLEGRO_BITMAP *src, int x, int y)
 {
-    /* D2 shadow/smoke uses palette-based darkening via 256x256 lookup tables.
-     * Approximate with alpha-blended draw at ~40% opacity. The original game
-     * blended dark smoke pixels with the background using color_map tables
-     * producing a darkening effect. Alpha blend at reduced opacity is the
-     * closest match in true-color rendering. */
+    /* D2 blending formula: output = (invBlend * srcColor + blendRatio * dstColor) / 255
+     * trans_b=0: blendRatio=191 -> src at 25% opacity (smoke/shadow)
+     * trans_b=1: blendRatio=127 -> src at 50% opacity
+     * trans_b=2: blendRatio=63  -> src at 75% opacity
+     * a5_trans_alpha is set by the caller based on the trans_b value */
+    float alpha = a5_trans_alpha;
     ALLEGRO_BITMAP *old_target = al_get_target_bitmap();
     al_set_target_bitmap(dst);
-    al_draw_tinted_bitmap(src, al_map_rgba_f(0.6f, 0.6f, 0.6f, 0.4f),
+    al_draw_tinted_bitmap(src, al_map_rgba_f(alpha, alpha, alpha, alpha),
                           (float)x, (float)y, 0);
     al_set_target_bitmap(old_target);
 }
