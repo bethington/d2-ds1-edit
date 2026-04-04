@@ -143,6 +143,18 @@ static void render_perf_print_summary(void)
    memset(&glb_render_perf_stats, 0, sizeof(glb_render_perf_stats));
 }
 
+// Palette state: tracks which palette is active to avoid redundant rebuilds.
+// Initialized by wpreview_init_palette_state() before the render loop starts.
+static int wpreview_wpreview_old_pal = -1;
+
+void wpreview_init_palette_state(int ds1_idx)
+{
+   if (glb_ds1edit.cmd_line.force_pal_num == -1)
+      wpreview_wpreview_old_pal = glb_ds1[ds1_idx].act - 1;
+   else
+      wpreview_wpreview_old_pal = glb_ds1edit.cmd_line.force_pal_num - 1;
+}
+
 static void wpreview_draw_bitmap(ALLEGRO_BITMAP * bmp, int x, int y)
 {
    al_draw_bitmap(bmp, (float) x, (float) y, 0);
@@ -2428,7 +2440,6 @@ void wpreview_draw_tiles(int ds1_idx)
    int               x, y, base_x = 0, base_y = 0, mx, my;
    int               cx, cy, dx, dy, z, x1, x2, x3, x4, y1, y2, y3, i, select;
    int               min_tile_x, max_tile_x, min_tile_y, max_tile_y;
-   static int        old_pal = -1;
    char              * mode;
    UBYTE             walkinfo[25];
    int               objdraw_cur_idx = 0;
@@ -2452,20 +2463,20 @@ void wpreview_draw_tiles(int ds1_idx)
    if (glb_ds1edit.cmd_line.force_pal_num == -1)
    {
       // use .ds1 act value for palette
-      if (old_pal != glb_ds1[ds1_idx].act - 1)
+      if (wpreview_old_pal != glb_ds1[ds1_idx].act - 1)
       {
-         old_pal = glb_ds1[ds1_idx].act - 1;
-         a5_current_palette = &glb_ds1edit.vga_pal[old_pal];
+         wpreview_old_pal = glb_ds1[ds1_idx].act - 1;
+         a5_current_palette = &glb_ds1edit.vga_pal[wpreview_old_pal];
          dt1_rebuild_bitmaps_from_cache(a5_current_palette);
       }
    }
    else
    {
       // use force_pal value for palette
-      if (old_pal != glb_ds1edit.cmd_line.force_pal_num - 1)
+      if (wpreview_old_pal != glb_ds1edit.cmd_line.force_pal_num - 1)
       {
-         old_pal = glb_ds1edit.cmd_line.force_pal_num - 1;
-         a5_current_palette = &glb_ds1edit.vga_pal[old_pal];
+         wpreview_old_pal = glb_ds1edit.cmd_line.force_pal_num - 1;
+         a5_current_palette = &glb_ds1edit.vga_pal[wpreview_old_pal];
          dt1_rebuild_bitmaps_from_cache(a5_current_palette);
       }
    }
@@ -3177,7 +3188,7 @@ int wpreview_draw_tiles_big_screenshot(int ds1_idx)
 {
    int               x, y, base_x = 0, base_y = 0, mx, my;
    int               cx, cy, z, x1, x2, y1, y2, select;
-   static int        old_pal = -1;
+   static int        wpreview_old_pal = -1;
    UBYTE             walkinfo[25];
    int               objdraw_cur_idx = 0;
    void              (* fptr_wi) (int, int, int, UBYTE *);
@@ -3379,20 +3390,20 @@ int wpreview_draw_tiles_big_screenshot(int ds1_idx)
    if (glb_ds1edit.cmd_line.force_pal_num == -1)
    {
       // use .ds1 act value for palette
-      if (old_pal != glb_ds1[ds1_idx].act - 1)
+      if (wpreview_old_pal != glb_ds1[ds1_idx].act - 1)
       {
-         old_pal = glb_ds1[ds1_idx].act - 1;
-         a5_current_palette = &glb_ds1edit.vga_pal[old_pal];
+         wpreview_old_pal = glb_ds1[ds1_idx].act - 1;
+         a5_current_palette = &glb_ds1edit.vga_pal[wpreview_old_pal];
          dt1_rebuild_bitmaps_from_cache(a5_current_palette);
       }
    }
    else
    {
       // use force_pal value for palette
-      if (old_pal != glb_ds1edit.cmd_line.force_pal_num - 1)
+      if (wpreview_old_pal != glb_ds1edit.cmd_line.force_pal_num - 1)
       {
-         old_pal = glb_ds1edit.cmd_line.force_pal_num - 1;
-         a5_current_palette = &glb_ds1edit.vga_pal[old_pal];
+         wpreview_old_pal = glb_ds1edit.cmd_line.force_pal_num - 1;
+         a5_current_palette = &glb_ds1edit.vga_pal[wpreview_old_pal];
          dt1_rebuild_bitmaps_from_cache(a5_current_palette);
       }
    }

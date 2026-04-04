@@ -39,6 +39,7 @@ October 30 2011 :
 #include "iniread.h"
 #include "animdata.h"
 #include "interfac.h"
+#include "wPreview.h"
 
 
 WRKSPC_DATAS_S glb_wrkspc_datas[WRKSPC_MAX] = // workspace datas saved in .ds1
@@ -1206,6 +1207,10 @@ int main(int argc, char * argv[])
    glb_ds1edit.win_preview.w  = glb_ds1[ds1_idx].own_wpreview.w ;
    glb_ds1edit.win_preview.h  = glb_ds1[ds1_idx].own_wpreview.h ;
 
+
+   // Initialize palette state so the first frame doesn't trigger a redundant
+   // dt1_rebuild_bitmaps_from_cache (already done during init above).
+   wpreview_init_palette_state(ds1_idx);
 
    // main loop
    freopen("stderr.txt", "wt", stderr);
