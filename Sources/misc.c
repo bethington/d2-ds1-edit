@@ -254,6 +254,7 @@ void misc_make_block_table(int ds1_idx)
    bt_ptr->roof_y          = -1;
    bt_ptr->type            = -1;
    bt_ptr->zero_line       = -1;
+   bt_ptr->corner_pair_idx = -1;
    bt_ptr++;
 
    for (i=0; i<DT1_IN_DS1_MAX; i++)
@@ -276,6 +277,7 @@ void misc_make_block_table(int ds1_idx)
             bt_ptr->block_idx       = b;
             bt_ptr->roof_y          = 0;
             bt_ptr->zero_line       = 0;
+            bt_ptr->corner_pair_idx = -1;
             
             // type
             if (bt_ptr->orientation == 0)
@@ -371,6 +373,18 @@ void misc_make_block_table(int ds1_idx)
    printf("----- ----------- -------- ------- ----- ------- ------- ------ ---- -----\n");
    for (b=0; b<glb_ds1[ds1_idx].bt_num; b++)
    {
+      if (glb_ds1[ds1_idx].block_table[b].orientation == 3)
+      {
+         glb_ds1[ds1_idx].block_table[b].corner_pair_idx =
+            misc_seach_block_or4(
+               ds1_idx,
+               glb_ds1[ds1_idx].block_table,
+               b + 1,
+               glb_ds1[ds1_idx].block_table[b].main_index,
+               glb_ds1[ds1_idx].block_table[b].sub_index
+            );
+      }
+
       printf("%5i %11li %8li %7li %5li %7li %7li %6i %4i %5i",
          b,
          glb_ds1[ds1_idx].block_table[b].orientation,

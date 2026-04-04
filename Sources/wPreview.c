@@ -1,12 +1,151 @@
 #include <math.h>
 #include <string.h>
+#include <stdio.h>
 #include "structs.h"
+
+// Diagnostic: track which COF trans_b blend modes are actually used
+static int trans_b_seen[7] = {0}; // modes 0-6
 #include "gfx_custom.h"
 #include "misc.h"
 #include "editobj.h"
 #include "editpath.h"
 #include "wPreview.h"
 #include "dt1misc.h"
+
+typedef struct
+{
+   double clear_ms_total;
+   double palette_ms_total;
+   double mouse_ms_total;
+   double obj_anim_ms_total;
+   double loop_1a_ms_total;
+   double loop_1a_w_ms_total;
+   double loop_1a_f_ms_total;
+   double loop_1a_s_ms_total;
+   double loop_1b_ms_total;
+   double loop_2_ms_total;
+   double loop_3_ms_total;
+   double loop_3_w_ms_total;
+   double loop_3_obj_ms_total;
+   double loop_4_ms_total;
+   double loop_5_ms_total;
+   double loop_6_ms_total;
+   double cursor_ms_total;
+   double paths_ms_total;
+   double obj_info_ms_total;
+   double path_info_ms_total;
+   double help_ms_total;
+   double hud_ms_total;
+   double present_ms_total;
+   double reinit_ms_total;
+   double total_ms_total;
+
+   double clear_ms_max;
+   double palette_ms_max;
+   double mouse_ms_max;
+   double obj_anim_ms_max;
+   double loop_1a_ms_max;
+   double loop_1a_w_ms_max;
+   double loop_1a_f_ms_max;
+   double loop_1a_s_ms_max;
+   double loop_1b_ms_max;
+   double loop_2_ms_max;
+   double loop_3_ms_max;
+   double loop_3_w_ms_max;
+   double loop_3_obj_ms_max;
+   double loop_4_ms_max;
+   double loop_5_ms_max;
+   double loop_6_ms_max;
+   double cursor_ms_max;
+   double paths_ms_max;
+   double obj_info_ms_max;
+   double path_info_ms_max;
+   double help_ms_max;
+   double hud_ms_max;
+   double present_ms_max;
+   double reinit_ms_max;
+   double total_ms_max;
+
+   int frames;
+} RENDER_PERF_STATS_S;
+
+static RENDER_PERF_STATS_S glb_render_perf_stats;
+
+static double render_perf_now_ms(void)
+{
+   return al_get_time() * 1000.0;
+}
+
+static void render_perf_add(double * total, double * max, double dt_ms)
+{
+   (*total) += dt_ms;
+   if (dt_ms > *max)
+      *max = dt_ms;
+}
+
+static void render_perf_print_summary(void)
+{
+   double inv;
+
+   if (glb_render_perf_stats.frames <= 0)
+      return;
+
+   inv = 1.0 / glb_render_perf_stats.frames;
+   fprintf(stderr, "\n[render-perf] last %d frames\n", glb_render_perf_stats.frames);
+   fprintf(stderr, "[render-perf] total:      avg %7.2f ms  max %7.2f ms\n",
+      glb_render_perf_stats.total_ms_total * inv, glb_render_perf_stats.total_ms_max);
+   fprintf(stderr, "[render-perf] clear:      avg %7.2f ms  max %7.2f ms\n",
+      glb_render_perf_stats.clear_ms_total * inv, glb_render_perf_stats.clear_ms_max);
+   fprintf(stderr, "[render-perf] palette:    avg %7.2f ms  max %7.2f ms\n",
+      glb_render_perf_stats.palette_ms_total * inv, glb_render_perf_stats.palette_ms_max);
+   fprintf(stderr, "[render-perf] mouse:      avg %7.2f ms  max %7.2f ms\n",
+      glb_render_perf_stats.mouse_ms_total * inv, glb_render_perf_stats.mouse_ms_max);
+   fprintf(stderr, "[render-perf] obj_anim:   avg %7.2f ms  max %7.2f ms\n",
+      glb_render_perf_stats.obj_anim_ms_total * inv, glb_render_perf_stats.obj_anim_ms_max);
+   fprintf(stderr, "[render-perf] loop1a:     avg %7.2f ms  max %7.2f ms\n",
+      glb_render_perf_stats.loop_1a_ms_total * inv, glb_render_perf_stats.loop_1a_ms_max);
+   fprintf(stderr, "[render-perf] loop1a_w:   avg %7.2f ms  max %7.2f ms\n",
+      glb_render_perf_stats.loop_1a_w_ms_total * inv, glb_render_perf_stats.loop_1a_w_ms_max);
+   fprintf(stderr, "[render-perf] loop1a_f:   avg %7.2f ms  max %7.2f ms\n",
+      glb_render_perf_stats.loop_1a_f_ms_total * inv, glb_render_perf_stats.loop_1a_f_ms_max);
+   fprintf(stderr, "[render-perf] loop1a_s:   avg %7.2f ms  max %7.2f ms\n",
+      glb_render_perf_stats.loop_1a_s_ms_total * inv, glb_render_perf_stats.loop_1a_s_ms_max);
+   fprintf(stderr, "[render-perf] loop1b:     avg %7.2f ms  max %7.2f ms\n",
+      glb_render_perf_stats.loop_1b_ms_total * inv, glb_render_perf_stats.loop_1b_ms_max);
+   fprintf(stderr, "[render-perf] loop2:      avg %7.2f ms  max %7.2f ms\n",
+      glb_render_perf_stats.loop_2_ms_total * inv, glb_render_perf_stats.loop_2_ms_max);
+   fprintf(stderr, "[render-perf] loop3:      avg %7.2f ms  max %7.2f ms\n",
+      glb_render_perf_stats.loop_3_ms_total * inv, glb_render_perf_stats.loop_3_ms_max);
+   fprintf(stderr, "[render-perf] loop3_w:    avg %7.2f ms  max %7.2f ms\n",
+      glb_render_perf_stats.loop_3_w_ms_total * inv, glb_render_perf_stats.loop_3_w_ms_max);
+   fprintf(stderr, "[render-perf] loop3_obj:  avg %7.2f ms  max %7.2f ms\n",
+      glb_render_perf_stats.loop_3_obj_ms_total * inv, glb_render_perf_stats.loop_3_obj_ms_max);
+   fprintf(stderr, "[render-perf] loop4:      avg %7.2f ms  max %7.2f ms\n",
+      glb_render_perf_stats.loop_4_ms_total * inv, glb_render_perf_stats.loop_4_ms_max);
+   fprintf(stderr, "[render-perf] loop5:      avg %7.2f ms  max %7.2f ms\n",
+      glb_render_perf_stats.loop_5_ms_total * inv, glb_render_perf_stats.loop_5_ms_max);
+   fprintf(stderr, "[render-perf] loop6:      avg %7.2f ms  max %7.2f ms\n",
+      glb_render_perf_stats.loop_6_ms_total * inv, glb_render_perf_stats.loop_6_ms_max);
+   fprintf(stderr, "[render-perf] cursor:     avg %7.2f ms  max %7.2f ms\n",
+      glb_render_perf_stats.cursor_ms_total * inv, glb_render_perf_stats.cursor_ms_max);
+   fprintf(stderr, "[render-perf] paths:      avg %7.2f ms  max %7.2f ms\n",
+      glb_render_perf_stats.paths_ms_total * inv, glb_render_perf_stats.paths_ms_max);
+   fprintf(stderr, "[render-perf] obj_info:   avg %7.2f ms  max %7.2f ms\n",
+      glb_render_perf_stats.obj_info_ms_total * inv, glb_render_perf_stats.obj_info_ms_max);
+   fprintf(stderr, "[render-perf] path_info:  avg %7.2f ms  max %7.2f ms\n",
+      glb_render_perf_stats.path_info_ms_total * inv, glb_render_perf_stats.path_info_ms_max);
+   fprintf(stderr, "[render-perf] help:       avg %7.2f ms  max %7.2f ms\n",
+      glb_render_perf_stats.help_ms_total * inv, glb_render_perf_stats.help_ms_max);
+   fprintf(stderr, "[render-perf] hud:        avg %7.2f ms  max %7.2f ms\n",
+      glb_render_perf_stats.hud_ms_total * inv, glb_render_perf_stats.hud_ms_max);
+   fprintf(stderr, "[render-perf] present:    avg %7.2f ms  max %7.2f ms\n",
+      glb_render_perf_stats.present_ms_total * inv, glb_render_perf_stats.present_ms_max);
+   fprintf(stderr, "[render-perf] reinit:     avg %7.2f ms  max %7.2f ms\n",
+      glb_render_perf_stats.reinit_ms_total * inv, glb_render_perf_stats.reinit_ms_max);
+   fflush(stderr);
+
+   memset(&glb_render_perf_stats, 0, sizeof(glb_render_perf_stats));
+}
 
 #ifdef WIN32
    #pragma warning (push)
@@ -135,6 +274,123 @@ int qsort_helper_order_data(const void *e1, const void *e2)
       return o1->idx - o2->idx; // else it reverse the original order !
       
    return o1->height - o2->height;
+}
+
+
+// ==========================================================================
+// The draw passes sort at most 4 layers per tile; a tiny insertion sort is
+// much cheaper here than calling qsort thousands of times per frame.
+static void wpreview_sort_order_data(ORDER_DATA_S * order_data, int count)
+{
+   int i, j;
+   ORDER_DATA_S key;
+
+   for (i=1; i<count; i++)
+   {
+      key = order_data[i];
+      j = i - 1;
+      while (j >= 0)
+      {
+         if (order_data[j].height < key.height)
+            break;
+         if ((order_data[j].height == key.height) &&
+             (order_data[j].idx <= key.idx))
+            break;
+         order_data[j + 1] = order_data[j];
+         j--;
+      }
+      order_data[j + 1] = key;
+   }
+}
+
+
+// ==========================================================================
+// Convert absolute pixel coordinates to major tile coordinates without the
+// mode-specific 5x scaling used for object/path sub-cells.
+static void wpreview_coord_to_major_tile(int ds1_idx, int ax, int ay,
+                                         int * layer_x, int * layer_y)
+{
+   int bx, by, cx, cy, rx, ry;
+
+   if (ax < 0)
+      ax -= glb_ds1[ds1_idx].tile_w;
+   if (ay < 0)
+      ay -= glb_ds1[ds1_idx].tile_h;
+
+   bx = ax / glb_ds1[ds1_idx].tile_w;
+   by = ay / glb_ds1[ds1_idx].tile_h;
+   cx = bx  + by;
+   cy = -bx + by;
+
+   rx = ax % glb_ds1[ds1_idx].tile_w;
+   ry = ay % glb_ds1[ds1_idx].tile_h;
+   if (ax < 0) rx = glb_ds1[ds1_idx].tile_w + rx;
+   if (ay < 0) ry = glb_ds1[ds1_idx].tile_h + ry;
+
+   if (ry >= -rx / 2 + glb_ds1[ds1_idx].tile_w/2 + glb_ds1[ds1_idx].tile_h/2)     cx++;
+   else if (ry < -rx / 2 + glb_ds1[ds1_idx].tile_h/2)                               cx--;
+   else if (glb_ds1[ds1_idx].tile_w/2 - ry >=
+            -rx / 2 + glb_ds1[ds1_idx].tile_w/2 + glb_ds1[ds1_idx].tile_h/2)        cy--;
+   else if (glb_ds1[ds1_idx].tile_w/2 - ry < -rx / 2 + glb_ds1[ds1_idx].tile_h/2)   cy++;
+
+   * layer_x = cx;
+   * layer_y = cy;
+}
+
+
+// ==========================================================================
+// Estimate the major-tile bounds that can contribute to the current view.
+static void wpreview_get_visible_tile_bounds(int ds1_idx,
+                                             int * min_x, int * max_x,
+                                             int * min_y, int * max_y)
+{
+   int px, py, pw, ph;
+   int corners[4][2];
+   int i, cx, cy;
+   int x_pad = 2;
+   int y_pad = 4;
+
+   px = glb_ds1edit.win_preview.x0;
+   py = glb_ds1edit.win_preview.y0;
+   pw = glb_ds1edit.win_preview.w;
+   ph = glb_ds1edit.win_preview.h;
+
+   corners[0][0] = px - glb_ds1[ds1_idx].tile_w;
+   corners[0][1] = py - glb_ds1[ds1_idx].tile_h * y_pad;
+   corners[1][0] = px + pw + glb_ds1[ds1_idx].tile_w;
+   corners[1][1] = py - glb_ds1[ds1_idx].tile_h * y_pad;
+   corners[2][0] = px - glb_ds1[ds1_idx].tile_w;
+   corners[2][1] = py + ph + glb_ds1[ds1_idx].tile_h * y_pad;
+   corners[3][0] = px + pw + glb_ds1[ds1_idx].tile_w;
+   corners[3][1] = py + ph + glb_ds1[ds1_idx].tile_h * y_pad;
+
+   * min_x = glb_ds1[ds1_idx].width - 1;
+   * max_x = 0;
+   * min_y = glb_ds1[ds1_idx].height - 1;
+   * max_y = 0;
+
+   for (i=0; i<4; i++)
+   {
+      wpreview_coord_to_major_tile(ds1_idx, corners[i][0], corners[i][1], &cx, &cy);
+      if (cx < * min_x) * min_x = cx;
+      if (cx > * max_x) * max_x = cx;
+      if (cy < * min_y) * min_y = cy;
+      if (cy > * max_y) * max_y = cy;
+   }
+
+   * min_x -= x_pad;
+   * max_x += x_pad;
+   * min_y -= y_pad;
+   * max_y += y_pad;
+
+   if (* min_x < 0)
+      * min_x = 0;
+   if (* min_y < 0)
+      * min_y = 0;
+   if (* max_x >= glb_ds1[ds1_idx].width)
+      * max_x = glb_ds1[ds1_idx].width - 1;
+   if (* max_y >= glb_ds1[ds1_idx].height)
+      * max_y = glb_ds1[ds1_idx].height - 1;
 }
 
      
@@ -334,8 +590,7 @@ void wpreview_draw_f(int ds1_idx, int x, int y, int mx, int my, int z, int selec
       order_data[n].idx    = n;
       order_data[n].height = f_ptr[n].prop1;
    }
-   qsort(order_data, glb_ds1[ds1_idx].floor_num, sizeof(ORDER_DATA_S),
-      qsort_helper_order_data);
+   wpreview_sort_order_data(order_data, glb_ds1[ds1_idx].floor_num);
    
    for (n=0; n<glb_ds1[ds1_idx].floor_num; n++)
    {
@@ -542,8 +797,8 @@ void wpreview_draw_w(int ds1_idx, int x, int y, int mx, int my, int z,
    BLOCK_TABLE_S * bt_ptr;
    ALLEGRO_BITMAP        * tmp_bmp;
    CELL_W_S      * w_ptr;
-   int           n, t, bt_idx, dt1_idx, block_idx, m, s, y1;
-   int           done, found, o, color;
+   int           n, t, bt_idx, dt1_idx, block_idx, y1;
+   int           o, color;
    ORDER_DATA_S  order_data[4];
    int           dist, c1=0, c2=0;
    int           ux1, ux2, ux3, ux4, uy1, uy2, uy3;
@@ -559,8 +814,7 @@ void wpreview_draw_w(int ds1_idx, int x, int y, int mx, int my, int z,
       if (w_ptr[n].orientation == 10)
          order_data[n].height = 255;
    }
-   qsort(order_data, glb_ds1[ds1_idx].wall_num, sizeof(ORDER_DATA_S),
-      qsort_helper_order_data);
+   wpreview_sort_order_data(order_data, glb_ds1[ds1_idx].wall_num);
    
    for (n=0; n<glb_ds1[ds1_idx].wall_num; n++)
    {
@@ -737,30 +991,9 @@ void wpreview_draw_w(int ds1_idx, int x, int y, int mx, int my, int z,
       // // upper-left corner
       if (bt_ptr->orientation == 3)
       {
-         // search the o=4 m=m s=s
-         m = bt_ptr->main_index;
-         s = bt_ptr->sub_index;
-         done = FALSE;
-         found = FALSE;
-         while( ! done)
+         if (bt_ptr->corner_pair_idx >= 0)
          {
-            if (bt_idx >= glb_ds1[ds1_idx].bt_num)
-               done = TRUE;
-            else
-            {
-               bt_ptr++;
-               if (bt_ptr->orientation < 4)
-                  bt_idx++;
-               else
-               {
-                  if (bt_ptr->orientation == 4)
-                     if ((bt_ptr->main_index == m) && (bt_ptr->sub_index == s))
-                        done = found = TRUE;
-               }
-            }
-         }
-         if (found == TRUE)
-         {
+            bt_ptr = glb_ds1[ds1_idx].block_table + bt_ptr->corner_pair_idx;
             dt1_idx   = bt_ptr->dt1_idx;
             block_idx = bt_ptr->block_idx;
             tmp_bmp   = * (glb_dt1[dt1_idx].block_zoom[z] + block_idx);
@@ -819,8 +1052,7 @@ void wpreview_draw_r(int ds1_idx, int x, int y, int mx, int my, int z,
       order_data[n].idx    = n;
       order_data[n].height = r_ptr[n].prop1;
    }
-   qsort(order_data, glb_ds1[ds1_idx].wall_num, sizeof(ORDER_DATA_S),
-      qsort_helper_order_data);
+   wpreview_sort_order_data(order_data, glb_ds1[ds1_idx].wall_num);
    
    for (n=0; n<glb_ds1[ds1_idx].wall_num; n++)
    {
@@ -947,8 +1179,7 @@ void wpreview_draw_sp(int ds1_idx, int x, int y, int mx, int my, int z,
       if (w_ptr[n].orientation == 10)
          order_data[n].height = 255;
    }
-   qsort(order_data, glb_ds1[ds1_idx].wall_num, sizeof(ORDER_DATA_S),
-      qsort_helper_order_data);
+   wpreview_sort_order_data(order_data, glb_ds1[ds1_idx].wall_num);
    
    for (n=0; n<glb_ds1[ds1_idx].wall_num; n++)
    {
@@ -1622,31 +1853,12 @@ void wpreview_draw_an_object(int ds1_idx, int o)
          // normal drawing
          if ((lay->trans_a) && (lay->trans_b <= 6) && (lay->trans_b != 5))
          {
-            // valid gfx effect
-            if (glb_ds1edit.cmd_line.force_pal_num == -1)
-               bptr = glb_ds1edit.d2_pal[glb_ds1[ds1_idx].act - 1];
-            else
-               bptr = glb_ds1edit.d2_pal[glb_ds1edit.cmd_line.force_pal_num - 1];
-            switch(lay->trans_b)
-            {
-               case 0 : bptr += (256 * COF_75TRANS);     break;
-               case 1 : bptr += (256 * COF_50TRANS);     break;
-               case 2 : bptr += (256 * COF_25TRANS);     break;
-               case 3 : bptr += (256 * COF_ALPHA);       break;
-               case 4 : bptr += (256 * COF_LUMINANCE);   break;
-               case 6 : bptr += (256 * COF_ALPHABRIGHT); break;
+            // Diagnostic: log first occurrence of each trans_b value
+            if (!trans_b_seen[lay->trans_b]) {
+               trans_b_seen[lay->trans_b] = 1;
+               fprintf(stderr, "[D2 blend] trans_b=%d first seen (layer composit)\n", lay->trans_b);
             }
-            /* Set transparency level based on D2's trans_b value:
-             * 0=75% transparent (25% src), 1=50%, 2=25% transparent (75% src)
-             * 3/4/6 = screen/luminance/alphabright (approximate at 50%) */
-            switch(lay->trans_b)
-            {
-               case 0 : a5_trans_alpha = 0.25f; break; /* 75% transparent */
-               case 1 : a5_trans_alpha = 0.50f; break; /* 50% transparent */
-               case 2 : a5_trans_alpha = 0.75f; break; /* 25% transparent */
-               default: a5_trans_alpha = 0.50f; break;
-            }
-            a5_draw_trans_sprite(glb_ds1edit.screen_buff, bmp, dx, dy);
+            a5_draw_blended_sprite(glb_ds1edit.screen_buff, bmp, dx, dy, lay->trans_b);
          }
          else
          {
@@ -1667,35 +1879,24 @@ void wpreview_draw_an_object(int ds1_idx, int o)
 
          if ((lay->trans_a) && (lay->trans_b <= 6) && (lay->trans_b != 5))
          {
-            // valid gfx effect
-            if (glb_ds1edit.cmd_line.force_pal_num == -1)
-               bptr = glb_ds1edit.d2_pal[glb_ds1[ds1_idx].act - 1];
-            else
-               bptr = glb_ds1edit.d2_pal[glb_ds1edit.cmd_line.force_pal_num - 1];
-            switch(lay->trans_b)
-            {
-               case 0 : bptr += (256 * COF_75TRANS);     break;
-               case 1 : bptr += (256 * COF_50TRANS);     break;
-               case 2 : bptr += (256 * COF_25TRANS);     break;
-               case 3 : bptr += (256 * COF_ALPHA);       break;
-               case 4 : bptr += (256 * COF_LUMINANCE);   break;
-               case 6 : bptr += (256 * COF_ALPHABRIGHT); break;
+            // Diagnostic: log first occurrence of each trans_b value
+            if (!trans_b_seen[lay->trans_b]) {
+               trans_b_seen[lay->trans_b] = 1;
+               fprintf(stderr, "[D2 blend] trans_b=%d first seen (stretch layer)\n", lay->trans_b);
             }
-            /* TODO A5: color_map = (COLOR_MAP *) bptr; */
+            a5_draw_scaled_blended_sprite(
+               glb_ds1edit.screen_buff, bmp, dx, dy,
+               glb_ds1[ds1_idx].height_div, lay->trans_b
+            );
          }
          else
          {
-            // normal colors
-            /* TODO A5: color_map = NULL; */ ((void)0);
+            // normal colors — opaque scaled drawing
+            a5_draw_scaled_blended_sprite(
+               glb_ds1edit.screen_buff, bmp, dx, dy,
+               glb_ds1[ds1_idx].height_div, -1
+            );
          }
-
-         stretch_trans_sprite_8bpp(
-            glb_ds1edit.screen_buff,
-            bmp,
-            dx,
-            dy,
-            glb_ds1[ds1_idx].height_div
-         );
       }
 
       // end
@@ -2132,18 +2333,28 @@ void wpreview_draw_tiles(int ds1_idx)
 {
    int               x, y, base_x = 0, base_y = 0, mx, my;
    int               cx, cy, dx, dy, z, x1, x2, x3, x4, y1, y2, y3, i, select;
+   int               min_tile_x, max_tile_x, min_tile_y, max_tile_y;
    static int        old_pal = -1;
    char              * mode;
    UBYTE             walkinfo[25];
    int               objdraw_cur_idx = 0;
    void              (* fptr_wi) (int, int, int, UBYTE *);
    PATH_EDIT_WIN_S   * pwin = & glb_ds1[ds1_idx].path_edit_win;
+   double            perf_total_start_ms, perf_section_start_ms, perf_call_start_ms;
 
 
    z = glb_ds1[ds1_idx].cur_zoom;
+   perf_total_start_ms = render_perf_now_ms();
+   perf_section_start_ms = render_perf_now_ms();
    a5_clear(glb_ds1edit.screen_buff);
+   render_perf_add(
+      &glb_render_perf_stats.clear_ms_total,
+      &glb_render_perf_stats.clear_ms_max,
+      render_perf_now_ms() - perf_section_start_ms
+   );
 
    // handle palette
+   perf_section_start_ms = render_perf_now_ms();
    if (glb_ds1edit.cmd_line.force_pal_num == -1)
    {
       // use .ds1 act value for palette
@@ -2164,8 +2375,14 @@ void wpreview_draw_tiles(int ds1_idx)
          dt1_rebuild_bitmaps_from_cache(a5_current_palette);
       }
    }
+   render_perf_add(
+      &glb_render_perf_stats.palette_ms_total,
+      &glb_render_perf_stats.palette_ms_max,
+      render_perf_now_ms() - perf_section_start_ms
+   );
 
    // which tile is under the mouse ?
+   perf_section_start_ms = render_perf_now_ms();
    mouse_to_tile(ds1_idx, &cx, &cy);
    if (glb_ds1edit.mode == MOD_T)
    {
@@ -2201,49 +2418,98 @@ void wpreview_draw_tiles(int ds1_idx)
             cy = glb_ds1[ds1_idx].height * 5 - 1;
       }
    }
+   render_perf_add(
+      &glb_render_perf_stats.mouse_ms_total,
+      &glb_render_perf_stats.mouse_ms_max,
+      render_perf_now_ms() - perf_section_start_ms
+   );
 
    // update objects animation, only if in 'running' animation mode
+   perf_section_start_ms = render_perf_now_ms();
    if (glb_ds1[ds1_idx].animations_layer_mask == 1)
    {
       wpreview_obj_animate();
    }
+   render_perf_add(
+      &glb_render_perf_stats.obj_anim_ms_total,
+      &glb_render_perf_stats.obj_anim_ms_max,
+      render_perf_now_ms() - perf_section_start_ms
+   );
+
+   wpreview_get_visible_tile_bounds(
+      ds1_idx,
+      &min_tile_x,
+      &max_tile_x,
+      &min_tile_y,
+      &max_tile_y
+   );
 
    // loop 1A : lower walls, floors, shadows of dt1
-   for (y=0; y<glb_ds1[ds1_idx].height; y++)
+   perf_section_start_ms = render_perf_now_ms();
+   for (y=min_tile_y; y<=max_tile_y; y++)
    {
       base_x = y * -glb_ds1[ds1_idx].tile_w / 2;
       base_y = y * glb_ds1[ds1_idx].tile_h / 2;
-      for (x=0; x<glb_ds1[ds1_idx].width; x++)
+      for (x=min_tile_x; x<=max_tile_x; x++)
       {
          select = FALSE;
          if ((glb_ds1edit.mode == MOD_T) && (x==cx) && (y==cy))
             select = TRUE;
          mx = base_x + x * glb_ds1[ds1_idx].tile_w / 2;
+         my = base_y + x * glb_ds1[ds1_idx].tile_h / 2;
          if ((mx >= glb_ds1edit.win_preview.x0-glb_ds1[ds1_idx].tile_w) &&
-             (mx < glb_ds1edit.win_preview.x0 + glb_ds1edit.win_preview.w))
+             (mx < glb_ds1edit.win_preview.x0 + glb_ds1edit.win_preview.w) &&
+             (my >= glb_ds1edit.win_preview.y0-glb_ds1[ds1_idx].tile_h * 2) &&
+             (my < glb_ds1edit.win_preview.y0 + glb_ds1edit.win_preview.h + glb_ds1[ds1_idx].tile_h * 2))
          {
-            my = base_y + x * glb_ds1[ds1_idx].tile_h / 2;
+            perf_call_start_ms = render_perf_now_ms();
             wpreview_draw_w(ds1_idx, x, y, mx, my, z, select, FALSE); // lower walls
+            render_perf_add(
+               &glb_render_perf_stats.loop_1a_w_ms_total,
+               &glb_render_perf_stats.loop_1a_w_ms_max,
+               render_perf_now_ms() - perf_call_start_ms
+            );
+            perf_call_start_ms = render_perf_now_ms();
             wpreview_draw_f(ds1_idx, x, y, mx, my, z, select);        // floors
+            render_perf_add(
+               &glb_render_perf_stats.loop_1a_f_ms_total,
+               &glb_render_perf_stats.loop_1a_f_ms_max,
+               render_perf_now_ms() - perf_call_start_ms
+            );
+            perf_call_start_ms = render_perf_now_ms();
             wpreview_draw_s(ds1_idx, x, y, mx, my, z, select);        // shadows of dt1
+            render_perf_add(
+               &glb_render_perf_stats.loop_1a_s_ms_total,
+               &glb_render_perf_stats.loop_1a_s_ms_max,
+               render_perf_now_ms() - perf_call_start_ms
+            );
          }
       }
    }
+   render_perf_add(
+      &glb_render_perf_stats.loop_1a_ms_total,
+      &glb_render_perf_stats.loop_1a_ms_max,
+      render_perf_now_ms() - perf_section_start_ms
+   );
 
    // loop 1B : shadows of objects
+   perf_section_start_ms = render_perf_now_ms();
    objdraw_cur_idx = 0;
-   for (y=0; y<glb_ds1[ds1_idx].height; y++)
+   for (y=min_tile_y; y<=max_tile_y; y++)
    {
       base_x = y * -glb_ds1[ds1_idx].tile_w / 2;
       base_y = y * glb_ds1[ds1_idx].tile_h / 2;
-      for (x=0; x<glb_ds1[ds1_idx].width; x++)
+      for (x=min_tile_x; x<=max_tile_x; x++)
       {
          select = FALSE;
          if ((glb_ds1edit.mode == MOD_T) && (x==cx) && (y==cy))
             select = TRUE;
          mx = base_x + x * glb_ds1[ds1_idx].tile_w / 2;
+         my = base_y + x * glb_ds1[ds1_idx].tile_h / 2;
          if ((mx >= glb_ds1edit.win_preview.x0-glb_ds1[ds1_idx].tile_w) &&
-             (mx < glb_ds1edit.win_preview.x0 + glb_ds1edit.win_preview.w))
+             (mx < glb_ds1edit.win_preview.x0 + glb_ds1edit.win_preview.w) &&
+             (my >= glb_ds1edit.win_preview.y0-glb_ds1[ds1_idx].tile_h * 2) &&
+             (my < glb_ds1edit.win_preview.y0 + glb_ds1edit.win_preview.h + glb_ds1[ds1_idx].tile_h * 2))
          {
             // shadows of objects
             if (glb_ds1[ds1_idx].animations_layer_mask)
@@ -2251,23 +2517,32 @@ void wpreview_draw_tiles(int ds1_idx)
          }
       }
    }
+   render_perf_add(
+      &glb_render_perf_stats.loop_1b_ms_total,
+      &glb_render_perf_stats.loop_1b_ms_max,
+      render_perf_now_ms() - perf_section_start_ms
+   );
 
    // loop 2 : objects with orderflag set to 1 (optional)
+   perf_section_start_ms = render_perf_now_ms();
    objdraw_cur_idx = 0;
    if (glb_ds1[ds1_idx].animations_layer_mask)
    {
-      for (y=0; y<glb_ds1[ds1_idx].height; y++)
+      for (y=min_tile_y; y<=max_tile_y; y++)
       {
          base_x = y * -glb_ds1[ds1_idx].tile_w / 2;
          base_y = y * glb_ds1[ds1_idx].tile_h / 2;
-         for (x=0; x<glb_ds1[ds1_idx].width; x++)
+         for (x=min_tile_x; x<=max_tile_x; x++)
          {
             select = FALSE;
             if ((glb_ds1edit.mode == MOD_T) && (x==cx) && (y==cy))
                select = TRUE;
             mx = base_x + x * glb_ds1[ds1_idx].tile_w / 2;
+            my = base_y + x * glb_ds1[ds1_idx].tile_h / 2;
             if ((mx >= glb_ds1edit.win_preview.x0-glb_ds1[ds1_idx].tile_w) &&
-                (mx < glb_ds1edit.win_preview.x0 + glb_ds1edit.win_preview.w))
+                (mx < glb_ds1edit.win_preview.x0 + glb_ds1edit.win_preview.w) &&
+                (my >= glb_ds1edit.win_preview.y0-glb_ds1[ds1_idx].tile_h * 2) &&
+                (my < glb_ds1edit.win_preview.y0 + glb_ds1edit.win_preview.h + glb_ds1[ds1_idx].tile_h * 2))
             {
                // objects of this tile
                wpreview_draw_obj_tile_1(ds1_idx, x, y, & objdraw_cur_idx);
@@ -2275,80 +2550,124 @@ void wpreview_draw_tiles(int ds1_idx)
          }
       }
    }
+   render_perf_add(
+      &glb_render_perf_stats.loop_2_ms_total,
+      &glb_render_perf_stats.loop_2_ms_max,
+      render_perf_now_ms() - perf_section_start_ms
+   );
 
    // tile grid : if over floor but under wall, draw it now
    if (glb_ds1edit.display_tile_grid == TG_OVERFLOOR)
       wpreview_draw_tile_grid(ds1_idx);
 
    // loop 3 : upper walls, objects with orderflag set to 0 or 2
+   perf_section_start_ms = render_perf_now_ms();
    objdraw_cur_idx = 0;
-   for (y=0; y<glb_ds1[ds1_idx].height; y++)
+   for (y=min_tile_y; y<=max_tile_y; y++)
    {
       base_x = y * -glb_ds1[ds1_idx].tile_w / 2;
       base_y = y * glb_ds1[ds1_idx].tile_h / 2;
-      for (x=0; x<glb_ds1[ds1_idx].width; x++)
+      for (x=min_tile_x; x<=max_tile_x; x++)
       {
          select = FALSE;
          if ((glb_ds1edit.mode == MOD_T) && (x==cx) && (y==cy))
             select = TRUE;
          mx = base_x + x * glb_ds1[ds1_idx].tile_w / 2;
+         my = base_y + x * glb_ds1[ds1_idx].tile_h / 2;
          if ((mx >= glb_ds1edit.win_preview.x0-glb_ds1[ds1_idx].tile_w) &&
-             (mx < glb_ds1edit.win_preview.x0 + glb_ds1edit.win_preview.w))
+             (mx < glb_ds1edit.win_preview.x0 + glb_ds1edit.win_preview.w) &&
+             (my >= glb_ds1edit.win_preview.y0-glb_ds1[ds1_idx].tile_h * 2) &&
+             (my < glb_ds1edit.win_preview.y0 + glb_ds1edit.win_preview.h + glb_ds1[ds1_idx].tile_h * 2))
          {
-            my = base_y + x * glb_ds1[ds1_idx].tile_h / 2;
+            perf_call_start_ms = render_perf_now_ms();
             wpreview_draw_w(ds1_idx, x, y, mx, my, z, select, TRUE);  // upper walls
+            render_perf_add(
+               &glb_render_perf_stats.loop_3_w_ms_total,
+               &glb_render_perf_stats.loop_3_w_ms_max,
+               render_perf_now_ms() - perf_call_start_ms
+            );
 
             // objects of this tile
             if (glb_ds1[ds1_idx].animations_layer_mask)
+            {
+               perf_call_start_ms = render_perf_now_ms();
                wpreview_draw_obj_tile_0_2(ds1_idx, x, y, & objdraw_cur_idx);
+               render_perf_add(
+                  &glb_render_perf_stats.loop_3_obj_ms_total,
+                  &glb_render_perf_stats.loop_3_obj_ms_max,
+                  render_perf_now_ms() - perf_call_start_ms
+               );
+            }
          }
       }
    }
+   render_perf_add(
+      &glb_render_perf_stats.loop_3_ms_total,
+      &glb_render_perf_stats.loop_3_ms_max,
+      render_perf_now_ms() - perf_section_start_ms
+   );
 
    // loop 4 : roofs
-   for (y=0; y<glb_ds1[ds1_idx].height; y++)
+   perf_section_start_ms = render_perf_now_ms();
+   for (y=min_tile_y; y<=max_tile_y; y++)
    {
       base_x = y * -glb_ds1[ds1_idx].tile_w / 2;
       base_y = y * glb_ds1[ds1_idx].tile_h / 2;
-      for (x=0; x<glb_ds1[ds1_idx].width; x++)
+      for (x=min_tile_x; x<=max_tile_x; x++)
       {
          select = FALSE;
          if ((glb_ds1edit.mode == MOD_T) && (x==cx) && (y==cy))
             select = TRUE;
          mx = base_x + x * glb_ds1[ds1_idx].tile_w / 2;
+         my = base_y + x * glb_ds1[ds1_idx].tile_h / 2;
          if ((mx >= glb_ds1edit.win_preview.x0-glb_ds1[ds1_idx].tile_w) &&
-             (mx < glb_ds1edit.win_preview.x0 + glb_ds1edit.win_preview.w))
+             (mx < glb_ds1edit.win_preview.x0 + glb_ds1edit.win_preview.w) &&
+             (my >= glb_ds1edit.win_preview.y0-glb_ds1[ds1_idx].tile_h * 2) &&
+             (my < glb_ds1edit.win_preview.y0 + glb_ds1edit.win_preview.h + glb_ds1[ds1_idx].tile_h * 2))
          {
-            my = base_y + x * glb_ds1[ds1_idx].tile_h / 2;
             wpreview_draw_r (ds1_idx, x, y, mx, my, z, select); // roofs
          }
       }
    }
+   render_perf_add(
+      &glb_render_perf_stats.loop_4_ms_total,
+      &glb_render_perf_stats.loop_4_ms_max,
+      render_perf_now_ms() - perf_section_start_ms
+   );
 
    // loop 5 : special tiles (optional)
+   perf_section_start_ms = render_perf_now_ms();
    if (glb_ds1[ds1_idx].special_layer_mask)
    {
-      for (y=0; y<glb_ds1[ds1_idx].height; y++)
+      for (y=min_tile_y; y<=max_tile_y; y++)
       {
          base_x = y * -glb_ds1[ds1_idx].tile_w / 2;
          base_y = y * glb_ds1[ds1_idx].tile_h / 2;
-         for (x=0; x<glb_ds1[ds1_idx].width; x++)
+         for (x=min_tile_x; x<=max_tile_x; x++)
          {
             select = FALSE;
             if ((glb_ds1edit.mode == MOD_T) && (x==cx) && (y==cy))
                select = TRUE;
             mx = base_x + x * glb_ds1[ds1_idx].tile_w / 2;
+            my = base_y + x * glb_ds1[ds1_idx].tile_h / 2;
             if ((mx >= glb_ds1edit.win_preview.x0-glb_ds1[ds1_idx].tile_w) &&
-                (mx < glb_ds1edit.win_preview.x0 + glb_ds1edit.win_preview.w))
+                (mx < glb_ds1edit.win_preview.x0 + glb_ds1edit.win_preview.w) &&
+                (my >= glb_ds1edit.win_preview.y0-glb_ds1[ds1_idx].tile_h * 2) &&
+                (my < glb_ds1edit.win_preview.y0 + glb_ds1edit.win_preview.h + glb_ds1[ds1_idx].tile_h * 2))
             {
-               my = base_y + x * glb_ds1[ds1_idx].tile_h / 2;
                wpreview_draw_sp(ds1_idx, x, y, mx, my, z, select); // special
             }
          }
       }
    }
+   render_perf_add(
+      &glb_render_perf_stats.loop_5_ms_total,
+      &glb_render_perf_stats.loop_5_ms_max,
+      render_perf_now_ms() - perf_section_start_ms
+   );
 
    // loop 6 : walkable infos (optional)
+   perf_section_start_ms = render_perf_now_ms();
    switch(glb_ds1[ds1_idx].walkable_layer_mask)
    {
       case 1  : fptr_wi = wpreview_draw_simple_wi; break;
@@ -2357,11 +2676,11 @@ void wpreview_draw_tiles(int ds1_idx)
    }
    if (fptr_wi != NULL)
    {
-      for (y=0; y<glb_ds1[ds1_idx].height; y++)
+      for (y=min_tile_y; y<=max_tile_y; y++)
       {
          base_x = y * -glb_ds1[ds1_idx].tile_w / 2;
          base_y = y * glb_ds1[ds1_idx].tile_h / 2;
-         for (x=0; x<glb_ds1[ds1_idx].width; x++)
+         for (x=min_tile_x; x<=max_tile_x; x++)
          {
             mx = base_x + x * glb_ds1[ds1_idx].tile_w / 2;
             if ((mx >= glb_ds1edit.win_preview.x0-glb_ds1[ds1_idx].tile_w) &&
@@ -2378,12 +2697,18 @@ void wpreview_draw_tiles(int ds1_idx)
          }
       }
    }
+   render_perf_add(
+      &glb_render_perf_stats.loop_6_ms_total,
+      &glb_render_perf_stats.loop_6_ms_max,
+      render_perf_now_ms() - perf_section_start_ms
+   );
 
    // tile grid : if over floor and walls, draw it now
    if (glb_ds1edit.display_tile_grid == TG_OVERWALL)
       wpreview_draw_tile_grid(ds1_idx);
 
    // mouse floor cursor
+   perf_section_start_ms = render_perf_now_ms();
    if (glb_ds1edit.mode == MOD_T)
    {
       // tile cursor
@@ -2434,14 +2759,26 @@ void wpreview_draw_tiles(int ds1_idx)
       a5_line(glb_ds1edit.screen_buff, x3, y3, x4, y2, 129);
       a5_line(glb_ds1edit.screen_buff, x1, y2, x2, y3, 129);
    }
+   render_perf_add(
+      &glb_render_perf_stats.cursor_ms_total,
+      &glb_render_perf_stats.cursor_ms_max,
+      render_perf_now_ms() - perf_section_start_ms
+   );
    
    // npc paths
+   perf_section_start_ms = render_perf_now_ms();
    if (glb_ds1edit.mode == MOD_P)
       wpreview_draw_paths_1obj(ds1_idx, pwin->obj_idx);
    else if (glb_ds1[ds1_idx].paths_layer_mask)
       wpreview_draw_paths(ds1_idx);
+   render_perf_add(
+      &glb_render_perf_stats.paths_ms_total,
+      &glb_render_perf_stats.paths_ms_max,
+      render_perf_now_ms() - perf_section_start_ms
+   );
    
    // objects infos
+   perf_section_start_ms = render_perf_now_ms();
    if (glb_ds1edit.mode == MOD_O)
    {
       editobj_draw_obj_lab(ds1_idx, TRUE);
@@ -2451,14 +2788,26 @@ void wpreview_draw_tiles(int ds1_idx)
    }
    else if (glb_ds1[ds1_idx].objects_layer_mask != OL_NONE)
       wpreview_draw_objects(ds1_idx);
+   render_perf_add(
+      &glb_render_perf_stats.obj_info_ms_total,
+      &glb_render_perf_stats.obj_info_ms_max,
+      render_perf_now_ms() - perf_section_start_ms
+   );
 
    // path infos window
+   perf_section_start_ms = render_perf_now_ms();
    if (glb_ds1edit.mode == MOD_P)
    {
       editpath_draw(ds1_idx, a5_mouse_x, a5_mouse_y, a5_mouse_b, cx, cy);
    }
+   render_perf_add(
+      &glb_render_perf_stats.path_info_ms_total,
+      &glb_render_perf_stats.path_info_ms_max,
+      render_perf_now_ms() - perf_section_start_ms
+   );
 
    // help window for accurate sub-tile flags
+   perf_section_start_ms = render_perf_now_ms();
    if ((glb_ds1[ds1_idx].walkable_layer_mask == 2) &&
        (glb_ds1[ds1_idx].subtile_help_display))
    {
@@ -2470,8 +2819,14 @@ void wpreview_draw_tiles(int ds1_idx)
          0, 0, x1, y1, x2, y2);
       a5_rect(glb_ds1edit.screen_buff, x1-1, y1-1, x2+1, y2+1, 255);
    }
+   render_perf_add(
+      &glb_render_perf_stats.help_ms_total,
+      &glb_render_perf_stats.help_ms_max,
+      render_perf_now_ms() - perf_section_start_ms
+   );
    
    // make up & bottom border black, with white line
+   perf_section_start_ms = render_perf_now_ms();
    if (glb_ds1edit.show_2nd_row == TRUE)
    {
       a5_rectfill(glb_ds1edit.screen_buff, 0,  0, glb_config.screen.width, 19, 0);
@@ -2676,6 +3031,11 @@ void wpreview_draw_tiles(int ds1_idx)
       glb_config.screen.width-112, glb_config.screen.height-8, 255, "Mode :");
    a5_textprintf(glb_ds1edit.screen_buff, font,
       glb_config.screen.width-56, glb_config.screen.height-8, 108, "%s", mode);
+   render_perf_add(
+      &glb_render_perf_stats.hud_ms_total,
+      &glb_render_perf_stats.hud_ms_max,
+      render_perf_now_ms() - perf_section_start_ms
+   );
 
    // uncomment this part to understand the axis and
    // glb_ds1edit.win_preview.x0 (and y0) relations, at different zooms
@@ -2687,9 +3047,30 @@ void wpreview_draw_tiles(int ds1_idx)
 */
 
    // draw screen
+   perf_section_start_ms = render_perf_now_ms();
    misc_draw_screen(a5_mouse_x, a5_mouse_y);
+   render_perf_add(
+      &glb_render_perf_stats.present_ms_total,
+      &glb_render_perf_stats.present_ms_max,
+      render_perf_now_ms() - perf_section_start_ms
+   );
 
+   perf_section_start_ms = render_perf_now_ms();
    wpreview_reiinit_animated_floor(ds1_idx);
+   render_perf_add(
+      &glb_render_perf_stats.reinit_ms_total,
+      &glb_render_perf_stats.reinit_ms_max,
+      render_perf_now_ms() - perf_section_start_ms
+   );
+
+   render_perf_add(
+      &glb_render_perf_stats.total_ms_total,
+      &glb_render_perf_stats.total_ms_max,
+      render_perf_now_ms() - perf_total_start_ms
+   );
+   glb_render_perf_stats.frames++;
+   if (glb_render_perf_stats.frames >= 30)
+      render_perf_print_summary();
 }
 
 
