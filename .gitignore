@@ -20,6 +20,8 @@ cmake-build/
 *.tmp
 bin/stderr.txt
 bin/screenshot-*
+bin/*.pcx
+bin/Ds1edit.ini
 Data/Tmp/
 
 # Visual Studio / IDE
@@ -55,5 +57,8 @@ Thumbs.db
 *.tar.gz
 *.tar.bz2
 
-# Legacy (can be removed once confirmed unused)
+# Legacy
 .d2workshop/
+
+# MCP configuration (local developer setup)
+.mcp.json
