@@ -55,12 +55,25 @@ static inline ALLEGRO_COLOR pal_color(int index)
 /* These bridge the Allegro 4 API pattern (pass dst bitmap) to
  * Allegro 5's target bitmap model */
 
+static inline ALLEGRO_BITMAP * a5_begin_target_bitmap(ALLEGRO_BITMAP * dst)
+{
+    ALLEGRO_BITMAP * current = al_get_target_bitmap();
+    if (current != dst)
+        al_set_target_bitmap(dst);
+    return current;
+}
+
+static inline void a5_end_target_bitmap(ALLEGRO_BITMAP * previous, ALLEGRO_BITMAP * dst)
+{
+    if (previous != dst)
+        al_set_target_bitmap(previous);
+}
+
 static inline void a5_draw_sprite(ALLEGRO_BITMAP *dst, ALLEGRO_BITMAP *src, int x, int y)
 {
-    ALLEGRO_BITMAP *old_target = al_get_target_bitmap();
-    al_set_target_bitmap(dst);
+    ALLEGRO_BITMAP *old_target = a5_begin_target_bitmap(dst);
     al_draw_bitmap(src, (float)x, (float)y, 0);
-    al_set_target_bitmap(old_target);
+    a5_end_target_bitmap(old_target, dst);
 }
 
 /* Global: set before calling a5_draw_trans_sprite to control blend level.
@@ -69,64 +82,161 @@ extern float a5_trans_alpha;
 
 static inline void a5_draw_trans_sprite(ALLEGRO_BITMAP *dst, ALLEGRO_BITMAP *src, int x, int y)
 {
-    /* D2 blending formula: output = (invBlend * srcColor + blendRatio * dstColor) / 255
-     * trans_b=0: blendRatio=191 -> src at 25% opacity (smoke/shadow)
-     * trans_b=1: blendRatio=127 -> src at 50% opacity
-     * trans_b=2: blendRatio=63  -> src at 75% opacity
-     * a5_trans_alpha is set by the caller based on the trans_b value */
     float alpha = a5_trans_alpha;
-    ALLEGRO_BITMAP *old_target = al_get_target_bitmap();
-    al_set_target_bitmap(dst);
+    ALLEGRO_BITMAP *old_target = a5_begin_target_bitmap(dst);
     al_draw_tinted_bitmap(src, al_map_rgba_f(alpha, alpha, alpha, alpha),
                           (float)x, (float)y, 0);
-    al_set_target_bitmap(old_target);
+    a5_end_target_bitmap(old_target, dst);
+}
+
+/* D2 COF blend modes mapped to Allegro 5 blender states.
+ * Formulas derived from D2CMP.dll BuildPaletteTransformTables:
+ *   0 = 75% transparent: (dst*192 + src*63)  / 255  -> alpha 0.25
+ *   1 = 50% transparent: (dst*128 + src*128) / 255  -> alpha 0.50
+ *   2 = 25% transparent: (dst*64  + src*191) / 255  -> alpha 0.75
+ *   3 = Additive:        min(src + dst, 255)
+ *   4 = Multiply:        (src * dst) / 255
+ *   5 = (unused)
+ *   6 = Screen:          src + dst - (src * dst) / 255
+ */
+static inline void a5_draw_blended_sprite(ALLEGRO_BITMAP *dst, ALLEGRO_BITMAP *src,
+                                           int x, int y, int trans_b)
+{
+    ALLEGRO_BITMAP *old_target = a5_begin_target_bitmap(dst);
+
+    switch (trans_b)
+    {
+        case 0: /* 75% transparent (25% opaque) */
+            al_draw_tinted_bitmap(src, al_map_rgba_f(0.25f, 0.25f, 0.25f, 0.25f),
+                                  (float)x, (float)y, 0);
+            break;
+        case 1: /* 50% transparent */
+            al_draw_tinted_bitmap(src, al_map_rgba_f(0.50f, 0.50f, 0.50f, 0.50f),
+                                  (float)x, (float)y, 0);
+            break;
+        case 2: /* 25% transparent (75% opaque) */
+            al_draw_tinted_bitmap(src, al_map_rgba_f(0.75f, 0.75f, 0.75f, 0.75f),
+                                  (float)x, (float)y, 0);
+            break;
+        case 3: /* Additive: min(src + dst, 255) — glow/fire/smoke effects */
+            al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_ONE);
+            al_draw_bitmap(src, (float)x, (float)y, 0);
+            al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
+            break;
+        case 4: /* Multiply: (src * dst) / 255 — darkening/shadow overlays */
+            al_set_blender(ALLEGRO_ADD, ALLEGRO_DEST_COLOR, ALLEGRO_ZERO);
+            al_draw_bitmap(src, (float)x, (float)y, 0);
+            al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
+            break;
+        case 6: /* Screen: src + dst - src*dst — ethereal/bright effects */
+            al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_INVERSE_SRC_COLOR);
+            al_draw_bitmap(src, (float)x, (float)y, 0);
+            al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
+            break;
+        default: /* Fallback: 50% alpha */
+            al_draw_tinted_bitmap(src, al_map_rgba_f(0.50f, 0.50f, 0.50f, 0.50f),
+                                  (float)x, (float)y, 0);
+            break;
+    }
+
+    a5_end_target_bitmap(old_target, dst);
+}
+
+/* Scaled version of a5_draw_blended_sprite for zoomed-out rendering.
+ * div is the scale divisor (1 = normal, 2 = half size, etc.).
+ * trans_b selects the D2 blend mode; pass -1 for normal (opaque) drawing. */
+static inline void a5_draw_scaled_blended_sprite(ALLEGRO_BITMAP *dst, ALLEGRO_BITMAP *src,
+                                                  int x, int y, int div, int trans_b)
+{
+    ALLEGRO_BITMAP *old_target = a5_begin_target_bitmap(dst);
+    float sw = (float)al_get_bitmap_width(src);
+    float sh = (float)al_get_bitmap_height(src);
+    float dw = sw / (float)div;
+    float dh = sh / (float)div;
+
+    if (trans_b < 0) {
+        /* Normal opaque drawing */
+        al_draw_scaled_bitmap(src, 0, 0, sw, sh, (float)x, (float)y, dw, dh, 0);
+    } else {
+        switch (trans_b)
+        {
+            case 0:
+                al_draw_tinted_scaled_bitmap(src, al_map_rgba_f(0.25f, 0.25f, 0.25f, 0.25f),
+                                              0, 0, sw, sh, (float)x, (float)y, dw, dh, 0);
+                break;
+            case 1:
+                al_draw_tinted_scaled_bitmap(src, al_map_rgba_f(0.50f, 0.50f, 0.50f, 0.50f),
+                                              0, 0, sw, sh, (float)x, (float)y, dw, dh, 0);
+                break;
+            case 2:
+                al_draw_tinted_scaled_bitmap(src, al_map_rgba_f(0.75f, 0.75f, 0.75f, 0.75f),
+                                              0, 0, sw, sh, (float)x, (float)y, dw, dh, 0);
+                break;
+            case 3: /* Additive */
+                al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_ONE);
+                al_draw_scaled_bitmap(src, 0, 0, sw, sh, (float)x, (float)y, dw, dh, 0);
+                al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
+                break;
+            case 4: /* Multiply */
+                al_set_blender(ALLEGRO_ADD, ALLEGRO_DEST_COLOR, ALLEGRO_ZERO);
+                al_draw_scaled_bitmap(src, 0, 0, sw, sh, (float)x, (float)y, dw, dh, 0);
+                al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
+                break;
+            case 6: /* Screen */
+                al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_INVERSE_SRC_COLOR);
+                al_draw_scaled_bitmap(src, 0, 0, sw, sh, (float)x, (float)y, dw, dh, 0);
+                al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
+                break;
+            default:
+                al_draw_tinted_scaled_bitmap(src, al_map_rgba_f(0.50f, 0.50f, 0.50f, 0.50f),
+                                              0, 0, sw, sh, (float)x, (float)y, dw, dh, 0);
+                break;
+        }
+    }
+
+    a5_end_target_bitmap(old_target, dst);
 }
 
 static inline void a5_blit(ALLEGRO_BITMAP *src, ALLEGRO_BITMAP *dst,
                            int sx, int sy, int dx, int dy, int w, int h)
 {
-    ALLEGRO_BITMAP *old_target = al_get_target_bitmap();
-    al_set_target_bitmap(dst);
+    ALLEGRO_BITMAP *old_target = a5_begin_target_bitmap(dst);
     al_draw_bitmap_region(src, (float)sx, (float)sy, (float)w, (float)h,
                           (float)dx, (float)dy, 0);
-    al_set_target_bitmap(old_target);
+    a5_end_target_bitmap(old_target, dst);
 }
 
 static inline void a5_stretch_blit(ALLEGRO_BITMAP *src, ALLEGRO_BITMAP *dst,
                                    int sx, int sy, int sw, int sh,
                                    int dx, int dy, int dw, int dh)
 {
-    ALLEGRO_BITMAP *old_target = al_get_target_bitmap();
-    al_set_target_bitmap(dst);
+    ALLEGRO_BITMAP *old_target = a5_begin_target_bitmap(dst);
     al_draw_scaled_bitmap(src, (float)sx, (float)sy, (float)sw, (float)sh,
                           (float)dx, (float)dy, (float)dw, (float)dh, 0);
-    al_set_target_bitmap(old_target);
+    a5_end_target_bitmap(old_target, dst);
 }
 
 static inline void a5_clear(ALLEGRO_BITMAP *bmp)
 {
-    ALLEGRO_BITMAP *old_target = al_get_target_bitmap();
-    al_set_target_bitmap(bmp);
+    ALLEGRO_BITMAP *old_target = a5_begin_target_bitmap(bmp);
     al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_ZERO);
     al_clear_to_color(al_map_rgba(0, 0, 0, 0));
     al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
-    al_set_target_bitmap(old_target);
+    a5_end_target_bitmap(old_target, bmp);
 }
 
 static inline void a5_clear_to_color(ALLEGRO_BITMAP *bmp, int color)
 {
-    ALLEGRO_BITMAP *old_target = al_get_target_bitmap();
-    al_set_target_bitmap(bmp);
+    ALLEGRO_BITMAP *old_target = a5_begin_target_bitmap(bmp);
     al_clear_to_color(pal_color(color));
-    al_set_target_bitmap(old_target);
+    a5_end_target_bitmap(old_target, bmp);
 }
 
 static inline void a5_putpixel(ALLEGRO_BITMAP *bmp, int x, int y, int color)
 {
-    ALLEGRO_BITMAP *old_target = al_get_target_bitmap();
-    al_set_target_bitmap(bmp);
+    ALLEGRO_BITMAP *old_target = a5_begin_target_bitmap(bmp);
     al_put_pixel(x, y, pal_color(color));
-    al_set_target_bitmap(old_target);
+    a5_end_target_bitmap(old_target, bmp);
 }
 
 static inline int a5_getpixel(ALLEGRO_BITMAP *bmp, int x, int y)
@@ -150,29 +260,26 @@ static inline int a5_getpixel(ALLEGRO_BITMAP *bmp, int x, int y)
 /* ---- Drawing primitives ---- */
 static inline void a5_line(ALLEGRO_BITMAP *bmp, int x1, int y1, int x2, int y2, int color)
 {
-    ALLEGRO_BITMAP *old_target = al_get_target_bitmap();
-    al_set_target_bitmap(bmp);
+    ALLEGRO_BITMAP *old_target = a5_begin_target_bitmap(bmp);
     al_draw_line((float)x1 + 0.5f, (float)y1 + 0.5f,
                  (float)x2 + 0.5f, (float)y2 + 0.5f, pal_color(color), 1.0f);
-    al_set_target_bitmap(old_target);
+    a5_end_target_bitmap(old_target, bmp);
 }
 
 static inline void a5_rect(ALLEGRO_BITMAP *bmp, int x1, int y1, int x2, int y2, int color)
 {
-    ALLEGRO_BITMAP *old_target = al_get_target_bitmap();
-    al_set_target_bitmap(bmp);
+    ALLEGRO_BITMAP *old_target = a5_begin_target_bitmap(bmp);
     al_draw_rectangle((float)x1 + 0.5f, (float)y1 + 0.5f,
                       (float)x2 + 0.5f, (float)y2 + 0.5f, pal_color(color), 1.0f);
-    al_set_target_bitmap(old_target);
+    a5_end_target_bitmap(old_target, bmp);
 }
 
 static inline void a5_rectfill(ALLEGRO_BITMAP *bmp, int x1, int y1, int x2, int y2, int color)
 {
-    ALLEGRO_BITMAP *old_target = al_get_target_bitmap();
-    al_set_target_bitmap(bmp);
+    ALLEGRO_BITMAP *old_target = a5_begin_target_bitmap(bmp);
     al_draw_filled_rectangle((float)x1, (float)y1, (float)x2 + 1.0f, (float)y2 + 1.0f,
                              pal_color(color));
-    al_set_target_bitmap(old_target);
+    a5_end_target_bitmap(old_target, bmp);
 }
 
 static inline void a5_hline(ALLEGRO_BITMAP *bmp, int x1, int y, int x2, int color)
@@ -190,10 +297,9 @@ static inline void a5_vline(ALLEGRO_BITMAP *bmp, int x, int y1, int y2, int colo
  * Allegro 5 needs target bitmap + al_draw_textf */
 #define a5_textprintf(bmp, fnt, x, y, color, ...) \
     do { \
-        ALLEGRO_BITMAP *_old = al_get_target_bitmap(); \
-        al_set_target_bitmap(bmp); \
+        ALLEGRO_BITMAP *_old = a5_begin_target_bitmap(bmp); \
         al_draw_textf(a5_font, pal_color(color), (float)(x), (float)(y), 0, __VA_ARGS__); \
-        al_set_target_bitmap(_old); \
+        a5_end_target_bitmap(_old, bmp); \
     } while(0)
 
 /* text_mode is not needed in Allegro 5 (always transparent bg) */

@@ -1142,6 +1142,48 @@ int main(int argc, char * argv[])
    if (a5_current_palette != NULL)
       dt1_rebuild_bitmaps_from_cache(a5_current_palette);
 
+   // Promote animation bitmaps (DCC/DC6 object sprites) from MEMORY to VIDEO.
+   // anim_update_gfx() ran before display existed, so all sprites are memory bitmaps.
+   {
+      int oi, li, fi;
+      int promoted = 0, total = 0;
+      for (oi = 0; oi < glb_ds1edit.obj_desc_num; oi++)
+      {
+         COF_S *cof = glb_ds1edit.obj_desc[oi].cof;
+         if (cof == NULL) continue;
+         for (li = 0; li < COMPOSIT_NB; li++)
+         {
+            LAY_INF_S *lay = &cof->lay_inf[li];
+            if (lay->bmp == NULL) continue;
+            for (fi = 0; fi < lay->bmp_num; fi++)
+            {
+               ALLEGRO_BITMAP *old_bmp = lay->bmp[fi];
+               if (old_bmp == NULL) continue;
+               total++;
+               if (al_get_bitmap_flags(old_bmp) & ALLEGRO_MEMORY_BITMAP)
+               {
+                  ALLEGRO_BITMAP *new_bmp = al_clone_bitmap(old_bmp);
+                  if (new_bmp != NULL)
+                  {
+                     al_destroy_bitmap(old_bmp);
+                     lay->bmp[fi] = new_bmp;
+                     promoted++;
+                  }
+               }
+            }
+         }
+      }
+      fprintf(stderr, "[perf] Promoted %d/%d animation bitmaps to VIDEO\n", promoted, total);
+   }
+
+   // Diagnostic: verify bitmap types
+   fprintf(stderr, "[perf] screen_buff flags: 0x%x (%s)\n",
+      al_get_bitmap_flags(glb_ds1edit.screen_buff),
+      (al_get_bitmap_flags(glb_ds1edit.screen_buff) & ALLEGRO_MEMORY_BITMAP) ? "MEMORY" : "VIDEO");
+   fprintf(stderr, "[perf] big_screen_buff flags: 0x%x (%s)\n",
+      al_get_bitmap_flags(glb_ds1edit.big_screen_buff),
+      (al_get_bitmap_flags(glb_ds1edit.big_screen_buff) & ALLEGRO_MEMORY_BITMAP) ? "MEMORY" : "VIDEO");
+
    // mouse
    if (!al_install_mouse())
    {
@@ -1159,7 +1201,7 @@ int main(int argc, char * argv[])
    al_register_event_source(a5_event_queue, al_get_display_event_source(a5_display));
 
    // timers (Allegro 5 event-based timers replace the old interrupt callbacks)
-   a5_tick_timer = al_create_timer(1.0 / 25.0);
+   a5_tick_timer = al_create_timer(1.0 / 60.0);
    al_register_event_source(a5_event_queue, al_get_timer_event_source(a5_tick_timer));
    al_start_timer(a5_tick_timer);
 

@@ -147,6 +147,149 @@ static void render_perf_print_summary(void)
    memset(&glb_render_perf_stats, 0, sizeof(glb_render_perf_stats));
 }
 
+static void wpreview_draw_bitmap(ALLEGRO_BITMAP * bmp, int x, int y)
+{
+   al_draw_bitmap(bmp, (float) x, (float) y, 0);
+}
+
+static void wpreview_draw_trans_bitmap(ALLEGRO_BITMAP * bmp, int x, int y, float alpha)
+{
+   al_draw_tinted_bitmap(
+      bmp,
+      al_map_rgba_f(alpha, alpha, alpha, alpha),
+      (float) x,
+      (float) y,
+      0
+   );
+}
+
+static void wpreview_draw_blended_bitmap(ALLEGRO_BITMAP * bmp, int x, int y, int trans_b)
+{
+   switch (trans_b)
+   {
+      case 0:
+         wpreview_draw_trans_bitmap(bmp, x, y, 0.25f);
+         break;
+      case 1:
+         wpreview_draw_trans_bitmap(bmp, x, y, 0.50f);
+         break;
+      case 2:
+         wpreview_draw_trans_bitmap(bmp, x, y, 0.75f);
+         break;
+      case 3:
+         al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_ONE);
+         wpreview_draw_bitmap(bmp, x, y);
+         al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
+         break;
+      case 4:
+         al_set_blender(ALLEGRO_ADD, ALLEGRO_DEST_COLOR, ALLEGRO_ZERO);
+         wpreview_draw_bitmap(bmp, x, y);
+         al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
+         break;
+      case 6:
+         al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_INVERSE_SRC_COLOR);
+         wpreview_draw_bitmap(bmp, x, y);
+         al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
+         break;
+      default:
+         wpreview_draw_trans_bitmap(bmp, x, y, 0.50f);
+         break;
+   }
+}
+
+static void wpreview_draw_scaled_blended_bitmap(ALLEGRO_BITMAP * bmp, int x, int y,
+                                                int div, int trans_b)
+{
+   float sw, sh, dw, dh;
+
+   sw = (float) al_get_bitmap_width(bmp);
+   sh = (float) al_get_bitmap_height(bmp);
+   dw = sw / (float) div;
+   dh = sh / (float) div;
+
+   if (trans_b < 0)
+   {
+      al_draw_scaled_bitmap(bmp, 0, 0, sw, sh, (float) x, (float) y, dw, dh, 0);
+      return;
+   }
+
+   switch (trans_b)
+   {
+      case 0:
+         al_draw_tinted_scaled_bitmap(
+            bmp, al_map_rgba_f(0.25f, 0.25f, 0.25f, 0.25f),
+            0, 0, sw, sh, (float) x, (float) y, dw, dh, 0
+         );
+         break;
+      case 1:
+         al_draw_tinted_scaled_bitmap(
+            bmp, al_map_rgba_f(0.50f, 0.50f, 0.50f, 0.50f),
+            0, 0, sw, sh, (float) x, (float) y, dw, dh, 0
+         );
+         break;
+      case 2:
+         al_draw_tinted_scaled_bitmap(
+            bmp, al_map_rgba_f(0.75f, 0.75f, 0.75f, 0.75f),
+            0, 0, sw, sh, (float) x, (float) y, dw, dh, 0
+         );
+         break;
+      case 3:
+         al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_ONE);
+         al_draw_scaled_bitmap(bmp, 0, 0, sw, sh, (float) x, (float) y, dw, dh, 0);
+         al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
+         break;
+      case 4:
+         al_set_blender(ALLEGRO_ADD, ALLEGRO_DEST_COLOR, ALLEGRO_ZERO);
+         al_draw_scaled_bitmap(bmp, 0, 0, sw, sh, (float) x, (float) y, dw, dh, 0);
+         al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
+         break;
+      case 6:
+         al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_INVERSE_SRC_COLOR);
+         al_draw_scaled_bitmap(bmp, 0, 0, sw, sh, (float) x, (float) y, dw, dh, 0);
+         al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
+         break;
+      default:
+         al_draw_tinted_scaled_bitmap(
+            bmp, al_map_rgba_f(0.50f, 0.50f, 0.50f, 0.50f),
+            0, 0, sw, sh, (float) x, (float) y, dw, dh, 0
+         );
+         break;
+   }
+}
+
+static void wpreview_blit_region(ALLEGRO_BITMAP * src,
+                                 int sx, int sy, int dx, int dy, int w, int h)
+{
+   al_draw_bitmap_region(src, (float) sx, (float) sy, (float) w, (float) h,
+                         (float) dx, (float) dy, 0);
+}
+
+static void wpreview_draw_line(int x1, int y1, int x2, int y2, int color)
+{
+   al_draw_line((float) x1 + 0.5f, (float) y1 + 0.5f,
+                (float) x2 + 0.5f, (float) y2 + 0.5f,
+                pal_color(color), 1.0f);
+}
+
+static void wpreview_draw_rect(int x1, int y1, int x2, int y2, int color)
+{
+   al_draw_rectangle((float) x1 + 0.5f, (float) y1 + 0.5f,
+                     (float) x2 + 0.5f, (float) y2 + 0.5f,
+                     pal_color(color), 1.0f);
+}
+
+static void wpreview_draw_rectfill(int x1, int y1, int x2, int y2, int color)
+{
+   al_draw_filled_rectangle((float) x1, (float) y1,
+                            (float) x2 + 1.0f, (float) y2 + 1.0f,
+                            pal_color(color));
+}
+
+#define wpreview_draw_hline(x1, y, x2, color) wpreview_draw_line((x1), (y), (x2), (y), (color))
+#define wpreview_draw_vline(x, y1, y2, color) wpreview_draw_line((x), (y1), (x), (y2), (color))
+#define wpreview_textprintf(x, y, color, ...) \
+   al_draw_textf(a5_font, pal_color(color), (float) (x), (float) (y), 0, __VA_ARGS__)
+
 #ifdef WIN32
    #pragma warning (push)
    #pragma warning (disable  : 4244 4267 )
@@ -161,7 +304,7 @@ void wpreview_shape(ALLEGRO_BITMAP * tmp_bmp, int x0, int y0, int ds1_idx,
       /* TODO A5: color_map = & glb_ds1edit.cmap[CM_SELECT][glb_ds1[ds1_idx].act - 1]; */ ((void)0);
    else
       /* TODO A5: color_map = & glb_ds1edit.cmap[CM_SELECT][glb_ds1edit.cmd_line.force_pal_num - 1]; */ ((void)0);
-   draw_lit_sprite(glb_ds1edit.screen_buff, tmp_bmp, x0, y0, col_idx);
+   wpreview_draw_trans_bitmap(tmp_bmp, x0, y0, a5_trans_alpha);
 }
 
 
@@ -175,14 +318,14 @@ void wpreview_gouraud_f(ALLEGRO_BITMAP * tmp_bmp, int x0, int y0, int ds1_idx,
       if (c1 <= 7)
          return;
       if (c1 >= 248)
-         a5_draw_sprite(glb_ds1edit.screen_buff, tmp_bmp, x0, y0);
+         wpreview_draw_bitmap(tmp_bmp, x0, y0);
       else
       {
          if (glb_ds1edit.cmd_line.force_pal_num == -1)
             /* TODO A5: color_map = & glb_ds1edit.cmap[CM_SHADOW][glb_ds1[ds1_idx].act - 1]; */ ((void)0);
          else
             /* TODO A5: color_map = & glb_ds1edit.cmap[CM_SHADOW][glb_ds1edit.cmd_line.force_pal_num - 1]; */ ((void)0);
-         draw_lit_sprite(glb_ds1edit.screen_buff, tmp_bmp, x0, y0, c1);
+         wpreview_draw_trans_bitmap(tmp_bmp, x0, y0, a5_trans_alpha);
       }
    }
    else
@@ -193,13 +336,11 @@ void wpreview_gouraud_f(ALLEGRO_BITMAP * tmp_bmp, int x0, int y0, int ds1_idx,
          /* TODO A5: color_map = & glb_ds1edit.cmap[CM_SHADOW][glb_ds1edit.cmd_line.force_pal_num - 1]; */ ((void)0);
       if (glb_ds1edit.night_mode == 1)
       {
-         draw_gouraud_sprite(glb_ds1edit.screen_buff, tmp_bmp, x0, y0,
-            c1, c2, c3, c4);
+         wpreview_draw_trans_bitmap(tmp_bmp, x0, y0, a5_trans_alpha);
       }
       else
       {
-         draw_lit_sprite(glb_ds1edit.screen_buff, tmp_bmp, x0, y0,
-            (c1 + c2 + c3 + c4) / 4);
+         wpreview_draw_trans_bitmap(tmp_bmp, x0, y0, a5_trans_alpha);
       }
    }
 }
@@ -218,27 +359,25 @@ void wpreview_gouraud_w(ALLEGRO_BITMAP * tmp_bmp, int x0, int y0, int ds1_idx,
    if ((c1 == c2) && (c2 == c3) && (c3 == c4))
    {
       if (c1 >= 248)
-         a5_draw_sprite(glb_ds1edit.screen_buff, tmp_bmp, x0, y0);
+         wpreview_draw_bitmap(tmp_bmp, x0, y0);
       else
       {
          if (glb_ds1edit.cmd_line.force_pal_num == -1)
             /* TODO A5: color_map = & glb_ds1edit.cmap[CM_SHADOW][glb_ds1[ds1_idx].act - 1]; */ ((void)0);
          else
             /* TODO A5: color_map = & glb_ds1edit.cmap[CM_SHADOW][glb_ds1edit.cmd_line.force_pal_num - 1]; */ ((void)0);
-         draw_lit_sprite(glb_ds1edit.screen_buff, tmp_bmp, x0, y0, c1);
+         wpreview_draw_trans_bitmap(tmp_bmp, x0, y0, a5_trans_alpha);
       }
    }
    else
    {
       if (glb_ds1edit.night_mode == 1)
       {
-         draw_gouraud_sprite(glb_ds1edit.screen_buff, tmp_bmp, x0, y0,
-            c1, c2, c3, c4);
+         wpreview_draw_trans_bitmap(tmp_bmp, x0, y0, a5_trans_alpha);
       }
       else
       {
-         draw_lit_sprite(glb_ds1edit.screen_buff, tmp_bmp, x0, y0,
-            (c1 + c2 + c3 + c4) / 4);
+         wpreview_draw_trans_bitmap(tmp_bmp, x0, y0, a5_trans_alpha);
       }
    }
 }
@@ -434,21 +573,21 @@ void wpreview_draw_s(int ds1_idx, int x, int y, int mx, int my, int z,
          uy2 = uy1 + glb_ds1[ds1_idx].tile_h / 2 - 1;
          uy3 = uy1 + glb_ds1[ds1_idx].tile_h - 2;
 
-         a5_line(glb_ds1edit.screen_buff, ux1, uy2, ux2, uy1, 168);
-         a5_line(glb_ds1edit.screen_buff, ux3, uy1, ux4, uy2, 168);
-         a5_line(glb_ds1edit.screen_buff, ux3, uy3, ux4, uy2, 168);
-         a5_line(glb_ds1edit.screen_buff, ux1, uy2, ux2, uy3, 168);
+         wpreview_draw_line(ux1, uy2, ux2, uy1, 168);
+         wpreview_draw_line(ux3, uy1, ux4, uy2, 168);
+         wpreview_draw_line(ux3, uy3, ux4, uy2, 168);
+         wpreview_draw_line(ux1, uy2, ux2, uy3, 168);
 
          if (glb_ds1[ds1_idx].cur_zoom == ZM_11)
          {
-            a5_textprintf(glb_ds1edit.screen_buff, font, ux1+8, uy2-2, 0,
+            wpreview_textprintf(ux1+8, uy2-2, 0,
                "%u %u %u %u",
                s_ptr[n].prop1,
                s_ptr[n].prop2,
                s_ptr[n].prop3,
                s_ptr[n].prop4
             );
-            a5_textprintf(glb_ds1edit.screen_buff, font, ux1+7, uy2-3, 255,
+            wpreview_textprintf(ux1+7, uy2-3, 255,
                "%u %u %u %u",
                s_ptr[n].prop1,
                s_ptr[n].prop2,
@@ -525,7 +664,7 @@ void wpreview_draw_s(int ds1_idx, int x, int y, int mx, int my, int z,
                break;
 
             case 1 : // normal sprite
-               a5_draw_sprite(glb_ds1edit.screen_buff, tmp_bmp,
+               wpreview_draw_bitmap(tmp_bmp,
                            mx - glb_ds1edit.win_preview.x0, y1);
                break;
 
@@ -537,11 +676,11 @@ void wpreview_draw_s(int ds1_idx, int x, int y, int mx, int my, int z,
 
             case 3 : // transparent (CM_TRANS = 50% blend)
                a5_trans_alpha = 0.50f;
-               a5_draw_trans_sprite(
-                  glb_ds1edit.screen_buff,
+               wpreview_draw_trans_bitmap(
                   tmp_bmp,
                   mx - glb_ds1edit.win_preview.x0,
-                  y1
+                  y1,
+                  a5_trans_alpha
                );
                break;
          }
@@ -620,21 +759,21 @@ void wpreview_draw_f(int ds1_idx, int x, int y, int mx, int my, int z, int selec
          uy2 = uy1 + glb_ds1[ds1_idx].tile_h / 2 - 1;
          uy3 = uy1 + glb_ds1[ds1_idx].tile_h - 2;
    
-         a5_line(glb_ds1edit.screen_buff, ux1, uy2, ux2, uy1, 168);
-         a5_line(glb_ds1edit.screen_buff, ux3, uy1, ux4, uy2, 168);
-         a5_line(glb_ds1edit.screen_buff, ux3, uy3, ux4, uy2, 168);
-         a5_line(glb_ds1edit.screen_buff, ux1, uy2, ux2, uy3, 168);
+         wpreview_draw_line(ux1, uy2, ux2, uy1, 168);
+         wpreview_draw_line(ux3, uy1, ux4, uy2, 168);
+         wpreview_draw_line(ux3, uy3, ux4, uy2, 168);
+         wpreview_draw_line(ux1, uy2, ux2, uy3, 168);
 
          if (glb_ds1[ds1_idx].cur_zoom == ZM_11)
          {
-            a5_textprintf(glb_ds1edit.screen_buff, font, ux1+8, uy2-2, 0,
+            wpreview_textprintf(ux1+8, uy2-2, 0,
                "%u %u %u %u",
                f_ptr[order_data[n].idx].prop1,
                f_ptr[order_data[n].idx].prop2,
                f_ptr[order_data[n].idx].prop3,
                f_ptr[order_data[n].idx].prop4
             );
-            a5_textprintf(glb_ds1edit.screen_buff, font, ux1+7, uy2-3, 255,
+            wpreview_textprintf(ux1+7, uy2-3, 255,
                "%u %u %u %u",
                f_ptr[order_data[n].idx].prop1,
                f_ptr[order_data[n].idx].prop2,
@@ -781,7 +920,7 @@ void wpreview_draw_f(int ds1_idx, int x, int y, int mx, int my, int z, int selec
          }
          else
          {
-            a5_draw_sprite(glb_ds1edit.screen_buff, tmp_bmp,
+            wpreview_draw_bitmap(tmp_bmp,
                         mx - glb_ds1edit.win_preview.x0, y1);
          }
       }
@@ -861,14 +1000,14 @@ void wpreview_draw_w(int ds1_idx, int x, int y, int mx, int my, int z,
          uy2 = uy1 + glb_ds1[ds1_idx].tile_h / 2 - 1;
          uy3 = uy1 + glb_ds1[ds1_idx].tile_h - 2;
    
-         a5_line(glb_ds1edit.screen_buff, ux1, uy2, ux2, uy1, 168);
-         a5_line(glb_ds1edit.screen_buff, ux3, uy1, ux4, uy2, 168);
-         a5_line(glb_ds1edit.screen_buff, ux3, uy3, ux4, uy2, 168);
-         a5_line(glb_ds1edit.screen_buff, ux1, uy2, ux2, uy3, 168);
+         wpreview_draw_line(ux1, uy2, ux2, uy1, 168);
+         wpreview_draw_line(ux3, uy1, ux4, uy2, 168);
+         wpreview_draw_line(ux3, uy3, ux4, uy2, 168);
+         wpreview_draw_line(ux1, uy2, ux2, uy3, 168);
          
          if (glb_ds1[ds1_idx].cur_zoom == ZM_11)
          {
-            a5_textprintf(glb_ds1edit.screen_buff, font, ux1+8, uy2-2, 0,
+            wpreview_textprintf(ux1+8, uy2-2, 0,
                "(%u) %u %u %u %u",
                w_ptr[order_data[n].idx].orientation,
                w_ptr[order_data[n].idx].prop1,
@@ -876,7 +1015,7 @@ void wpreview_draw_w(int ds1_idx, int x, int y, int mx, int my, int z,
                w_ptr[order_data[n].idx].prop3,
                w_ptr[order_data[n].idx].prop4
             );
-            a5_textprintf(glb_ds1edit.screen_buff, font, ux1+7, uy2-3, 255,
+            wpreview_textprintf(ux1+7, uy2-3, 255,
                "(%u) %u %u %u %u",
                w_ptr[order_data[n].idx].orientation,
                w_ptr[order_data[n].idx].prop1,
@@ -979,12 +1118,12 @@ void wpreview_draw_w(int ds1_idx, int x, int y, int mx, int my, int z,
             else if (IS_SELECTED(w_ptr[order_data[n].idx].flags))
                color = COL_WALL;
          }
-         if (color != -1)
-            wpreview_shape(tmp_bmp,
-                           mx - glb_ds1edit.win_preview.x0, y1,
-                           ds1_idx, color);
-         else
-            a5_draw_sprite(glb_ds1edit.screen_buff, tmp_bmp,
+        if (color != -1)
+           wpreview_shape(tmp_bmp,
+                          mx - glb_ds1edit.win_preview.x0, y1,
+                          ds1_idx, color);
+        else
+            wpreview_draw_bitmap(tmp_bmp,
                         mx - glb_ds1edit.win_preview.x0, y1);
       }
 
@@ -1023,7 +1162,7 @@ void wpreview_draw_w(int ds1_idx, int x, int y, int mx, int my, int z,
                                  mx - glb_ds1edit.win_preview.x0, y1,
                                  ds1_idx, color);
                else
-                  a5_draw_sprite(glb_ds1edit.screen_buff, tmp_bmp,
+                  wpreview_draw_bitmap(tmp_bmp,
                               mx - glb_ds1edit.win_preview.x0, y1);
             }
          }
@@ -1105,11 +1244,11 @@ void wpreview_draw_r(int ds1_idx, int x, int y, int mx, int my, int z,
             /* TODO A5: color_map = & glb_ds1edit.cmap[CM_SHADOW][glb_ds1[ds1_idx].act - 1]; */ ((void)0);
          else
             /* TODO A5: color_map = & glb_ds1edit.cmap[CM_SHADOW][glb_ds1edit.cmd_line.force_pal_num - 1]; */ ((void)0);
-         draw_lit_sprite(glb_ds1edit.screen_buff,
-                         tmp_bmp,
-                         mx - glb_ds1edit.win_preview.x0,
-                         y1,
-                         0
+         wpreview_draw_trans_bitmap(
+            tmp_bmp,
+            mx - glb_ds1edit.win_preview.x0,
+            y1,
+            a5_trans_alpha
          );
       }
       else
@@ -1147,7 +1286,7 @@ void wpreview_draw_r(int ds1_idx, int x, int y, int mx, int my, int z,
                            mx - glb_ds1edit.win_preview.x0, y1,
                            ds1_idx, color);
          else
-            a5_draw_sprite(glb_ds1edit.screen_buff, tmp_bmp,
+            wpreview_draw_bitmap(tmp_bmp,
                         mx - glb_ds1edit.win_preview.x0, y1);
       }
    }
@@ -1218,14 +1357,14 @@ void wpreview_draw_sp(int ds1_idx, int x, int y, int mx, int my, int z,
             uy2 = uy1 + glb_ds1[ds1_idx].tile_h / 2 - 1;
             uy3 = uy1 + glb_ds1[ds1_idx].tile_h - 2;
    
-            a5_line(glb_ds1edit.screen_buff, ux1, uy2, ux2, uy1, 168);
-            a5_line(glb_ds1edit.screen_buff, ux3, uy1, ux4, uy2, 168);
-            a5_line(glb_ds1edit.screen_buff, ux3, uy3, ux4, uy2, 168);
-            a5_line(glb_ds1edit.screen_buff, ux1, uy2, ux2, uy3, 168);
+            wpreview_draw_line(ux1, uy2, ux2, uy1, 168);
+            wpreview_draw_line(ux3, uy1, ux4, uy2, 168);
+            wpreview_draw_line(ux3, uy3, ux4, uy2, 168);
+            wpreview_draw_line(ux1, uy2, ux2, uy3, 168);
          
             if (glb_ds1[ds1_idx].cur_zoom == ZM_11)
             {
-               a5_textprintf(glb_ds1edit.screen_buff, font, ux1+8, uy2-2, 0,
+               wpreview_textprintf(ux1+8, uy2-2, 0,
                   "(%u) %u %u %u %u",
                   w_ptr[order_data[n].idx].orientation,
                   w_ptr[order_data[n].idx].prop1,
@@ -1233,7 +1372,7 @@ void wpreview_draw_sp(int ds1_idx, int x, int y, int mx, int my, int z,
                   w_ptr[order_data[n].idx].prop3,
                   w_ptr[order_data[n].idx].prop4
                );
-               a5_textprintf(glb_ds1edit.screen_buff, font, ux1+7, uy2-3, 255,
+               wpreview_textprintf(ux1+7, uy2-3, 255,
                   "(%u) %u %u %u %u",
                   w_ptr[order_data[n].idx].orientation,
                   w_ptr[order_data[n].idx].prop1,
@@ -1334,7 +1473,7 @@ void wpreview_draw_sp(int ds1_idx, int x, int y, int mx, int my, int z,
                            mx - glb_ds1edit.win_preview.x0, y1,
                            ds1_idx, color);
          else
-            a5_draw_sprite(glb_ds1edit.screen_buff, tmp_bmp,
+            wpreview_draw_bitmap(tmp_bmp,
                         mx - glb_ds1edit.win_preview.x0, y1);
       }
    }
@@ -1503,8 +1642,8 @@ void wpreview_draw_paths(int ds1_idx)
          y2 = dy - glb_ds1edit.win_preview.y0 - 1;
 
          // line
-         a5_line(glb_ds1edit.screen_buff, x1+1, y1+1, x2+1, y2+1, 0);
-         a5_line(glb_ds1edit.screen_buff, x1, y1, x2, y2, color1);
+         wpreview_draw_line(x1+1, y1+1, x2+1, y2+1, 0);
+         wpreview_draw_line(x1, y1, x2, y2, color1);
       }
       
       // paths
@@ -1539,12 +1678,12 @@ void wpreview_draw_paths(int ds1_idx)
          y2 = dy - glb_ds1edit.win_preview.y0 - 1;
 
          // line
-         a5_line(glb_ds1edit.screen_buff, x1+1, y1+1, x2+1, y2+1, 0);
-         a5_line(glb_ds1edit.screen_buff, x1, y1, x2, y2, color2);
+         wpreview_draw_line(x1+1, y1+1, x2+1, y2+1, 0);
+         wpreview_draw_line(x1, y1, x2, y2, color2);
 
          // big point
-         a5_rectfill(glb_ds1edit.screen_buff, x1, y1, x1+2, y1+2, 0);
-         a5_rectfill(glb_ds1edit.screen_buff, x1-1, y1-1, x1+1, y1+1, 157);
+         wpreview_draw_rectfill(x1, y1, x1+2, y1+2, 0);
+         wpreview_draw_rectfill(x1-1, y1-1, x1+1, y1+1, 157);
       }
    }
 }
@@ -1588,8 +1727,8 @@ void wpreview_draw_paths_1obj(int ds1_idx, int o)
 
       // line
       color = 219; // grey
-      a5_line(glb_ds1edit.screen_buff, x1+1, y1+1, x2+1, y2+1, 0);
-      a5_line(glb_ds1edit.screen_buff, x1, y1, x2, y2, color);
+      wpreview_draw_line(x1+1, y1+1, x2+1, y2+1, 0);
+      wpreview_draw_line(x1, y1, x2, y2, color);
    }
       
    // paths
@@ -1625,12 +1764,12 @@ void wpreview_draw_paths_1obj(int ds1_idx, int o)
 
       // line
       color = 155; // dark magenta
-      a5_line(glb_ds1edit.screen_buff, x1+1, y1+1, x2+1, y2+1, 0);
-      a5_line(glb_ds1edit.screen_buff, x1, y1, x2, y2, color);
+      wpreview_draw_line(x1+1, y1+1, x2+1, y2+1, 0);
+      wpreview_draw_line(x1, y1, x2, y2, color);
 
       // big point
-      a5_rectfill(glb_ds1edit.screen_buff, x1, y1, x1+2, y1+2, 0);
-      a5_rectfill(glb_ds1edit.screen_buff, x1-1, y1-1, x1+1, y1+1, 157);
+      wpreview_draw_rectfill(x1, y1, x1+2, y1+2, 0);
+      wpreview_draw_rectfill(x1-1, y1-1, x1+1, y1+1, 157);
    }
 }
 
@@ -1704,10 +1843,10 @@ void wpreview_draw_objects(int ds1_idx)
                   (8 * strlen(glb_ds1edit.obj_desc[d].desc) / 2);
                y1 = dy - glb_ds1edit.win_preview.y0 - 4;
 
-               a5_textprintf(glb_ds1edit.screen_buff, font, x1+1, y1+1, 0, "%s",
+               wpreview_textprintf(x1+1, y1+1, 0, "%s",
                   glb_ds1edit.obj_desc[d].desc);
 
-               a5_textprintf(glb_ds1edit.screen_buff, font, x1, y1, 255, "%s",
+               wpreview_textprintf(x1, y1, 255, "%s",
                  glb_ds1edit.obj_desc[d].desc);
             }
          }
@@ -1719,13 +1858,13 @@ void wpreview_draw_objects(int ds1_idx)
          x1 = dx - glb_ds1edit.win_preview.x0 - 20;
          y1 = dy - glb_ds1edit.win_preview.y0 - 4;
 
-         a5_textprintf(glb_ds1edit.screen_buff, font, x1+1, y1+1, 0, "%i,%3i",
+         wpreview_textprintf(x1+1, y1+1, 0, "%i,%3i",
            glb_ds1[ds1_idx].obj[o].type, glb_ds1[ds1_idx].obj[o].id);
 
-         a5_textprintf(glb_ds1edit.screen_buff, font, x1, y1, 11, "%i",
+         wpreview_textprintf(x1, y1, 11, "%i",
            glb_ds1[ds1_idx].obj[o].type);
 
-         a5_textprintf(glb_ds1edit.screen_buff, font, x1+8, y1, 255, ",%3i",
+         wpreview_textprintf(x1+8, y1, 255, ",%3i",
             glb_ds1[ds1_idx].obj[o].id);
       }
    }
@@ -1742,18 +1881,18 @@ void wpreview_draw_simple_wi(int mx, int my, int z, UBYTE * walkinfo)
    {
       if (walkinfo[i] & 0x04)
       {
-         draw_rle_sprite(glb_ds1edit.screen_buff,
-                         glb_ds1edit.subtile_nojump[z][i],
-                         mx - glb_ds1edit.win_preview.x0,
-                         my - glb_ds1edit.win_preview.y0
+         wpreview_draw_bitmap(
+            glb_ds1edit.subtile_nojump[z][i],
+            mx - glb_ds1edit.win_preview.x0,
+            my - glb_ds1edit.win_preview.y0
          );
       }
       else if (walkinfo[i] & 0x09)
       {
-         draw_rle_sprite(glb_ds1edit.screen_buff,
-                         glb_ds1edit.subtile_nowalk[z][i],
-                         mx - glb_ds1edit.win_preview.x0,
-                         my - glb_ds1edit.win_preview.y0
+         wpreview_draw_bitmap(
+            glb_ds1edit.subtile_nowalk[z][i],
+            mx - glb_ds1edit.win_preview.x0,
+            my - glb_ds1edit.win_preview.y0
          );
       }
    }
@@ -1770,8 +1909,7 @@ void wpreview_draw_wi(int mx, int my, int z, UBYTE * walkinfo)
    {
       if (walkinfo[i])
       {
-         draw_rle_sprite(
-            glb_ds1edit.screen_buff,
+         wpreview_draw_bitmap(
             glb_ds1edit.subtile_flag_combination[walkinfo[i]][z][i],
             mx - glb_ds1edit.win_preview.x0,
             my - glb_ds1edit.win_preview.y0
@@ -1858,12 +1996,12 @@ void wpreview_draw_an_object(int ds1_idx, int o)
                trans_b_seen[lay->trans_b] = 1;
                fprintf(stderr, "[D2 blend] trans_b=%d first seen (layer composit)\n", lay->trans_b);
             }
-            a5_draw_blended_sprite(glb_ds1edit.screen_buff, bmp, dx, dy, lay->trans_b);
+            wpreview_draw_blended_bitmap(bmp, dx, dy, lay->trans_b);
          }
          else
          {
             // normal colors
-            a5_draw_sprite(glb_ds1edit.screen_buff, bmp, dx, dy);
+            wpreview_draw_bitmap(bmp, dx, dy);
          }
       }
       else
@@ -1884,17 +2022,15 @@ void wpreview_draw_an_object(int ds1_idx, int o)
                trans_b_seen[lay->trans_b] = 1;
                fprintf(stderr, "[D2 blend] trans_b=%d first seen (stretch layer)\n", lay->trans_b);
             }
-            a5_draw_scaled_blended_sprite(
-               glb_ds1edit.screen_buff, bmp, dx, dy,
-               glb_ds1[ds1_idx].height_div, lay->trans_b
+            wpreview_draw_scaled_blended_bitmap(
+               bmp, dx, dy, glb_ds1[ds1_idx].height_div, lay->trans_b
             );
          }
          else
          {
             // normal colors — opaque scaled drawing
-            a5_draw_scaled_blended_sprite(
-               glb_ds1edit.screen_buff, bmp, dx, dy,
-               glb_ds1[ds1_idx].height_div, -1
+            wpreview_draw_scaled_blended_bitmap(
+               bmp, dx, dy, glb_ds1[ds1_idx].height_div, -1
             );
          }
       }
@@ -1914,10 +2050,10 @@ void wpreview_draw_an_object(int ds1_idx, int o)
       dx = dx0 - glb_ds1edit.win_preview.x0 - 44;
       dy = dy0 - glb_ds1edit.win_preview.y0 - 8; // + cof->yoffset;
 
-      a5_textprintf(glb_ds1edit.screen_buff, font, dx+1, dy+1, col_black,
+      wpreview_textprintf(dx+1, dy+1, col_black,
          "speed = %3li", cof->spd_mul);
 
-      a5_textprintf(glb_ds1edit.screen_buff, font, dx, dy, col_white,
+      wpreview_textprintf(dx, dy, col_white,
          "speed = %3li", cof->spd_mul);
    }
 }
@@ -2309,7 +2445,7 @@ void wpreview_draw_tile_grid(int ds1_idx)
       y1 = base_y + i * th / 2;
       x2 = mx + i * tw / 2;
       y2 = my + i * th / 2;
-      a5_line(glb_ds1edit.screen_buff, x1, y1, x2, y2, c);
+      wpreview_draw_line(x1, y1, x2, y2, c);
    }
 
    base_x = tw/2 - px - 1;
@@ -2322,7 +2458,7 @@ void wpreview_draw_tile_grid(int ds1_idx)
       y1 = base_y + i * th / 2;
       x2 = mx - i * tw / 2;
       y2 = my + i * th / 2;
-      a5_line(glb_ds1edit.screen_buff, x1, y1, x2, y2, c);
+      wpreview_draw_line(x1, y1, x2, y2, c);
    }
 }
 
@@ -2444,7 +2580,37 @@ void wpreview_draw_tiles(int ds1_idx)
       &max_tile_y
    );
 
+   // One-time first-frame diagnostic: count memory vs video source bitmaps
+   {
+      static int first_frame_check = 1;
+      if (first_frame_check) {
+         int mem_count = 0, vid_count = 0, dt1i, zi, bi;
+         first_frame_check = 0;
+         for (dt1i = 0; dt1i < DT1_MAX; dt1i++) {
+            for (zi = 0; zi < ZM_MAX; zi++) {
+               for (bi = 0; bi < glb_dt1[dt1i].block_num; bi++) {
+                  ALLEGRO_BITMAP *b = *(glb_dt1[dt1i].block_zoom[zi] + bi);
+                  if (b == NULL) continue;
+                  if (al_get_bitmap_flags(b) & ALLEGRO_MEMORY_BITMAP)
+                     mem_count++;
+                  else
+                     vid_count++;
+               }
+            }
+         }
+         fprintf(stderr, "[perf] DT1 tile bitmaps: %d VIDEO, %d MEMORY\n", vid_count, mem_count);
+         fprintf(stderr, "[perf] screen_buff target is %s\n",
+            (al_get_bitmap_flags(glb_ds1edit.screen_buff) & ALLEGRO_MEMORY_BITMAP) ? "MEMORY" : "VIDEO");
+      }
+   }
+
+   // Pre-set target bitmap for ALL rendering — avoids thousands of FBO rebinds.
+   // All a5_draw_* helpers use a5_begin/end_target_bitmap which skip the switch
+   // when the target is already correct.
+   al_set_target_bitmap(glb_ds1edit.screen_buff);
+
    // loop 1A : lower walls, floors, shadows of dt1
+   al_hold_bitmap_drawing(true);
    perf_section_start_ms = render_perf_now_ms();
    for (y=min_tile_y; y<=max_tile_y; y++)
    {
@@ -2556,9 +2722,15 @@ void wpreview_draw_tiles(int ds1_idx)
       render_perf_now_ms() - perf_section_start_ms
    );
 
+   // Release bitmap drawing hold before primitives/blender changes
+   al_hold_bitmap_drawing(false);
+
    // tile grid : if over floor but under wall, draw it now
    if (glb_ds1edit.display_tile_grid == TG_OVERFLOOR)
       wpreview_draw_tile_grid(ds1_idx);
+
+   // Re-enable bitmap drawing hold for sprite loops
+   al_hold_bitmap_drawing(true);
 
    // loop 3 : upper walls, objects with orderflag set to 0 or 2
    perf_section_start_ms = render_perf_now_ms();
@@ -2724,10 +2896,10 @@ void wpreview_draw_tiles(int ds1_idx)
       y2 = y1 + glb_ds1[ds1_idx].tile_h / 2 - 1;
       y3 = y1 + glb_ds1[ds1_idx].tile_h - 2;
    
-      a5_line(glb_ds1edit.screen_buff, x1, y2, x2, y1, 129);
-      a5_line(glb_ds1edit.screen_buff, x3, y1, x4, y2, 129);
-      a5_line(glb_ds1edit.screen_buff, x3, y3, x4, y2, 129);
-      a5_line(glb_ds1edit.screen_buff, x1, y2, x2, y3, 129);
+      wpreview_draw_line(x1, y2, x2, y1, 129);
+      wpreview_draw_line(x3, y1, x4, y2, 129);
+      wpreview_draw_line(x3, y3, x4, y2, 129);
+      wpreview_draw_line(x1, y2, x2, y3, 129);
    }
    else // if (glb_ds1edit.mode != MOD_L)
    {
@@ -2754,10 +2926,10 @@ void wpreview_draw_tiles(int ds1_idx)
       y2 = y1 + glb_ds1[ds1_idx].tile_h / 10 - 1;
       y3 = y1 + glb_ds1[ds1_idx].tile_h / 5 - 2;
    
-      a5_line(glb_ds1edit.screen_buff, x1, y2, x2, y1, 129);
-      a5_line(glb_ds1edit.screen_buff, x3, y1, x4, y2, 129);
-      a5_line(glb_ds1edit.screen_buff, x3, y3, x4, y2, 129);
-      a5_line(glb_ds1edit.screen_buff, x1, y2, x2, y3, 129);
+      wpreview_draw_line(x1, y2, x2, y1, 129);
+      wpreview_draw_line(x3, y1, x4, y2, 129);
+      wpreview_draw_line(x3, y3, x4, y2, 129);
+      wpreview_draw_line(x1, y2, x2, y3, 129);
    }
    render_perf_add(
       &glb_render_perf_stats.cursor_ms_total,
@@ -2815,9 +2987,9 @@ void wpreview_draw_tiles(int ds1_idx)
       x2 = x1 + al_get_bitmap_width(glb_ds1edit.subtile_help);
       y1 = al_get_bitmap_height(glb_ds1edit.screen_buff) - al_get_bitmap_height(glb_ds1edit.subtile_help) - 20;
       y2 = y1 + al_get_bitmap_height(glb_ds1edit.subtile_help);
-      a5_blit(glb_ds1edit.subtile_help, glb_ds1edit.screen_buff,
+      wpreview_blit_region(glb_ds1edit.subtile_help,
          0, 0, x1, y1, x2, y2);
-      a5_rect(glb_ds1edit.screen_buff, x1-1, y1-1, x2+1, y2+1, 255);
+      wpreview_draw_rect(x1-1, y1-1, x2+1, y2+1, 255);
    }
    render_perf_add(
       &glb_render_perf_stats.help_ms_total,
@@ -2829,29 +3001,29 @@ void wpreview_draw_tiles(int ds1_idx)
    perf_section_start_ms = render_perf_now_ms();
    if (glb_ds1edit.show_2nd_row == TRUE)
    {
-      a5_rectfill(glb_ds1edit.screen_buff, 0,  0, glb_config.screen.width, 19, 0);
-      a5_hline(glb_ds1edit.screen_buff,    0,  9, glb_config.screen.width, 29);
-      a5_hline(glb_ds1edit.screen_buff,    0, 20, glb_config.screen.width, 255);
+      wpreview_draw_rectfill(0,  0, glb_config.screen.width, 19, 0);
+      wpreview_draw_hline(   0,  9, glb_config.screen.width, 29);
+      wpreview_draw_hline(   0, 20, glb_config.screen.width, 255);
 
       // 2nd row datas
-      a5_textprintf(glb_ds1edit.screen_buff, font,   0, 11, 255, "Set:");
-      a5_textprintf(glb_ds1edit.screen_buff, font,  32, 11, 109, "%i", glb_ds1edit.ds1_group_idx + 1);
+      wpreview_textprintf(  0, 11, 255, "Set:");
+      wpreview_textprintf( 32, 11, 109, "%i", glb_ds1edit.ds1_group_idx + 1);
 
-      a5_textprintf(glb_ds1edit.screen_buff, font,  65, 11, 255, "Ds1Index:");
-      a5_textprintf(glb_ds1edit.screen_buff, font, 137, 11, 109, "%i", ds1_idx + 1);
+      wpreview_textprintf( 65, 11, 255, "Ds1Index:");
+      wpreview_textprintf(137, 11, 109, "%i", ds1_idx + 1);
 
-      a5_textprintf(glb_ds1edit.screen_buff, font, 175, 11, 255, "File:");
-      a5_textprintf(glb_ds1edit.screen_buff, font, 215, 11, 109, "%s", glb_ds1[ds1_idx].name);
+      wpreview_textprintf(175, 11, 255, "File:");
+      wpreview_textprintf(215, 11, 109, "%s", glb_ds1[ds1_idx].name);
    }
    else
    {
-      a5_rectfill(glb_ds1edit.screen_buff, 0, 0, glb_config.screen.width, 8, 0);
-      a5_hline(glb_ds1edit.screen_buff,    0, 9, glb_config.screen.width, 255);
+      wpreview_draw_rectfill(0, 0, glb_config.screen.width, 8, 0);
+      wpreview_draw_hline(   0, 9, glb_config.screen.width, 255);
    }
 
    // bottom row background
-   a5_rectfill(glb_ds1edit.screen_buff, 0, glb_config.screen.height-9,  glb_config.screen.width, glb_config.screen.height, 0);
-   a5_hline(glb_ds1edit.screen_buff,    0, glb_config.screen.height-10, glb_config.screen.width, 255);
+   wpreview_draw_rectfill(0, glb_config.screen.height-9,  glb_config.screen.width, glb_config.screen.height, 0);
+   wpreview_draw_hline(   0, glb_config.screen.height-10, glb_config.screen.width, 255);
 
    // layers toggle
    a5_text_mode(-1);
@@ -2860,24 +3032,24 @@ void wpreview_draw_tiles(int ds1_idx)
    for (i=0; i < glb_ds1[ds1_idx].floor_num; i++)
    {
       if (glb_ds1[ds1_idx].floor_layer_mask[i] == 0)
-         a5_textprintf(glb_ds1edit.screen_buff, font, 20*i, 0,  98, "f%i", i+1);
+         wpreview_textprintf(20*i, 0,  98, "f%i", i+1);
       else
-         a5_textprintf(glb_ds1edit.screen_buff, font, 20*i, 0, 132, "f%i", i+1);
+         wpreview_textprintf(20*i, 0, 132, "f%i", i+1);
    }
 
    // animation layer (F3)
    switch(glb_ds1[ds1_idx].animations_layer_mask)
    {
       case 0 :
-         a5_textprintf(glb_ds1edit.screen_buff, font, 50, 0, 98, "anims");
+         wpreview_textprintf(50, 0, 98, "anims");
          break;
          
       case 1 :
-         a5_textprintf(glb_ds1edit.screen_buff, font, 50, 0, 132, "anims");
+         wpreview_textprintf(50, 0, 132, "anims");
          break;
          
       default :
-         a5_textprintf(glb_ds1edit.screen_buff, font, 50, 0, 108, "anims");
+         wpreview_textprintf(50, 0, 108, "anims");
          break;
    }
 
@@ -2885,19 +3057,19 @@ void wpreview_draw_tiles(int ds1_idx)
    switch(glb_ds1[ds1_idx].objects_layer_mask)
    {
       case OL_NONE :
-         a5_textprintf(glb_ds1edit.screen_buff, font, 100, 0, 98, "obj");
+         wpreview_textprintf(100, 0, 98, "obj");
          break;
          
       case OL_TYPEID :
-         a5_textprintf(glb_ds1edit.screen_buff, font, 100, 0, 210, "obj");
+         wpreview_textprintf(100, 0, 210, "obj");
          break;
          
       case OL_SPEED :
-         a5_textprintf(glb_ds1edit.screen_buff, font, 100, 0, 108, "obj");
+         wpreview_textprintf(100, 0, 108, "obj");
          break;
          
       case OL_DESC :
-         a5_textprintf(glb_ds1edit.screen_buff, font, 100, 0, 132, "obj");
+         wpreview_textprintf(100, 0, 132, "obj");
          break;
          
       default :
@@ -2908,11 +3080,11 @@ void wpreview_draw_tiles(int ds1_idx)
    switch(glb_ds1[ds1_idx].special_layer_mask)
    {
       case 0 :
-         a5_textprintf(glb_ds1edit.screen_buff, font, 240, 0, 98, "spl");
+         wpreview_textprintf(240, 0, 98, "spl");
          break;
          
       default :
-         a5_textprintf(glb_ds1edit.screen_buff, font, 240, 0, 132, "spl");
+         wpreview_textprintf(240, 0, 132, "spl");
          break;
    }
 
@@ -2920,34 +3092,34 @@ void wpreview_draw_tiles(int ds1_idx)
    for (i=0; i < glb_ds1[ds1_idx].wall_num; i++)
    {
       if (glb_ds1[ds1_idx].wall_layer_mask[i] == 0)
-         a5_textprintf(glb_ds1edit.screen_buff, font, 140+20*i, 0,  98, "w%i", i+1);
+         wpreview_textprintf(140+20*i, 0,  98, "w%i", i+1);
       else
-         a5_textprintf(glb_ds1edit.screen_buff, font, 140+20*i, 0, 132, "w%i", i+1);
+         wpreview_textprintf(140+20*i, 0, 132, "w%i", i+1);
    }
 
    // paths layer (F10)
    if (glb_ds1[ds1_idx].paths_layer_mask == 0)
-      a5_textprintf(glb_ds1edit.screen_buff, font, 280, 0, 98, "path");
+      wpreview_textprintf(280, 0, 98, "path");
    else
-      a5_textprintf(glb_ds1edit.screen_buff, font, 280, 0, 132, "path");
+      wpreview_textprintf(280, 0, 132, "path");
 
    // shadow layer (F11)
    switch(glb_ds1[ds1_idx].shadow_layer_mask[0])
    {
       case 1 :
-         a5_textprintf(glb_ds1edit.screen_buff, font, 340, 0, 210, "shad");
+         wpreview_textprintf(340, 0, 210, "shad");
          break;
          
       case 2 :
-         a5_textprintf(glb_ds1edit.screen_buff, font, 340, 0, 255, "shad");
+         wpreview_textprintf(340, 0, 255, "shad");
          break;
          
       case 3 :
-         a5_textprintf(glb_ds1edit.screen_buff, font, 340, 0, 132, "shad");
+         wpreview_textprintf(340, 0, 132, "shad");
          break;
 
       default :
-         a5_textprintf(glb_ds1edit.screen_buff, font, 340, 0, 98, "shad");
+         wpreview_textprintf(340, 0, 98, "shad");
          break;
          
    }
@@ -2955,23 +3127,23 @@ void wpreview_draw_tiles(int ds1_idx)
    // other infos
 
    // zoom (+, -)
-   a5_textprintf(glb_ds1edit.screen_buff, font, 390, 0, 255, "zoom=%i:%i",
+   wpreview_textprintf(390, 0, 255, "zoom=%i:%i",
       glb_ds1[ds1_idx].height_mul, glb_ds1[ds1_idx].height_div);
 
    // gamma (F12)
-   a5_textprintf(glb_ds1edit.screen_buff, font, 490, 0, 255, "gamma=%s",
+   wpreview_textprintf(490, 0, 255, "gamma=%s",
       glb_gamma_str[glb_ds1edit.cur_gamma].str);
 
    // ds1 file name
-   a5_textprintf(glb_ds1edit.screen_buff, font, 606, 0, 109, "%s",
+   wpreview_textprintf(606, 0, 109, "%s",
       glb_ds1[ds1_idx].filename);
 
    // cell coordinates
    if (glb_ds1edit.mode == MOD_T)
    {
       // mode Tiles, 1 cell = 1 Tile
-      a5_textprintf(
-         glb_ds1edit.screen_buff, font, 0, glb_config.screen.height-8, 255,
+      wpreview_textprintf(
+         0, glb_config.screen.height-8, 255,
          "Cell (%3i, %3i)",
          cx, cy
       );
@@ -2979,23 +3151,22 @@ void wpreview_draw_tiles(int ds1_idx)
    else
    {
       // mode Objects or Paths, 1 cell = 1 sub-Tile
-      a5_textprintf(
-         glb_ds1edit.screen_buff, font, 0, glb_config.screen.height-8, 255,
+      wpreview_textprintf(
+         0, glb_config.screen.height-8, 255,
          "Sub-Cell (%3i, %3i)",
          cx, cy
       );
    }
 
    // frames per second
-   a5_textprintf(
-      glb_ds1edit.screen_buff, font, glb_config.screen.width-80, 0, 255,
+   wpreview_textprintf(
+      glb_config.screen.width-80, 0, 255,
       "  fps=%i",
       glb_ds1edit.old_fps
    );
 
    // refresh rate
-   a5_textprintf(
-      glb_ds1edit.screen_buff, font,
+   wpreview_textprintf(
       glb_config.screen.width-168, glb_config.screen.height-8,
       92,
       "%iHz",
@@ -3003,8 +3174,7 @@ void wpreview_draw_tiles(int ds1_idx)
    );
 
    // current number of objects / max number of objects
-   a5_textprintf(
-      glb_ds1edit.screen_buff, font,
+   wpreview_textprintf(
       200, glb_config.screen.height-8,
       92,
       "[Objects : %ld / %ld]",
@@ -3027,9 +3197,9 @@ void wpreview_draw_tiles(int ds1_idx)
          
       default    : mode = "?      "; break;
    }
-   a5_textprintf(glb_ds1edit.screen_buff, font,
+   wpreview_textprintf(
       glb_config.screen.width-112, glb_config.screen.height-8, 255, "Mode :");
-   a5_textprintf(glb_ds1edit.screen_buff, font,
+   wpreview_textprintf(
       glb_config.screen.width-56, glb_config.screen.height-8, 108, "%s", mode);
    render_perf_add(
       &glb_render_perf_stats.hud_ms_total,
@@ -3040,11 +3210,14 @@ void wpreview_draw_tiles(int ds1_idx)
    // uncomment this part to understand the axis and
    // glb_ds1edit.win_preview.x0 (and y0) relations, at different zooms
 /*
-   a5_textprintf(glb_ds1edit.screen_buff, font, 0, 40, 255, "prev x0, y0  = "
+   wpreview_textprintf(0, 40, 255, "prev x0, y0  = "
       "%i, %i", glb_ds1edit.win_preview.x0, glb_ds1edit.win_preview.y0);
-   a5_hline(glb_ds1edit.screen_buff, 0, - glb_ds1edit.win_preview.y0, glb_config.screen.width, 255);
-   a5_vline(glb_ds1edit.screen_buff, - glb_ds1edit.win_preview.x0, 0, glb_config.screen.height, 255);
+   wpreview_draw_hline(0, - glb_ds1edit.win_preview.y0, glb_config.screen.width, 255);
+   wpreview_draw_vline(- glb_ds1edit.win_preview.x0, 0, glb_config.screen.height, 255);
 */
+
+   // Flush any remaining held drawing and release target before present
+   al_hold_bitmap_drawing(false);
 
    // draw screen
    perf_section_start_ms = render_perf_now_ms();
@@ -3504,9 +3677,9 @@ int wpreview_draw_tiles_big_screenshot(int ds1_idx)
       x2 = x1 + al_get_bitmap_width(glb_ds1edit.subtile_help);
       y1 = al_get_bitmap_height(glb_ds1edit.screen_buff) - al_get_bitmap_height(glb_ds1edit.subtile_help) - 20;
       y2 = y1 + al_get_bitmap_height(glb_ds1edit.subtile_help);
-      a5_blit(glb_ds1edit.subtile_help, glb_ds1edit.screen_buff,
+      wpreview_blit_region(glb_ds1edit.subtile_help,
          0, 0, x1, y1, x2, y2);
-      a5_rect(glb_ds1edit.screen_buff, x1-1, y1-1, x2+1, y2+1, 255);
+      wpreview_draw_rect(x1-1, y1-1, x2+1, y2+1, 255);
    }
    
    glb_ds1edit.win_preview.w  = old_screen_width;
@@ -3522,3 +3695,4 @@ int wpreview_draw_tiles_big_screenshot(int ds1_idx)
 #ifdef WIN32
    #pragma warning (pop)
 #endif
+
