@@ -2,74 +2,40 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "CMake Configure",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "-S", "${workspaceFolder}",
+                "-B", "${workspaceFolder}/build",
+                "-G", "Visual Studio 16 2019",
+                "-A", "Win32"
+            ],
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
             "label": "Build DS1Edit Debug",
             "type": "shell",
-            "command": "cmd",
+            "command": "cmake",
             "args": [
-                "/c",
-                "scripts\\batch\\build.bat"
+                "--build", "${workspaceFolder}/build",
+                "--config", "Debug"
             ],
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
             "problemMatcher": "$msCompile",
-            "options": {
-                "cwd": "${workspaceFolder}"
-            }
+            "dependsOn": []
         },
         {
             "label": "Build DS1Edit Release",
             "type": "shell",
-            "command": "cmd",
-            "args": [
-                "/c",
-                "scripts\\batch\\build.bat",
-                "release"
-            ],
-            "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
-            "problemMatcher": "$msCompile",
-            "options": {
-                "cwd": "${workspaceFolder}"
-            }
-        },
-        {
-            "label": "CMake Configure",
-            "type": "shell",
             "command": "cmake",
             "args": [
-                "-S",
-                "${workspaceFolder}",
-                "-B",
-                "${workspaceFolder}/cmake-build",
-                "-G",
-                "Visual Studio 16 2019",
-                "-A",
-                "Win32"
-            ],
-            "group": "build"
-        },
-        {
-            "label": "CMake Build Debug",
-            "type": "shell",
-            "command": "cmake",
-            "args": [
-                "--build",
-                "${workspaceFolder}/cmake-build",
-                "--config",
-                "Debug"
+                "--build", "${workspaceFolder}/build",
+                "--config", "Release"
             ],
             "group": "build",
             "problemMatcher": "$msCompile"
@@ -79,13 +45,12 @@
             "type": "shell",
             "command": "ctest",
             "args": [
-                "--test-dir",
-                "${workspaceFolder}/cmake-build",
-                "-C",
-                "Debug",
+                "--test-dir", "${workspaceFolder}/build",
+                "-C", "Debug",
                 "--output-on-failure"
             ],
-            "group": "test"
+            "group": "test",
+            "problemMatcher": []
         }
     ]
 }
