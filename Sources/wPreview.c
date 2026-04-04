@@ -1,10 +1,6 @@
 #include <math.h>
 #include <string.h>
-#include <stdio.h>
 #include "structs.h"
-
-// Diagnostic: track which COF trans_b blend modes are actually used
-static int trans_b_seen[7] = {0}; // modes 0-6
 #include "gfx_custom.h"
 #include "misc.h"
 #include "editobj.h"
@@ -1991,11 +1987,6 @@ void wpreview_draw_an_object(int ds1_idx, int o)
          // normal drawing
          if ((lay->trans_a) && (lay->trans_b <= 6) && (lay->trans_b != 5))
          {
-            // Diagnostic: log first occurrence of each trans_b value
-            if (!trans_b_seen[lay->trans_b]) {
-               trans_b_seen[lay->trans_b] = 1;
-               fprintf(stderr, "[D2 blend] trans_b=%d first seen (layer composit)\n", lay->trans_b);
-            }
             wpreview_draw_blended_bitmap(bmp, dx, dy, lay->trans_b);
          }
          else
@@ -2017,11 +2008,6 @@ void wpreview_draw_an_object(int ds1_idx, int o)
 
          if ((lay->trans_a) && (lay->trans_b <= 6) && (lay->trans_b != 5))
          {
-            // Diagnostic: log first occurrence of each trans_b value
-            if (!trans_b_seen[lay->trans_b]) {
-               trans_b_seen[lay->trans_b] = 1;
-               fprintf(stderr, "[D2 blend] trans_b=%d first seen (stretch layer)\n", lay->trans_b);
-            }
             wpreview_draw_scaled_blended_bitmap(
                bmp, dx, dy, glb_ds1[ds1_idx].height_div, lay->trans_b
             );
@@ -2480,27 +2466,9 @@ void wpreview_draw_tiles(int ds1_idx)
 
 
    z = glb_ds1[ds1_idx].cur_zoom;
-   {
-      static int frame_num = 0;
-      frame_num++;
-      if (frame_num <= 5 || (frame_num % 30) == 0)
-      {
-         fprintf(stderr, "[render] frame %d entering wpreview_draw_tiles\n", frame_num);
-         fflush(stderr);
-      }
-   }
    perf_total_start_ms = render_perf_now_ms();
    perf_section_start_ms = render_perf_now_ms();
    a5_clear(glb_ds1edit.screen_buff);
-   {
-      double clear_ms = render_perf_now_ms() - perf_section_start_ms;
-      static int dbg_frame = 0;
-      dbg_frame++;
-      if (dbg_frame <= 3) {
-         fprintf(stderr, "[frame %d] clear: %.1f ms\n", dbg_frame, clear_ms);
-         fflush(stderr);
-      }
-   }
    render_perf_add(
       &glb_render_perf_stats.clear_ms_total,
       &glb_render_perf_stats.clear_ms_max,
@@ -2598,31 +2566,6 @@ void wpreview_draw_tiles(int ds1_idx)
       &max_tile_y
    );
 
-   // One-time first-frame diagnostic: count memory vs video source bitmaps
-   {
-      static int first_frame_check = 1;
-      if (first_frame_check) {
-         int mem_count = 0, vid_count = 0, dt1i, zi, bi;
-         first_frame_check = 0;
-         for (dt1i = 0; dt1i < DT1_MAX; dt1i++) {
-            for (zi = 0; zi < ZM_MAX; zi++) {
-               for (bi = 0; bi < glb_dt1[dt1i].block_num; bi++) {
-                  ALLEGRO_BITMAP *b = *(glb_dt1[dt1i].block_zoom[zi] + bi);
-                  if (b == NULL) continue;
-                  if (al_get_bitmap_flags(b) & ALLEGRO_MEMORY_BITMAP)
-                     mem_count++;
-                  else
-                     vid_count++;
-               }
-            }
-         }
-         fprintf(stderr, "[perf] DT1 tile bitmaps: %d VIDEO, %d MEMORY\n", vid_count, mem_count);
-         fprintf(stderr, "[perf] screen_buff target is %s\n",
-            (al_get_bitmap_flags(glb_ds1edit.screen_buff) & ALLEGRO_MEMORY_BITMAP) ? "MEMORY" : "VIDEO");
-         fflush(stderr);
-      }
-   }
-
    // Pre-set target bitmap for ALL rendering — avoids thousands of FBO rebinds.
    // All a5_draw_* helpers use a5_begin/end_target_bitmap which skip the switch
    // when the target is already correct.
@@ -2668,16 +2611,6 @@ void wpreview_draw_tiles(int ds1_idx)
                render_perf_now_ms() - perf_call_start_ms
             );
          }
-      }
-   }
-   {
-      double loop1a_ms = render_perf_now_ms() - perf_section_start_ms;
-      static int dbg1a = 0;
-      dbg1a++;
-      if (dbg1a <= 3) {
-         fprintf(stderr, "[frame %d] loop_1a (walls+floors+shadows): %.1f ms  tiles: %dx%d\n",
-            dbg1a, loop1a_ms, max_tile_x - min_tile_x + 1, max_tile_y - min_tile_y + 1);
-         fflush(stderr);
       }
    }
    render_perf_add(
@@ -2793,15 +2726,6 @@ void wpreview_draw_tiles(int ds1_idx)
                );
             }
          }
-      }
-   }
-   {
-      double loop3_ms = render_perf_now_ms() - perf_section_start_ms;
-      static int dbg3 = 0;
-      dbg3++;
-      if (dbg3 <= 3) {
-         fprintf(stderr, "[frame %d] loop_3 (upper walls+objects): %.1f ms\n", dbg3, loop3_ms);
-         fflush(stderr);
       }
    }
    render_perf_add(
@@ -3250,16 +3174,6 @@ void wpreview_draw_tiles(int ds1_idx)
    // draw screen
    perf_section_start_ms = render_perf_now_ms();
    misc_draw_screen(a5_mouse_x, a5_mouse_y);
-   {
-      double present_ms = render_perf_now_ms() - perf_section_start_ms;
-      double total_ms = render_perf_now_ms() - perf_total_start_ms;
-      static int dbgP = 0;
-      dbgP++;
-      if (dbgP <= 3) {
-         fprintf(stderr, "[frame %d] present: %.1f ms  TOTAL frame: %.1f ms\n", dbgP, present_ms, total_ms);
-         fflush(stderr);
-      }
-   }
    render_perf_add(
       &glb_render_perf_stats.present_ms_total,
       &glb_render_perf_stats.present_ms_max,

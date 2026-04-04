@@ -1173,17 +1173,8 @@ int main(int argc, char * argv[])
             }
          }
       }
-      fprintf(stderr, "[perf] Promoted %d/%d animation bitmaps to VIDEO\n", promoted, total);
    }
 
-   // Diagnostic: verify bitmap types
-   fprintf(stderr, "[perf] screen_buff flags: 0x%x (%s)\n",
-      al_get_bitmap_flags(glb_ds1edit.screen_buff),
-      (al_get_bitmap_flags(glb_ds1edit.screen_buff) & ALLEGRO_MEMORY_BITMAP) ? "MEMORY" : "VIDEO");
-   fprintf(stderr, "[perf] big_screen_buff flags: 0x%x (%s)\n",
-      al_get_bitmap_flags(glb_ds1edit.big_screen_buff),
-      (al_get_bitmap_flags(glb_ds1edit.big_screen_buff) & ALLEGRO_MEMORY_BITMAP) ? "MEMORY" : "VIDEO");
-   fflush(stderr);
 
    // mouse
    if (!al_install_mouse())
