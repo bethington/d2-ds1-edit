@@ -71,7 +71,7 @@ target_include_directories(ds1edit PRIVATE
     ${ALLEGRO5_ROOT}/include
 )
 
-# Platform-specific configuration
+# Platform-specific configuration (matched to scripts/batch/build.bat)
 if(WIN32)
     target_compile_definitions(ds1edit PRIVATE WIN32 USE_CONSOLE)
 
@@ -83,6 +83,18 @@ if(WIN32)
         allegro_font
         allegro_primitives
         allegro_main
+        user32 gdi32 ole32 winmm shlwapi
+    )
+
+    # Whole-program optimization for Release — matches the batch build which
+    # compiles all .c files in a single cl invocation, allowing cross-file inlining.
+    target_compile_options(ds1edit PRIVATE
+        $<$<CONFIG:Release>:/GL>
+        $<$<CONFIG:RelWithDebInfo>:/GL>
+    )
+    target_link_options(ds1edit PRIVATE
+        $<$<CONFIG:Release>:/LTCG>
+        $<$<CONFIG:RelWithDebInfo>:/LTCG>
     )
 endif()
 
