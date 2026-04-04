@@ -1,0 +1,73 @@
+{
+    "version": 3,
+    "cmakeMinimumRequired": { "major": 3, "minor": 20, "patch": 0 },
+    "configurePresets": [
+        {
+            "name": "default",
+            "displayName": "Default (x86, vcpkg)",
+            "description": "Build with vcpkg dependencies, Win32 architecture",
+            "generator": "Visual Studio 16 2019",
+            "architecture": { "value": "Win32", "strategy": "set" },
+            "binaryDir": "${sourceDir}/build",
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": {
+                    "type": "FILEPATH",
+                    "value": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+                },
+                "VCPKG_TARGET_TRIPLET": "x86-windows"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "ci",
+            "displayName": "CI Build",
+            "inherits": "default",
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": {
+                    "type": "FILEPATH",
+                    "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+                }
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "debug",
+            "displayName": "Debug",
+            "configurePreset": "default",
+            "configuration": "Debug"
+        },
+        {
+            "name": "release",
+            "displayName": "Release",
+            "configurePreset": "default",
+            "configuration": "Release"
+        },
+        {
+            "name": "ci-release",
+            "displayName": "CI Release",
+            "configurePreset": "ci",
+            "configuration": "Release"
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "default",
+            "displayName": "Run Tests",
+            "configurePreset": "default",
+            "configuration": "Release",
+            "output": { "outputOnFailure": true }
+        },
+        {
+            "name": "ci",
+            "displayName": "CI Tests",
+            "configurePreset": "ci",
+            "configuration": "Release",
+            "output": { "outputOnFailure": true }
+        }
+    ]
+}

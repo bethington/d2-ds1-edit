@@ -15,13 +15,11 @@ add_test(NAME palette COMMAND test_palette)
 
 # Phase 1: RGBA cache tests (needs Allegro 5 for cache_tile_to_a5_bitmap)
 add_executable(test_rgba_cache test_rgba_cache.c ../Sources/rgba_cache.c)
-target_link_libraries(test_rgba_cache PRIVATE unity)
+target_link_libraries(test_rgba_cache PRIVATE unity ${ALLEGRO5_LIB})
 target_include_directories(test_rgba_cache PRIVATE
     ${CMAKE_SOURCE_DIR}/Sources
-    ${ALLEGRO5_ROOT}/include
+    ${ALLEGRO5_INCLUDE_DIR}
 )
-target_link_directories(test_rgba_cache PRIVATE ${ALLEGRO5_ROOT}/lib)
-target_link_libraries(test_rgba_cache PRIVATE allegro)
 add_test(NAME rgba_cache COMMAND test_rgba_cache)
 
 # Phase 2: DT1 sub-tile decoder tests (no Allegro dependency)

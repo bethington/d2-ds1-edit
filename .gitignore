@@ -60,5 +60,6 @@ Thumbs.db
 # Legacy
 .d2workshop/
 
-# MCP configuration (local developer setup)
+# Local developer configuration
 .mcp.json
+CMakeUserPresets.json

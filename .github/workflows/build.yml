@@ -10,28 +10,20 @@ jobs:
   build-windows:
     runs-on: windows-latest
 
-    env:
-      VCPKG_DEFAULT_TRIPLET: x86-windows
-
     steps:
       - uses: actions/checkout@v4
 
       - name: Install Allegro 5 via vcpkg
-        run: |
-          vcpkg install allegro5[core,image,font,primitives]:x86-windows
+        run: vcpkg install allegro5[core,image,font,primitives]:x86-windows
 
-      - name: Configure CMake
-        run: >
-          cmake -B build -S .
-          -DCMAKE_BUILD_TYPE=Release
-          -DVCPKG_ROOT=C:/vcpkg
-          -A Win32
+      - name: Configure
+        run: cmake --preset ci
 
-      - name: Build
-        run: cmake --build build --config Release
+      - name: Build Release
+        run: cmake --build --preset ci-release
 
       - name: Run tests
-        run: ctest --test-dir build --build-config Release --output-on-failure
+        run: ctest --preset ci
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4

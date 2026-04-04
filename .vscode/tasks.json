@@ -5,12 +5,7 @@
             "label": "CMake Configure",
             "type": "shell",
             "command": "cmake",
-            "args": [
-                "-S", "${workspaceFolder}",
-                "-B", "${workspaceFolder}/build",
-                "-G", "Visual Studio 16 2019",
-                "-A", "Win32"
-            ],
+            "args": ["--preset", "default"],
             "group": "build",
             "problemMatcher": []
         },
@@ -18,25 +13,18 @@
             "label": "Build DS1Edit Debug",
             "type": "shell",
             "command": "cmake",
-            "args": [
-                "--build", "${workspaceFolder}/build",
-                "--config", "Debug"
-            ],
+            "args": ["--build", "--preset", "debug"],
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
-            "problemMatcher": "$msCompile",
-            "dependsOn": []
+            "problemMatcher": "$msCompile"
         },
         {
             "label": "Build DS1Edit Release",
             "type": "shell",
             "command": "cmake",
-            "args": [
-                "--build", "${workspaceFolder}/build",
-                "--config", "Release"
-            ],
+            "args": ["--build", "--preset", "release"],
             "group": "build",
             "problemMatcher": "$msCompile"
         },
@@ -44,12 +32,19 @@
             "label": "Run Tests",
             "type": "shell",
             "command": "ctest",
-            "args": [
-                "--test-dir", "${workspaceFolder}/build",
-                "-C", "Debug",
-                "--output-on-failure"
-            ],
+            "args": ["--preset", "default"],
             "group": "test",
+            "problemMatcher": []
+        },
+        {
+            "label": "Package Release",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build", "--preset", "release",
+                "--target", "package"
+            ],
+            "group": "build",
             "problemMatcher": []
         }
     ]
