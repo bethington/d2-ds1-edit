@@ -268,7 +268,7 @@ void interfac_user_handler(int start_ds1_idx)
          &glb_perf_stats.render_ms_max,
          perf_now_ms() - section_start_ms
       );
-      
+
       // scroll UP / DOWN / LEFT / RIGHT
       section_start_ms = perf_now_ms();
 
