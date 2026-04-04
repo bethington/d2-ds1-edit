@@ -2480,9 +2480,27 @@ void wpreview_draw_tiles(int ds1_idx)
 
 
    z = glb_ds1[ds1_idx].cur_zoom;
+   {
+      static int frame_num = 0;
+      frame_num++;
+      if (frame_num <= 5 || (frame_num % 30) == 0)
+      {
+         fprintf(stderr, "[render] frame %d entering wpreview_draw_tiles\n", frame_num);
+         fflush(stderr);
+      }
+   }
    perf_total_start_ms = render_perf_now_ms();
    perf_section_start_ms = render_perf_now_ms();
    a5_clear(glb_ds1edit.screen_buff);
+   {
+      double clear_ms = render_perf_now_ms() - perf_section_start_ms;
+      static int dbg_frame = 0;
+      dbg_frame++;
+      if (dbg_frame <= 3) {
+         fprintf(stderr, "[frame %d] clear: %.1f ms\n", dbg_frame, clear_ms);
+         fflush(stderr);
+      }
+   }
    render_perf_add(
       &glb_render_perf_stats.clear_ms_total,
       &glb_render_perf_stats.clear_ms_max,
@@ -2601,6 +2619,7 @@ void wpreview_draw_tiles(int ds1_idx)
          fprintf(stderr, "[perf] DT1 tile bitmaps: %d VIDEO, %d MEMORY\n", vid_count, mem_count);
          fprintf(stderr, "[perf] screen_buff target is %s\n",
             (al_get_bitmap_flags(glb_ds1edit.screen_buff) & ALLEGRO_MEMORY_BITMAP) ? "MEMORY" : "VIDEO");
+         fflush(stderr);
       }
    }
 
@@ -2610,7 +2629,6 @@ void wpreview_draw_tiles(int ds1_idx)
    al_set_target_bitmap(glb_ds1edit.screen_buff);
 
    // loop 1A : lower walls, floors, shadows of dt1
-   al_hold_bitmap_drawing(true);
    perf_section_start_ms = render_perf_now_ms();
    for (y=min_tile_y; y<=max_tile_y; y++)
    {
@@ -2650,6 +2668,16 @@ void wpreview_draw_tiles(int ds1_idx)
                render_perf_now_ms() - perf_call_start_ms
             );
          }
+      }
+   }
+   {
+      double loop1a_ms = render_perf_now_ms() - perf_section_start_ms;
+      static int dbg1a = 0;
+      dbg1a++;
+      if (dbg1a <= 3) {
+         fprintf(stderr, "[frame %d] loop_1a (walls+floors+shadows): %.1f ms  tiles: %dx%d\n",
+            dbg1a, loop1a_ms, max_tile_x - min_tile_x + 1, max_tile_y - min_tile_y + 1);
+         fflush(stderr);
       }
    }
    render_perf_add(
@@ -2722,15 +2750,9 @@ void wpreview_draw_tiles(int ds1_idx)
       render_perf_now_ms() - perf_section_start_ms
    );
 
-   // Release bitmap drawing hold before primitives/blender changes
-   al_hold_bitmap_drawing(false);
-
    // tile grid : if over floor but under wall, draw it now
    if (glb_ds1edit.display_tile_grid == TG_OVERFLOOR)
       wpreview_draw_tile_grid(ds1_idx);
-
-   // Re-enable bitmap drawing hold for sprite loops
-   al_hold_bitmap_drawing(true);
 
    // loop 3 : upper walls, objects with orderflag set to 0 or 2
    perf_section_start_ms = render_perf_now_ms();
@@ -2771,6 +2793,15 @@ void wpreview_draw_tiles(int ds1_idx)
                );
             }
          }
+      }
+   }
+   {
+      double loop3_ms = render_perf_now_ms() - perf_section_start_ms;
+      static int dbg3 = 0;
+      dbg3++;
+      if (dbg3 <= 3) {
+         fprintf(stderr, "[frame %d] loop_3 (upper walls+objects): %.1f ms\n", dbg3, loop3_ms);
+         fflush(stderr);
       }
    }
    render_perf_add(
@@ -3216,12 +3247,19 @@ void wpreview_draw_tiles(int ds1_idx)
    wpreview_draw_vline(- glb_ds1edit.win_preview.x0, 0, glb_config.screen.height, 255);
 */
 
-   // Flush any remaining held drawing and release target before present
-   al_hold_bitmap_drawing(false);
-
    // draw screen
    perf_section_start_ms = render_perf_now_ms();
    misc_draw_screen(a5_mouse_x, a5_mouse_y);
+   {
+      double present_ms = render_perf_now_ms() - perf_section_start_ms;
+      double total_ms = render_perf_now_ms() - perf_total_start_ms;
+      static int dbgP = 0;
+      dbgP++;
+      if (dbgP <= 3) {
+         fprintf(stderr, "[frame %d] present: %.1f ms  TOTAL frame: %.1f ms\n", dbgP, present_ms, total_ms);
+         fflush(stderr);
+      }
+   }
    render_perf_add(
       &glb_render_perf_stats.present_ms_total,
       &glb_render_perf_stats.present_ms_max,
