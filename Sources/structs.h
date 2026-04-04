@@ -541,6 +541,7 @@ typedef struct BLOCK_TABLE_S
    BLK_TYP_E type;
    int       zero_line;
    int       roof_y;
+   int       corner_pair_idx;
 
    // conflicts managment
    char      conflict;

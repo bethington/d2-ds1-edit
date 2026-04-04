@@ -8,8 +8,12 @@ October 30 2011 :
   - similar objects animates with a random starting frame. fire is more natural, and monsters don't 'dance' anymore.
 */
 
-#define COMPILER_NAME              "Visual C++ 2010 Express Edition"
-#define WINDS1EDIT_GUI_LOADER_LINK "http://d2mods.com/forum/viewtopic.php?f=81&t=21281"
+#define COMPILER_NAME              "MSVC"
+#define WINDS1EDIT_GUI_LOADER_LINK "https://github.com/bethington/d2-ds1-edit"
+
+#ifndef DS1EDIT_VERSION_STR
+#define DS1EDIT_VERSION_STR "dev"
+#endif
 
 #ifdef WIN32
    #define DS1EDIT_BUILD __DATE__
@@ -39,6 +43,7 @@ October 30 2011 :
 #include "iniread.h"
 #include "animdata.h"
 #include "interfac.h"
+#include "wPreview.h"
 
 
 WRKSPC_DATAS_S glb_wrkspc_datas[WRKSPC_MAX] = // workspace datas saved in .ds1
@@ -445,13 +450,80 @@ UDWORD ds1edit_get_RLE_bitmap_size(ALLEGRO_BITMAP * bmp)
 
 
 // ==========================================================================
+// Recreate the offscreen render targets after the display exists so Allegro
+// can allocate them as display bitmaps instead of memory bitmaps.
+static void ds1edit_recreate_render_targets(void)
+{
+   ALLEGRO_BITMAP * new_big_screen_buff;
+   ALLEGRO_BITMAP * new_screen_buff;
+   int old_width;
+   int old_height;
+   char tmp[160];
+
+   old_width = glb_config.screen.width;
+   old_height = glb_config.screen.height;
+
+   glb_config.screen.width  += 600;
+   glb_config.screen.height += 600;
+   new_big_screen_buff = al_create_bitmap(
+      glb_config.screen.width,
+      glb_config.screen.height
+   );
+   if (new_big_screen_buff == NULL)
+   {
+      sprintf(tmp, "main(), error.\nCan't recreate big_screen_buff (%i*%i pixels).",
+         glb_config.screen.width,
+         glb_config.screen.height
+      );
+      ds1edit_error(tmp);
+   }
+   glb_config.screen.width = old_width;
+   glb_config.screen.height = old_height;
+
+   new_screen_buff = al_create_sub_bitmap(
+      new_big_screen_buff,
+      300,
+      300,
+      glb_config.screen.width,
+      glb_config.screen.height
+   );
+   if (new_screen_buff == NULL)
+   {
+      al_destroy_bitmap(new_big_screen_buff);
+      sprintf(tmp, "main(), error.\nCan't recreate sub-bitmap screen_buff (%i*%i pixels).",
+         glb_config.screen.width,
+         glb_config.screen.height
+      );
+      ds1edit_error(tmp);
+   }
+
+   if (glb_ds1edit.screen_buff != NULL)
+      al_destroy_bitmap(glb_ds1edit.screen_buff);
+   if (glb_ds1edit.big_screen_buff != NULL)
+      al_destroy_bitmap(glb_ds1edit.big_screen_buff);
+
+   glb_ds1edit.big_screen_buff = new_big_screen_buff;
+   glb_ds1edit.screen_buff = new_screen_buff;
+}
+
+
+// ==========================================================================
 // automatically called at the end, with the help of atexit()
 void ds1edit_exit(void)
 {
    int i, z, b;
-   
+   static int already_called = 0;
+
+   /* Guard against being called twice (atexit + explicit) */
+   if (already_called) return;
+   already_called = 1;
 
    printf("\nds1edit_exit()\n");
+
+   /* Skip Allegro bitmap cleanup — the heap corruption from the Allegro 4->5
+    * migration makes al_destroy_bitmap unsafe during shutdown. The OS reclaims
+    * all process memory on exit anyway. We still close file handles and free
+    * non-bitmap allocations. */
 
    // close all mpq
    for (i=0; i<MAX_MPQ_FILE; i++)
@@ -469,37 +541,12 @@ void ds1edit_exit(void)
       }
    }
    
-   // free all mem
+   // free non-bitmap memory (skip al_destroy_bitmap — causes heap corruption
+   // during shutdown due to Allegro 4->5 migration issues; OS reclaims all
+   // process memory on exit)
    fprintf(stderr, "exit, memory free :\n");
    fflush(stderr);
 
-   // mouse cursor
-   fprintf(stderr, "   * mouse cursor...\n");
-   fflush(stderr);
-   for (i=0; i<MOD_MAX; i++)
-   {
-      if (glb_ds1edit.mouse_cursor[i] != NULL)
-      {
-         al_destroy_bitmap(glb_ds1edit.mouse_cursor[i]);
-         glb_ds1edit.mouse_cursor[i] = NULL;
-      }
-   }
-      
-   // screen buffer
-   fprintf(stderr, "   * screen buffer...\n");
-   fflush(stderr);
-   if (glb_ds1edit.screen_buff != NULL)
-   {
-      al_destroy_bitmap(glb_ds1edit.screen_buff);
-      glb_ds1edit.screen_buff = NULL;
-   }
-
-   if (glb_ds1edit.big_screen_buff != NULL)
-   {
-      al_destroy_bitmap(glb_ds1edit.big_screen_buff);
-      glb_ds1edit.big_screen_buff = NULL;
-   }
-   
    // config, mpq name
    fprintf(stderr, "   * config, mpq names...\n");
    fflush(stderr);
@@ -531,91 +578,12 @@ void ds1edit_exit(void)
       }
    }
 
-   // dt1
-   fprintf(stderr, "   * DT1 files...\n");
-   fflush(stderr);
-   if (glb_dt1 != NULL)
-   {
-      for (i=0; i<DT1_MAX; i++)
-         dt1_free(i);
-   }
-
-   // ds1
-   fprintf(stderr, "   * DS1 files...\n");
-   fflush(stderr);
-   if (glb_ds1 != NULL)
-   {
-      for (i=0; i<DS1_MAX; i++)
-         ds1_free(i);
-   }
-
-   // objects descriptions
-   fprintf(stderr, "   * objects descriptions...\n");
-   fflush(stderr);
-   if (glb_ds1edit.obj_desc != NULL)
-   {
-      anim_exit();
-      free(glb_ds1edit.obj_desc);
-      glb_ds1edit.obj_desc = NULL;
-      glb_ds1edit.obj_desc_num = 0;
-   }
-
-   // buttons & tab
-   fprintf(stderr, "   * buttons & tab...\n");
-   fflush(stderr);
-   wedit_free();
-
-   // undo buffers
+   // skip DT1/DS1/object/bitmap cleanup (contains al_destroy_bitmap calls)
+   // undo buffers — close file handles
    fprintf(stderr, "   * undo buffers...\n");
    fflush(stderr);
    if (glb_ds1 != NULL)
       undo_exit();
-
-   // walkable infos tiles
-   fprintf(stderr, "   * walkable info tiles...\n");
-   fflush(stderr);
-   for (z=0; z<ZM_MAX; z++)
-   {
-      for (i=0; i<25; i++)
-      {
-         if (glb_ds1edit.subtile_nowalk[z][i] != NULL)
-         {
-            al_destroy_bitmap(glb_ds1edit.subtile_nowalk[z][i]);
-            glb_ds1edit.subtile_nowalk[z][i] = NULL;
-         }
-
-         if (glb_ds1edit.subtile_nojump[z][i] != NULL)
-         {
-            al_destroy_bitmap(glb_ds1edit.subtile_nojump[z][i]);
-            glb_ds1edit.subtile_nojump[z][i] = NULL;
-         }
-      }
-   }
-
-   if (glb_ds1edit.subtile_help != NULL)
-   {
-      al_destroy_bitmap(glb_ds1edit.subtile_help);
-      glb_ds1edit.subtile_help = NULL;
-   }
-
-
-   // walkable infos tiles, combinations
-   fprintf(stderr, "   * walkable info tiles combinations...\n");
-   fflush(stderr);
-   for (b=0; b<256; b++)
-   {
-      for (z=0; z<ZM_MAX; z++)
-      {
-         for (i=0; i<25; i++)
-         {
-            if (glb_ds1edit.subtile_flag[b][z][i] != NULL)
-            {
-               al_destroy_bitmap(glb_ds1edit.subtile_flag[b][z][i]);
-               glb_ds1edit.subtile_flag[b][z][i] = NULL;
-            }
-         }
-      }
-   }
 
    // .txt buffers
    fprintf(stderr, "   * .txt buffers ...\n");
@@ -821,8 +789,8 @@ int main(int argc, char * argv[])
    if (atexit(ds1edit_exit) != 0)
       ds1edit_error("main(), error.\nCan't install the 'atexit' Handler.");
 
-   // Use memory bitmaps until display is created (needed for headless mode
-   // and for loading bitmaps before display setup)
+   // Use memory bitmaps until display is created
+   // TODO: move display creation earlier for GPU-accelerated bitmaps (FPS fix)
    al_set_new_bitmap_flags(ALLEGRO_MEMORY_BITMAP);
 
    ds1edit_init();
@@ -1163,14 +1131,55 @@ int main(int argc, char * argv[])
 
    sprintf(
       tmp,
-      "DS1 Editor, %s Build %s, Allegro %i.%i.%i",
+      "DS1 Editor v%s (%s), Allegro %i.%i.%i",
+      DS1EDIT_VERSION_STR,
       DS1EDIT_BUILD_MODE,
-      glb_ds1edit.version,
       al_get_allegro_version() >> 24,
       (al_get_allegro_version() >> 16) & 0xFF,
       (al_get_allegro_version() >> 8) & 0xFF
    );
    al_set_window_title(a5_display, tmp);
+
+   // Now that a display exists, promote the hot render surfaces and cached
+   // DT1 tiles to display bitmaps so repeated tile blits stay on the GPU.
+   al_set_new_bitmap_flags(ALLEGRO_VIDEO_BITMAP);
+   ds1edit_recreate_render_targets();
+   if (a5_current_palette != NULL)
+      dt1_rebuild_bitmaps_from_cache(a5_current_palette);
+
+   // Promote animation bitmaps (DCC/DC6 object sprites) from MEMORY to VIDEO.
+   // anim_update_gfx() ran before display existed, so all sprites are memory bitmaps.
+   {
+      int oi, li, fi;
+      int promoted = 0, total = 0;
+      for (oi = 0; oi < glb_ds1edit.obj_desc_num; oi++)
+      {
+         COF_S *cof = glb_ds1edit.obj_desc[oi].cof;
+         if (cof == NULL) continue;
+         for (li = 0; li < COMPOSIT_NB; li++)
+         {
+            LAY_INF_S *lay = &cof->lay_inf[li];
+            if (lay->bmp == NULL) continue;
+            for (fi = 0; fi < lay->bmp_num; fi++)
+            {
+               ALLEGRO_BITMAP *old_bmp = lay->bmp[fi];
+               if (old_bmp == NULL) continue;
+               total++;
+               if (al_get_bitmap_flags(old_bmp) & ALLEGRO_MEMORY_BITMAP)
+               {
+                  ALLEGRO_BITMAP *new_bmp = al_clone_bitmap(old_bmp);
+                  if (new_bmp != NULL)
+                  {
+                     al_destroy_bitmap(old_bmp);
+                     lay->bmp[fi] = new_bmp;
+                     promoted++;
+                  }
+               }
+            }
+         }
+      }
+   }
+
 
    // mouse
    if (!al_install_mouse())
@@ -1203,8 +1212,13 @@ int main(int argc, char * argv[])
    glb_ds1edit.win_preview.h  = glb_ds1[ds1_idx].own_wpreview.h ;
 
 
+   // Initialize palette state so the first frame doesn't trigger a redundant
+   // dt1_rebuild_bitmaps_from_cache (already done during init above).
+   wpreview_init_palette_state(ds1_idx);
+
    // main loop
    freopen("stderr.txt", "wt", stderr);
+   setvbuf(stderr, NULL, _IONBF, 0); // unbuffered so perf stats survive process kill
    interfac_user_handler(ds1_idx);
 
    // cleanup

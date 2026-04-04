@@ -164,6 +164,8 @@ int wmsg_main(WMSG_S * wmsg)
                // wait for all keys of the shortcut to not be pressed
                while (all_keys == TRUE)
                {
+                  al_rest(0.01);
+                  al_get_keyboard_state(&a5_kb_state);
                   all_keys = FALSE;
                   for (k=0; k < MW_COMBINATION_KEY_NUM; k++)
                   {
@@ -235,7 +237,9 @@ int wmsg_main(WMSG_S * wmsg)
 
       misc_draw_screen(mx, my);
 
-      // new mouse state
+      // poll new input state
+      al_get_keyboard_state(&a5_kb_state);
+      al_get_mouse_state(&a5_ms_state);
       mx = a5_mouse_x;
       my = a5_mouse_y;
       mb = a5_mouse_b;

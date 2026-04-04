@@ -18,7 +18,7 @@ PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
 BIN_DIR = os.path.join(PROJECT_ROOT, "bin")
 ASSETS_DIR = os.path.join(BIN_DIR, "assets")
 GOLDEN_DIR = os.path.join(PROJECT_ROOT, "test", "golden")
-EXE = os.path.join(BIN_DIR, "win_ds1edit_debug.exe")
+EXE = os.path.join(BIN_DIR, "ds1edit.exe")
 
 # Core test suite: 6 maps covering all 5 act palettes + indoor/outdoor
 CORE_MAPS = [

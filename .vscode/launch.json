@@ -6,7 +6,7 @@
             "name": "Debug DS1Edit - Act1 Barracks",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act1_barracks.ini"
             ],
@@ -20,7 +20,7 @@
             "name": "Debug DS1Edit - Act1 Catacombs",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act1_catacombs.ini"
             ],
@@ -34,7 +34,7 @@
             "name": "Debug DS1Edit - Act1 Cathedral",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act1_cathedral.ini"
             ],
@@ -48,7 +48,7 @@
             "name": "Debug DS1Edit - Act1 Cave",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act1_cave.ini"
             ],
@@ -62,7 +62,7 @@
             "name": "Debug DS1Edit - Act1 Courtyard",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act1_courtyard.ini"
             ],
@@ -76,7 +76,7 @@
             "name": "Debug DS1Edit - Act1 Crypt",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act1_crypt.ini"
             ],
@@ -90,7 +90,7 @@
             "name": "Debug DS1Edit - Act1 Jail",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act1_jail.ini"
             ],
@@ -104,7 +104,7 @@
             "name": "Debug DS1Edit - Act1 Monestary",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act1_monestary.ini"
             ],
@@ -118,7 +118,7 @@
             "name": "Debug DS1Edit - Act1 Town",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act1_town.ini"
             ],
@@ -132,7 +132,7 @@
             "name": "Debug DS1Edit - Act1 Tristram",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act1_tristram.ini"
             ],
@@ -146,7 +146,7 @@
             "name": "Debug DS1Edit - Act1 Wilderness",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act1_wilderness.ini"
             ],
@@ -161,7 +161,7 @@
             "name": "Debug DS1Edit - Act2 Arcane",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act2_arcane.ini"
             ],
@@ -175,7 +175,7 @@
             "name": "Debug DS1Edit - Act2 Palace",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act2_palace.ini"
             ],
@@ -189,7 +189,7 @@
             "name": "Debug DS1Edit - Act2 Desert",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act2_desert.ini"
             ],
@@ -203,7 +203,7 @@
             "name": "Debug DS1Edit - Act2 Maggot",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act2_maggot.ini"
             ],
@@ -217,7 +217,7 @@
             "name": "Debug DS1Edit - Act2 Sewer",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act2_sewer.ini"
             ],
@@ -231,7 +231,7 @@
             "name": "Debug DS1Edit - Act2 Tomb",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act2_tomb.ini"
             ],
@@ -245,7 +245,7 @@
             "name": "Debug DS1Edit - Act2 Town",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act2_town.ini"
             ],
@@ -260,7 +260,7 @@
             "name": "Debug DS1Edit - Act3 Dungeon",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act3_dungeon.ini"
             ],
@@ -274,7 +274,7 @@
             "name": "Debug DS1Edit - Act3 Jungle",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act3_jungle.ini"
             ],
@@ -288,7 +288,7 @@
             "name": "Debug DS1Edit - Act3 Clearing",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act3_clearing.ini"
             ],
@@ -302,7 +302,7 @@
             "name": "Debug DS1Edit - Act3 Swamp",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act3_swamp.ini"
             ],
@@ -316,7 +316,7 @@
             "name": "Debug DS1Edit - Act3 Kurast",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act3_kurast.ini"
             ],
@@ -330,7 +330,7 @@
             "name": "Debug DS1Edit - Act3 Sewer",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act3_sewer.ini"
             ],
@@ -344,7 +344,7 @@
             "name": "Debug DS1Edit - Act3 Spider",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act3_spider.ini"
             ],
@@ -358,7 +358,7 @@
             "name": "Debug DS1Edit - Act3 Town",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act3_town.ini"
             ],
@@ -372,7 +372,7 @@
             "name": "Debug DS1Edit - Act3 Travincal",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act3_travincal.ini"
             ],
@@ -386,7 +386,7 @@
             "name": "Debug DS1Edit - Act3 Temple",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act3_temple.ini"
             ],
@@ -400,7 +400,7 @@
             "name": "Debug DS1Edit - Act3 Mephisto",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act3_mephisto.ini"
             ],
@@ -415,7 +415,7 @@
             "name": "Debug DS1Edit - Act4 Fortress",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act4_fortress.ini"
             ],
@@ -429,7 +429,7 @@
             "name": "Debug DS1Edit - Act4 Mesa",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act4_mesa.ini"
             ],
@@ -443,7 +443,7 @@
             "name": "Debug DS1Edit - Act4 Lava",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act4_lava.ini"
             ],
@@ -457,7 +457,7 @@
             "name": "Debug DS1Edit - Act4 Diablo",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act4_diablo.ini"
             ],
@@ -469,10 +469,20 @@
         },
         // ========== ACT 5 ==========
         {
+            "name": "Run DS1Edit - Act5 Town",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "${workspaceFolder}/bin/ds1edit.exe",
+            "runtimeArgs": ["assets/act5_town.ini"],
+            "cwd": "${workspaceFolder}/bin",
+            "console": "externalTerminal",
+            "preLaunchTask": "Build DS1Edit Release"
+        },
+        {
             "name": "Debug DS1Edit - Act5 Town",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act5_town.ini"
             ],
@@ -486,7 +496,7 @@
             "name": "Debug DS1Edit - Act5 Siege",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act5_siege.ini"
             ],
@@ -500,7 +510,7 @@
             "name": "Debug DS1Edit - Act5 Barricade",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act5_barricade.ini"
             ],
@@ -514,7 +524,7 @@
             "name": "Debug DS1Edit - Act5 Snow",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act5_snow.ini"
             ],
@@ -528,7 +538,7 @@
             "name": "Debug DS1Edit - Act5 Ice Caves",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act5_ice_caves.ini"
             ],
@@ -542,7 +552,7 @@
             "name": "Debug DS1Edit - Act5 Temple",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act5_temple.ini"
             ],
@@ -556,7 +566,7 @@
             "name": "Debug DS1Edit - Act5 Lava",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act5_lava.ini",
                 "-no_check_act",
@@ -573,7 +583,7 @@
             "name": "Debug DS1Edit - Act5 Keep",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act5_keep.ini"
             ],
@@ -587,7 +597,7 @@
             "name": "Debug DS1Edit - Act5 Baal",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit_debug.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/tiles/expansion/BaalLair/wthrone.ds1",
                 "34",
@@ -605,7 +615,7 @@
             "name": "Release DS1Edit - Act5 Baal",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/win_ds1edit.exe",
+            "program": "${workspaceFolder}/bin/ds1edit.exe",
             "args": [
                 "assets/act5_baal.ini"
             ],
@@ -614,6 +624,7 @@
             "environment": [],
             "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Release"
+
         }
     ]
 }

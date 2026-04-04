@@ -1,117 +1,131 @@
-# DS1Edit - Project Organization
+# DS1Edit - Project Structure
 
-## Directory Structure
+## Directory Layout
 
 ```
-DS1Edit/
-├── .gitignore              # Git ignore rules
-├── .vscode/                # VS Code configuration
-├── assets/                 # Game assets and DS1 configuration files
-│   ├── excel/             # Excel data files (LvlPrest.txt, etc.)
-│   ├── tiles/             # DS1 tile files organized by Act
-│   └── *.ini              # DS1 configuration files by area
-├── bin/                    # Compiled executables
-│   ├── win_ds1edit.exe    # Release build
-│   └── win_ds1edit_debug.exe  # Debug build  
-├── build/                  # Build artifacts and intermediate files
-├── config/                 # Configuration files
-│   ├── Ds1edit.ini        # Main DS1Edit configuration
-│   └── *.ini              # Other configuration files
-├── Data/                   # Game data files (palettes, etc.)
-├── docs/                   # Project documentation
-│   ├── BUILD_*.md         # Build instructions
-│   ├── PROJECT_*.md       # Project status docs
-│   └── README.md          # This file
-├── examples/               # Example DS1 files and configurations
-├── logs/                   # Log files and debug output
-│   ├── stderr.txt         # Error logs
-│   └── debug_*.txt        # Debug output files
-├── media/                  # Media files
-│   ├── screenshots/       # Screenshot files (.bmp, .pcx)
-│   └── pcx/              # PCX image resources
-├── scripts/                # Development scripts
-│   ├── batch/             # Batch scripts for building and testing
-│   │   ├── build.bat      # Main build script
-│   │   ├── clean.bat      # Cleanup script
-│   │   └── test_*_lines.bat  # Testing scripts
-│   └── python/            # Python utilities
-│       ├── generate_level_inis.py  # INI file generation
-│       ├── test_ini.py    # INI testing utilities
-│       └── rename_tileset_files.py  # File management
-├── Sources/                # C/C++ source code
-│   ├── *.c                # Source files
-│   ├── *.h                # Header files
-│   └── Makefile           # Build configuration
-├── temp/                   # Temporary files (auto-cleaned)
-├── third_party/            # Third-party libraries
-│   └── allegro/           # Allegro graphics library
-└── tools/                  # Development tools and utilities
+d2-ds1-edit/
+├── CMakeLists.txt              # Main build configuration
+├── CMakePresets.json           # Build presets (default, ci, dev, release)
+├── vcpkg.json                  # Dependency manifest (Allegro 5)
+├── LICENSE                     # MIT License
+├── README.md                   # Project overview
+├── BUILDING.md                 # Build instructions
+├── PROJECT_STRUCTURE.md        # This file
+│
+├── Sources/                    # C source and header files
+│   ├── main.c                 # Entry point, initialization, display setup
+│   ├── interfac.c             # Main event loop, input handling
+│   ├── wPreview.c             # Tile rendering pipeline (7 render passes)
+│   ├── a5_compat.h            # Allegro 5 compatibility layer and draw helpers
+│   ├── a5_globals.c           # Allegro 5 global state (display, timers, etc.)
+│   ├── anim.c                 # COF/DCC/DC6 animation loading
+│   ├── dt1misc.c              # DT1 tile loading, caching, palette rebuild
+│   ├── dt1_decode.c           # DT1 sub-tile pixel decoder
+│   ├── ds1misc.c              # DS1 map file loading
+│   ├── ds1save.c              # DS1 map file saving
+│   ├── palette.c              # Palette management and color matching
+│   ├── rgba_cache.c           # Palette-indexed tile cache (indices + RGBA)
+│   ├── structs.h              # Core data structures (COF_S, LAY_INF_S, etc.)
+│   ├── gfx_custom.c           # Legacy graphics stubs (mostly removed)
+│   ├── editobj.c              # Object editing
+│   ├── editpath.c             # NPC path editing
+│   ├── edittile.c             # Tile editing
+│   ├── misc.c                 # Utility functions, screen presentation
+│   └── mpq/                   # MPQ archive reader
+│       ├── MpqView.c
+│       ├── Explode.c
+│       ├── Dcl_tbl.c
+│       └── Wav_unp.c
+│
+├── test/                       # Unit tests (Unity framework)
+│   ├── CMakeLists.txt         # Test build configuration
+│   ├── test_placeholder.c     # Infrastructure validation
+│   ├── test_palette.c         # Palette color conversion tests
+│   ├── test_rgba_cache.c      # RGBA cache create/rebuild/convert tests
+│   ├── test_dt1_decode.c      # DT1 sub-tile decoder tests
+│   └── unity/                 # Unity test framework
+│
+├── scripts/                    # Development and test scripts
+│   ├── run_golden_tests.py    # Golden screenshot comparison tests
+│   ├── capture_golden.py      # Generate golden reference images
+│   ├── compare_golden.py      # Compare two screenshots
+│   └── convert_golden_to_png.py
+│
+├── bin/                        # Runtime directory (exe, DLLs, assets)
+│   ├── ds1edit.exe            # Built executable (all configurations)
+│   ├── Ds1edit.ini.sample     # Sample configuration (copy to Ds1edit.ini)
+│   ├── *.dll                  # Allegro 5 runtime DLLs (copied by CMake)
+│   ├── data/                  # Palettes, gamma tables, version
+│   └── assets/                # Map configurations and test fixtures
+│       ├── *.ini              # Area configs (act1_town.ini, etc.)
+│       ├── tiles/             # DS1 map files organized by Act
+│       ├── excel/             # Game data tables
+│       └── palette/           # Palette data
+│
+├── docs/                       # Documentation
+│   ├── README.md              # Detailed documentation index
+│   └── guides/                # Technical guides
+│
+├── .vscode/                    # VSCode configuration
+│   ├── launch.json            # 31 debug + 1 run launch configs (all Acts)
+│   └── tasks.json             # Build tasks (dev, release, test, package)
+│
+└── .github/
+    └── workflows/
+        └── build.yml          # CI: build + test on push/PR
 ```
 
-## Quick Start
+## Build System
 
-### Building the Project
+CMake with vcpkg for dependency management. Three build presets:
+
 ```bash
-# Navigate to project root
-cd DS1Edit
-
-# Run build script
-scripts\batch\build.bat debug
+cmake --preset default          # Configure (first time)
+cmake --build --preset dev      # Development build (optimized + debug symbols)
+cmake --build --preset release  # Release build (full optimization + LTCG)
+ctest --preset default          # Run unit tests
+cmake --build --preset release --target package   # Create release zip
 ```
 
-### Testing DS1 Files
+## Testing
+
+**Unit tests** (C, Unity framework):
 ```bash
-# Test individual area configurations
-scripts\batch\test_clearing_lines.bat
-scripts\batch\test_mesa_lines.bat
-# ... etc for other areas
+ctest --preset default          # Runs 4 tests in ~0.1s
 ```
 
-### Generating INI Files
+**Golden screenshot tests** (Python, requires Pillow):
 ```bash
-# Generate level configuration files
-python scripts\python\generate_level_inis.py
+python scripts/run_golden_tests.py --core    # Core maps only
+python scripts/run_golden_tests.py --full    # All maps
 ```
 
-## File Organization
+## Rendering Architecture
 
-### Assets Directory
-- **`assets/tiles/`** - DS1 files organized by Act (ACT1/, ACT2/, ACT3/, ACT4/, Expansion/)
-- **`assets/excel/`** - Game data files (LvlPrest.txt with level definitions)
-- **`assets/*.ini`** - Area-specific DS1 configuration files (act1_*, act2_*, etc.)
+The render pipeline in `wPreview.c` runs 7 passes per frame:
 
-### Configuration Files
-- **Main Config**: `config/Ds1edit.ini` - Primary DS1Edit settings
-- **Area Configs**: `assets/*.ini` - DS1 file lists for each game area
+1. **Base terrain** — Lower walls, floors, tile shadows (batched GPU draws)
+2. **Object shadows** — Tinted black silhouettes at D2 darkness levels
+3. **Objects behind walls** — Animated sprites (orderflag=1)
+4. **Upper walls + objects** — Wall tiles + sprites in front (orderflag 0/2)
+5. **Roofs** — Roof tiles
+6. **Special tiles** — Orientation 10/11 tiles (optional)
+7. **Walkable info** — Debug overlay (optional)
 
-### Scripts Organization
-- **Batch Scripts**: `scripts/batch/` - Windows batch files for building and testing
-- **Python Scripts**: `scripts/python/` - Python utilities for file generation and management
+All rendering targets a pre-set VIDEO bitmap (`screen_buff`). Draw helpers in
+`a5_compat.h` skip target switching when it's already correct. The 25 Hz tick
+timer drives animation; the display refreshes at vsync rate (~60-165 Hz).
 
-### Build System
-- **Source**: `Sources/` - All C/C++ source and header files
-- **Build Output**: `bin/` - Final executables
-- **Build Artifacts**: `build/` - Intermediate build files
+## Key Files
 
-## Development Workflow
-
-1. **Edit Source Code**: Modify files in `Sources/`
-2. **Build Project**: Run `scripts\batch\build.bat debug`
-3. **Test Changes**: Use `scripts\batch\test_*_lines.bat` scripts
-4. **Generate Configs**: Run `scripts\python\generate_level_inis.py` if needed
-5. **Clean Build**: Use `scripts\batch\clean.bat` when needed
-
-## Key Features
-
-- **Systematic DS1 Testing**: Individual file validation with error reporting
-- **Automated INI Generation**: Python scripts for creating area configuration files
-- **Comprehensive Build System**: Debug and release build configurations
-- **Asset Organization**: Logical grouping of game assets by Act and area type
-- **Development Tools**: Scripts for testing, building, and file management
-
-## Notes
-
-- Debug builds include additional logging and error checking
-- Test scripts generate `*_working.ini` and `*_errors.txt` files for validation
-- Screenshots and temporary files are automatically organized
-- Configuration files are centralized for easy management
+| File | Purpose |
+|------|---------|
+| `Sources/wPreview.c` | Tile rendering pipeline, per-frame perf stats |
+| `Sources/a5_compat.h` | Allegro 5 draw helpers, D2 blend modes |
+| `Sources/main.c` | Init, display creation, bitmap promotion |
+| `Sources/anim.c` | COF/DCC/DC6 animation loading |
+| `Sources/dt1misc.c` | DT1 tile loading and palette rebuild |
+| `Sources/rgba_cache.c` | Tile bitmap cache (palette → RGBA) |
+| `Sources/structs.h` | Core structs: COF_S, LAY_INF_S, DS1_S |
+| `CMakePresets.json` | Build presets for dev/release/CI |
+| `vcpkg.json` | Allegro 5 dependency declaration |

@@ -15,6 +15,78 @@
 #include "interfac.h"
 
 
+typedef struct
+{
+   double event_ms_total;
+   double input_ms_total;
+   double mouse_to_tile_ms_total;
+   double editobj_ms_total;
+   double anim_ms_total;
+   double render_ms_total;
+   double ui_ms_total;
+   double frame_ms_total;
+
+   double event_ms_max;
+   double input_ms_max;
+   double mouse_to_tile_ms_max;
+   double editobj_ms_max;
+   double anim_ms_max;
+   double render_ms_max;
+   double ui_ms_max;
+   double frame_ms_max;
+
+   int frames;
+} PERF_STATS_S;
+
+static PERF_STATS_S glb_perf_stats;
+
+static double perf_now_ms(void)
+{
+   return al_get_time() * 1000.0;
+}
+
+static void perf_accumulate(double * total, double * max, double dt_ms)
+{
+   (*total) += dt_ms;
+   if (dt_ms > *max)
+      *max = dt_ms;
+}
+
+static void perf_print_summary(void)
+{
+   double inv;
+
+   if (glb_perf_stats.frames <= 0)
+      return;
+
+   inv = 1.0 / glb_perf_stats.frames;
+
+   fprintf(stderr, "\n[perf] last %d frames\n", glb_perf_stats.frames);
+   fprintf(stderr, "[perf] frame:       avg %7.2f ms  max %7.2f ms  (%.2f FPS)\n",
+      glb_perf_stats.frame_ms_total * inv,
+      glb_perf_stats.frame_ms_max,
+      (glb_perf_stats.frame_ms_total > 0.0) ?
+         (1000.0 * glb_perf_stats.frames / glb_perf_stats.frame_ms_total) : 0.0);
+   fprintf(stderr, "[perf] events:      avg %7.2f ms  max %7.2f ms\n",
+      glb_perf_stats.event_ms_total * inv, glb_perf_stats.event_ms_max);
+   fprintf(stderr, "[perf] input:       avg %7.2f ms  max %7.2f ms\n",
+      glb_perf_stats.input_ms_total * inv, glb_perf_stats.input_ms_max);
+   fprintf(stderr, "[perf] mouse->tile: avg %7.2f ms  max %7.2f ms\n",
+      glb_perf_stats.mouse_to_tile_ms_total * inv, glb_perf_stats.mouse_to_tile_ms_max);
+   fprintf(stderr, "[perf] editobj:     avg %7.2f ms  max %7.2f ms\n",
+      glb_perf_stats.editobj_ms_total * inv, glb_perf_stats.editobj_ms_max);
+   fprintf(stderr, "[perf] anim:        avg %7.2f ms  max %7.2f ms\n",
+      glb_perf_stats.anim_ms_total * inv, glb_perf_stats.anim_ms_max);
+   fprintf(stderr, "[perf] render:      avg %7.2f ms  max %7.2f ms\n",
+      glb_perf_stats.render_ms_total * inv, glb_perf_stats.render_ms_max);
+   fprintf(stderr, "[perf] ui/other:    avg %7.2f ms  max %7.2f ms\n",
+      glb_perf_stats.ui_ms_total * inv, glb_perf_stats.ui_ms_max);
+   fflush(stderr);
+
+   memset(&glb_perf_stats, 0, sizeof(glb_perf_stats));
+}
+
+
 // ==========================================================================
 // MAIN loop
 void interfac_user_handler(int start_ds1_idx)
@@ -34,6 +106,7 @@ void interfac_user_handler(int start_ds1_idx)
    IT_ENUM     itype = IT_NULL;
    int         group_changed, old_group, found;
    ALLEGRO_BITMAP * old_screen_buff = NULL;
+   double      frame_start_ms, section_start_ms;
  
 
    // init
@@ -57,7 +130,10 @@ void interfac_user_handler(int start_ds1_idx)
    // main loop
    while (! done)
    {
+      frame_start_ms = perf_now_ms();
+
       // drain Allegro 5 event queue
+      section_start_ms = perf_now_ms();
       {
           ALLEGRO_EVENT event;
           while (al_get_next_event(a5_event_queue, &event)) {
@@ -74,10 +150,21 @@ void interfac_user_handler(int start_ds1_idx)
               }
           }
       }
+      perf_accumulate(
+         &glb_perf_stats.event_ms_total,
+         &glb_perf_stats.event_ms_max,
+         perf_now_ms() - section_start_ms
+      );
 
       // poll input state
+      section_start_ms = perf_now_ms();
       al_get_keyboard_state(&a5_kb_state);
       al_get_mouse_state(&a5_ms_state);
+      perf_accumulate(
+         &glb_perf_stats.input_ms_total,
+         &glb_perf_stats.input_ms_max,
+         perf_now_ms() - section_start_ms
+      );
 
       can_swich_mode = TRUE;
       if (glb_ds1edit.mode == MOD_P)
@@ -97,6 +184,7 @@ void interfac_user_handler(int start_ds1_idx)
       // keep the current mouse coordinates for the entire loop process
       
       // which tile (or sub-tile) is RIGHT NOW under the mouse ?
+      section_start_ms = perf_now_ms();
       mouse_to_tile(ds1_idx, &cx, &cy);
       if (glb_ds1edit.mode == MOD_T)
       {
@@ -122,15 +210,26 @@ void interfac_user_handler(int start_ds1_idx)
          else if (cy >= glb_ds1[ds1_idx].height * 5 - 1)
             cy = glb_ds1[ds1_idx].height * 5 - 1;
       }
+      perf_accumulate(
+         &glb_perf_stats.mouse_to_tile_ms_total,
+         &glb_perf_stats.mouse_to_tile_ms_max,
+         perf_now_ms() - section_start_ms
+      );
             
       if (glb_ds1edit.mode == MOD_O)
       {
+         section_start_ms = perf_now_ms();
          editobj_handler(
             ds1_idx, cx,
             cy,
             old_mouse_x,
             old_mouse_y,
             old_mouse_b
+         );
+         perf_accumulate(
+            &glb_perf_stats.editobj_ms_total,
+            &glb_perf_stats.editobj_ms_max,
+            perf_now_ms() - section_start_ms
          );
       }
       
@@ -143,6 +242,7 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       // check if need to redraw the screen because of floor animation
+      section_start_ms = perf_now_ms();
       ticks_elapsed = glb_ds1edit.ticks_elapsed;
       if ( ticks_elapsed && (glb_ds1[ds1_idx].animations_layer_mask == 1))
       {
@@ -153,12 +253,24 @@ void interfac_user_handler(int start_ds1_idx)
       }
       else
          glb_ds1edit.ticks_elapsed = 0;
+      perf_accumulate(
+         &glb_perf_stats.anim_ms_total,
+         &glb_perf_stats.anim_ms_max,
+         perf_now_ms() - section_start_ms
+      );
 
       // redraw the whole screen
+      section_start_ms = perf_now_ms();
       wpreview_draw_tiles(ds1_idx);
       glb_ds1edit.fps++;
-      
+      perf_accumulate(
+         &glb_perf_stats.render_ms_total,
+         &glb_perf_stats.render_ms_max,
+         perf_now_ms() - section_start_ms
+      );
+
       // scroll UP / DOWN / LEFT / RIGHT
+      section_start_ms = perf_now_ms();
 
       // if the Object Editing Window is display
       if (glb_ds1[ds1_idx].draw_edit_obj == TRUE)
@@ -1401,5 +1513,21 @@ void interfac_user_handler(int start_ds1_idx)
                break;
          }
       }
+
+      perf_accumulate(
+         &glb_perf_stats.ui_ms_total,
+         &glb_perf_stats.ui_ms_max,
+         perf_now_ms() - section_start_ms
+      );
+      perf_accumulate(
+         &glb_perf_stats.frame_ms_total,
+         &glb_perf_stats.frame_ms_max,
+         perf_now_ms() - frame_start_ms
+      );
+      glb_perf_stats.frames++;
+      if (glb_perf_stats.frames >= 30)
+         perf_print_summary();
    }
+
+   perf_print_summary();
 }

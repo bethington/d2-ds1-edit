@@ -26,6 +26,7 @@ void wpreview_draw_an_object_shad       (int ds1_idx, int o);
 void wpreview_draw_obj_tile_shad        (int ds1_idx, int x, int y, int * cur_idx);
 void wpreview_draw_obj_tile_0_2         (int ds1_idx, int x, int y, int * cur_idx);
 void wpreview_draw_obj_tile_1           (int ds1_idx, int x, int y, int * cur_idx);
+void wpreview_init_palette_state        (int ds1_idx);
 void wpreview_draw_tiles                (int ds1_idx);
 void wpreview_reiinit_animated_floor    (int ds1_idx);
 int  wpreview_draw_tiles_big_screenshot (int ds1_idx);

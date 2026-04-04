@@ -15,14 +15,22 @@ add_test(NAME palette COMMAND test_palette)
 
 # Phase 1: RGBA cache tests (needs Allegro 5 for cache_tile_to_a5_bitmap)
 add_executable(test_rgba_cache test_rgba_cache.c ../Sources/rgba_cache.c)
-target_link_libraries(test_rgba_cache PRIVATE unity)
+target_link_libraries(test_rgba_cache PRIVATE unity ${ALLEGRO5_LIB})
 target_include_directories(test_rgba_cache PRIVATE
     ${CMAKE_SOURCE_DIR}/Sources
-    ${ALLEGRO5_ROOT}/include
+    ${ALLEGRO5_INCLUDE_DIR}
 )
-target_link_directories(test_rgba_cache PRIVATE ${ALLEGRO5_ROOT}/lib)
-target_link_libraries(test_rgba_cache PRIVATE allegro)
 add_test(NAME rgba_cache COMMAND test_rgba_cache)
+
+# Copy Allegro DLLs next to test executables so they can find them at runtime
+if(WIN32 AND DEFINED ALLEGRO5_BIN_DIR AND EXISTS "${ALLEGRO5_BIN_DIR}")
+    add_custom_command(TARGET test_rgba_cache POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${ALLEGRO5_BIN_DIR}"
+            "$<TARGET_FILE_DIR:test_rgba_cache>"
+        COMMENT "Copying Allegro DLLs to test output directory"
+    )
+endif()
 
 # Phase 2: DT1 sub-tile decoder tests (no Allegro dependency)
 add_executable(test_dt1_decode test_dt1_decode.c ../Sources/dt1_decode.c)

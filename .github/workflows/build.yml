@@ -1,0 +1,37 @@
+name: Build & Test
+
+on:
+  push:
+    branches: [main, fix-interactive-rendering]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Allegro 5 via vcpkg
+        run: vcpkg install allegro5[core,image,font,primitives]:x86-windows
+
+      - name: Configure
+        run: cmake --preset ci
+
+      - name: Build Release
+        run: cmake --build --preset ci-release
+
+      - name: Run tests
+        run: ctest --preset ci
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ds1edit-windows
+          path: |
+            bin/ds1edit.exe
+            bin/data/
+            bin/assets/*.ini
+            bin/Ds1edit.ini.sample
+          retention-days: 30

@@ -14,3 +14,4 @@ RGBA_PALETTE        *a5_current_palette = NULL;
 ALLEGRO_KEYBOARD_STATE a5_kb_state;
 ALLEGRO_MOUSE_STATE    a5_ms_state;
 ALLEGRO_CONFIG         *a5_config      = NULL;
+float                  a5_trans_alpha  = 0.5f;
