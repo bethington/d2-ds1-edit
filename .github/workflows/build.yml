@@ -1,0 +1,45 @@
+name: Build & Test
+
+on:
+  push:
+    branches: [main, fix-interactive-rendering]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    env:
+      VCPKG_DEFAULT_TRIPLET: x86-windows
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Allegro 5 via vcpkg
+        run: |
+          vcpkg install allegro5[core,image,font,primitives]:x86-windows
+
+      - name: Configure CMake
+        run: >
+          cmake -B build -S .
+          -DCMAKE_BUILD_TYPE=Release
+          -DVCPKG_ROOT=C:/vcpkg
+          -A Win32
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Run tests
+        run: ctest --test-dir build --build-config Release --output-on-failure
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ds1edit-windows
+          path: |
+            bin/ds1edit.exe
+            bin/data/
+            bin/assets/*.ini
+            bin/Ds1edit.ini.sample
+          retention-days: 30
