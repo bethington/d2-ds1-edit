@@ -2114,65 +2114,37 @@ void wpreview_draw_an_object_shad(int ds1_idx, int o)
            (dy >= glb_ds1edit.win_preview.h))
          continue;
 
-      // stretch drawing of shadow
-
-      if (lay->trans_a)
+      // Shadow rendering using D2 darkness levels (0-32 scale from D2CMP)
+      // Transparent layers get a faint shadow (level 28), opaque layers get a dark one (level 10)
       {
-         // transparent layer, very few shadows
-         if (glb_ds1edit.cmd_line.force_pal_num == -1)
-            bptr = glb_ds1edit.d2_pal[glb_ds1[ds1_idx].act - 1];
+         int shadow_level = lay->trans_a ? 28 : 10;
+
+         if ((glb_ds1[ds1_idx].cur_zoom == ZM_11) || (glb_config.stretch_sprites != TRUE))
+         {
+            offx = cof->xoffset + lay->off_x;
+            offy = cof->yoffset + lay->off_y;
+
+            dx = dx0 - glb_ds1edit.win_preview.x0 + offx;
+            dy = dy0 - glb_ds1edit.win_preview.y0 + offy;
+
+            a5_draw_shadow_sprite(glb_ds1edit.screen_buff, bmp, dx, dy, shadow_level);
+         }
          else
-            bptr = glb_ds1edit.d2_pal[glb_ds1edit.cmd_line.force_pal_num - 1];
-         bptr += (256 * 32); // 28th level of transparency table on 32
-      }
-      else
-      {
-         // darker shadow
-         if (glb_ds1edit.cmd_line.force_pal_num == -1)
-            bptr = glb_ds1edit.d2_pal[glb_ds1[ds1_idx].act - 1];
-         else
-            bptr = glb_ds1edit.d2_pal[glb_ds1edit.cmd_line.force_pal_num - 1];
-         bptr += (256 * 14); // 10th level of transparency table on 32
-      }
+         {
+            offx = (cof->xoffset * glb_ds1[ds1_idx].height_mul / glb_ds1[ds1_idx].height_div) +
+                   (lay->off_x * glb_ds1[ds1_idx].height_mul / glb_ds1[ds1_idx].height_div);
 
-      if ((glb_ds1[ds1_idx].cur_zoom == ZM_11) || (glb_config.stretch_sprites != TRUE))
-      {
-         offx = cof->xoffset + lay->off_x;
-         offy = cof->yoffset + lay->off_y;
+            offy = (cof->yoffset * glb_ds1[ds1_idx].height_mul / glb_ds1[ds1_idx].height_div) +
+                   (lay->off_y * glb_ds1[ds1_idx].height_mul / glb_ds1[ds1_idx].height_div);
 
-         dx = dx0 - glb_ds1edit.win_preview.x0 + offx;
-         dy = dy0 - glb_ds1edit.win_preview.y0 + offy;
+            dx = dx0 - glb_ds1edit.win_preview.x0 + offx;
+            dy = dy0 - glb_ds1edit.win_preview.y0 + offy;
 
-         stretch_trans_shadow_8bpp(
-            glb_ds1edit.screen_buff,
-            bmp,
-            dx,
-            dy,
-            1,
-            bptr,
-            dy0 - glb_ds1edit.win_preview.y0
-         );
-      }
-      else
-      {
-         offx = (cof->xoffset * glb_ds1[ds1_idx].height_mul / glb_ds1[ds1_idx].height_div) +
-                (lay->off_x * glb_ds1[ds1_idx].height_mul / glb_ds1[ds1_idx].height_div);
-
-         offy = (cof->yoffset * glb_ds1[ds1_idx].height_mul / glb_ds1[ds1_idx].height_div) +
-                (lay->off_y * glb_ds1[ds1_idx].height_mul / glb_ds1[ds1_idx].height_div);
-
-         dx = dx0 - glb_ds1edit.win_preview.x0 + offx;
-         dy = dy0 - glb_ds1edit.win_preview.y0 + offy;
-
-         stretch_trans_shadow_8bpp(
-            glb_ds1edit.screen_buff,
-            bmp,
-            dx,
-            dy,
-            glb_ds1[ds1_idx].height_div,
-            bptr,
-            dy0 - glb_ds1edit.win_preview.y0
-         );
+            a5_draw_scaled_shadow_sprite(
+               glb_ds1edit.screen_buff, bmp, dx, dy,
+               glb_ds1[ds1_idx].height_div, shadow_level
+            );
+         }
       }
    }
 }

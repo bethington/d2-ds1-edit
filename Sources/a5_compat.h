@@ -197,6 +197,35 @@ static inline void a5_draw_scaled_blended_sprite(ALLEGRO_BITMAP *dst, ALLEGRO_BI
     a5_end_target_bitmap(old_target, dst);
 }
 
+/* D2 shadow rendering: draws sprite as a black silhouette that darkens the
+ * destination. darkness_level is 0..32 from D2CMP's darkness palette table,
+ * where 0 = fully black and 32 = no darkening.
+ * Formula: result = dst * (level/32), achieved via black tint with alpha. */
+static inline void a5_draw_shadow_sprite(ALLEGRO_BITMAP *dst, ALLEGRO_BITMAP *src,
+                                          int x, int y, int darkness_level)
+{
+    float alpha = 1.0f - (float)darkness_level / 32.0f;
+    ALLEGRO_BITMAP *old_target = a5_begin_target_bitmap(dst);
+    al_draw_tinted_bitmap(src, al_map_rgba_f(0, 0, 0, alpha),
+                          (float)x, (float)y, 0);
+    a5_end_target_bitmap(old_target, dst);
+}
+
+/* Scaled version for zoomed-out shadow rendering. */
+static inline void a5_draw_scaled_shadow_sprite(ALLEGRO_BITMAP *dst, ALLEGRO_BITMAP *src,
+                                                 int x, int y, int div, int darkness_level)
+{
+    float alpha = 1.0f - (float)darkness_level / 32.0f;
+    float sw = (float)al_get_bitmap_width(src);
+    float sh = (float)al_get_bitmap_height(src);
+    float dw = sw / (float)div;
+    float dh = sh / (float)div;
+    ALLEGRO_BITMAP *old_target = a5_begin_target_bitmap(dst);
+    al_draw_tinted_scaled_bitmap(src, al_map_rgba_f(0, 0, 0, alpha),
+                                  0, 0, sw, sh, (float)x, (float)y, dw, dh, 0);
+    a5_end_target_bitmap(old_target, dst);
+}
+
 static inline void a5_blit(ALLEGRO_BITMAP *src, ALLEGRO_BITMAP *dst,
                            int sx, int sy, int dx, int dy, int w, int h)
 {
