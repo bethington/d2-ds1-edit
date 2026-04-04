@@ -484,10 +484,9 @@ static inline int get_config_int(const char *section, const char *key, int def) 
 #define destroy_rle_sprite(spr) al_destroy_bitmap((ALLEGRO_BITMAP*)(spr))
 #define get_rle_sprite(bmp) (bmp) /* just keep the bitmap as-is */
 
-/* Specialty sprite functions — stubbed for now */
-/* draw_lit_sprite: used for shadow/highlight overlays — draw with 50% alpha */
+/* Allegro 4 specialty sprite functions — no longer used in native A5 render path.
+ * Kept as stubs in case any legacy code path still references them. */
 #define draw_lit_sprite(dst, src, x, y, color) a5_draw_trans_sprite(dst, src, x, y)
-/* draw_gouraud_sprite: used for lighting effects — draw with 50% alpha */
 #define draw_gouraud_sprite(dst, src, x, y, c1, c2, c3, c4) a5_draw_trans_sprite(dst, src, x, y)
 
 /* stricmp is MSVC-specific, may be needed on other platforms */
