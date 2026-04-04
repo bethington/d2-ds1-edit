@@ -1218,6 +1218,7 @@ int main(int argc, char * argv[])
 
    // main loop
    freopen("stderr.txt", "wt", stderr);
+   setvbuf(stderr, NULL, _IONBF, 0); // unbuffered so perf stats survive process kill
    interfac_user_handler(ds1_idx);
 
    // cleanup
