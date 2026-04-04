@@ -3449,6 +3449,7 @@ int wpreview_draw_tiles_big_screenshot(int ds1_idx)
 
    // let's go
    a5_clear(glb_ds1edit.screen_buff);
+   al_set_target_bitmap(glb_ds1edit.screen_buff);
 
    // handle palette
    if (glb_ds1edit.cmd_line.force_pal_num == -1)
