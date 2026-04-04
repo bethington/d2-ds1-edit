@@ -445,6 +445,64 @@ UDWORD ds1edit_get_RLE_bitmap_size(ALLEGRO_BITMAP * bmp)
 
 
 // ==========================================================================
+// Recreate the offscreen render targets after the display exists so Allegro
+// can allocate them as display bitmaps instead of memory bitmaps.
+static void ds1edit_recreate_render_targets(void)
+{
+   ALLEGRO_BITMAP * new_big_screen_buff;
+   ALLEGRO_BITMAP * new_screen_buff;
+   int old_width;
+   int old_height;
+   char tmp[160];
+
+   old_width = glb_config.screen.width;
+   old_height = glb_config.screen.height;
+
+   glb_config.screen.width  += 600;
+   glb_config.screen.height += 600;
+   new_big_screen_buff = al_create_bitmap(
+      glb_config.screen.width,
+      glb_config.screen.height
+   );
+   if (new_big_screen_buff == NULL)
+   {
+      sprintf(tmp, "main(), error.\nCan't recreate big_screen_buff (%i*%i pixels).",
+         glb_config.screen.width,
+         glb_config.screen.height
+      );
+      ds1edit_error(tmp);
+   }
+   glb_config.screen.width = old_width;
+   glb_config.screen.height = old_height;
+
+   new_screen_buff = al_create_sub_bitmap(
+      new_big_screen_buff,
+      300,
+      300,
+      glb_config.screen.width,
+      glb_config.screen.height
+   );
+   if (new_screen_buff == NULL)
+   {
+      al_destroy_bitmap(new_big_screen_buff);
+      sprintf(tmp, "main(), error.\nCan't recreate sub-bitmap screen_buff (%i*%i pixels).",
+         glb_config.screen.width,
+         glb_config.screen.height
+      );
+      ds1edit_error(tmp);
+   }
+
+   if (glb_ds1edit.screen_buff != NULL)
+      al_destroy_bitmap(glb_ds1edit.screen_buff);
+   if (glb_ds1edit.big_screen_buff != NULL)
+      al_destroy_bitmap(glb_ds1edit.big_screen_buff);
+
+   glb_ds1edit.big_screen_buff = new_big_screen_buff;
+   glb_ds1edit.screen_buff = new_screen_buff;
+}
+
+
+// ==========================================================================
 // automatically called at the end, with the help of atexit()
 void ds1edit_exit(void)
 {
@@ -1076,6 +1134,13 @@ int main(int argc, char * argv[])
       (al_get_allegro_version() >> 8) & 0xFF
    );
    al_set_window_title(a5_display, tmp);
+
+   // Now that a display exists, promote the hot render surfaces and cached
+   // DT1 tiles to display bitmaps so repeated tile blits stay on the GPU.
+   al_set_new_bitmap_flags(ALLEGRO_VIDEO_BITMAP);
+   ds1edit_recreate_render_targets();
+   if (a5_current_palette != NULL)
+      dt1_rebuild_bitmaps_from_cache(a5_current_palette);
 
    // mouse
    if (!al_install_mouse())
