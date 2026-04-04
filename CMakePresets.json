@@ -42,6 +42,12 @@
             "configuration": "Debug"
         },
         {
+            "name": "dev",
+            "displayName": "Dev (optimized + debug symbols)",
+            "configurePreset": "default",
+            "configuration": "RelWithDebInfo"
+        },
+        {
             "name": "release",
             "displayName": "Release",
             "configurePreset": "default",

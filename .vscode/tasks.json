@@ -13,7 +13,7 @@
             "label": "Build DS1Edit Debug",
             "type": "shell",
             "command": "cmake",
-            "args": ["--build", "--preset", "debug"],
+            "args": ["--build", "--preset", "dev"],
             "group": {
                 "kind": "build",
                 "isDefault": true
