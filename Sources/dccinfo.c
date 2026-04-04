@@ -4,7 +4,7 @@
 
 #include "dccinfo.h"
 
-#define DCCINFO_SAVE_PCX
+/* #define DCCINFO_SAVE_PCX */ /* Debug: saves each DCC frame as dXX-fXXX.pcx */
 
 
 // ==========================================================================

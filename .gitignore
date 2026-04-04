@@ -22,6 +22,7 @@ bin/stderr.txt
 bin/screenshot-*
 bin/*.pcx
 bin/Ds1edit.ini
+bin/perf_log.csv
 Data/Tmp/
 
 # Visual Studio / IDE
