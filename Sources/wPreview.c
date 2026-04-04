@@ -2555,8 +2555,6 @@ void wpreview_draw_tiles(int ds1_idx)
    al_set_target_bitmap(glb_ds1edit.screen_buff);
 
    // Pass 1: Base terrain (lower walls, floors, tile shadows)
-   // Batched — tile drawing uses only al_draw_bitmap, no blender changes.
-   al_hold_bitmap_drawing(true);
    perf_section_start_ms = render_perf_now_ms();
    for (y=min_tile_y; y<=max_tile_y; y++)
    {
@@ -2604,9 +2602,7 @@ void wpreview_draw_tiles(int ds1_idx)
       render_perf_now_ms() - perf_section_start_ms
    );
 
-   al_hold_bitmap_drawing(false);
-
-   // Pass 2: Object shadows (uses tinted drawing — not batched)
+   // Pass 2: Object shadows (uses tinted drawing)
    perf_section_start_ms = render_perf_now_ms();
    objdraw_cur_idx = 0;
    for (y=min_tile_y; y<=max_tile_y; y++)
@@ -2721,8 +2717,7 @@ void wpreview_draw_tiles(int ds1_idx)
       render_perf_now_ms() - perf_section_start_ms
    );
 
-   // Pass 5: Roofs (pure tile draws, safe to batch)
-   al_hold_bitmap_drawing(true);
+   // Pass 5: Roofs
    perf_section_start_ms = render_perf_now_ms();
    for (y=min_tile_y; y<=max_tile_y; y++)
    {
@@ -2744,7 +2739,6 @@ void wpreview_draw_tiles(int ds1_idx)
          }
       }
    }
-   al_hold_bitmap_drawing(false);
    render_perf_add(
       &glb_render_perf_stats.loop_4_ms_total,
       &glb_render_perf_stats.loop_4_ms_max,
