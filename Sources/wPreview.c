@@ -2554,7 +2554,9 @@ void wpreview_draw_tiles(int ds1_idx)
    // when the target is already correct.
    al_set_target_bitmap(glb_ds1edit.screen_buff);
 
-   // loop 1A : lower walls, floors, shadows of dt1
+   // Pass 1: Base terrain (lower walls, floors, tile shadows)
+   // Batched — tile drawing uses only al_draw_bitmap, no blender changes.
+   al_hold_bitmap_drawing(true);
    perf_section_start_ms = render_perf_now_ms();
    for (y=min_tile_y; y<=max_tile_y; y++)
    {
@@ -2602,7 +2604,9 @@ void wpreview_draw_tiles(int ds1_idx)
       render_perf_now_ms() - perf_section_start_ms
    );
 
-   // loop 1B : shadows of objects
+   al_hold_bitmap_drawing(false);
+
+   // Pass 2: Object shadows (uses tinted drawing — not batched)
    perf_section_start_ms = render_perf_now_ms();
    objdraw_cur_idx = 0;
    for (y=min_tile_y; y<=max_tile_y; y++)
@@ -2633,7 +2637,7 @@ void wpreview_draw_tiles(int ds1_idx)
       render_perf_now_ms() - perf_section_start_ms
    );
 
-   // loop 2 : objects with orderflag set to 1 (optional)
+   // Pass 3: Objects behind walls (orderflag=1)
    perf_section_start_ms = render_perf_now_ms();
    objdraw_cur_idx = 0;
    if (glb_ds1[ds1_idx].animations_layer_mask)
@@ -2654,7 +2658,6 @@ void wpreview_draw_tiles(int ds1_idx)
                 (my >= glb_ds1edit.win_preview.y0-glb_ds1[ds1_idx].tile_h * 2) &&
                 (my < glb_ds1edit.win_preview.y0 + glb_ds1edit.win_preview.h + glb_ds1[ds1_idx].tile_h * 2))
             {
-               // objects of this tile
                wpreview_draw_obj_tile_1(ds1_idx, x, y, & objdraw_cur_idx);
             }
          }
@@ -2666,11 +2669,12 @@ void wpreview_draw_tiles(int ds1_idx)
       render_perf_now_ms() - perf_section_start_ms
    );
 
-   // tile grid : if over floor but under wall, draw it now
+   // Tile grid overlay (if configured to draw between floors and walls)
+   if (glb_ds1edit.display_tile_grid == TG_OVERFLOOR)
    if (glb_ds1edit.display_tile_grid == TG_OVERFLOOR)
       wpreview_draw_tile_grid(ds1_idx);
 
-   // loop 3 : upper walls, objects with orderflag set to 0 or 2
+   // Pass 4: Upper walls + objects in front (orderflag 0/2)
    perf_section_start_ms = render_perf_now_ms();
    objdraw_cur_idx = 0;
    for (y=min_tile_y; y<=max_tile_y; y++)
@@ -2717,7 +2721,8 @@ void wpreview_draw_tiles(int ds1_idx)
       render_perf_now_ms() - perf_section_start_ms
    );
 
-   // loop 4 : roofs
+   // Pass 5: Roofs (pure tile draws, safe to batch)
+   al_hold_bitmap_drawing(true);
    perf_section_start_ms = render_perf_now_ms();
    for (y=min_tile_y; y<=max_tile_y; y++)
    {
@@ -2739,13 +2744,14 @@ void wpreview_draw_tiles(int ds1_idx)
          }
       }
    }
+   al_hold_bitmap_drawing(false);
    render_perf_add(
       &glb_render_perf_stats.loop_4_ms_total,
       &glb_render_perf_stats.loop_4_ms_max,
       render_perf_now_ms() - perf_section_start_ms
    );
 
-   // loop 5 : special tiles (optional)
+   // Pass 6: Special tiles — orientation 10/11 (optional)
    perf_section_start_ms = render_perf_now_ms();
    if (glb_ds1[ds1_idx].special_layer_mask)
    {
@@ -2776,7 +2782,7 @@ void wpreview_draw_tiles(int ds1_idx)
       render_perf_now_ms() - perf_section_start_ms
    );
 
-   // loop 6 : walkable infos (optional)
+   // Pass 7: Walkable info overlay (optional debug view)
    perf_section_start_ms = render_perf_now_ms();
    switch(glb_ds1[ds1_idx].walkable_layer_mask)
    {
@@ -3179,6 +3185,44 @@ void wpreview_draw_tiles(int ds1_idx)
    glb_render_perf_stats.frames++;
    if (glb_render_perf_stats.frames >= 30)
       render_perf_print_summary();
+
+   // Per-frame perf log — writes directly to file (not stderr which has flush issues)
+   {
+      static FILE *_plog = NULL;
+      static int _pframe = 0;
+      static double _prev_clear = 0, _prev_pal = 0, _prev_1a = 0, _prev_1b = 0;
+      static double _prev_3 = 0, _prev_4 = 0, _prev_present = 0;
+      double frame_ms = render_perf_now_ms() - perf_total_start_ms;
+      // Compute per-frame deltas from cumulative totals
+      double d_clear   = glb_render_perf_stats.clear_ms_total - _prev_clear;
+      double d_pal     = glb_render_perf_stats.palette_ms_total - _prev_pal;
+      double d_1a      = glb_render_perf_stats.loop_1a_ms_total - _prev_1a;
+      double d_1b      = glb_render_perf_stats.loop_1b_ms_total - _prev_1b;
+      double d_3       = glb_render_perf_stats.loop_3_ms_total - _prev_3;
+      double d_4       = glb_render_perf_stats.loop_4_ms_total - _prev_4;
+      double d_present = glb_render_perf_stats.present_ms_total - _prev_present;
+      _prev_clear = glb_render_perf_stats.clear_ms_total;
+      _prev_pal   = glb_render_perf_stats.palette_ms_total;
+      _prev_1a    = glb_render_perf_stats.loop_1a_ms_total;
+      _prev_1b    = glb_render_perf_stats.loop_1b_ms_total;
+      _prev_3     = glb_render_perf_stats.loop_3_ms_total;
+      _prev_4     = glb_render_perf_stats.loop_4_ms_total;
+      _prev_present = glb_render_perf_stats.present_ms_total;
+      _pframe++;
+      if (_plog == NULL) {
+         _plog = fopen("c:/tmp/ds1edit_perf_log.csv", "w");
+         if (_plog) {
+            fprintf(_plog, "frame,time_s,total_ms,clear_ms,palette_ms,terrain_ms,obj_shadows_ms,walls_obj_ms,roofs_ms,present_ms\n");
+            fflush(_plog);
+         }
+      }
+      if (_plog && _pframe <= 120) {
+         fprintf(_plog, "%d,%.3f,%.1f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f\n",
+            _pframe, al_get_time(), frame_ms,
+            d_clear, d_pal, d_1a, d_1b, d_3, d_4, d_present);
+         fflush(_plog);
+      }
+   }
 }
 
 
