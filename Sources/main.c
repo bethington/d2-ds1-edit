@@ -8,8 +8,12 @@ October 30 2011 :
   - similar objects animates with a random starting frame. fire is more natural, and monsters don't 'dance' anymore.
 */
 
-#define COMPILER_NAME              "Visual C++ 2010 Express Edition"
-#define WINDS1EDIT_GUI_LOADER_LINK "http://d2mods.com/forum/viewtopic.php?f=81&t=21281"
+#define COMPILER_NAME              "MSVC"
+#define WINDS1EDIT_GUI_LOADER_LINK "https://github.com/bethington/d2-ds1-edit"
+
+#ifndef DS1EDIT_VERSION_STR
+#define DS1EDIT_VERSION_STR "dev"
+#endif
 
 #ifdef WIN32
    #define DS1EDIT_BUILD __DATE__
@@ -1127,9 +1131,9 @@ int main(int argc, char * argv[])
 
    sprintf(
       tmp,
-      "DS1 Editor, %s Build %s, Allegro %i.%i.%i",
+      "DS1 Editor v%s (%s), Allegro %i.%i.%i",
+      DS1EDIT_VERSION_STR,
       DS1EDIT_BUILD_MODE,
-      glb_ds1edit.version,
       al_get_allegro_version() >> 24,
       (al_get_allegro_version() >> 16) & 0xFF,
       (al_get_allegro_version() >> 8) & 0xFF

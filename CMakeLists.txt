@@ -1,5 +1,13 @@
 cmake_minimum_required(VERSION 3.20)
-project(d2-ds1-edit C)
+project(d2-ds1-edit VERSION 1.0.0 LANGUAGES C)
+
+# Pass version to source code
+add_compile_definitions(
+    DS1EDIT_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+    DS1EDIT_VERSION_MINOR=${PROJECT_VERSION_MINOR}
+    DS1EDIT_VERSION_PATCH=${PROJECT_VERSION_PATCH}
+    DS1EDIT_VERSION_STR="${PROJECT_VERSION}"
+)
 
 # Options
 option(USE_SOFTWARE_RENDERER "Force software rendering (no GPU)" OFF)
