@@ -469,6 +469,16 @@
         },
         // ========== ACT 5 ==========
         {
+            "name": "Run DS1Edit - Act5 Town",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "${workspaceFolder}/bin/ds1edit.exe",
+            "runtimeArgs": ["assets/act5_town.ini"],
+            "cwd": "${workspaceFolder}/bin",
+            "console": "externalTerminal",
+            "preLaunchTask": "Build DS1Edit Release"
+        },
+        {
             "name": "Debug DS1Edit - Act5 Town",
             "type": "cppvsdbg",
             "request": "launch",
