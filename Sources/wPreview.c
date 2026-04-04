@@ -155,9 +155,21 @@ void wpreview_init_palette_state(int ds1_idx)
       wpreview_old_pal = glb_ds1edit.cmd_line.force_pal_num - 1;
 }
 
+static int _draw_call_count = 0;
+static double _draw_call_total_ms = 0;
+static double _draw_call_max_ms = 0;
+static int _draw_call_mem_count = 0;
+
 static void wpreview_draw_bitmap(ALLEGRO_BITMAP * bmp, int x, int y)
 {
+   double t0 = al_get_time();
    al_draw_bitmap(bmp, (float) x, (float) y, 0);
+   double dt = (al_get_time() - t0) * 1000.0;
+   _draw_call_count++;
+   _draw_call_total_ms += dt;
+   if (dt > _draw_call_max_ms) _draw_call_max_ms = dt;
+   if (bmp && (al_get_bitmap_flags(bmp) & ALLEGRO_MEMORY_BITMAP))
+      _draw_call_mem_count++;
 }
 
 static void wpreview_draw_trans_bitmap(ALLEGRO_BITMAP * bmp, int x, int y, float alpha)
@@ -3206,16 +3218,25 @@ void wpreview_draw_tiles(int ds1_idx)
       if (_plog == NULL) {
          _plog = fopen("perf_log.csv", "w");
          if (_plog) {
-            fprintf(_plog, "frame,time_s,total_ms,clear_ms,palette_ms,terrain_ms,obj_shadows_ms,walls_obj_ms,roofs_ms,present_ms\n");
+            fprintf(_plog, "frame,time_s,total_ms,terrain_ms,present_ms,draw_calls,draw_total_ms,draw_max_ms,draw_avg_us,mem_draws,target_flags\n");
             fflush(_plog);
          }
       }
       if (_plog && _pframe <= 120) {
-         fprintf(_plog, "%d,%.3f,%.1f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f\n",
+         double draw_avg_us = _draw_call_count > 0 ? (_draw_call_total_ms * 1000.0 / _draw_call_count) : 0;
+         fprintf(_plog, "%d,%.3f,%.1f,%.2f,%.2f,%d,%.2f,%.3f,%.1f,%d,0x%x\n",
             _pframe, al_get_time(), frame_ms,
-            d_clear, d_pal, d_1a, d_1b, d_3, d_4, d_present);
+            d_1a, d_present,
+            _draw_call_count, _draw_call_total_ms, _draw_call_max_ms,
+            draw_avg_us, _draw_call_mem_count,
+            al_get_bitmap_flags(glb_ds1edit.screen_buff));
          fflush(_plog);
       }
+      // Reset per-frame draw call stats
+      _draw_call_count = 0;
+      _draw_call_total_ms = 0;
+      _draw_call_max_ms = 0;
+      _draw_call_mem_count = 0;
    }
 }
 
