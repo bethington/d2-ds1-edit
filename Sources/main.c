@@ -1193,7 +1193,7 @@ int main(int argc, char * argv[])
    al_register_event_source(a5_event_queue, al_get_display_event_source(a5_display));
 
    // timers (Allegro 5 event-based timers replace the old interrupt callbacks)
-   a5_tick_timer = al_create_timer(1.0 / 60.0);
+   a5_tick_timer = al_create_timer(1.0 / 25.0);
    al_register_event_source(a5_event_queue, al_get_timer_event_source(a5_tick_timer));
    al_start_timer(a5_tick_timer);
 
