@@ -3204,7 +3204,7 @@ void wpreview_draw_tiles(int ds1_idx)
       _prev_present = glb_render_perf_stats.present_ms_total;
       _pframe++;
       if (_plog == NULL) {
-         _plog = fopen("c:/tmp/ds1edit_perf_log.csv", "w");
+         _plog = fopen("perf_log.csv", "w");
          if (_plog) {
             fprintf(_plog, "frame,time_s,total_ms,clear_ms,palette_ms,terrain_ms,obj_shadows_ms,walls_obj_ms,roofs_ms,present_ms\n");
             fflush(_plog);
