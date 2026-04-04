@@ -36,10 +36,29 @@ void anim_build_layer_cache(LAY_INF_S *lay)
       if (lay->cache[i] == NULL)
          continue;
 
-      // copy palette indices from BITMAP to CACHED_TILE
-      for (y = 0; y < h; y++)
-         for (x = 0; x < w; x++)
-            lay->cache[i]->indices[y * w + x] = (uint8_t) a5_getpixel(lay->bmp[i], x, y);
+      // copy palette indices from BITMAP to CACHED_TILE (batch-locked)
+      {
+         ALLEGRO_LOCKED_REGION *lock = al_lock_bitmap(
+            lay->bmp[i], ALLEGRO_PIXEL_FORMAT_ABGR_8888_LE, ALLEGRO_LOCK_READONLY);
+         if (lock != NULL)
+         {
+            for (y = 0; y < h; y++)
+            {
+               uint8_t *row = (uint8_t *)lock->data + y * lock->pitch;
+               for (x = 0; x < w; x++)
+               {
+                  uint8_t r = row[x * 4];
+                  uint8_t g = row[x * 4 + 1];
+                  uint8_t b = row[x * 4 + 2];
+                  if (a5_current_palette != NULL)
+                     lay->cache[i]->indices[y * w + x] = palette_find_closest(a5_current_palette, r, g, b);
+                  else
+                     lay->cache[i]->indices[y * w + x] = r;
+               }
+            }
+            al_unlock_bitmap(lay->bmp[i]);
+         }
+      }
    }
 }
 
@@ -123,12 +142,37 @@ int anim_load_dcc(
          return 1;
       }
       a5_clear(lay->bmp[i]);
-      if (palshift)
+      if (palshift && a5_current_palette != NULL)
       {
-         for (y=0; y<h; y++)
-            for (x=0; x<w; x++)
-               a5_putpixel(lay->bmp[i], x, y, palshift[
-                  a5_getpixel(dcc->frame[dir][i].bmp, x, y)]);
+         // Batch-locked palette shift: read source pixels, remap through palshift, write dest
+         ALLEGRO_LOCKED_REGION *src_lock = al_lock_bitmap(
+            dcc->frame[dir][i].bmp, ALLEGRO_PIXEL_FORMAT_ABGR_8888_LE, ALLEGRO_LOCK_READONLY);
+         ALLEGRO_LOCKED_REGION *dst_lock = al_lock_bitmap(
+            lay->bmp[i], ALLEGRO_PIXEL_FORMAT_ABGR_8888_LE, ALLEGRO_LOCK_WRITEONLY);
+         if (src_lock != NULL && dst_lock != NULL)
+         {
+            for (y=0; y<h; y++)
+            {
+               uint8_t *src_row = (uint8_t *)src_lock->data + y * src_lock->pitch;
+               uint8_t *dst_row = (uint8_t *)dst_lock->data + y * dst_lock->pitch;
+               for (x=0; x<w; x++)
+               {
+                  uint8_t r = src_row[x * 4];
+                  uint8_t g = src_row[x * 4 + 1];
+                  uint8_t b = src_row[x * 4 + 2];
+                  uint8_t a = src_row[x * 4 + 3];
+                  uint8_t src_idx = palette_find_closest(a5_current_palette, r, g, b);
+                  uint8_t dst_idx = palshift[src_idx];
+                  RGBA_COLOR pc = a5_current_palette->colors[dst_idx];
+                  dst_row[x * 4]     = pc.r;
+                  dst_row[x * 4 + 1] = pc.g;
+                  dst_row[x * 4 + 2] = pc.b;
+                  dst_row[x * 4 + 3] = a;  // preserve source alpha
+               }
+            }
+         }
+         if (dst_lock != NULL) al_unlock_bitmap(lay->bmp[i]);
+         if (src_lock != NULL) al_unlock_bitmap(dcc->frame[dir][i].bmp);
       }
       else
          a5_blit(dcc->frame[dir][i].bmp, lay->bmp[i], 0, 0, 0, 0, w, h);

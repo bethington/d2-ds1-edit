@@ -145,14 +145,14 @@ static void render_perf_print_summary(void)
 
 // Palette state: tracks which palette is active to avoid redundant rebuilds.
 // Initialized by wpreview_init_palette_state() before the render loop starts.
-static int wpreview_wpreview_old_pal = -1;
+static int wpreview_old_pal = -1;
 
 void wpreview_init_palette_state(int ds1_idx)
 {
    if (glb_ds1edit.cmd_line.force_pal_num == -1)
-      wpreview_wpreview_old_pal = glb_ds1[ds1_idx].act - 1;
+      wpreview_old_pal = glb_ds1[ds1_idx].act - 1;
    else
-      wpreview_wpreview_old_pal = glb_ds1edit.cmd_line.force_pal_num - 1;
+      wpreview_old_pal = glb_ds1edit.cmd_line.force_pal_num - 1;
 }
 
 static void wpreview_draw_bitmap(ALLEGRO_BITMAP * bmp, int x, int y)
@@ -3188,7 +3188,7 @@ int wpreview_draw_tiles_big_screenshot(int ds1_idx)
 {
    int               x, y, base_x = 0, base_y = 0, mx, my;
    int               cx, cy, z, x1, x2, y1, y2, select;
-   static int        wpreview_old_pal = -1;
+   static int        old_pal = -1;
    UBYTE             walkinfo[25];
    int               objdraw_cur_idx = 0;
    void              (* fptr_wi) (int, int, int, UBYTE *);
@@ -3390,20 +3390,20 @@ int wpreview_draw_tiles_big_screenshot(int ds1_idx)
    if (glb_ds1edit.cmd_line.force_pal_num == -1)
    {
       // use .ds1 act value for palette
-      if (wpreview_old_pal != glb_ds1[ds1_idx].act - 1)
+      if (old_pal != glb_ds1[ds1_idx].act - 1)
       {
-         wpreview_old_pal = glb_ds1[ds1_idx].act - 1;
-         a5_current_palette = &glb_ds1edit.vga_pal[wpreview_old_pal];
+         old_pal = glb_ds1[ds1_idx].act - 1;
+         a5_current_palette = &glb_ds1edit.vga_pal[old_pal];
          dt1_rebuild_bitmaps_from_cache(a5_current_palette);
       }
    }
    else
    {
       // use force_pal value for palette
-      if (wpreview_old_pal != glb_ds1edit.cmd_line.force_pal_num - 1)
+      if (old_pal != glb_ds1edit.cmd_line.force_pal_num - 1)
       {
-         wpreview_old_pal = glb_ds1edit.cmd_line.force_pal_num - 1;
-         a5_current_palette = &glb_ds1edit.vga_pal[wpreview_old_pal];
+         old_pal = glb_ds1edit.cmd_line.force_pal_num - 1;
+         a5_current_palette = &glb_ds1edit.vga_pal[old_pal];
          dt1_rebuild_bitmaps_from_cache(a5_current_palette);
       }
    }
