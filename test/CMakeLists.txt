@@ -22,6 +22,16 @@ target_include_directories(test_rgba_cache PRIVATE
 )
 add_test(NAME rgba_cache COMMAND test_rgba_cache)
 
+# Copy Allegro DLLs next to test executables so they can find them at runtime
+if(WIN32 AND DEFINED ALLEGRO5_BIN_DIR AND EXISTS "${ALLEGRO5_BIN_DIR}")
+    add_custom_command(TARGET test_rgba_cache POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${ALLEGRO5_BIN_DIR}"
+            "$<TARGET_FILE_DIR:test_rgba_cache>"
+        COMMENT "Copying Allegro DLLs to test output directory"
+    )
+endif()
+
 # Phase 2: DT1 sub-tile decoder tests (no Allegro dependency)
 add_executable(test_dt1_decode test_dt1_decode.c ../Sources/dt1_decode.c)
 target_link_libraries(test_dt1_decode PRIVATE unity)
