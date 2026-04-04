@@ -23,6 +23,7 @@ bin/screenshot-*
 bin/*.pcx
 bin/Ds1edit.ini
 bin/perf_log.csv
+bin/data/version
 Data/Tmp/
 
 # Visual Studio / IDE
