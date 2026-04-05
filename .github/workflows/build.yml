@@ -31,7 +31,8 @@ jobs:
           name: ds1edit-windows
           path: |
             bin/ds1edit.exe
-            bin/data/
-            bin/assets/*.ini
-            bin/Ds1edit.ini.sample
+            data/
+            pcx/
+            assets/*.ini
+            Ds1edit.ini.sample
           retention-days: 30

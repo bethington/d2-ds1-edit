@@ -120,6 +120,21 @@ set_target_properties(ds1edit PROPERTIES
     OUTPUT_NAME "ds1edit"
 )
 
+# Copy runtime data files to bin/ at build time
+add_custom_command(TARGET ds1edit POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/data" "${CMAKE_SOURCE_DIR}/bin/data"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/pcx" "${CMAKE_SOURCE_DIR}/bin/pcx"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/assets" "${CMAKE_SOURCE_DIR}/bin/assets"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/examples" "${CMAKE_SOURCE_DIR}/bin/examples"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_SOURCE_DIR}/Ds1edit.ini.sample" "${CMAKE_SOURCE_DIR}/bin/Ds1edit.ini.sample"
+    COMMENT "Copying data, pcx, assets, and examples to bin/"
+)
+
 # Copy required DLLs to output directory (vcpkg puts them next to the libs)
 if(WIN32)
     get_filename_component(ALLEGRO5_BIN_DIR "${ALLEGRO5_LIB}" DIRECTORY)
@@ -147,12 +162,13 @@ set(CPACK_GENERATOR "ZIP")
 
 # Install rules for packaging
 install(TARGETS ds1edit RUNTIME DESTINATION .)
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/bin/data/ DESTINATION data)
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/bin/assets/
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/data/ DESTINATION data)
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/pcx/ DESTINATION pcx)
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets/
     DESTINATION assets
     FILES_MATCHING PATTERN "*.ini"
 )
-install(FILES ${CMAKE_SOURCE_DIR}/bin/Ds1edit.ini.sample DESTINATION .)
+install(FILES ${CMAKE_SOURCE_DIR}/Ds1edit.ini.sample DESTINATION .)
 install(FILES ${CMAKE_SOURCE_DIR}/LICENSE DESTINATION .)
 
 # Install required DLLs
