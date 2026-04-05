@@ -33,7 +33,10 @@ data/Tmp/
 __pycache__/
 *.pyc
 
-# MPQ files (game data, not distributed)
+# Game data files (users supply their own from Diablo II installation)
+assets/tiles/
+assets/*_errors.*
+assets/*_working.*
 *.mpq
 
 # OS generated

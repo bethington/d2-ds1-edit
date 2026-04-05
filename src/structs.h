@@ -2,15 +2,16 @@
 
 #define _WINDS1EDIT_STRUCTS_H_
 
-// for allegro with MSVC6/7/2008, in console version
+#ifndef USE_CONSOLE
 #define USE_CONSOLE
+#endif
 
 #include "types.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "ui/compat.h"
-#include "mpq\\mpqtypes.h"
+#include "mpq/mpqtypes.h"
 #include "core/rgba_cache.h"
 
 /* Allegro 5 does not have PAL_SIZE; define for COLOR_MAP compat */

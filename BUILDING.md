@@ -22,26 +22,25 @@ C:\vcpkg\vcpkg.exe install allegro5:x86-windows
 
 ```bash
 # Configure (from project root)
-mkdir cmake-build && cd cmake-build
-cmake .. -G "Visual Studio 16 2019" -A Win32
+cmake --preset default
 
-# Build
-cmake --build . --config Debug
+# Build (dev = optimized with debug symbols)
+cmake --build --preset dev
 
 # Run tests
-ctest -C Debug --output-on-failure
+ctest --preset default
 ```
 
-The executable is output to `bin/ds1edit.exe`. Allegro 5 DLLs are automatically copied to `bin/`.
+The executable is output to `bin/ds1edit.exe`. Allegro 5 DLLs are automatically copied to `bin/`. Runtime data files (`data/`, `pcx/`, `assets/`) are also copied to `bin/` by a post-build step.
 
 ## Build Options
 
 | Option | Default | Description |
 |--------|---------|-------------|
 | `USE_SOFTWARE_RENDERER` | OFF | Force software rendering (no GPU) |
-| `VCPKG_ROOT` | `C:/vcpkg` | Path to vcpkg installation |
+| `DS1EDIT_PERF_LOG` | OFF | Enable per-frame perf logging to stderr and perf_log.csv |
 
-Example: `cmake .. -DUSE_SOFTWARE_RENDERER=ON`
+Example: `cmake --preset default -DUSE_SOFTWARE_RENDERER=ON`
 
 ## Running
 
@@ -58,11 +57,15 @@ ds1edit.exe <file.ini>
 ds1edit.exe <file.ds1> <ID> <DEF> --headless output.png
 ```
 
+## Game Data
+
+The editor needs Diablo II tile data to function. Place your DS1/DT1 files under `assets/tiles/` organized by Act (this directory is gitignored). The INI files in `assets/` define which tile files to load for each area.
+
 ## Testing
 
 ```bash
-# Unit tests (from cmake-build/)
-ctest -C Debug
+# Unit tests
+ctest --preset default
 
 # Golden screenshot comparison (from project root)
 python scripts/run_golden_tests.py --core --tolerance 4
@@ -72,22 +75,25 @@ python scripts/run_golden_tests.py --full --tolerance 4
 ## Project Structure
 
 ```
-Sources/          C source files
-  a5_compat.h     Allegro 4->5 compatibility layer
-  palette.c/h     RGBA palette system
-  rgba_cache.c/h  Hybrid index+RGBA tile cache
-  dt1_decode.c    Allegro-independent tile decoding
+src/                C source files
+  main.c            Entry point
+  config.c/h        INI creation and reading
+  core/             File format parsers (DS1, DT1, COF, palette, etc.)
+  render/           Tile rendering pipeline
+  editor/           Editing operations (tiles, objects, paths, undo)
+  ui/               User interface (event loop, dialogs, windows)
+  mpq/              MPQ archive reader
+data/               Palettes, gamma tables, editor tile data
+pcx/                UI element images
+assets/             Area INI configs, excel tables, palette data
+  tiles/            Game tile data (gitignored, user-supplied)
 test/
-  unity/          Unity test framework (ThrowTheSwitch)
-  golden/         Golden reference screenshots (PNG)
-  test_*.c        Unit test files
+  unity/            Unity test framework (ThrowTheSwitch)
+  golden/           Golden reference screenshots (PNG)
+  test_*.c          Unit test files
 scripts/
+  run_golden_tests.py     Automated render+compare workflow
   capture_golden.py       Capture reference screenshots
   compare_golden.py       Pixel-level image comparison
-  run_golden_tests.py     Automated render+compare workflow
-  convert_golden_to_png.py  BMP->PNG conversion utility
-bin/
-  assets/         Game tile data and INI configurations
-  pcx/            UI element images (PNG format despite directory name)
-  data/           Runtime data files (palettes, gamma)
+bin/                Build output (gitignored)
 ```

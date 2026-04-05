@@ -1,3 +1,0 @@
-
-ERROR: 28 863 assets/tiles/ACT4/Lava/lavaSE2.ds1 - Exit code: 3
-ERROR: 28 880 assets/tiles/ACT4/Lava/wingW2.ds1 - Exit code: 3
