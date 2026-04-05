@@ -2,9 +2,9 @@
 #include "structs.h"
 #include "error.h"
 #include "misc.h"
-#include "dt1misc.h"
+#include "core/dt1.h"
 #include "mpq/MpqView.h"
-#include "txtread.h"
+#include "core/txtread.h"
 
 
 // ==========================================================================

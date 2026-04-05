@@ -5,7 +5,7 @@
 
 #include <string.h>
 #include "unity/unity.h"
-#include "../src/core/dt1_draw.h"
+#include "core/dt1_draw.h"
 
 void setUp(void) {}
 void tearDown(void) {}

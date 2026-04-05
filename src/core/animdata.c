@@ -2,7 +2,7 @@
 #include <ctype.h>
 #include "structs.h"
 #include "misc.h"
-#include "animdata.h"
+#include "core/animdata.h"
  
 
 // ==========================================================================

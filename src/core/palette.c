@@ -1,5 +1,5 @@
 #include <string.h>
-#include "palette.h"
+#include "core/palette.h"
 
 
 /* ========================================================================== */

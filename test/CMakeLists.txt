@@ -12,8 +12,7 @@ add_executable(test_palette test_palette.c ../src/core/palette.c)
 target_link_libraries(test_palette PRIVATE unity)
 target_include_directories(test_palette PRIVATE
     ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_SOURCE_DIR}/src/core
-    ${CMAKE_SOURCE_DIR}/src/ui
+    ${CMAKE_SOURCE_DIR}/src/mpq
 )
 add_test(NAME palette COMMAND test_palette)
 
@@ -22,8 +21,7 @@ add_executable(test_rgba_cache test_rgba_cache.c ../src/core/rgba_cache.c)
 target_link_libraries(test_rgba_cache PRIVATE unity ${ALLEGRO5_LIB})
 target_include_directories(test_rgba_cache PRIVATE
     ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_SOURCE_DIR}/src/core
-    ${CMAKE_SOURCE_DIR}/src/ui
+    ${CMAKE_SOURCE_DIR}/src/mpq
     ${ALLEGRO5_INCLUDE_DIR}
 )
 add_test(NAME rgba_cache COMMAND test_rgba_cache)
@@ -43,6 +41,5 @@ add_executable(test_dt1_decode test_dt1_decode.c ../src/core/dt1_decode.c)
 target_link_libraries(test_dt1_decode PRIVATE unity)
 target_include_directories(test_dt1_decode PRIVATE
     ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_SOURCE_DIR}/src/core
 )
 add_test(NAME dt1_decode COMMAND test_dt1_decode)

@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
-#include "rgba_cache.h"
+#include "core/rgba_cache.h"
 #include <allegro5/allegro.h>
 
 

@@ -9,8 +9,8 @@
 #include "mpqTypes.h"
 #include "Dclib.h"
 
-#include "../structs.h"
-#include "../error.h"
+#include "structs.h"
+#include "error.h"
 
 
 extern UInt32 ExtWavUnp1 (UInt32,UInt32,UInt32,UInt32); // Call for metod: 0x01

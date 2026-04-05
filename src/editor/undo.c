@@ -1,7 +1,7 @@
 #include "structs.h"
 #include "error.h"
-#include "ds1misc.h"
-#include "undo.h"
+#include "core/ds1.h"
+#include "editor/undo.h"
 
 
 // ==========================================================================

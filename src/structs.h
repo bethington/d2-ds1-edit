@@ -9,9 +9,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "a5_compat.h"
+#include "ui/compat.h"
 #include "mpq\\mpqtypes.h"
-#include "rgba_cache.h"
+#include "core/rgba_cache.h"
 
 /* Allegro 5 does not have PAL_SIZE; define for COLOR_MAP compat */
 #define PAL_SIZE 256

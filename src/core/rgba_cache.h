@@ -2,7 +2,7 @@
 #define _RGBA_CACHE_H_
 
 #include <stdint.h>
-#include "palette.h"
+#include "core/palette.h"
 
 /*
  * CACHED_TILE: holds both palette-indexed pixel data (for editing)

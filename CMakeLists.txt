@@ -32,39 +32,35 @@ endif()
 # Source files
 set(SOURCES
     src/main.c
-    src/a5_globals.c
+    src/globals.c
+    src/config.c
     src/error.c
     src/misc.c
-    src/inicreat.c
-    src/iniread.c
     # core/
-    src/core/ds1misc.c
-    src/core/ds1save.c
-    src/core/dt1misc.c
+    src/core/ds1.c
+    src/core/dt1.c
     src/core/dt1_draw.c
     src/core/dt1_decode.c
-    src/core/anim.c
+    src/core/cof.c
     src/core/animdata.c
-    src/core/dccinfo.c
-    src/core/dc6info.c
+    src/core/dcc.c
+    src/core/dc6.c
     src/core/palette.c
     src/core/rgba_cache.c
     src/core/txtread.c
     # render/
-    src/render/wPreview.c
-    src/render/gfx_custom.c
+    src/render/preview.c
+    src/render/gfx.c
     # editor/
-    src/editor/edittile.c
-    src/editor/editobj.c
-    src/editor/editpath.c
+    src/editor/tiles.c
+    src/editor/objects.c
+    src/editor/paths.c
     src/editor/undo.c
     # ui/
-    src/ui/interfac.c
-    src/ui/wMsg.c
-    src/ui/msg_quit.c
-    src/ui/msg_save.c
-    src/ui/wEdit.c
-    src/ui/wBits.c
+    src/ui/interface.c
+    src/ui/dialogs.c
+    src/ui/edit_window.c
+    src/ui/bits_window.c
     # mpq/
     src/mpq/Dcl_tbl.c
     src/mpq/Explode.c
@@ -76,12 +72,8 @@ set(SOURCES
 add_executable(ds1edit ${SOURCES})
 
 target_include_directories(ds1edit PRIVATE
-    ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_SOURCE_DIR}/src/core
-    ${CMAKE_SOURCE_DIR}/src/render
-    ${CMAKE_SOURCE_DIR}/src/editor
-    ${CMAKE_SOURCE_DIR}/src/ui
+    ${CMAKE_SOURCE_DIR}/src/mpq
     ${ALLEGRO5_INCLUDE_DIR}
 )
 

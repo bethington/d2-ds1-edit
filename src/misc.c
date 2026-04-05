@@ -1,9 +1,9 @@
 #include <string.h>
 #include "structs.h"
 #include "error.h"
-#include "ds1misc.h"
-#include "txtread.h"
-#include "dt1misc.h"
+#include "core/ds1.h"
+#include "core/txtread.h"
+#include "core/dt1.h"
 #include "mpq/mpqview.h"
 #include "misc.h"
 
