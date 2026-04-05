@@ -31,36 +31,41 @@ endif()
 
 # Source files
 set(SOURCES
+    src/main.c
     src/a5_globals.c
-    src/anim.c
-    src/animdata.c
-    src/dc6info.c
-    src/dccinfo.c
-    src/ds1misc.c
-    src/ds1save.c
-    src/dt1misc.c
-    src/dt1_draw.c
-    src/dt1_decode.c
-    src/editobj.c
-    src/editpath.c
-    src/edittile.c
     src/error.c
-    src/gfx_custom.c
+    src/misc.c
     src/inicreat.c
     src/iniread.c
-    src/interfac.c
-    src/main.c
-    src/misc.c
-    src/msg_quit.c
-    src/msg_save.c
-    src/palette.c
-    src/rgba_cache.c
-    src/txtread.c
-    src/undo.c
-    src/wBits.c
-    src/wEdit.c
-    src/wMsg.c
-    src/wPreview.c
+    # core/
+    src/core/ds1misc.c
+    src/core/ds1save.c
+    src/core/dt1misc.c
+    src/core/dt1_draw.c
+    src/core/dt1_decode.c
+    src/core/anim.c
+    src/core/animdata.c
+    src/core/dccinfo.c
+    src/core/dc6info.c
+    src/core/palette.c
+    src/core/rgba_cache.c
+    src/core/txtread.c
+    # render/
+    src/render/wPreview.c
+    src/render/gfx_custom.c
+    # editor/
+    src/editor/edittile.c
+    src/editor/editobj.c
+    src/editor/editpath.c
+    src/editor/undo.c
+    # ui/
+    src/ui/interfac.c
+    src/ui/wMsg.c
+    src/ui/msg_quit.c
+    src/ui/msg_save.c
+    src/ui/wEdit.c
+    src/ui/wBits.c
+    # mpq/
     src/mpq/Dcl_tbl.c
     src/mpq/Explode.c
     src/mpq/MpqView.c
@@ -73,6 +78,10 @@ add_executable(ds1edit ${SOURCES})
 target_include_directories(ds1edit PRIVATE
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/core
+    ${CMAKE_SOURCE_DIR}/src/render
+    ${CMAKE_SOURCE_DIR}/src/editor
+    ${CMAKE_SOURCE_DIR}/src/ui
     ${ALLEGRO5_INCLUDE_DIR}
 )
 

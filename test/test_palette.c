@@ -6,7 +6,7 @@
 
 #include <string.h>
 #include "unity/unity.h"
-#include "../src/palette.h"
+#include "../src/core/palette.h"
 
 void setUp(void) {}
 void tearDown(void) {}
