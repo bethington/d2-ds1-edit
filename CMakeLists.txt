@@ -11,6 +11,7 @@ add_compile_definitions(
 
 # Options
 option(USE_SOFTWARE_RENDERER "Force software rendering (no GPU)" OFF)
+option(DS1EDIT_PERF_LOG "Enable per-frame perf logging to stderr and perf_log.csv" OFF)
 
 # Find Allegro 5 (installed via vcpkg or system)
 # vcpkg toolchain is set via CMakePresets.json or -DCMAKE_TOOLCHAIN_FILE
@@ -110,6 +111,10 @@ target_compile_definitions(ds1edit PRIVATE
 
 if(USE_SOFTWARE_RENDERER)
     target_compile_definitions(ds1edit PRIVATE DS1EDIT_SOFTWARE_RENDERER)
+endif()
+
+if(DS1EDIT_PERF_LOG)
+    target_compile_definitions(ds1edit PRIVATE DS1EDIT_PERF_LOG)
 endif()
 
 # Output to bin/ directory

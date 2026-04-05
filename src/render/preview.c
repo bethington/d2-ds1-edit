@@ -74,11 +74,16 @@ static double render_perf_now_ms(void)
 
 static void render_perf_add(double * total, double * max, double dt_ms)
 {
+#ifdef DS1EDIT_PERF_LOG
    (*total) += dt_ms;
    if (dt_ms > *max)
       *max = dt_ms;
+#else
+   (void)total; (void)max; (void)dt_ms;
+#endif
 }
 
+#ifdef DS1EDIT_PERF_LOG
 static void render_perf_print_summary(void)
 {
    double inv;
@@ -142,6 +147,7 @@ static void render_perf_print_summary(void)
 
    memset(&glb_render_perf_stats, 0, sizeof(glb_render_perf_stats));
 }
+#endif /* DS1EDIT_PERF_LOG */
 
 // Palette state: tracks which palette is active to avoid redundant rebuilds.
 // Initialized by wpreview_init_palette_state() before the render loop starts.
@@ -155,6 +161,7 @@ void wpreview_init_palette_state(int ds1_idx)
       wpreview_old_pal = glb_ds1edit.cmd_line.force_pal_num - 1;
 }
 
+#ifdef DS1EDIT_PERF_LOG
 static int _draw_call_count = 0;
 static double _draw_call_total_ms = 0;
 static double _draw_call_max_ms = 0;
@@ -171,6 +178,12 @@ static void wpreview_draw_bitmap(ALLEGRO_BITMAP * bmp, int x, int y)
    if (bmp && (al_get_bitmap_flags(bmp) & ALLEGRO_MEMORY_BITMAP))
       _draw_call_mem_count++;
 }
+#else
+static void wpreview_draw_bitmap(ALLEGRO_BITMAP * bmp, int x, int y)
+{
+   al_draw_bitmap(bmp, (float) x, (float) y, 0);
+}
+#endif /* DS1EDIT_PERF_LOG */
 
 static void wpreview_draw_trans_bitmap(ALLEGRO_BITMAP * bmp, int x, int y, float alpha)
 {
@@ -3188,6 +3201,7 @@ void wpreview_draw_tiles(int ds1_idx)
       &glb_render_perf_stats.total_ms_max,
       render_perf_now_ms() - perf_total_start_ms
    );
+#ifdef DS1EDIT_PERF_LOG
    glb_render_perf_stats.frames++;
    if (glb_render_perf_stats.frames >= 30)
       render_perf_print_summary();
@@ -3238,6 +3252,7 @@ void wpreview_draw_tiles(int ds1_idx)
       _draw_call_max_ms = 0;
       _draw_call_mem_count = 0;
    }
+#endif /* DS1EDIT_PERF_LOG */
 }
 
 

@@ -11,31 +11,72 @@ d2-ds1-edit/
 ├── README.md                   # Project overview
 ├── BUILDING.md                 # Build instructions
 ├── PROJECT_STRUCTURE.md        # This file
+├── Ds1edit.ini.sample          # Sample configuration (copy to bin/)
 │
-├── Sources/                    # C source and header files
+├── src/                        # C source and header files
 │   ├── main.c                 # Entry point, initialization, display setup
-│   ├── interfac.c             # Main event loop, input handling
-│   ├── wPreview.c             # Tile rendering pipeline (7 render passes)
-│   ├── a5_compat.h            # Allegro 5 compatibility layer and draw helpers
-│   ├── a5_globals.c           # Allegro 5 global state (display, timers, etc.)
-│   ├── anim.c                 # COF/DCC/DC6 animation loading
-│   ├── dt1misc.c              # DT1 tile loading, caching, palette rebuild
-│   ├── dt1_decode.c           # DT1 sub-tile pixel decoder
-│   ├── ds1misc.c              # DS1 map file loading
-│   ├── ds1save.c              # DS1 map file saving
-│   ├── palette.c              # Palette management and color matching
-│   ├── rgba_cache.c           # Palette-indexed tile cache (indices + RGBA)
+│   ├── globals.c              # Allegro 5 global state (display, timers, etc.)
+│   ├── config.c/h             # INI creation and reading
+│   ├── error.c/h              # Error handling
+│   ├── misc.c/h               # Utility functions, screen presentation
 │   ├── structs.h              # Core data structures (COF_S, LAY_INF_S, etc.)
-│   ├── gfx_custom.c           # Legacy graphics stubs (mostly removed)
-│   ├── editobj.c              # Object editing
-│   ├── editpath.c             # NPC path editing
-│   ├── edittile.c             # Tile editing
-│   ├── misc.c                 # Utility functions, screen presentation
+│   ├── types.h                # Basic type definitions
+│   │
+│   ├── core/                  # File format parsers and data management
+│   │   ├── ds1.c/h           # DS1 map loading and saving
+│   │   ├── dt1.c/h           # DT1 tile loading, caching, palette rebuild
+│   │   ├── dt1_draw.c/h      # DT1 sub-tile drawing routines
+│   │   ├── dt1_decode.c       # DT1 sub-tile pixel decoder
+│   │   ├── cof.c/h           # COF/DCC/DC6 animation loading
+│   │   ├── dcc.c/h           # DCC sprite format
+│   │   ├── dc6.c/h           # DC6 sprite format
+│   │   ├── palette.c/h       # Palette management and color matching
+│   │   ├── rgba_cache.c/h    # Palette-indexed tile cache (indices + RGBA)
+│   │   ├── animdata.c/h      # Animation data tables
+│   │   └── txtread.c/h       # Text/config file parsing
+│   │
+│   ├── render/                # Rendering pipeline
+│   │   ├── preview.c/h       # Tile rendering pipeline (7 render passes)
+│   │   └── gfx.c/h           # Custom graphics helpers
+│   │
+│   ├── editor/                # Editing operations
+│   │   ├── tiles.c/h         # Tile editing
+│   │   ├── objects.c/h       # Object editing
+│   │   ├── paths.c/h         # NPC path editing
+│   │   └── undo.c/h          # Undo system
+│   │
+│   ├── ui/                    # User interface
+│   │   ├── interface.c/h     # Main event loop, input handling
+│   │   ├── dialogs.c/h       # Message dialogs (quit, save)
+│   │   ├── edit_window.c/h   # Edit window
+│   │   ├── bits_window.c/h   # Bits/flags window
+│   │   └── compat.h          # Allegro 5 compatibility layer and draw helpers
+│   │
 │   └── mpq/                   # MPQ archive reader
-│       ├── MpqView.c
+│       ├── MpqView.c/h
 │       ├── Explode.c
 │       ├── Dcl_tbl.c
-│       └── Wav_unp.c
+│       └── Wav_unp.c/h
+│
+├── data/                       # Runtime data (copied to bin/ at build time)
+│   ├── pal*.bin               # Palettes
+│   ├── cmap*.bin              # Color maps
+│   ├── gamma.dat              # Gamma correction tables
+│   ├── obj.txt                # Object definitions
+│   └── ds1edit.dt1            # Editor tile set
+│
+├── pcx/                        # UI graphics (copied to bin/ at build time)
+│   ├── *.png                  # Cursors, buttons, tabs, icons
+│   ├── preview/               # Preview direction arrows
+│   └── tiles/                 # Tile selection arrows
+│
+├── assets/                     # Game configuration (copied to bin/ at build time)
+│   ├── *.ini                  # Area configs (act1_town.ini, etc.)
+│   ├── tiles/                 # DS1 map files organized by Act
+│   ├── excel/                 # Game data tables
+│   └── palette/               # Palette data
+│
+├── examples/                   # Example launch scripts
 │
 ├── test/                       # Unit tests (Unity framework)
 │   ├── CMakeLists.txt         # Test build configuration
@@ -51,24 +92,15 @@ d2-ds1-edit/
 │   ├── compare_golden.py      # Compare two screenshots
 │   └── convert_golden_to_png.py
 │
-├── bin/                        # Runtime directory (exe, DLLs, assets)
-│   ├── ds1edit.exe            # Built executable (all configurations)
-│   ├── Ds1edit.ini.sample     # Sample configuration (copy to Ds1edit.ini)
-│   ├── *.dll                  # Allegro 5 runtime DLLs (copied by CMake)
-│   ├── data/                  # Palettes, gamma tables, version
-│   └── assets/                # Map configurations and test fixtures
-│       ├── *.ini              # Area configs (act1_town.ini, etc.)
-│       ├── tiles/             # DS1 map files organized by Act
-│       ├── excel/             # Game data tables
-│       └── palette/           # Palette data
+├── bin/                        # Build output (gitignored)
+│   ├── ds1edit.exe            # Built executable
+│   └── *.dll                  # Allegro 5 runtime DLLs
 │
 ├── docs/                       # Documentation
-│   ├── README.md              # Detailed documentation index
-│   └── guides/                # Technical guides
 │
 ├── .vscode/                    # VSCode configuration
-│   ├── launch.json            # 31 debug + 1 run launch configs (all Acts)
-│   └── tasks.json             # Build tasks (dev, release, test, package)
+│   ├── launch.json            # Debug + run launch configs
+│   └── tasks.json             # Build tasks
 │
 └── .github/
     └── workflows/
@@ -77,7 +109,7 @@ d2-ds1-edit/
 
 ## Build System
 
-CMake with vcpkg for dependency management. Three build presets:
+CMake with vcpkg for dependency management. Build presets:
 
 ```bash
 cmake --preset default          # Configure (first time)
@@ -86,6 +118,13 @@ cmake --build --preset release  # Release build (full optimization + LTCG)
 ctest --preset default          # Run unit tests
 cmake --build --preset release --target package   # Create release zip
 ```
+
+### Build Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `USE_SOFTWARE_RENDERER` | OFF | Force software rendering (no GPU) |
+| `DS1EDIT_PERF_LOG` | OFF | Enable per-frame perf logging to stderr and perf_log.csv |
 
 ## Testing
 
@@ -102,30 +141,42 @@ python scripts/run_golden_tests.py --full    # All maps
 
 ## Rendering Architecture
 
-The render pipeline in `wPreview.c` runs 7 passes per frame:
+The render pipeline in `src/render/preview.c` runs 7 passes per frame:
 
-1. **Base terrain** — Lower walls, floors, tile shadows (batched GPU draws)
-2. **Object shadows** — Tinted black silhouettes at D2 darkness levels
-3. **Objects behind walls** — Animated sprites (orderflag=1)
-4. **Upper walls + objects** — Wall tiles + sprites in front (orderflag 0/2)
-5. **Roofs** — Roof tiles
-6. **Special tiles** — Orientation 10/11 tiles (optional)
-7. **Walkable info** — Debug overlay (optional)
+1. **Base terrain** -- Lower walls, floors, tile shadows (batched GPU draws)
+2. **Object shadows** -- Tinted black silhouettes at D2 darkness levels
+3. **Objects behind walls** -- Animated sprites (orderflag=1)
+4. **Upper walls + objects** -- Wall tiles + sprites in front (orderflag 0/2)
+5. **Roofs** -- Roof tiles
+6. **Special tiles** -- Orientation 10/11 tiles (optional)
+7. **Walkable info** -- Debug overlay (optional)
 
 All rendering targets a pre-set VIDEO bitmap (`screen_buff`). Draw helpers in
-`a5_compat.h` skip target switching when it's already correct. The 25 Hz tick
+`src/ui/compat.h` skip target switching when it's already correct. The 25 Hz tick
 timer drives animation; the display refreshes at vsync rate (~60-165 Hz).
+
+## Include Convention
+
+All `#include` directives use project-root style relative to `src/`:
+
+```c
+#include "core/dt1.h"
+#include "render/preview.h"
+#include "editor/objects.h"
+#include "ui/compat.h"
+#include "structs.h"      // files at src/ root
+```
 
 ## Key Files
 
 | File | Purpose |
 |------|---------|
-| `Sources/wPreview.c` | Tile rendering pipeline, per-frame perf stats |
-| `Sources/a5_compat.h` | Allegro 5 draw helpers, D2 blend modes |
-| `Sources/main.c` | Init, display creation, bitmap promotion |
-| `Sources/anim.c` | COF/DCC/DC6 animation loading |
-| `Sources/dt1misc.c` | DT1 tile loading and palette rebuild |
-| `Sources/rgba_cache.c` | Tile bitmap cache (palette → RGBA) |
-| `Sources/structs.h` | Core structs: COF_S, LAY_INF_S, DS1_S |
+| `src/render/preview.c` | Tile rendering pipeline, per-frame perf stats |
+| `src/ui/compat.h` | Allegro 5 draw helpers, D2 blend modes |
+| `src/main.c` | Init, display creation, bitmap promotion |
+| `src/core/cof.c` | COF/DCC/DC6 animation loading |
+| `src/core/dt1.c` | DT1 tile loading and palette rebuild |
+| `src/core/rgba_cache.c` | Tile bitmap cache (palette -> RGBA) |
+| `src/structs.h` | Core structs: COF_S, LAY_INF_S, DS1_S |
 | `CMakePresets.json` | Build presets for dev/release/CI |
 | `vcpkg.json` | Allegro 5 dependency declaration |
