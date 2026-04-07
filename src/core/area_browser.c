@@ -1,7 +1,11 @@
 #include "structs.h"
 #include "error.h"
 #include "misc.h"
+#include "core/ds1.h"
 #include "core/txtread.h"
+#include "core/animdata.h"
+#include "core/cof.h"
+#include "render/preview.h"
 #include "core/area_browser.h"
 
 #define AREA_INIT_GROUPS    64
@@ -623,6 +627,107 @@ int area_browser_open_by_file(const char * ds1_path)
 
    printf("area_browser_open_by_file: '%s' not found\n", ds1_path);
    return -1;
+}
+
+/* Switch to a new area: clear existing DS1s, load new ones, run post-load.
+ * Returns the first ds1_idx of the loaded area, or -1 on error. */
+int area_browser_switch_area(int group_idx)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   int i, opened;
+
+   if (group_idx < 0 || group_idx >= ab->group_count)
+      return -1;
+   if (ab->groups[group_idx].entry_count == 0)
+      return -1;
+
+   printf("Switching to area: ");
+   fflush(stdout);
+
+   /* Free all currently loaded DS1 files (and their DT1 references) */
+   for (i = 0; i < DS1_MAX; i++)
+   {
+      if (glb_ds1[i].name[0] != '\0')
+         ds1_free(i);
+   }
+
+   /* Clear all DS1 slots */
+   memset(glb_ds1, 0, sizeof(DS1_S) * DS1_MAX);
+
+   /* Destroy COF animation data but keep the obj_desc table —
+    * it's loaded from obj.txt and doesn't change between areas. */
+   {
+      int od;
+      for (od = 0; od < glb_ds1edit.obj_desc_num; od++)
+      {
+         if (glb_ds1edit.obj_desc[od].cof != NULL)
+         {
+            anim_destroy_cof(glb_ds1edit.obj_desc[od].cof);
+            glb_ds1edit.obj_desc[od].cof = NULL;
+         }
+      }
+   }
+
+   /* Load the new area */
+   opened = area_browser_open_group(group_idx);
+   if (opened <= 0)
+      return -1;
+
+   /* Post-load: animdata, animations, colormaps */
+   animdata_load();
+   anim_update_gfx(FALSE);
+   misc_make_cmaps();
+
+   /* Promote bitmaps to VIDEO */
+   al_set_new_bitmap_flags(ALLEGRO_VIDEO_BITMAP);
+   ds1edit_recreate_render_targets();
+   if (a5_current_palette != NULL)
+      dt1_rebuild_bitmaps_from_cache(a5_current_palette);
+   /* Promote animation bitmaps */
+   {
+      int oi, li, fi;
+      for (oi = 0; oi < glb_ds1edit.obj_desc_num; oi++)
+      {
+         COF_S *cof = glb_ds1edit.obj_desc[oi].cof;
+         if (cof == NULL) continue;
+         for (li = 0; li < COMPOSIT_NB; li++)
+         {
+            LAY_INF_S *lay = &cof->lay_inf[li];
+            if (lay->bmp == NULL) continue;
+            for (fi = 0; fi < lay->bmp_num; fi++)
+            {
+               ALLEGRO_BITMAP *old_bmp = lay->bmp[fi];
+               if (old_bmp == NULL) continue;
+               if (al_get_bitmap_flags(old_bmp) & ALLEGRO_MEMORY_BITMAP)
+               {
+                  ALLEGRO_BITMAP *new_bmp = al_clone_bitmap(old_bmp);
+                  if (new_bmp != NULL)
+                  {
+                     al_destroy_bitmap(old_bmp);
+                     lay->bmp[fi] = new_bmp;
+                  }
+               }
+            }
+         }
+      }
+   }
+
+   /* Reset viewport */
+   glb_ds1edit.win_preview.x0 = glb_ds1[0].own_wpreview.x0;
+   glb_ds1edit.win_preview.y0 = glb_ds1[0].own_wpreview.y0;
+   glb_ds1edit.win_preview.w  = glb_config.screen.width;
+   glb_ds1edit.win_preview.h  = glb_config.screen.height;
+
+   wpreview_init_palette_state(0);
+   glb_ds1edit.has_loaded_ds1 = TRUE;
+   glb_ds1edit.ds1_group_idx = 0;
+
+   if (opened > 1)
+      glb_ds1edit.show_2nd_row = TRUE;
+
+   printf("done (%d maps loaded)\n", opened);
+   fflush(stdout);
+   return 0;
 }
 
 /* Free all area browser dynamic memory. */

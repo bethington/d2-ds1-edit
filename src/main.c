@@ -466,7 +466,7 @@ UDWORD ds1edit_get_RLE_bitmap_size(ALLEGRO_BITMAP * bmp)
 // ==========================================================================
 // Recreate the offscreen render targets after the display exists so Allegro
 // can allocate them as display bitmaps instead of memory bitmaps.
-static void ds1edit_recreate_render_targets(void)
+void ds1edit_recreate_render_targets(void)
 {
    ALLEGRO_BITMAP * new_big_screen_buff;
    ALLEGRO_BITMAP * new_screen_buff;

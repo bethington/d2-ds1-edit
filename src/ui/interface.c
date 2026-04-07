@@ -209,9 +209,9 @@ void interfac_user_handler(int start_ds1_idx)
             }
             else if (click_result >= 0)
             {
-               /* Area selected — load it (TODO: full reload) */
-               printf("Sidebar: selected group %d\n", click_result);
-               fflush(stdout);
+               /* Area selected — switch to it */
+               if (area_browser_switch_area(click_result) >= 0)
+                  ds1_idx = 0;
             }
 
             while (a5_mouse_b & 1)
