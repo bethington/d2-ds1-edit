@@ -764,6 +764,195 @@ int area_browser_switch_single(int group_idx, int entry_idx)
    return 0;
 }
 
+/* ---- DS1 keyboard navigation ---- */
+
+/* Move selection up in the tree. Returns new ds1_idx or -1. */
+int area_browser_nav_up(void)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   int gi = ab->selected_group;
+   int ei = ab->selected_entry;
+
+   if (ab->group_count == 0) return -1;
+
+   if (ei > 0)
+   {
+      /* Move up within expanded entries */
+      ab->selected_entry = ei - 1;
+      return ei - 1;  /* ds1_idx = entry index within loaded group */
+   }
+   else if (ei == 0)
+   {
+      /* At first entry — move up to group header */
+      ab->selected_entry = -1;
+      return -1;
+   }
+   else
+   {
+      /* At group header — move to previous group's last entry or header */
+      if (gi > 0)
+      {
+         ab->selected_group = gi - 1;
+         if (ab->groups[gi - 1].is_expanded && ab->groups[gi - 1].entry_count > 0)
+         {
+            ab->selected_entry = ab->groups[gi - 1].entry_count - 1;
+            return ab->selected_entry;
+         }
+         ab->selected_entry = -1;
+      }
+      return -1;
+   }
+}
+
+/* Move selection down in the tree. Returns new ds1_idx or -1. */
+int area_browser_nav_down(void)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   int gi = ab->selected_group;
+   int ei = ab->selected_entry;
+
+   if (ab->group_count == 0) return -1;
+
+   if (ei == -1)
+   {
+      /* At group header */
+      if (ab->groups[gi].is_expanded && ab->groups[gi].entry_count > 0)
+      {
+         /* Move into expanded entries */
+         ab->selected_entry = 0;
+         return 0;
+      }
+      else
+      {
+         /* Move to next group */
+         if (gi < ab->group_count - 1)
+         {
+            ab->selected_group = gi + 1;
+            ab->selected_entry = -1;
+         }
+         return -1;
+      }
+   }
+   else
+   {
+      /* Within entries — move down */
+      if (ei < ab->groups[gi].entry_count - 1)
+      {
+         ab->selected_entry = ei + 1;
+         return ei + 1;
+      }
+      else
+      {
+         /* Past last entry — move to next group */
+         if (gi < ab->group_count - 1)
+         {
+            ab->selected_group = gi + 1;
+            ab->selected_entry = -1;
+         }
+         return -1;
+      }
+   }
+}
+
+/* Collapse current group. Returns -1 (no ds1 change). */
+int area_browser_nav_left(void)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   int gi = ab->selected_group;
+
+   if (gi >= 0 && gi < ab->group_count)
+   {
+      ab->groups[gi].is_expanded = FALSE;
+      ab->selected_entry = -1;
+   }
+   return -1;
+}
+
+/* Expand current group and preload DS1s. Returns first ds1_idx or -1. */
+int area_browser_nav_right(void)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   int gi = ab->selected_group;
+
+   if (gi < 0 || gi >= ab->group_count)
+      return -1;
+   if (ab->groups[gi].entry_count == 0)
+      return -1;
+
+   if (!ab->groups[gi].is_expanded)
+   {
+      ab->groups[gi].is_expanded = TRUE;
+      /* Preload if not already loaded */
+      if (ab->loaded_group != gi)
+      {
+         area_browser_switch_area(gi);
+         return 0;
+      }
+   }
+
+   /* If already expanded, move into entries */
+   if (ab->selected_entry == -1 && ab->groups[gi].entry_count > 0)
+   {
+      ab->selected_entry = 0;
+      return 0;
+   }
+   return -1;
+}
+
+/* Jump to previous area group. Returns -1 (group nav, no ds1 change). */
+int area_browser_nav_pgup(void)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   if (ab->selected_group > 0)
+   {
+      ab->selected_group--;
+      ab->selected_entry = -1;
+   }
+   return -1;
+}
+
+/* Jump to next area group. Returns -1 (group nav, no ds1 change). */
+int area_browser_nav_pgdn(void)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   if (ab->selected_group < ab->group_count - 1)
+   {
+      ab->selected_group++;
+      ab->selected_entry = -1;
+   }
+   return -1;
+}
+
+/* Jump to first DS1 in current expanded group. */
+int area_browser_nav_home(void)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   int gi = ab->selected_group;
+
+   if (gi < 0 || gi >= ab->group_count)
+      return -1;
+   if (!ab->groups[gi].is_expanded || ab->groups[gi].entry_count == 0)
+      return -1;
+
+   ab->selected_entry = 0;
+   return 0;
+}
+
+/* Jump to last DS1 in current expanded group. */
+int area_browser_nav_end(void)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   int gi = ab->selected_group;
+
+   if (gi < 0 || gi >= ab->group_count)
+      return -1;
+   if (!ab->groups[gi].is_expanded || ab->groups[gi].entry_count == 0)
+      return -1;
+
+   ab->selected_entry = ab->groups[gi].entry_count - 1;
+   return ab->selected_entry;
+}
+
 /* Free all area browser dynamic memory. */
 void area_browser_destroy(void)
 {

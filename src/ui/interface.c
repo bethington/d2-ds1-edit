@@ -407,20 +407,20 @@ void interfac_user_handler(int start_ds1_idx)
       {
          if (glb_config.winobj_scroll_keyb == TRUE)
          {
-            // can scroll by keyboard
-            if (key_pressed(KEY_UP))
+            // can scroll by keyboard (WASD)
+            if (key_pressed(KEY_W))
             {
                glb_ds1edit.win_preview.y0 -= glb_ds1[ds1_idx].cur_scroll.keyb.y;
             }
-            if (key_pressed(KEY_DOWN))
+            if (key_pressed(KEY_S))
             {
                glb_ds1edit.win_preview.y0 += glb_ds1[ds1_idx].cur_scroll.keyb.y;
             }
-            if (key_pressed(KEY_LEFT))
+            if (key_pressed(KEY_A))
             {
                glb_ds1edit.win_preview.x0 -= glb_ds1[ds1_idx].cur_scroll.keyb.x;
             }
-            if (key_pressed(KEY_RIGHT))
+            if (key_pressed(KEY_D))
             {
                glb_ds1edit.win_preview.x0 += glb_ds1[ds1_idx].cur_scroll.keyb.x;
             }
@@ -449,7 +449,7 @@ void interfac_user_handler(int start_ds1_idx)
       }
       else
       {
-         if (key_pressed(KEY_UP))
+         if (key_pressed(KEY_W))
          {
             glb_ds1edit.win_preview.y0 -= glb_ds1[ds1_idx].cur_scroll.keyb.y;
          }
@@ -458,7 +458,7 @@ void interfac_user_handler(int start_ds1_idx)
             glb_ds1edit.win_preview.y0 -= glb_ds1[ds1_idx].cur_scroll.mouse.y;
          }
 
-         if (key_pressed(KEY_DOWN))
+         if (key_pressed(KEY_S))
          {
             glb_ds1edit.win_preview.y0 += glb_ds1[ds1_idx].cur_scroll.keyb.y;
          }
@@ -467,7 +467,7 @@ void interfac_user_handler(int start_ds1_idx)
             glb_ds1edit.win_preview.y0 += glb_ds1[ds1_idx].cur_scroll.mouse.y;
          }
 
-         if (key_pressed(KEY_LEFT))
+         if (key_pressed(KEY_A))
          {
             glb_ds1edit.win_preview.x0 -= glb_ds1[ds1_idx].cur_scroll.keyb.x;
          }
@@ -476,7 +476,7 @@ void interfac_user_handler(int start_ds1_idx)
             glb_ds1edit.win_preview.x0 -= glb_ds1[ds1_idx].cur_scroll.mouse.x;
          }
 
-         if (key_pressed(KEY_RIGHT))
+         if (key_pressed(KEY_D))
          {
             glb_ds1edit.win_preview.x0 += glb_ds1[ds1_idx].cur_scroll.keyb.x;
          }
@@ -569,6 +569,66 @@ void interfac_user_handler(int start_ds1_idx)
                al_set_mouse_xy(a5_display, glb_ds1edit.win_preview.w / 2, glb_ds1edit.win_preview.h / 2);
             }
          }
+      }
+
+      // DS1 file navigation (arrow keys, PgUp/PgDn, Home/End)
+      if (key_pressed(KEY_UP))
+      {
+         int nav_idx = area_browser_nav_up();
+         if (nav_idx >= 0 && glb_ds1edit.has_loaded_ds1)
+            ds1_idx = nav_idx;
+         while (key_pressed(KEY_UP))
+         { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+      }
+      if (key_pressed(KEY_DOWN))
+      {
+         int nav_idx = area_browser_nav_down();
+         if (nav_idx >= 0 && glb_ds1edit.has_loaded_ds1)
+            ds1_idx = nav_idx;
+         while (key_pressed(KEY_DOWN))
+         { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+      }
+      if (key_pressed(KEY_LEFT))
+      {
+         area_browser_nav_left();
+         while (key_pressed(KEY_LEFT))
+         { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+      }
+      if (key_pressed(KEY_RIGHT))
+      {
+         int nav_idx = area_browser_nav_right();
+         if (nav_idx >= 0 && glb_ds1edit.has_loaded_ds1)
+            ds1_idx = nav_idx;
+         while (key_pressed(KEY_RIGHT))
+         { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+      }
+      if (key_pressed(KEY_PGUP) && !(key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)))
+      {
+         area_browser_nav_pgup();
+         while (key_pressed(KEY_PGUP))
+         { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+      }
+      if (key_pressed(KEY_PGDN) && !(key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)))
+      {
+         area_browser_nav_pgdn();
+         while (key_pressed(KEY_PGDN))
+         { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+      }
+      if (key_pressed(KEY_HOME) && !(key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT)))
+      {
+         int nav_idx = area_browser_nav_home();
+         if (nav_idx >= 0 && glb_ds1edit.has_loaded_ds1)
+            ds1_idx = nav_idx;
+         while (key_pressed(KEY_HOME))
+         { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+      }
+      if (key_pressed(KEY_END))
+      {
+         int nav_idx = area_browser_nav_end();
+         if (nav_idx >= 0 && glb_ds1edit.has_loaded_ds1)
+            ds1_idx = nav_idx;
+         while (key_pressed(KEY_END))
+         { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
       }
 
       // layers toggle
@@ -781,8 +841,9 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       // Home (center the map)
-      if (key_pressed(KEY_HOME))
+      if (key_pressed(KEY_HOME) && (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT)))
       {
+         // Shift+Home: center map view
          while (key_pressed(KEY_HOME))
          {
             al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
@@ -888,38 +949,36 @@ void interfac_user_handler(int start_ds1_idx)
       }
       
       // S
-      if (key_pressed(KEY_S))
+      if (key_pressed(KEY_S) && (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)))
       {
-         if (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
+         // CTRL + S : save the ds1, in the current state, incremental save
+         ds1_save(ds1_idx, FALSE);
+         while (key_pressed(KEY_S))
          {
-            // CTRL + S : save the ds1, in the current state, incremental save
-            ds1_save(ds1_idx, FALSE);
-            while (key_pressed(KEY_S))
-            {
-               al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
-            }
-            ret = msg_save_main();
-            switch (ret)
-            {
-               case -1 :
-                  // error
-                  done = TRUE;
-                  break;
+            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+         }
+         ret = msg_save_main();
+         switch (ret)
+         {
+            case -1 :
+               // error
+               done = TRUE;
+               break;
 
-               case 0 :
-                  // ok
-                  break;
-            }
+            case 0 :
+               // ok
+               break;
          }
-         else if (glb_ds1edit.mode == MOD_T)
+      }
+      if (key_pressed(KEY_S) && (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT))
+          && glb_ds1edit.mode == MOD_T)
+      {
+         // Shift+S : show all previously hidden tiles
+         while (key_pressed(KEY_S))
          {
-            // (Show all precedently hiden tiles)
-            while (key_pressed(KEY_S))
-            {
-               al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
-            }
-            edittile_unhide_all(ds1_idx);
+            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
          }
+         edittile_unhide_all(ds1_idx);
       }
       
       // 'C' : either Copy or Center
