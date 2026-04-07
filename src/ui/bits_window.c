@@ -29,8 +29,6 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
    int           w_width = 545, w_height= 270;
 
 
-   a5_text_mode(-1);
-
    w_x0 = (glb_config.screen.width  - w_width) / 2;
    w_y0 = (glb_config.screen.height - w_height) / 2;
    w_x1 = w_x0 + w_width;
@@ -135,7 +133,6 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
    // main loop
    while ( ! done)
    {
-      a5_text_mode(-1);
 
       // OK button
       c1 = c_darkgreen;
@@ -195,7 +192,6 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
       a5_rect(glb_ds1edit.screen_buff,     cancel_x0, ok_y0-3, cancel_x0 + 64, ok_y0 + 20, c2);
       a5_textout(glb_ds1edit.screen_buff, font, "CANCEL", cancel_x0+10, ok_y0+5, c3);
 
-      a5_text_mode(0);
 
       // floors
       y = w_y0 + 2;
@@ -522,7 +518,6 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
    }
 
    // end
-   a5_text_mode(-1);
 }
 
 
@@ -864,8 +859,6 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
    UBYTE         shad[4];
 
 
-   a5_text_mode(-1);
-
    w_x0 = (glb_config.screen.width  - w_width) / 2;
    w_y0 = (glb_config.screen.height - w_height) / 2;
    w_x1 = w_x0 + w_width;
@@ -933,7 +926,6 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
    // main loop
    while ( ! done)
    {
-      a5_text_mode(-1);
 
       // OK button
       c1 = c_darkgreen;
@@ -993,7 +985,6 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
       a5_rect(glb_ds1edit.screen_buff,     cancel_x0, ok_y0-3, cancel_x0 + 64, ok_y0 + 20, c2);
       a5_textout(glb_ds1edit.screen_buff, font, "CANCEL", cancel_x0+10, ok_y0+5, c3);
 
-      a5_text_mode(0);
 
       // floors
       y = w_y0 + 2;
@@ -1380,7 +1371,6 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
    }
 
    // end
-   a5_text_mode(-1);
 }
 
 

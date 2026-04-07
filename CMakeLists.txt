@@ -126,6 +126,14 @@ set_target_properties(ds1edit PROPERTIES
     OUTPUT_NAME "ds1edit"
 )
 
+# Clean bin/ target — removes everything except Ds1edit.ini (user config)
+add_custom_target(clean-bin
+    COMMAND ${CMAKE_COMMAND} -E echo "Cleaning bin/ (preserving Ds1edit.ini)..."
+    COMMAND ${CMAKE_COMMAND} -P "${CMAKE_SOURCE_DIR}/cmake/clean-bin.cmake"
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    COMMENT "Removing bin/ contents except Ds1edit.ini"
+)
+
 # Copy runtime data files to bin/ at build time
 add_custom_command(TARGET ds1edit POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -138,6 +146,8 @@ add_custom_command(TARGET ds1edit POST_BUILD
         "${CMAKE_SOURCE_DIR}/examples" "${CMAKE_SOURCE_DIR}/bin/examples"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_SOURCE_DIR}/Ds1edit.ini.sample" "${CMAKE_SOURCE_DIR}/bin/Ds1edit.ini.sample"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_SOURCE_DIR}/allegro5.cfg" "${CMAKE_SOURCE_DIR}/bin/allegro5.cfg"
     COMMENT "Copying data, pcx, assets, and examples to bin/"
 )
 

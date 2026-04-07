@@ -21,7 +21,7 @@ data/Tmp/
 
 # Visual Studio / IDE
 .vs/
-.vscode/tasks.json
+# .vscode/tasks.json is now tracked (was gitignored, caused it to disappear on branch switches)
 *.vcxproj.user
 *.suo
 *.sdf

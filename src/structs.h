@@ -101,7 +101,6 @@ typedef struct SCREEN_S
 {
    int width;
    int height;
-   int depth;
    int refresh;
 } SCREEN_S;
 
@@ -149,7 +148,6 @@ typedef struct CONFIG_S
    SCREEN_S screen;
    SCROLL_S scroll;
    GC_ENUM  gamma;
-   XY_S     mouse_speed;
    int      normal_type2;
    int      always_max_layers;
    int      stretch_sprites;

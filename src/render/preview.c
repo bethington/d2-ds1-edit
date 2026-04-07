@@ -333,10 +333,6 @@ static void wpreview_draw_rectfill(int x1, int y1, int x2, int y2, int color)
 void wpreview_shape(ALLEGRO_BITMAP * tmp_bmp, int x0, int y0, int ds1_idx,
                     COL_E col_idx)
 {
-   if (glb_ds1edit.cmd_line.force_pal_num == -1)
-      ((void)0); /* A5: selection tinting handled by draw_lit_sprite */
-   else
-      ((void)0);
    wpreview_draw_trans_bitmap(tmp_bmp, x0, y0, a5_trans_alpha);
 }
 
@@ -2989,7 +2985,6 @@ void wpreview_draw_tiles(int ds1_idx)
    wpreview_draw_hline(   0, glb_config.screen.height-10, glb_config.screen.width, 255);
 
    // layers toggle
-   a5_text_mode(-1);
 
    // floor layers (F1, F2)
    for (i=0; i < glb_ds1[ds1_idx].floor_num; i++)

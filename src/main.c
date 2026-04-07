@@ -323,7 +323,6 @@ void ds1edit_init(void)
       glb_ds1edit.version,
       DS1EDIT_BUILD_MODE
    );
-
    // update the version info on disk
    sprintf(tmp, "%sversion", glb_ds1edit_data_dir);
    out = fopen(tmp, "wb");
@@ -636,7 +635,6 @@ void ds1edit_debug(void)
    printf("fullscreen              = %s\n", glb_config.fullscreen ? "YES" : "NO");
    printf("screen_width            = %i\n", glb_config.screen.width);
    printf("screen_height           = %i\n", glb_config.screen.height);
-   printf("screen_depth            = %i\n", glb_config.screen.depth);
    printf("refresh_rate            = %i\n", glb_config.screen.refresh);
    printf("keyb_scroll_x           = %i\n", glb_config.scroll.keyb.x);
    printf("keyb_scroll_y           = %i\n", glb_config.scroll.keyb.y);
@@ -645,8 +643,6 @@ void ds1edit_debug(void)
    printf("edit_scroll_x           = %i\n", glb_config.scroll.edit.x);
    printf("edit_scroll_y           = %i\n", glb_config.scroll.edit.y);   
    printf("obj_edit_scroll         = %i\n", glb_config.scroll.obj_edit);
-   printf("mouse_speed_x           = %i\n", glb_config.mouse_speed.x);
-   printf("mouse_speed_y           = %i\n", glb_config.mouse_speed.y);
    printf("gamma_correction        = %s\n", glb_gamma_str[glb_config.gamma].str);
    printf("only_normal_type2       = %s\n", glb_config.normal_type2        ? "YES" : "NO");
    printf("always_max_layers       = %s\n", glb_config.always_max_layers   ? "YES" : "NO");
@@ -947,7 +943,7 @@ int main(int argc, char * argv[])
 
    // open all mpq
    ds1edit_open_all_mpq();
-   
+
    // load palettes from disk, else from mpq
    ds1edit_load_palettes();
 
@@ -1114,6 +1110,9 @@ int main(int argc, char * argv[])
       al_set_new_display_flags(ALLEGRO_FULLSCREEN);
    else
       al_set_new_display_flags(ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE);
+
+   if (glb_config.screen.refresh > 0)
+      al_set_new_display_refresh_rate(glb_config.screen.refresh);
 
    a5_display = al_create_display(glb_config.screen.width, glb_config.screen.height);
    if (a5_display == NULL)

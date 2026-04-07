@@ -638,7 +638,7 @@ void wedit_read_pcx(void)
    a5_blit(pcx[8], tmp_bmp, 0, 0, w-al_get_bitmap_width(pcx[8]), h-al_get_bitmap_height(pcx[8]), al_get_bitmap_width(pcx[8]), al_get_bitmap_height(pcx[8]));
 
    w_elm = & glb_ds1edit.win_edit.w_preview;
-   w_elm->border = get_rle_sprite(tmp_bmp);
+   w_elm->border = tmp_bmp;
    w_elm->b_x0 = x0;
    w_elm->b_y0 = y0;
 
@@ -689,7 +689,7 @@ void wedit_read_pcx(void)
    a5_blit(pcx[8], tmp_bmp, 0, 0, w-al_get_bitmap_width(pcx[8]), h-al_get_bitmap_height(pcx[8]), al_get_bitmap_width(pcx[8]), al_get_bitmap_height(pcx[8]));
 
    w_elm = & glb_ds1edit.win_edit.w_tiles;
-   w_elm->border = get_rle_sprite(tmp_bmp);
+   w_elm->border = tmp_bmp;
    w_elm->b_x0 = x0;
    w_elm->b_y0 = y0;
 
@@ -761,7 +761,7 @@ void wedit_free(void)
       // free
       if (w_elm->border != NULL)
       {
-         destroy_rle_sprite(w_elm->border);
+         al_destroy_bitmap(w_elm->border);
          w_elm->border = NULL;
       }
       if (w_elm->inside != NULL)
@@ -1234,7 +1234,6 @@ void wedit_tab_tiles(int ds1_idx, BLK_TYP_E t, int x0, int y0, int bt_sel,
    a5_blit(wt->inside, w->tmp_edit, 0, 0, 0, 0, al_get_bitmap_width(wt->inside), al_get_bitmap_height(wt->inside));
 
    // draw the tiles
-   a5_text_mode(-1);
    for (m=0; m < w->main_line_num[t]; m++)
    {
       m_ptr = w->main_line_tab[t] + m;
@@ -1773,11 +1772,11 @@ void wedit_test(int ds1_idx, int tx, int ty)
       }
 
       w_elm = & glb_ds1edit.win_edit.w_preview;
-      draw_rle_sprite(glb_ds1edit.screen_buff, w_elm->border, w_elm->b_x0, w_elm->b_y0);
+      a5_draw_sprite(glb_ds1edit.screen_buff, w_elm->border, w_elm->b_x0, w_elm->b_y0);
       a5_blit(w_elm->inside, glb_ds1edit.screen_buff, 0, 0, w_elm->i_x0, w_elm->i_y0, al_get_bitmap_width(w_elm->inside), al_get_bitmap_height(w_elm->inside));
 
       w_elm = & glb_ds1edit.win_edit.w_tiles;
-      draw_rle_sprite(glb_ds1edit.screen_buff, w_elm->border, w_elm->b_x0, w_elm->b_y0);
+      a5_draw_sprite(glb_ds1edit.screen_buff, w_elm->border, w_elm->b_x0, w_elm->b_y0);
 
       wedit_draw_w (ds1_idx, tx, ty, FALSE); // lower walls
       wedit_draw_f (ds1_idx, tx, ty);        // floors

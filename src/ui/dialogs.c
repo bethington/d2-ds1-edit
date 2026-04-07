@@ -94,7 +94,6 @@ int wmsg_main(WMSG_S * wmsg)
       a5_rect(glb_ds1edit.screen_buff, wx0, wy0, wx1, wy0 + line_height*2, wmsg->col_title.fg);
       a5_hline(glb_ds1edit.screen_buff, wx0, wy0 + line_height*2, wx1, wmsg->col_win.fg);
 
-      a5_text_mode(wmsg->col_title.bg);
       a5_textout(glb_ds1edit.screen_buff, font, wmsg->title, x, y, wmsg->col_title.fg);
       y += line_height * 2;
    }
@@ -102,7 +101,6 @@ int wmsg_main(WMSG_S * wmsg)
    // text
    tmp[1] = 0x00;
    n = strlen(wmsg->text) + 1;
-   a5_text_mode(wmsg->col_text.bg);
    for (i=0; i < n; i++)
    {
       if ( (wmsg->text[i] != 0x0A) &&
@@ -133,7 +131,6 @@ int wmsg_main(WMSG_S * wmsg)
    mb = a5_mouse_b;
 
    // main loop
-   a5_text_mode(-1);
    while ( ! done)
    {
       // handle keyboard shortcuts
@@ -247,7 +244,6 @@ int wmsg_main(WMSG_S * wmsg)
       mb = a5_mouse_b;
    }
 
-   a5_text_mode(-1);
 
    return ret;
 }

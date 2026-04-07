@@ -1,10 +1,10 @@
 /*
- * Allegro 4 -> Allegro 5 Compatibility Layer
+ * Allegro 5 Drawing Helpers and Input Compatibility
  *
- * This header provides macros, typedefs, and helper functions that
- * allow Allegro 4-style code to compile against Allegro 5 with minimal
- * per-call-site changes. It will be gradually removed as the migration
- * progresses and code is rewritten to use native Allegro 5 APIs.
+ * Provides convenience wrappers around Allegro 5's target-bitmap model,
+ * palette-indexed color conversion, D2 blend modes, and keyboard/mouse
+ * state macros. Also maps Allegro 4 key constant names (KEY_A, etc.)
+ * to their Allegro 5 equivalents (ALLEGRO_KEY_A).
  */
 #ifndef _A5_COMPAT_H_
 #define _A5_COMPAT_H_
@@ -331,8 +331,6 @@ static inline void a5_vline(ALLEGRO_BITMAP *bmp, int x, int y1, int y2, int colo
         a5_end_target_bitmap(_old, bmp); \
     } while(0)
 
-/* text_mode is not needed in Allegro 5 (always transparent bg) */
-#define a5_text_mode(x) ((void)0)
 
 /* ---- Keyboard compat ---- */
 /* Allegro 4: key[KEY_X], Allegro 5: al_key_down(&state, ALLEGRO_KEY_X) */
@@ -456,38 +454,14 @@ static inline int a5_makecol(int r, int g, int b)
 }
 #define makecol(r,g,b) a5_makecol(r,g,b)
 
-/* Allegro 4 config functions — implemented via Allegro 5 ALLEGRO_CONFIG */
+/* Allegro 5 config handle — loaded in config.c */
 extern ALLEGRO_CONFIG *a5_config;
-
-static inline void set_config_file(const char *path) {
-    if (a5_config) al_destroy_config(a5_config);
-    a5_config = al_load_config_file(path);
-    if (a5_config == NULL) a5_config = al_create_config();
-}
-static inline const char *get_config_string(const char *section, const char *key, const char *def) {
-    const char *val;
-    if (a5_config == NULL) return def;
-    val = al_get_config_value(a5_config, section ? section : "", key);
-    return val ? val : def;
-}
-static inline int get_config_int(const char *section, const char *key, int def) {
-    const char *val = get_config_string(section, key, NULL);
-    return val ? atoi(val) : def;
-}
 
 /* textout - Allegro 4 fixed text rendering (no format string) */
 #define a5_textout(bmp, fnt, text, x, y, color) a5_textprintf(bmp, fnt, x, y, color, "%s", text)
 #define textout(bmp, fnt, text, x, y, color) a5_textout(bmp, fnt, text, x, y, color)
 
-/* RLE sprite compat — Allegro 5 has no RLE sprites; use regular bitmaps */
-#define draw_rle_sprite(dst, src, x, y) a5_draw_sprite(dst, (ALLEGRO_BITMAP*)(src), x, y)
-#define destroy_rle_sprite(spr) al_destroy_bitmap((ALLEGRO_BITMAP*)(spr))
-#define get_rle_sprite(bmp) (bmp) /* just keep the bitmap as-is */
 
-/* Allegro 4 specialty sprite functions — no longer used in native A5 render path.
- * Kept as stubs in case any legacy code path still references them. */
-#define draw_lit_sprite(dst, src, x, y, color) a5_draw_trans_sprite(dst, src, x, y)
-#define draw_gouraud_sprite(dst, src, x, y, c1, c2, c3, c4) a5_draw_trans_sprite(dst, src, x, y)
 
 /* stricmp is MSVC-specific, may be needed on other platforms */
 #ifndef stricmp

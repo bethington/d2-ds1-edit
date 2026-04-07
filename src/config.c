@@ -4,12 +4,11 @@
 #include "error.h"
 #include "config.h"
 
-
 // ==========================================================================
 // create a new ds1edit.ini
-void ini_create(char * ininame)
+void ini_create(char *ininame)
 {
-   FILE * out;
+   FILE *out;
    char tmp[80];
 
    printf("can't open %s, creating it\n", ininame);
@@ -20,324 +19,322 @@ void ini_create(char * ininame)
       ds1edit_error(tmp);
    }
    fputs(
-      "; Paths to the mpqs. When the editor need to read a file from a mpq\n"
-      "; it scan first in mod_dir. If not found, in patch_d2. If not found,\n"
-      "; in d2exp. If again not found, in d2data (just like the game)\n"
-      "; =================================================================\n"
-      "d2char   = c:\\program files\\diablo II\\d2char.mpq\n"
-      "d2data   = c:\\program files\\diablo II\\d2data.mpq\n"
-      "d2exp    = c:\\program files\\diablo II\\d2exp.mpq\n"
-      "patch_d2 = c:\\program files\\diablo II\\patch_d2.mpq\n"
-      "mod_dir  =\n"
-      "\n"
-      "; if you don't have a mpq, put a blank, like :\n"
-      "; d2exp =\n"
-      "\n"
-      "; mod_dir is an optional Mod Directory, like :\n"
-      "; mod_dir = c:\\program files\\diablo II\\mods\\my_mod\n"
-      "\n"
-      "\n"
-      "; screen configuration\n"
-      "; screen_depth can be either 8, 15, 16, 24 or 32 bits per pixel\n"
-      ";    (if your video card support it)\n"
-      "; if full_screen is not set to YES, it'll be a windowed screen\n"
-      ";    (will always fail under MS-DOS)\n"
-      "; =============================================================\n"
-      "full_screen   = YES\n"
-      "screen_width  = 800\n"
-      "screen_height = 600\n"
-      "screen_depth  = 8\n"
-      "\n"
-      "\n"
-      "; Try to use this refresh rate, if possible. Not all drivers are able to\n"
-      "; control this at all, and even when they can, not all rates will be\n"
-      "; possible on all hardware, so the actual settings may differ from what\n"
-      "; you requested. Some non-exhaustive values : 60, 70, 72, 75, 85, 100, 120\n"
-      "; ========================================================================\n"
-      "refresh_rate = 60\n"
-      "\n"
-      "\n"
-      "; speed of scrolls, in pixels\n"
-      "; ===========================\n"
-      "keyb_scroll_x  = 40\n"
-      "keyb_scroll_y  = 20\n"
-      "mouse_scroll_x = 20\n"
-      "mouse_scroll_y = 10\n"
-      "edit_scroll_x  = 20\n"
-      "edit_scroll_y  = 20\n"
-      "\n"
-      "\n"
-      "; speed of scroll in the Object Editing window, in rows\n"
-      "; =====================================================\n"
-      "obj_edit_scroll = 2\n"
-      "\n"
-      "\n"
-      "; speed of mouse, larger values slow the mouse, defaut 2\n"
-      "; (don't seem to work under Windows XP)\n"
-      "; ======================================================\n"
-      "mouse_speed_x = 2\n"
-      "mouse_speed_y = 2\n"
-      "\n"
-      "\n"
-      "\n"
-      "; misc options\n"
-      "; ============\n"
-      "\n"
-      "\n"
-      "; default gamma correction\n"
-      "; valid value : 0.60, 0.62, [...] 0.98, 1.00, 1.10, 1.20, [...], 3.00\n"
-      "; -------------------------------------------------------------------\n"
-      "gamma_correction = 1.30\n"
-      "\n"
-      "\n"
-      "; does the editor allow you to use Type 2 objects of higher act ?\n"
-      "; if this line is NOT set to YES, the editor will allow it\n"
-      "; ---------------------------------------------------------------\n"
-      "only_normal_type2 = YES\n"
-      "\n"
-      "\n"
-      "; does the editor always modified the ds1 to have 2 floors layers and\n"
-      "; 4 walls layers ?\n"
-      "; if this line is NOT set to YES, the editor won't make any change\n"
-      "; -------------------------------------------------------------------\n"
-      "always_max_layers = YES\n"
-      "\n"
-      "\n"
-      "; resize the sprites when zooming\n"
-      "; -------------------------------\n"
-      "stretch_sprite = YES\n"
-      "\n"
-      "\n"
-      "; when editing an object, posibility to scroll the main tile editing window\n"
-      "; with the arrow keys\n"
-      "; -------------------------------------------------------------------------\n"
-      "winobj_can_scroll_keyb = YES\n"
-      "\n"
-      "\n"
-      "; when editing an object, posibility to scroll the main tile editing window\n"
-      "; with the mouse on the border of the screen\n"
-      "; -------------------------------------------------------------------------\n"
-      "winobj_can_scroll_mouse = NO\n"
-      "\n"
-      "\n"
-      "; after a Centering (with the 'C' key), wich zoom ?\n"
-      "; possible values : NO_CHANGE, 1:1, 1:2, 1:4, 1:8, 1:16\n"
-      "; -----------------------------------------------------\n"
-      "center_zoom = 1:1\n"
-      "\n"
-      "\n"
-      "; What are the sizes of object tables in DLL for type 1 and 2 ?\n"
-      "; normal values are :\n"
-      ";    *  60 entries per act for type 1 objects\n"
-      ";    * 150 entries per act for type 2 objects\n"
-      "; You shouldn't change these values unless you have a modified DLL\n"
-      "; ----------------------------------------------------------------\n"
-      "nb_type1_per_act = 60\n"
-      "nb_type2_per_act = 150\n"
-      "\n"
-      "\n"
-      "; minimize file size of saved ds1 ?\n"
-      "; ---------------------------------\n"
-      "ds1_saved_minimize = YES\n"
-      "\n"
-      "\n"
-      "; reduce scrolling speed when zooming out ?\n"
-      "; -----------------------------------------\n"
-      "lower_speed_zoom_out = NO\n"
-      "\n"
-      "\n"
-      "; enable the workspace feature ?\n"
-      "; ------------------------------\n"
-      "workspace_enable = YES\n"
-      , out
-   );
+       "; Paths to the mpqs. When the editor need to read a file from a mpq\n"
+       "; it scan first in mod_dir. If not found, in patch_d2. If not found,\n"
+       "; in d2exp. If again not found, in d2data (just like the game)\n"
+       "; =================================================================\n"
+       "d2char   = c:\\program files\\diablo II\\d2char.mpq\n"
+       "d2data   = c:\\program files\\diablo II\\d2data.mpq\n"
+       "d2exp    = c:\\program files\\diablo II\\d2exp.mpq\n"
+       "patch_d2 = c:\\program files\\diablo II\\patch_d2.mpq\n"
+       "mod_dir  =\n"
+       "\n"
+       "; if you don't have a mpq, put a blank, like :\n"
+       "; d2exp =\n"
+       "\n"
+       "; mod_dir is an optional Mod Directory, like :\n"
+       "; mod_dir = c:\\program files\\diablo II\\mods\\my_mod\n"
+       "\n"
+       "\n"
+       "; screen configuration\n"
+       "; if full_screen is not set to YES, it'll be a windowed screen\n"
+       "; =============================================================\n"
+       "full_screen   = YES\n"
+       "screen_width  = 800\n"
+       "screen_height = 600\n"
+       "\n"
+       "\n"
+       "; Try to use this refresh rate, if possible. Not all drivers are able to\n"
+       "; control this at all, and even when they can, not all rates will be\n"
+       "; possible on all hardware, so the actual settings may differ from what\n"
+       "; you requested. Some non-exhaustive values : 60, 70, 72, 75, 85, 100, 120\n"
+       "; ========================================================================\n"
+       "refresh_rate = 60\n"
+       "\n"
+       "\n"
+       "; speed of scrolls, in pixels\n"
+       "; ===========================\n"
+       "keyb_scroll_x  = 40\n"
+       "keyb_scroll_y  = 20\n"
+       "mouse_scroll_x = 20\n"
+       "mouse_scroll_y = 10\n"
+       "edit_scroll_x  = 20\n"
+       "edit_scroll_y  = 20\n"
+       "\n"
+       "\n"
+       "; speed of scroll in the Object Editing window, in rows\n"
+       "; =====================================================\n"
+       "obj_edit_scroll = 2\n"
+       "\n"
+       "\n"
+       "\n"
+       "\n"
+       "\n"
+       "; misc options\n"
+       "; ============\n"
+       "\n"
+       "\n"
+       "; default gamma correction\n"
+       "; valid value : 0.60, 0.62, [...] 0.98, 1.00, 1.10, 1.20, [...], 3.00\n"
+       "; -------------------------------------------------------------------\n"
+       "gamma_correction = 1.30\n"
+       "\n"
+       "\n"
+       "; does the editor allow you to use Type 2 objects of higher act ?\n"
+       "; if this line is NOT set to YES, the editor will allow it\n"
+       "; ---------------------------------------------------------------\n"
+       "only_normal_type2 = YES\n"
+       "\n"
+       "\n"
+       "; does the editor always modified the ds1 to have 2 floors layers and\n"
+       "; 4 walls layers ?\n"
+       "; if this line is NOT set to YES, the editor won't make any change\n"
+       "; -------------------------------------------------------------------\n"
+       "always_max_layers = YES\n"
+       "\n"
+       "\n"
+       "; resize the sprites when zooming\n"
+       "; -------------------------------\n"
+       "stretch_sprite = YES\n"
+       "\n"
+       "\n"
+       "; when editing an object, posibility to scroll the main tile editing window\n"
+       "; with the arrow keys\n"
+       "; -------------------------------------------------------------------------\n"
+       "winobj_can_scroll_keyb = YES\n"
+       "\n"
+       "\n"
+       "; when editing an object, posibility to scroll the main tile editing window\n"
+       "; with the mouse on the border of the screen\n"
+       "; -------------------------------------------------------------------------\n"
+       "winobj_can_scroll_mouse = NO\n"
+       "\n"
+       "\n"
+       "; after a Centering (with the 'C' key), wich zoom ?\n"
+       "; possible values : NO_CHANGE, 1:1, 1:2, 1:4, 1:8, 1:16\n"
+       "; -----------------------------------------------------\n"
+       "center_zoom = 1:1\n"
+       "\n"
+       "\n"
+       "; What are the sizes of object tables in DLL for type 1 and 2 ?\n"
+       "; normal values are :\n"
+       ";    *  60 entries per act for type 1 objects\n"
+       ";    * 150 entries per act for type 2 objects\n"
+       "; You shouldn't change these values unless you have a modified DLL\n"
+       "; ----------------------------------------------------------------\n"
+       "nb_type1_per_act = 60\n"
+       "nb_type2_per_act = 150\n"
+       "\n"
+       "\n"
+       "; minimize file size of saved ds1 ?\n"
+       "; ---------------------------------\n"
+       "ds1_saved_minimize = YES\n"
+       "\n"
+       "\n"
+       "; reduce scrolling speed when zooming out ?\n"
+       "; -----------------------------------------\n"
+       "lower_speed_zoom_out = NO\n"
+       "\n"
+       "\n"
+       "; enable the workspace feature ?\n"
+       "; ------------------------------\n"
+       "workspace_enable = YES\n",
+       out);
 
    fclose(out);
    printf("new ds1edit.ini was created\n");
    fprintf(stderr, "new ds1edit.ini was created\n");
 }
 
-
 // ==========================================================================
-void ini_read(char * ininame)
+void ini_read(char *ininame)
 {
-   typedef enum {T_NULL, T_MPQ, T_MOD, T_STR, T_INT, T_GAM, T_YES, T_ZOOM} TYPE_E;
+   typedef enum
+   {
+      T_NULL,
+      T_MPQ,
+      T_MOD,
+      T_STR,
+      T_INT,
+      T_GAM,
+      T_YES,
+      T_ZOOM
+   } TYPE_E;
    static struct // 'static' because we need to keep the default string values
    {
-      char   name[30];
+      char name[30];
       TYPE_E type;
-      void   * data_ptr;
-      void   * def;
+      void *data_ptr;
+      void *def;
    } datas[] =
-   {
-      {"d2char",                  T_MPQ,  & glb_config.mpq_file[3],          ""},
-      {"d2data",                  T_MPQ,  & glb_config.mpq_file[2],          ""},
-      {"d2exp",                   T_MPQ,  & glb_config.mpq_file[1],          ""},
-      {"patch_d2",                T_MPQ,  & glb_config.mpq_file[0],          ""},
-      {"mod_dir",                 T_MOD,  & glb_config.mod_dir[0],           ""},
-      {"full_screen",             T_YES,  & glb_config.fullscreen,           "YES"},
-      {"screen_width",            T_INT,  & glb_config.screen.width,         (void *) 800},
-      {"screen_height",           T_INT,  & glb_config.screen.height,        (void *) 600},
-      {"screen_depth",            T_INT,  & glb_config.screen.depth,         (void *) 8},
-      {"refresh_rate",            T_INT,  & glb_config.screen.refresh,       (void *) 60},
-      {"keyb_scroll_x",           T_INT,  & glb_config.scroll.keyb.x,        (void *) 40},
-      {"keyb_scroll_y",           T_INT,  & glb_config.scroll.keyb.y,        (void *) 20},
-      {"mouse_scroll_x",          T_INT,  & glb_config.scroll.mouse.x,       (void *) 20},
-      {"mouse_scroll_y",          T_INT,  & glb_config.scroll.mouse.y,       (void *) 10},
-      {"edit_scroll_x",           T_INT,  & glb_config.scroll.edit.x,        (void *) 20},
-      {"edit_scroll_y",           T_INT,  & glb_config.scroll.edit.y,        (void *) 20},
-      {"obj_edit_scroll",         T_INT,  & glb_config.scroll.obj_edit,      (void *) 2},
-      {"mouse_speed_x",           T_INT,  & glb_config.mouse_speed.x,        (void *) 2},
-      {"mouse_speed_y",           T_INT,  & glb_config.mouse_speed.y,        (void *) 2},
-      {"gamma_correction",        T_GAM,  & glb_config.gamma,                "1.30"},
-      {"only_normal_type2",       T_YES,  & glb_config.normal_type2,         "YES"},
-      {"always_max_layers",       T_YES,  & glb_config.always_max_layers,    "YES"},
-      {"stretch_sprite",          T_YES,  & glb_config.stretch_sprites,      "YES"},
-      {"winobj_can_scroll_keyb",  T_YES,  & glb_config.winobj_scroll_keyb,   "YES"},
-      {"winobj_can_scroll_mouse", T_YES,  & glb_config.winobj_scroll_mouse,  "NO"},
-      {"center_zoom",             T_ZOOM, & glb_config.center_zoom,          "1:1"},
-      {"nb_type1_per_act",        T_INT,  & glb_config.nb_type1_per_act,     (void *) 60},
-      {"nb_type2_per_act",        T_INT,  & glb_config.nb_type2_per_act,     (void *) 150},
-      {"ds1_saved_minimize",      T_YES,  & glb_config.minimize_ds1,         "YES"},
-      {"lower_speed_zoom_out",    T_YES,  & glb_config.lower_speed_zoom_out, "NO"},
-      {"workspace_enable",        T_YES,  & glb_config.workspace_enable,     "YES"},
-      {"", T_NULL, NULL, NULL} // do not remove
-   };
-   int        i, val, is_ok = TRUE, n, len;
-   const char * str;
-   char       tmp[256], * buf, ** tmpptr;
-
+       {
+           {"d2char", T_MPQ, &glb_config.mpq_file[3], ""},
+           {"d2data", T_MPQ, &glb_config.mpq_file[2], ""},
+           {"d2exp", T_MPQ, &glb_config.mpq_file[1], ""},
+           {"patch_d2", T_MPQ, &glb_config.mpq_file[0], ""},
+           {"mod_dir", T_MOD, &glb_config.mod_dir[0], ""},
+           {"full_screen", T_YES, &glb_config.fullscreen, "YES"},
+           {"screen_width", T_INT, &glb_config.screen.width, (void *)800},
+           {"screen_height", T_INT, &glb_config.screen.height, (void *)600},
+           {"refresh_rate", T_INT, &glb_config.screen.refresh, (void *)60},
+           {"keyb_scroll_x", T_INT, &glb_config.scroll.keyb.x, (void *)40},
+           {"keyb_scroll_y", T_INT, &glb_config.scroll.keyb.y, (void *)20},
+           {"mouse_scroll_x", T_INT, &glb_config.scroll.mouse.x, (void *)20},
+           {"mouse_scroll_y", T_INT, &glb_config.scroll.mouse.y, (void *)10},
+           {"edit_scroll_x", T_INT, &glb_config.scroll.edit.x, (void *)20},
+           {"edit_scroll_y", T_INT, &glb_config.scroll.edit.y, (void *)20},
+           {"obj_edit_scroll", T_INT, &glb_config.scroll.obj_edit, (void *)2},
+           {"gamma_correction", T_GAM, &glb_config.gamma, "1.30"},
+           {"only_normal_type2", T_YES, &glb_config.normal_type2, "YES"},
+           {"always_max_layers", T_YES, &glb_config.always_max_layers, "YES"},
+           {"stretch_sprite", T_YES, &glb_config.stretch_sprites, "YES"},
+           {"winobj_can_scroll_keyb", T_YES, &glb_config.winobj_scroll_keyb, "YES"},
+           {"winobj_can_scroll_mouse", T_YES, &glb_config.winobj_scroll_mouse, "NO"},
+           {"center_zoom", T_ZOOM, &glb_config.center_zoom, "1:1"},
+           {"nb_type1_per_act", T_INT, &glb_config.nb_type1_per_act, (void *)60},
+           {"nb_type2_per_act", T_INT, &glb_config.nb_type2_per_act, (void *)150},
+           {"ds1_saved_minimize", T_YES, &glb_config.minimize_ds1, "YES"},
+           {"lower_speed_zoom_out", T_YES, &glb_config.lower_speed_zoom_out, "NO"},
+           {"workspace_enable", T_YES, &glb_config.workspace_enable, "YES"},
+           {"", T_NULL, NULL, NULL} // do not remove
+       };
+   int i, val, is_ok = TRUE, n, len;
+   const char *str;
+   char tmp[256], *buf, **tmpptr;
 
    printf("ini_read()\n");
    fprintf(stderr, "ini_read(), load ds1edit.ini\n");
    fflush(stdout);
    fflush(stderr);
 
-   set_config_file(ininame);
+   if (a5_config) al_destroy_config(a5_config);
+   a5_config = al_load_config_file(ininame);
+   if (a5_config == NULL) a5_config = al_create_config();
+
    i = 0;
    while (datas[i].type != T_NULL)
    {
-      str = get_config_string(NULL, datas[i].name, (const char *) datas[i].def);
+      {
+         const char *v = al_get_config_value(a5_config, "", datas[i].name);
+         str = v ? v : (const char *)datas[i].def;
+      }
       if (str == NULL)
       {
          fprintf(
-            stderr,
-            "   error, line not found : <%s>\n",
-            datas[i].name
-         );
+             stderr,
+             "   error, line not found : <%s>\n",
+             datas[i].name);
          fprintf(
-            stdout,
-            "   error, line not found : <%s>\n",
-            datas[i].name
-         );
+             stdout,
+             "   error, line not found : <%s>\n",
+             datas[i].name);
          is_ok = FALSE;
       }
       switch (datas[i].type)
       {
-         // string
-         case T_STR :
-            if (strlen(str))
-               datas[i].data_ptr = (char *) str;
-            break;
+      // string
+      case T_STR:
+         if (strlen(str))
+            datas[i].data_ptr = (char *)str;
+         break;
 
-         // number
-         case T_INT :
-            val = get_config_int(NULL, datas[i].name, (int) datas[i].def);
-            * ((int *) datas[i].data_ptr) = val;
-            break;
+      // number
+      case T_INT:
+         {
+            const char *v = al_get_config_value(a5_config, "", datas[i].name);
+            val = v ? atoi(v) : (int)datas[i].def;
+         }
+         *((int *)datas[i].data_ptr) = val;
+         break;
 
-         // gamma correction
-         case T_GAM :
-            n=0;
-            while ( (n < GC_MAX) &&
-                    (strcmp(str, glb_gamma_str[n].str) != 0) )
-               n++;
-            if (n < GC_MAX)
-               glb_config.gamma = glb_gamma_str[n].val;
-            break;
+      // gamma correction
+      case T_GAM:
+         n = 0;
+         while ((n < GC_MAX) &&
+                (strcmp(str, glb_gamma_str[n].str) != 0))
+            n++;
+         if (n < GC_MAX)
+            glb_config.gamma = glb_gamma_str[n].val;
+         break;
 
-         // mpq file
-         case T_MPQ :
-            len = strlen(str);
-            if (len)
+      // mpq file
+      case T_MPQ:
+         len = strlen(str);
+         if (len)
+         {
+            buf = (char *)malloc(sizeof(char) * (len + 1));
+            if (buf == NULL)
+               ds1edit_error("read_ini(), malloc() error on Mpq name");
+            else
             {
-               buf = (char *) malloc(sizeof(char) * (len+1));
-               if (buf == NULL)
-                  ds1edit_error("read_ini(), malloc() error on Mpq name");
-               else
-               {
-                  strcpy(buf, str);
-                  tmpptr = datas[i].data_ptr;
-                  * tmpptr = buf;
-               }
+               strcpy(buf, str);
+               tmpptr = datas[i].data_ptr;
+               *tmpptr = buf;
             }
-            break;
+         }
+         break;
 
-         // mod directory
-         case T_MOD :
-            len = strlen(str);
-            if (len)
+      // mod directory
+      case T_MOD:
+         len = strlen(str);
+         if (len)
+         {
+            buf = (char *)malloc(sizeof(char) * (len + 1));
+            if (buf == NULL)
+               ds1edit_error("read_ini(), malloc() error on Mod name");
+            else
             {
-               buf = (char *) malloc(sizeof(char) * (len+1));
-               if (buf == NULL)
-                  ds1edit_error("read_ini(), malloc() error on Mod name");
-               else
-               {
-                  strcpy(buf, str);
-                  if ((buf[strlen(buf)-1] == '\\') || (buf[strlen(buf)-1] == '/'))
-                     buf[strlen(buf)-1] = 0;
-                  tmpptr = datas[i].data_ptr;
-                  * tmpptr = buf;
-               }
+               strcpy(buf, str);
+               if ((buf[strlen(buf) - 1] == '\\') || (buf[strlen(buf) - 1] == '/'))
+                  buf[strlen(buf) - 1] = 0;
+               tmpptr = datas[i].data_ptr;
+               *tmpptr = buf;
             }
-            break;
+         }
+         break;
 
-         // read a YES/NO string, but store it as TRUE/FALSE
-         case T_YES :
-            if (strlen(str))
-            {
-               if (stricmp(str, "YES") == 0)
-                  * ((int *) datas[i].data_ptr) = TRUE;
-               else
-                  * ((int *) datas[i].data_ptr) = FALSE;
-            }
-            break;
+      // read a YES/NO string, but store it as TRUE/FALSE
+      case T_YES:
+         if (strlen(str))
+         {
+            if (stricmp(str, "YES") == 0)
+               *((int *)datas[i].data_ptr) = TRUE;
+            else
+               *((int *)datas[i].data_ptr) = FALSE;
+         }
+         break;
 
-         // zoom string
-         case T_ZOOM :
-            if (strlen(str))
-            {
-               // default value
-               * ((int *) datas[i].data_ptr) = -1;
+      // zoom string
+      case T_ZOOM:
+         if (strlen(str))
+         {
+            // default value
+            *((int *)datas[i].data_ptr) = -1;
 
-               // read value
-               if (stricmp(str, "1:1") == 0)
-                  * ((int *) datas[i].data_ptr) = ZM_11;
-               else if (stricmp(str, "1:2") == 0)
-                  * ((int *) datas[i].data_ptr) = ZM_12;
-               else if (stricmp(str, "1:4") == 0)
-                  * ((int *) datas[i].data_ptr) = ZM_14;
-               else if (stricmp(str, "1:8") == 0)
-                  * ((int *) datas[i].data_ptr) = ZM_18;
-               else if (stricmp(str, "1:16") == 0)
-                  * ((int *) datas[i].data_ptr) = ZM_116;
-            }
-
-               datas[i].data_ptr = (char *) str;
-            break;
-
+            // read value
+            if (stricmp(str, "1:1") == 0)
+               *((int *)datas[i].data_ptr) = ZM_11;
+            else if (stricmp(str, "1:2") == 0)
+               *((int *)datas[i].data_ptr) = ZM_12;
+            else if (stricmp(str, "1:4") == 0)
+               *((int *)datas[i].data_ptr) = ZM_14;
+            else if (stricmp(str, "1:8") == 0)
+               *((int *)datas[i].data_ptr) = ZM_18;
+            else if (stricmp(str, "1:16") == 0)
+               *((int *)datas[i].data_ptr) = ZM_116;
+         }
+         break;
       }
       i++;
    }
    if (is_ok != TRUE)
    {
       sprintf(
-         tmp,
-            "%s is not valid.\n"
-            "Delete it, and relaunch this prog to create a new good one,\n"
-            "then edit it to make changes where necessary, then relaunch this prog",
-         ininame
-      );
+          tmp,
+          "%s is not valid.\n"
+          "Delete it, and relaunch this prog to create a new good one,\n"
+          "then edit it to make changes where necessary, then relaunch this prog",
+          ininame);
       ds1edit_error(tmp);
    }
 }
