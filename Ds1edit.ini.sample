@@ -102,6 +102,12 @@ winobj_can_scroll_mouse = NO
 center_zoom = NO_CHANGE
 
 
+; default zoom level when opening a DS1 file
+; possible values : 1:1, 1:2, 1:4, 1:8, 1:16
+; -----------------------------------------------
+default_zoom = 1:1
+
+
 ; What are the sizes of object tables in DLL for type 1 and 2 ?
 ; normal values are :
 ;    *  60 entries per act for type 1 objects

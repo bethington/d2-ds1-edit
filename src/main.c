@@ -681,6 +681,16 @@ void ds1edit_debug(void)
       default : printf("?\n"); break;
    }
 
+   printf("default_zoom            = ");
+   switch(glb_config.default_zoom)
+   {
+      case ZM_11 : printf("1:1\n"); break;
+      case ZM_12 : printf("1:2\n"); break;
+      case ZM_14 : printf("1:4\n"); break;
+      case ZM_18 : printf("1:8\n"); break;
+      case ZM_116: printf("1:16\n"); break;
+      default : printf("1:1\n"); break;
+   }
    printf("nb_type1_per_act        = %i\n", glb_config.nb_type1_per_act);
    printf("nb_type2_per_act        = %i\n", glb_config.nb_type2_per_act);
    printf("ds1_saved_minimize      = %s\n", glb_config.minimize_ds1         ? "YES" : "NO");

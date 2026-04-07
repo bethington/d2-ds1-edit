@@ -154,6 +154,7 @@ typedef struct CONFIG_S
    int      winobj_scroll_keyb;
    int      winobj_scroll_mouse;
    int      center_zoom;
+   int      default_zoom;
    int      nb_type1_per_act;
    int      nb_type2_per_act;
    int      minimize_ds1;

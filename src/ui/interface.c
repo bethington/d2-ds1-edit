@@ -168,6 +168,8 @@ void interfac_user_handler(int start_ds1_idx)
          perf_now_ms() - section_start_ms
       );
 
+      cur_mouse_z = a5_mouse_z;
+
       /* Sidebar toggle: backtick key (`) */
       if (key_pressed(KEY_TILDE))
       {
@@ -189,9 +191,12 @@ void interfac_user_handler(int start_ds1_idx)
       if (glb_ds1edit.sidebar_visible &&
           a5_mouse_x < glb_ds1edit.sidebar_width)
       {
-         /* Mouse wheel scrolls the sidebar */
+         /* Mouse wheel scrolls the sidebar (consume delta so zoom doesn't fire) */
          if (cur_mouse_z != old_mouse_z)
+         {
             area_browser_sidebar_scroll(cur_mouse_z - old_mouse_z);
+            old_mouse_z = cur_mouse_z;
+         }
 
          /* Mouse click in sidebar */
          if (a5_mouse_b & 1)
