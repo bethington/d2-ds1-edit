@@ -192,7 +192,7 @@ void dt1_zoom(ALLEGRO_BITMAP * src, int i, int b, int z,
    w /= d;
    h /= d;
 
-   // legacy BITMAP (for rendering until Phase 4)
+   // create the zoomed tile bitmap
    dst = al_create_bitmap(w, h);
    if (dst == NULL)
    {

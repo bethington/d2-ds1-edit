@@ -3,8 +3,8 @@
  *
  * Provides convenience wrappers around Allegro 5's target-bitmap model,
  * palette-indexed color conversion, D2 blend modes, and keyboard/mouse
- * state macros. Also maps Allegro 4 key constant names (KEY_A, etc.)
- * to their Allegro 5 equivalents (ALLEGRO_KEY_A).
+ * state macros. Also defines short KEY_* aliases for the subset of
+ * Allegro 5 key constants used by the editor.
  */
 #ifndef _A5_COMPAT_H_
 #define _A5_COMPAT_H_
@@ -18,7 +18,7 @@
 #include <stdio.h>
 
 /* ---- Boolean constants ---- */
-/* Allegro 4 defines TRUE/FALSE; Allegro 5 doesn't */
+/* Allegro 5 does not define TRUE/FALSE */
 #ifndef TRUE
 #define TRUE 1
 #endif
@@ -52,8 +52,8 @@ static inline ALLEGRO_COLOR pal_color(int index)
 }
 
 /* ---- Drawing helpers ---- */
-/* These bridge the Allegro 4 API pattern (pass dst bitmap) to
- * Allegro 5's target bitmap model */
+/* These wrap Allegro 5's target-bitmap model with a convenient
+ * pass-dst-bitmap calling convention */
 
 static inline ALLEGRO_BITMAP * a5_begin_target_bitmap(ALLEGRO_BITMAP * dst)
 {
@@ -89,60 +89,7 @@ static inline void a5_draw_trans_sprite(ALLEGRO_BITMAP *dst, ALLEGRO_BITMAP *src
     a5_end_target_bitmap(old_target, dst);
 }
 
-/* D2 COF blend modes mapped to Allegro 5 blender states.
- * Formulas derived from D2CMP.dll BuildPaletteTransformTables:
- *   0 = 75% transparent: (dst*192 + src*63)  / 255  -> alpha 0.25
- *   1 = 50% transparent: (dst*128 + src*128) / 255  -> alpha 0.50
- *   2 = 25% transparent: (dst*64  + src*191) / 255  -> alpha 0.75
- *   3 = Additive:        min(src + dst, 255)
- *   4 = Multiply:        (src * dst) / 255
- *   5 = (unused)
- *   6 = Screen:          src + dst - (src * dst) / 255
- */
-static inline void a5_draw_blended_sprite(ALLEGRO_BITMAP *dst, ALLEGRO_BITMAP *src,
-                                           int x, int y, int trans_b)
-{
-    ALLEGRO_BITMAP *old_target = a5_begin_target_bitmap(dst);
-
-    switch (trans_b)
-    {
-        case 0: /* 75% transparent (25% opaque) */
-            al_draw_tinted_bitmap(src, al_map_rgba_f(0.25f, 0.25f, 0.25f, 0.25f),
-                                  (float)x, (float)y, 0);
-            break;
-        case 1: /* 50% transparent */
-            al_draw_tinted_bitmap(src, al_map_rgba_f(0.50f, 0.50f, 0.50f, 0.50f),
-                                  (float)x, (float)y, 0);
-            break;
-        case 2: /* 25% transparent (75% opaque) */
-            al_draw_tinted_bitmap(src, al_map_rgba_f(0.75f, 0.75f, 0.75f, 0.75f),
-                                  (float)x, (float)y, 0);
-            break;
-        case 3: /* Additive: min(src + dst, 255) — glow/fire/smoke effects */
-            al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_ONE);
-            al_draw_bitmap(src, (float)x, (float)y, 0);
-            al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
-            break;
-        case 4: /* Multiply: (src * dst) / 255 — darkening/shadow overlays */
-            al_set_blender(ALLEGRO_ADD, ALLEGRO_DEST_COLOR, ALLEGRO_ZERO);
-            al_draw_bitmap(src, (float)x, (float)y, 0);
-            al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
-            break;
-        case 6: /* Screen: src + dst - src*dst — ethereal/bright effects */
-            al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_INVERSE_SRC_COLOR);
-            al_draw_bitmap(src, (float)x, (float)y, 0);
-            al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
-            break;
-        default: /* Fallback: 50% alpha */
-            al_draw_tinted_bitmap(src, al_map_rgba_f(0.50f, 0.50f, 0.50f, 0.50f),
-                                  (float)x, (float)y, 0);
-            break;
-    }
-
-    a5_end_target_bitmap(old_target, dst);
-}
-
-/* Scaled version of a5_draw_blended_sprite for zoomed-out rendering.
+/* Scaled blended sprite for zoomed-out rendering with D2 COF blend modes.
  * div is the scale divisor (1 = normal, 2 = half size, etc.).
  * trans_b selects the D2 blend mode; pass -1 for normal (opaque) drawing. */
 static inline void a5_draw_scaled_blended_sprite(ALLEGRO_BITMAP *dst, ALLEGRO_BITMAP *src,
@@ -268,24 +215,6 @@ static inline void a5_putpixel(ALLEGRO_BITMAP *bmp, int x, int y, int color)
     a5_end_target_bitmap(old_target, bmp);
 }
 
-static inline int a5_getpixel(ALLEGRO_BITMAP *bmp, int x, int y)
-{
-    /* Returns the palette-closest index. For the migration period,
-     * we read the actual color and return the red channel as an
-     * approximation (works for 8-bit-style rendering) */
-    unsigned char r, g, b, a;
-    ALLEGRO_COLOR c;
-
-    al_lock_bitmap(bmp, ALLEGRO_PIXEL_FORMAT_ANY, ALLEGRO_LOCK_READONLY);
-    c = al_get_pixel(bmp, x, y);
-    al_unlock_bitmap(bmp);
-    al_unmap_rgba(c, &r, &g, &b, &a);
-
-    if (a5_current_palette != NULL)
-        return palette_find_closest(a5_current_palette, r, g, b);
-    return r; /* fallback */
-}
-
 /* ---- Drawing primitives ---- */
 static inline void a5_line(ALLEGRO_BITMAP *bmp, int x1, int y1, int x2, int y2, int color)
 {
@@ -322,8 +251,7 @@ static inline void a5_vline(ALLEGRO_BITMAP *bmp, int x, int y1, int y2, int colo
 }
 
 /* ---- Text rendering ---- */
-/* Allegro 4 textprintf(bmp, font, x, y, color, fmt, ...) ->
- * Allegro 5 needs target bitmap + al_draw_textf */
+/* Wraps al_draw_textf with target-bitmap save/restore */
 #define a5_textprintf(bmp, fnt, x, y, color, ...) \
     do { \
         ALLEGRO_BITMAP *_old = a5_begin_target_bitmap(bmp); \
@@ -333,36 +261,23 @@ static inline void a5_vline(ALLEGRO_BITMAP *bmp, int x, int y1, int y2, int colo
 
 
 /* ---- Keyboard compat ---- */
-/* Allegro 4: key[KEY_X], Allegro 5: al_key_down(&state, ALLEGRO_KEY_X) */
+/* Keyboard state: al_key_down(&state, ALLEGRO_KEY_X) */
 extern ALLEGRO_KEYBOARD_STATE a5_kb_state;
 
-/* Map Allegro 4 key constants to Allegro 5 */
+/* Short KEY_* aliases for Allegro 5 key constants used by the editor */
 #define KEY_A         ALLEGRO_KEY_A
-#define KEY_B         ALLEGRO_KEY_B
 #define KEY_C         ALLEGRO_KEY_C
-#define KEY_D         ALLEGRO_KEY_D
-#define KEY_E         ALLEGRO_KEY_E
-#define KEY_F         ALLEGRO_KEY_F
 #define KEY_G         ALLEGRO_KEY_G
 #define KEY_H         ALLEGRO_KEY_H
 #define KEY_I         ALLEGRO_KEY_I
-#define KEY_J         ALLEGRO_KEY_J
-#define KEY_K         ALLEGRO_KEY_K
-#define KEY_L         ALLEGRO_KEY_L
-#define KEY_M         ALLEGRO_KEY_M
 #define KEY_N         ALLEGRO_KEY_N
-#define KEY_O         ALLEGRO_KEY_O
 #define KEY_P         ALLEGRO_KEY_P
 #define KEY_Q         ALLEGRO_KEY_Q
 #define KEY_R         ALLEGRO_KEY_R
 #define KEY_S         ALLEGRO_KEY_S
 #define KEY_T         ALLEGRO_KEY_T
 #define KEY_U         ALLEGRO_KEY_U
-#define KEY_V         ALLEGRO_KEY_V
-#define KEY_W         ALLEGRO_KEY_W
 #define KEY_X         ALLEGRO_KEY_X
-#define KEY_Y         ALLEGRO_KEY_Y
-#define KEY_Z         ALLEGRO_KEY_Z
 #define KEY_0         ALLEGRO_KEY_0
 #define KEY_1         ALLEGRO_KEY_1
 #define KEY_2         ALLEGRO_KEY_2
@@ -423,14 +338,14 @@ extern ALLEGRO_KEYBOARD_STATE a5_kb_state;
 #define KEY_PGUP      ALLEGRO_KEY_PGUP
 #define KEY_PGDN      ALLEGRO_KEY_PGDN
 
-/* Allegro 4 global 'font' — replaced by a5_font */
+/* Global 'font' alias for a5_font */
 #define font a5_font
 
-/* Allegro 4 'screen' global is NOT #defined here because 'screen' is used
- * as a struct member name (glb_config.screen). Use al_get_backbuffer(a5_display)
- * directly in the few places that need the display backbuffer. */
+/* 'screen' is NOT #defined here because it is used as a struct member name
+ * (glb_config.screen). Use al_get_backbuffer(a5_display) directly in the
+ * few places that need the display backbuffer. */
 
-/* Allegro 4: key[KEY_X]  -> Allegro 5: al_key_down(&a5_kb_state, KEY_X) */
+/* key_pressed(k): check if key k is currently held down */
 #define key_pressed(k) al_key_down(&a5_kb_state, (k))
 
 /* ---- Mouse compat ---- */
@@ -444,7 +359,7 @@ extern ALLEGRO_MOUSE_STATE a5_ms_state;
 /* ---- Misc compat ---- */
 #define rest(ms) al_rest((double)(ms) / 1000.0)
 
-/* makecol - Allegro 4 color from RGB. Returns closest palette index. */
+/* makecol - color from RGB. Returns closest palette index. */
 static inline int a5_makecol(int r, int g, int b)
 {
     if (a5_current_palette != NULL)
@@ -457,9 +372,8 @@ static inline int a5_makecol(int r, int g, int b)
 /* Allegro 5 config handle — loaded in config.c */
 extern ALLEGRO_CONFIG *a5_config;
 
-/* textout - Allegro 4 fixed text rendering (no format string) */
+/* textout - fixed text rendering (no format string) */
 #define a5_textout(bmp, fnt, text, x, y, color) a5_textprintf(bmp, fnt, x, y, color, "%s", text)
-#define textout(bmp, fnt, text, x, y, color) a5_textout(bmp, fnt, text, x, y, color)
 
 
 
@@ -468,7 +382,7 @@ extern ALLEGRO_CONFIG *a5_config;
 #define stricmp _stricmp
 #endif
 
-/* file_exists - Allegro 4 function replaced with C standard */
+/* file_exists - wraps al_filename_exists */
 static inline int a5_file_exists(const char *path)
 {
     return al_filename_exists(path);

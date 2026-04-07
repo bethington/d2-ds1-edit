@@ -14,7 +14,7 @@
 #include "mpq/mpqtypes.h"
 #include "core/rgba_cache.h"
 
-/* Allegro 5 does not have PAL_SIZE; define for COLOR_MAP compat */
+/* PAL_SIZE: number of palette entries used by indexed-color structures */
 #define PAL_SIZE 256
 
 #define MAX_MPQ_FILE           4
@@ -304,8 +304,8 @@ typedef struct LAY_INF_S
 
    // editor only
    int    bmp_num;
-   ALLEGRO_BITMAP ** bmp;      // legacy frame bitmaps (palette indices)
-   CACHED_TILE ** cache;       // cached tiles with indices + RGBA (Allegro 5 migration)
+   ALLEGRO_BITMAP ** bmp;      // frame bitmaps
+   CACHED_TILE ** cache;       // cached tiles with palette indices + pre-converted RGBA
    int    off_x;
    int    off_y;
    int    last_good_frame;

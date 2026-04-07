@@ -534,10 +534,9 @@ void ds1edit_exit(void)
 
    printf("\nds1edit_exit()\n");
 
-   /* Skip Allegro bitmap cleanup — the heap corruption from the Allegro 4->5
-    * migration makes al_destroy_bitmap unsafe during shutdown. The OS reclaims
-    * all process memory on exit anyway. We still close file handles and free
-    * non-bitmap allocations. */
+   /* Skip Allegro bitmap cleanup — al_destroy_bitmap is unsafe during shutdown
+    * due to heap corruption. The OS reclaims all process memory on exit anyway.
+    * We still close file handles and free non-bitmap allocations. */
 
    // close all mpq
    for (i=0; i<MAX_MPQ_FILE; i++)
@@ -556,8 +555,7 @@ void ds1edit_exit(void)
    }
    
    // free non-bitmap memory (skip al_destroy_bitmap — causes heap corruption
-   // during shutdown due to Allegro 4->5 migration issues; OS reclaims all
-   // process memory on exit)
+   // during shutdown; OS reclaims all process memory on exit)
    fprintf(stderr, "exit, memory free :\n");
    fflush(stderr);
 

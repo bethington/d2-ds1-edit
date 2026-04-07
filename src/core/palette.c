@@ -132,13 +132,10 @@ void palette_build_select_colormap(const RGBA_PALETTE *pal, INDEX_COLORMAP *out)
 /*
  * TRANS colormap: 50% blend biased toward (128,128,128) gray.
  *
- * Original Allegro 4: create_trans_table(table, pal, 128, 128, 128, NULL)
- * This blends each palette color with (128,128,128) at 50%, then for each
- * (src, dst) pair finds the closest palette match.
- *
- * Actually, create_trans_table works as: for each (x, y) pair,
- * result = (pal[x] * (255-r) + pal[y] * r) / 255
+ * For each (x, y) pair:
+ *   result = (pal[x] * (255-r) + pal[y] * r) / 255
  * where r,g,b = 128,128,128 means 50% blend.
+ * Then the closest palette index is stored.
  */
 void palette_build_trans_colormap(const RGBA_PALETTE *pal, INDEX_COLORMAP *out)
 {
