@@ -415,6 +415,8 @@ void ds1edit_init(void)
    glb_ds1edit.cmd_line.area_name = NULL;
    glb_ds1edit.cmd_line.list_areas = FALSE;
    glb_ds1edit.cmd_line.list_areas_ext = FALSE;
+   glb_ds1edit.cmd_line.list_files = FALSE;
+   glb_ds1edit.cmd_line.file_path = NULL;
    for (i=0; i < DT1_IN_DS1_MAX; i++)
       glb_ds1edit.cmd_line.dt1_list_filename[i] = NULL;
 
@@ -1037,16 +1039,33 @@ int main(int argc, char * argv[])
       // list of ds1 to open
       misc_open_several_ds1(argv[1]);
    }
-   else if (glb_ds1edit.cmd_line.list_areas == TRUE || glb_ds1edit.cmd_line.list_areas_ext == TRUE)
+   else if (glb_ds1edit.cmd_line.list_areas == TRUE ||
+            glb_ds1edit.cmd_line.list_areas_ext == TRUE ||
+            glb_ds1edit.cmd_line.list_files == TRUE)
    {
-      // --list-areas or --list-areas-ext : print available areas and exit
+      // --list-areas, --list-areas-ext, or --list-files
       if (area_browser_init() != 0)
          ds1edit_error("main(), error.\nFailed to load Excel data for area browser.");
-      if (glb_ds1edit.cmd_line.list_areas_ext == TRUE)
+      if (glb_ds1edit.cmd_line.list_files == TRUE)
+         area_browser_list_files();
+      else if (glb_ds1edit.cmd_line.list_areas_ext == TRUE)
          area_browser_list_ext();
       else
          area_browser_list();
       exit(0);
+   }
+   else if (glb_ds1edit.cmd_line.file_path != NULL)
+   {
+      // --file "path/to/file.ds1" : load single DS1 from Excel data
+      if (area_browser_init() != 0)
+         ds1edit_error("main(), error.\nFailed to load Excel data for area browser.");
+
+      if (area_browser_open_by_file(glb_ds1edit.cmd_line.file_path) < 0)
+      {
+         sprintf(tmp, "main(), error.\nDS1 file '%s' not found in Excel data.",
+                 glb_ds1edit.cmd_line.file_path);
+         ds1edit_error(tmp);
+      }
    }
    else if (glb_ds1edit.cmd_line.area_name != NULL)
    {
@@ -1081,7 +1100,9 @@ int main(int argc, char * argv[])
    }
    else if (glb_ds1edit.cmd_line.area_name != NULL ||
             glb_ds1edit.cmd_line.list_areas == TRUE ||
-            glb_ds1edit.cmd_line.list_areas_ext == TRUE)
+            glb_ds1edit.cmd_line.list_areas_ext == TRUE ||
+            glb_ds1edit.cmd_line.list_files == TRUE ||
+            glb_ds1edit.cmd_line.file_path != NULL)
    {
    }
    else // syntax error

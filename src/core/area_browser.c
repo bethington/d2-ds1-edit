@@ -492,6 +492,104 @@ void area_browser_list_ext(void)
    fflush(stdout);
 }
 
+/* Print all DS1 files from the area browser data. */
+void area_browser_list_files(void)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   int i, j, total = 0;
+
+   printf("\nAll DS1 files:\n\n");
+   for (i = 0; i < ab->group_count; i++)
+   {
+      AREA_GROUP_S * g = &ab->groups[i];
+      for (j = 0; j < g->entry_count; j++)
+      {
+         AREA_DS1_ENTRY_S * e = &g->entries[j];
+         if (g->act > 0)
+            printf("  %-55s LvlType=%-3d Def=%-5d (Act %d - %s)\n",
+                   e->ds1_path, e->lvltype_id, e->lvlprest_def, g->act, g->name);
+         else
+            printf("  %-55s LvlType=%-3d Def=%-5d (%s)\n",
+                   e->ds1_path, e->lvltype_id, e->lvlprest_def, g->name);
+         total++;
+      }
+   }
+   printf("\nTotal: %d DS1 files\n\n", total);
+   fflush(stdout);
+}
+
+/* Find a DS1 file by path (case-insensitive, partial match on filename).
+ * Opens it with its correct LvlType and DEF. Returns 0 on success. */
+int area_browser_open_by_file(const char * ds1_path)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   int i, j, ds1_idx = 0;
+   const char * search_name;
+
+   /* Extract just the filename for matching if a full path was given */
+   search_name = strrchr(ds1_path, '/');
+   if (search_name == NULL)
+      search_name = strrchr(ds1_path, '\\');
+   if (search_name != NULL)
+      search_name++;
+   else
+      search_name = ds1_path;
+
+   for (i = 0; i < ab->group_count; i++)
+   {
+      AREA_GROUP_S * g = &ab->groups[i];
+      for (j = 0; j < g->entry_count; j++)
+      {
+         AREA_DS1_ENTRY_S * e = &g->entries[j];
+         const char * entry_name;
+
+         /* Try full path match first */
+         if (stricmp(e->ds1_path, ds1_path) == 0)
+            goto found;
+
+         /* Try filename-only match */
+         entry_name = strrchr(e->ds1_path, '/');
+         if (entry_name == NULL)
+            entry_name = strrchr(e->ds1_path, '\\');
+         if (entry_name != NULL)
+            entry_name++;
+         else
+            entry_name = e->ds1_path;
+
+         if (stricmp(entry_name, search_name) == 0)
+            goto found;
+
+         continue;
+
+      found:
+         printf("Loading DS1: %s (LvlType=%d, Def=%d)\n",
+                e->ds1_path, e->lvltype_id, e->lvlprest_def);
+         fflush(stdout);
+
+         /* Find first free ds1 slot */
+         for (ds1_idx = 0; ds1_idx < DS1_MAX; ds1_idx++)
+            if (glb_ds1[ds1_idx].name[0] == '\0')
+               break;
+
+         if (ds1_idx >= DS1_MAX)
+         {
+            printf("area_browser_open_by_file: DS1_MAX reached\n");
+            return -1;
+         }
+
+         {
+            char full_path[256];
+            sprintf(full_path, "assets/tiles/%s", e->ds1_path);
+            misc_open_1_ds1(ds1_idx, full_path, e->lvltype_id, e->lvlprest_def, 0, 0);
+         }
+         return 0;
+      }
+   }
+
+   printf("area_browser_open_by_file: '%s' not found\n", ds1_path);
+   return -1;
+}
+
 /* Free all area browser dynamic memory. */
 void area_browser_destroy(void)
 {

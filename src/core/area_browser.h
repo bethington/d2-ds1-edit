@@ -9,5 +9,7 @@ int  area_browser_open_group    (int group_idx);
 int  area_browser_run           (void);
 void area_browser_list          (void);
 void area_browser_list_ext      (void);
+void area_browser_list_files    (void);
+int  area_browser_open_by_file  (const char * ds1_path);
 
 #endif

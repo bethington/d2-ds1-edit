@@ -1337,6 +1337,20 @@ int misc_cmd_line_parse(int argc, char ** argv)
       {
          glb_ds1edit.cmd_line.list_areas_ext = TRUE;
       }
+      else if (i == 1 && stricmp(argv[i], "--list-files") == 0)
+      {
+         glb_ds1edit.cmd_line.list_files = TRUE;
+      }
+      else if (i == 1 && stricmp(argv[i], "--file") == 0)
+      {
+         i++;
+         if (i >= argc)
+         {
+            printf("misc_cmd_line_parse(), error : --file requires a DS1 file path\n");
+            return -1;
+         }
+         glb_ds1edit.cmd_line.file_path = argv[i];
+      }
       else if (i == 1)
       {
          // .ini or .ds1 ?
