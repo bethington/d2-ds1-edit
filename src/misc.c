@@ -1340,6 +1340,12 @@ int misc_cmd_line_parse(int argc, char ** argv)
       else if (i == 1 && stricmp(argv[i], "--list-files") == 0)
       {
          glb_ds1edit.cmd_line.list_files = TRUE;
+         /* optional filter argument */
+         if (i + 1 < argc && argv[i + 1][0] != '-')
+         {
+            i++;
+            glb_ds1edit.cmd_line.list_files_filter = argv[i];
+         }
       }
       else if (i == 1 && stricmp(argv[i], "--file") == 0)
       {

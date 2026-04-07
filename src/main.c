@@ -416,6 +416,7 @@ void ds1edit_init(void)
    glb_ds1edit.cmd_line.list_areas = FALSE;
    glb_ds1edit.cmd_line.list_areas_ext = FALSE;
    glb_ds1edit.cmd_line.list_files = FALSE;
+   glb_ds1edit.cmd_line.list_files_filter = NULL;
    glb_ds1edit.cmd_line.file_path = NULL;
    for (i=0; i < DT1_IN_DS1_MAX; i++)
       glb_ds1edit.cmd_line.dt1_list_filename[i] = NULL;
@@ -1047,7 +1048,7 @@ int main(int argc, char * argv[])
       if (area_browser_init() != 0)
          ds1edit_error("main(), error.\nFailed to load Excel data for area browser.");
       if (glb_ds1edit.cmd_line.list_files == TRUE)
-         area_browser_list_files();
+         area_browser_list_files(glb_ds1edit.cmd_line.list_files_filter);
       else if (glb_ds1edit.cmd_line.list_areas_ext == TRUE)
          area_browser_list_ext();
       else

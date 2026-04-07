@@ -10,6 +10,22 @@
 
 /* ---- helpers ---- */
 
+/* Case-insensitive substring search. */
+static int stristr_match(const char * haystack, const char * needle)
+{
+   int hlen, nlen, i;
+   if (needle == NULL || needle[0] == '\0') return 1;
+   hlen = (int)strlen(haystack);
+   nlen = (int)strlen(needle);
+   if (nlen > hlen) return 0;
+   for (i = 0; i <= hlen - nlen; i++)
+   {
+      if (strnicmp(haystack + i, needle, nlen) == 0)
+         return 1;
+   }
+   return 0;
+}
+
 /* Parse act number from a name like "Act 3 - Jungle". Returns 1-5, or 0 if
  * the name doesn't match the "Act X - ..." pattern. */
 static int area_parse_act(const char * name)
@@ -493,24 +509,43 @@ void area_browser_list_ext(void)
 }
 
 /* Print all DS1 files from the area browser data. */
-void area_browser_list_files(void)
+/* Print DS1 files, optionally filtered by substring (case-insensitive).
+ * Pass NULL or "" for no filter. */
+void area_browser_list_files(const char * filter)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
    int i, j, total = 0;
+   char group_label[128];
 
-   printf("\nAll DS1 files:\n\n");
+   if (filter != NULL && filter[0] != '\0')
+      printf("\nDS1 files matching \"%s\":\n\n", filter);
+   else
+      printf("\nAll DS1 files:\n\n");
+
    for (i = 0; i < ab->group_count; i++)
    {
       AREA_GROUP_S * g = &ab->groups[i];
+
+      if (g->act > 0)
+         sprintf(group_label, "Act %d - %s", g->act, g->name);
+      else
+         strncpy(group_label, g->name, sizeof(group_label) - 1);
+      group_label[sizeof(group_label) - 1] = '\0';
+
       for (j = 0; j < g->entry_count; j++)
       {
          AREA_DS1_ENTRY_S * e = &g->entries[j];
-         if (g->act > 0)
-            printf("  %-55s LvlType=%-3d Def=%-5d (Act %d - %s)\n",
-                   e->ds1_path, e->lvltype_id, e->lvlprest_def, g->act, g->name);
-         else
-            printf("  %-55s LvlType=%-3d Def=%-5d (%s)\n",
-                   e->ds1_path, e->lvltype_id, e->lvlprest_def, g->name);
+
+         /* Apply filter: match against path or group label */
+         if (filter != NULL && filter[0] != '\0')
+         {
+            if (!stristr_match(e->ds1_path, filter) &&
+                !stristr_match(group_label, filter))
+               continue;
+         }
+
+         printf("  %-55s LvlType=%-3d Def=%-5d (%s)\n",
+                e->ds1_path, e->lvltype_id, e->lvlprest_def, group_label);
          total++;
       }
    }

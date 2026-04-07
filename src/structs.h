@@ -463,6 +463,7 @@ typedef struct CMD_LINE_S
    int    list_areas;
    int    list_areas_ext;
    int    list_files;
+   char * list_files_filter; // optional substring filter for --list-files
 
    // --file : load a single DS1 by path
    char * file_path;
