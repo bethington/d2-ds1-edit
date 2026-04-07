@@ -148,6 +148,10 @@ add_custom_command(TARGET ds1edit POST_BUILD
         "${CMAKE_SOURCE_DIR}/Ds1edit.ini.sample" "${CMAKE_SOURCE_DIR}/bin/Ds1edit.ini.sample"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_SOURCE_DIR}/allegro5.cfg" "${CMAKE_SOURCE_DIR}/bin/allegro5.cfg"
+    COMMAND ${CMAKE_COMMAND}
+        -DSRC=${CMAKE_SOURCE_DIR}/Ds1edit.ini.sample
+        -DDST=${CMAKE_SOURCE_DIR}/bin/Ds1edit.ini
+        -P ${CMAKE_SOURCE_DIR}/cmake/copy-if-missing.cmake
     COMMENT "Copying data, pcx, assets, and examples to bin/"
 )
 
