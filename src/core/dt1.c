@@ -417,6 +417,152 @@ void dt1_all_zoom_make(int i)
 
 
 // ==========================================================================
+// ensure zoom level z is generated for all loaded DT1s
+// called on-demand when the user changes zoom to a level that wasn't
+// pre-generated during loading (we only generate the active zoom on load)
+void dt1_ensure_zoom(int z)
+{
+   int i, b, needs_rebuild = FALSE;
+
+   if (z < 0 || z >= ZM_MAX)
+      return;
+
+   for (i = 0; i < DT1_MAX; i++)
+   {
+      if (glb_dt1[i].ds1_usage == 0 || glb_dt1[i].block_num == 0)
+         continue;
+      if (glb_dt1[i].block_zoom[z] == NULL)
+         continue;
+
+      /* Check if any block at this zoom is NULL (needs generation) */
+      for (b = 0; b < glb_dt1[i].block_num; b++)
+      {
+         if (*(glb_dt1[i].block_zoom[z] + b) == NULL &&
+             glb_dt1[i].block_cache[z] != NULL &&
+             glb_dt1[i].block_cache[z][b] != NULL)
+         {
+            /* Has cached tile but no bitmap — rebuild from cache */
+            needs_rebuild = TRUE;
+            break;
+         }
+      }
+
+      /* Check if this zoom level was never generated (no cache data) */
+      if (!needs_rebuild && glb_dt1[i].block_cache[z] != NULL)
+      {
+         int has_any = FALSE;
+         for (b = 0; b < glb_dt1[i].block_num; b++)
+         {
+            if (glb_dt1[i].block_cache[z][b] != NULL)
+            {
+               has_any = TRUE;
+               break;
+            }
+         }
+         if (!has_any)
+         {
+            /* No cached data for this zoom — need to regenerate from raw DT1.
+             * This requires re-decoding. Reuse dt1_all_zoom_make but we
+             * modify it to only generate the missing zoom. For now, generate
+             * all zoom levels as a fallback (slower but correct). */
+            BLOCK_S * b_ptr;
+            int s, w, h, y_add, orientation;
+            uint8_t * idx_buf;
+            ALLEGRO_BITMAP * tmp_bmp;
+            SUB_TILE_S st_ptr;
+
+            b_ptr = (BLOCK_S *) glb_dt1[i].bh_buffer;
+            for (b = 0; b < glb_dt1[i].block_num; b++)
+            {
+               orientation = b_ptr->orientation;
+               w = b_ptr->size_x;
+               if ((orientation == 10) || (orientation == 11))
+                  w = 160;
+               h = - b_ptr->size_y;
+
+               y_add = 96;
+               if ((orientation == 0) || (orientation == 15))
+               {
+                  if (b_ptr->size_y) { h = 80; y_add = 0; }
+               }
+               else if (orientation < 15)
+               {
+                  if (b_ptr->size_y) { h += 32; y_add = h; }
+               }
+
+               if (w == 0 || h == 0)
+               {
+                  b_ptr++;
+                  continue;
+               }
+
+               tmp_bmp = al_create_bitmap(w, h);
+               if (tmp_bmp == NULL) { b_ptr++; continue; }
+               a5_clear(tmp_bmp);
+
+               idx_buf = (uint8_t *) calloc(w * h, 1);
+
+               for (s = 0; s < b_ptr->tiles_number; s++)
+               {
+                  UBYTE * data;
+                  int x0, y0, length, format;
+
+                  dt1_fill_subt(&st_ptr, i, b_ptr->tiles_ptr, s);
+                  x0     = st_ptr.x_pos;
+                  y0     = y_add + st_ptr.y_pos;
+                  data   = (UBYTE *)glb_dt1[i].buffer + b_ptr->tiles_ptr + st_ptr.data_offset;
+                  length = st_ptr.length;
+                  format = st_ptr.format;
+
+                  if (format == 0x0001)
+                     draw_sub_tile_isometric(tmp_bmp, x0, y0, data, length);
+                  else
+                     draw_sub_tile_normal(tmp_bmp, x0, y0, data, length);
+
+                  if (idx_buf != NULL)
+                  {
+                     if (format == 0x0001)
+                        decode_sub_tile_isometric(idx_buf, w, h, x0, y0, data, length);
+                     else
+                        decode_sub_tile_normal(idx_buf, w, h, x0, y0, data, length);
+                  }
+               }
+
+               dt1_zoom(tmp_bmp, i, b, z, idx_buf, w, h);
+
+               al_destroy_bitmap(tmp_bmp);
+               free(idx_buf);
+               b_ptr++;
+            }
+         }
+      }
+   }
+
+   /* Rebuild from cache for entries that have cached data but no bitmap */
+   if (needs_rebuild && a5_current_palette != NULL)
+   {
+      for (i = 0; i < DT1_MAX; i++)
+      {
+         if (glb_dt1[i].ds1_usage == 0)
+            continue;
+         if (glb_dt1[i].block_cache[z] == NULL || glb_dt1[i].block_zoom[z] == NULL)
+            continue;
+
+         for (b = 0; b < glb_dt1[i].block_num; b++)
+         {
+            CACHED_TILE * ct = glb_dt1[i].block_cache[z][b];
+            if (ct != NULL && *(glb_dt1[i].block_zoom[z] + b) == NULL)
+            {
+               ALLEGRO_BITMAP * new_bmp = cache_tile_to_a5_bitmap(ct, a5_current_palette);
+               if (new_bmp != NULL)
+                  *(glb_dt1[i].block_zoom[z] + b) = new_bmp;
+            }
+         }
+      }
+   }
+}
+
+// ==========================================================================
 // fill / make all the datas of 1 dt1
 void dt1_struct_update(int i)
 {

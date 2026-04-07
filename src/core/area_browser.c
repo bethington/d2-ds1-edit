@@ -722,6 +722,10 @@ int area_browser_switch_area(int group_idx)
    glb_ds1edit.has_loaded_ds1 = TRUE;
    glb_ds1edit.ds1_group_idx = 0;
 
+   /* Apply sticky zoom */
+   if (glb_ds1edit.last_zoom > ZM_11 && glb_ds1edit.last_zoom < ZM_MAX)
+      change_zoom(0, glb_ds1edit.last_zoom);
+
    if (opened > 1)
       glb_ds1edit.show_2nd_row = TRUE;
 
@@ -820,6 +824,10 @@ int area_browser_switch_single(int group_idx, int entry_idx)
    glb_ds1edit.has_loaded_ds1 = TRUE;
    glb_ds1edit.ds1_group_idx = 0;
    glb_ds1edit.show_2nd_row = FALSE;
+
+   /* Apply sticky zoom */
+   if (glb_ds1edit.last_zoom > ZM_11 && glb_ds1edit.last_zoom < ZM_MAX)
+      change_zoom(0, glb_ds1edit.last_zoom);
 
    return 0;
 }

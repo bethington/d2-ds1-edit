@@ -571,6 +571,7 @@ typedef struct GLB_DS1EDIT_S
    int           sidebar_visible;
    int           sidebar_width;
    int           has_loaded_ds1;  /* TRUE after at least one DS1 is loaded */
+   ZOOM_E        last_zoom;       /* remembered zoom level for sticky zoom */
 } GLB_DS1EDIT_S;
 
 extern GLB_DS1EDIT_S glb_ds1edit;
