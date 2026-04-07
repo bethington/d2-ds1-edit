@@ -291,6 +291,7 @@ void ds1edit_init(void)
    printf("ds1edit_init()\n");
    memset( & glb_config,  0, sizeof(glb_config));
    memset( & glb_ds1edit, 0, sizeof(glb_ds1edit));
+   glb_ds1edit.sidebar_width = 250;
 
    // allocate mem for DT1 & DS1
    i = sizeof(DS1_S) * DS1_MAX;
@@ -1029,6 +1030,7 @@ int main(int argc, char * argv[])
             glb_ds1edit.cmd_line.resize_height
          );
       }
+      glb_ds1edit.has_loaded_ds1 = TRUE;
    }
    else if (glb_ds1edit.cmd_line.ini_filename != NULL)
    {
@@ -1039,6 +1041,7 @@ int main(int argc, char * argv[])
 
       // list of ds1 to open
       misc_open_several_ds1(argv[1]);
+      glb_ds1edit.has_loaded_ds1 = TRUE;
    }
    else if (glb_ds1edit.cmd_line.list_areas == TRUE ||
             glb_ds1edit.cmd_line.list_areas_ext == TRUE ||
@@ -1067,6 +1070,7 @@ int main(int argc, char * argv[])
                  glb_ds1edit.cmd_line.file_path);
          ds1edit_error(tmp);
       }
+      glb_ds1edit.has_loaded_ds1 = TRUE;
    }
    else if (glb_ds1edit.cmd_line.area_name != NULL)
    {
@@ -1080,51 +1084,17 @@ int main(int argc, char * argv[])
                  glb_ds1edit.cmd_line.area_name);
          ds1edit_error(tmp);
       }
+      glb_ds1edit.has_loaded_ds1 = TRUE;
    }
    else
    {
-      // no arguments — show GUI area browser after display creation
-      glb_ds1edit.area_browser.is_active = TRUE;
-   }
-
-   // GUI area browser mode — no arguments provided
-   if (glb_ds1edit.area_browser.is_active == TRUE)
-   {
-      int browser_result;
-
-      // Create display early for GUI browser
-      if (glb_config.fullscreen == TRUE)
-         al_set_new_display_flags(ALLEGRO_FULLSCREEN);
-      else
-         al_set_new_display_flags(ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE);
-
-      if (glb_config.screen.refresh > 0)
-         al_set_new_display_refresh_rate(glb_config.screen.refresh);
-
-      a5_display = al_create_display(glb_config.screen.width, glb_config.screen.height);
-      if (a5_display == NULL)
-         ds1edit_error("main(), error.\nCan't create display for area browser.");
-
-      al_set_window_title(a5_display, "DS1 Editor - Area Browser");
-      al_install_mouse();
-
-      // Load Excel data and build area groups
+      // no arguments — open editor with sidebar visible, no map loaded
+      glb_ds1edit.sidebar_visible = TRUE;
       if (area_browser_init() != 0)
          ds1edit_error("main(), error.\nFailed to load Excel data for area browser.");
-
-      // Run the GUI browser
-      browser_result = area_browser_run();
-      if (browser_result < 0)
-      {
-         // User pressed Escape or closed window
-         al_destroy_display(a5_display);
-         exit(0);
-      }
-
-      // Load the selected area's DS1 files
-      area_browser_open_group(browser_result);
-      glb_ds1edit.area_browser.is_active = FALSE;
    }
+
+   /* (Full-screen browser removed — sidebar is used instead) */
 
    // syntaxe of the command line
    printf("============================================================\n");
@@ -1161,31 +1131,35 @@ int main(int argc, char * argv[])
    }
    printf("============================================================\n");
 
-   // animdata.d2
-   printf("\nanimdata_load()\n");
-   fflush(stdout);
-   fflush(stderr);
-   animdata_load();
+   // animdata, animations, and colormaps — only if DS1 files are loaded
+   if (glb_ds1edit.has_loaded_ds1)
+   {
+      // animdata.d2
+      printf("\nanimdata_load()\n");
+      fflush(stdout);
+      fflush(stderr);
+      animdata_load();
 
-   // load necessary objects animation
-   printf("loading ds1 objects animations :\n");
-   fprintf(stderr, "loading ds1 objects animations : ");
-   fflush(stdout);
-   fflush(stderr);
+      // load necessary objects animation
+      printf("loading ds1 objects animations :\n");
+      fprintf(stderr, "loading ds1 objects animations : ");
+      fflush(stdout);
+      fflush(stderr);
 
-   anim_update_gfx(TRUE); // TRUE is for "show dot progression"
+      anim_update_gfx(TRUE); // TRUE is for "show dot progression"
 
-   printf("\n");
-   fprintf(stderr, "\n");
-   fflush(stdout);
-   fflush(stderr);
-   
-   // colormaps
-   printf("\ncolor maps...");
-   fprintf(stderr, "color maps");
-   misc_make_cmaps();
-   printf("done\n");
-   fprintf(stderr, "done\n");
+      printf("\n");
+      fprintf(stderr, "\n");
+      fflush(stdout);
+      fflush(stderr);
+
+      // colormaps
+      printf("\ncolor maps...");
+      fprintf(stderr, "color maps");
+      misc_make_cmaps();
+      printf("done\n");
+      fprintf(stderr, "done\n");
+   }
 
    // headless mode : render one frame and save to file, then exit
    if (glb_ds1edit.cmd_line.headless_mode == TRUE)
@@ -1336,15 +1310,28 @@ int main(int argc, char * argv[])
    al_register_event_source(a5_event_queue, al_get_timer_event_source(a5_fps_timer));
    al_start_timer(a5_fps_timer);
 
-   glb_ds1edit.win_preview.x0 = glb_ds1[ds1_idx].own_wpreview.x0;
-   glb_ds1edit.win_preview.y0 = glb_ds1[ds1_idx].own_wpreview.y0;
-   glb_ds1edit.win_preview.w  = glb_ds1[ds1_idx].own_wpreview.w ;
-   glb_ds1edit.win_preview.h  = glb_ds1[ds1_idx].own_wpreview.h ;
+   if (glb_ds1edit.has_loaded_ds1)
+   {
+      glb_ds1edit.win_preview.x0 = glb_ds1[ds1_idx].own_wpreview.x0;
+      glb_ds1edit.win_preview.y0 = glb_ds1[ds1_idx].own_wpreview.y0;
+      glb_ds1edit.win_preview.w  = glb_ds1[ds1_idx].own_wpreview.w ;
+      glb_ds1edit.win_preview.h  = glb_ds1[ds1_idx].own_wpreview.h ;
 
+      // Initialize palette state so the first frame doesn't trigger a redundant
+      // dt1_rebuild_bitmaps_from_cache (already done during init above).
+      wpreview_init_palette_state(ds1_idx);
+   }
+   else
+   {
+      glb_ds1edit.win_preview.x0 = 0;
+      glb_ds1edit.win_preview.y0 = 0;
+      glb_ds1edit.win_preview.w  = glb_config.screen.width;
+      glb_ds1edit.win_preview.h  = glb_config.screen.height;
+   }
 
-   // Initialize palette state so the first frame doesn't trigger a redundant
-   // dt1_rebuild_bitmaps_from_cache (already done during init above).
-   wpreview_init_palette_state(ds1_idx);
+   // Ensure area browser data is available for the sidebar (all launch modes)
+   if (glb_ds1edit.area_browser.group_count == 0)
+      area_browser_init();
 
    // main loop
    freopen("stderr.txt", "wt", stderr);

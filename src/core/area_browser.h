@@ -9,6 +9,10 @@ int  area_browser_open_group    (int group_idx);
 int  area_browser_run           (void);
 void area_browser_list          (void);
 void area_browser_list_ext      (void);
+void area_browser_draw_sidebar  (int width, int height);
+void area_browser_draw_sidebar_tab(int height);
+int  area_browser_sidebar_click (int mx, int my, int sidebar_w, int disp_h);
+int  area_browser_sidebar_scroll(int dz);
 void area_browser_list_files    (const char * filter);
 int  area_browser_open_by_file  (const char * ds1_path);
 

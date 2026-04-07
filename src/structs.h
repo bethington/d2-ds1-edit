@@ -566,6 +566,9 @@ typedef struct GLB_DS1EDIT_S
    TILEGRID_ENUM display_tile_grid;
    char          * version_build;
    char          * version_dll;
+   int           sidebar_visible;
+   int           sidebar_width;
+   int           has_loaded_ds1;  /* TRUE after at least one DS1 is loaded */
 } GLB_DS1EDIT_S;
 
 extern GLB_DS1EDIT_S glb_ds1edit;

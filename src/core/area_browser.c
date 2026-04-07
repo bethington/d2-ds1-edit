@@ -770,7 +770,176 @@ int area_browser_open_group(int group_idx)
 }
 
 /* GUI area browser — placeholder for Phase 3 */
-/* ---- GUI area browser ---- */
+/* ---- Sidebar rendering ---- */
+
+#define SB_FONT_H      8
+#define SB_LINE_H      14
+#define SB_MARGIN_X    8
+#define SB_HEADER_H    22
+#define SB_TAB_W       16
+
+/* Draw the area browser sidebar on the backbuffer (target already set). */
+void area_browser_draw_sidebar(int width, int height)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   int y, i, last_act = -1;
+   int draw_row = 0;
+   int top_bar_h = glb_ds1edit.show_2nd_row ? 20 : 9;
+   int bottom_bar_h = 10;
+   int panel_top = top_bar_h;
+   int panel_bottom = height - bottom_bar_h;
+   ALLEGRO_COLOR col_title    = al_map_rgb(255, 200, 80);
+   ALLEGRO_COLOR col_act      = al_map_rgb(180, 150, 60);
+   ALLEGRO_COLOR col_item     = al_map_rgb(200, 200, 200);
+   ALLEGRO_COLOR col_sel_bg   = al_map_rgba(50, 70, 130, 220);
+   ALLEGRO_COLOR col_sel_text = al_map_rgb(255, 255, 255);
+   ALLEGRO_COLOR col_count    = al_map_rgb(120, 120, 120);
+   ALLEGRO_COLOR col_zero     = al_map_rgb(60, 60, 60);
+   ALLEGRO_COLOR col_border   = al_map_rgb(60, 50, 40);
+   ALLEGRO_COLOR col_close    = al_map_rgb(160, 160, 160);
+
+   /* Semi-transparent background overlay — between top and bottom bars */
+   al_draw_filled_rectangle(0, (float)panel_top, (float)width, (float)panel_bottom,
+                             al_map_rgba(20, 16, 12, 200));
+
+   /* Right border */
+   al_draw_line((float)width - 0.5f, (float)panel_top,
+                (float)width - 0.5f, (float)panel_bottom, col_border, 1.0f);
+
+   /* Header */
+   al_draw_filled_rectangle(0, (float)panel_top, (float)width,
+                             (float)(panel_top + SB_HEADER_H), al_map_rgba(36, 30, 24, 220));
+   al_draw_textf(a5_font, col_title, (float)SB_MARGIN_X, (float)(panel_top + 7), 0, "Areas");
+
+   /* Close button "X" */
+   al_draw_textf(a5_font, col_close, (float)(width - 16), (float)(panel_top + 7), 0, "X");
+
+   /* Area list */
+   y = panel_top + SB_HEADER_H + 4;
+   for (i = 0; i < ab->group_count; i++)
+   {
+      AREA_GROUP_S * g = &ab->groups[i];
+      int is_selected = (i == ab->selected_group);
+
+      /* Act header */
+      if (g->act != last_act)
+      {
+         if (draw_row >= ab->scroll_offset && y + SB_LINE_H < panel_bottom)
+         {
+            if (g->act > 0)
+               al_draw_textf(a5_font, col_act, (float)SB_MARGIN_X, (float)y, 0,
+                              "Act %d", g->act);
+            else
+               al_draw_textf(a5_font, col_act, (float)SB_MARGIN_X, (float)y, 0,
+                              "Other");
+            y += SB_LINE_H;
+         }
+         draw_row++;
+         last_act = g->act;
+      }
+
+      /* Group row */
+      if (draw_row >= ab->scroll_offset && y + SB_LINE_H < panel_bottom)
+      {
+         ALLEGRO_COLOR text_col = g->entry_count > 0 ? col_item : col_zero;
+         char count_str[16];
+
+         if (is_selected && g->entry_count > 0)
+         {
+            al_draw_filled_rectangle((float)(SB_MARGIN_X + 4), (float)(y - 1),
+                                     (float)(width - 4), (float)(y + SB_LINE_H - 1),
+                                     col_sel_bg);
+            text_col = col_sel_text;
+         }
+
+         al_draw_textf(a5_font, text_col, (float)(SB_MARGIN_X + 10), (float)y, 0,
+                        "%s", g->name);
+
+         sprintf(count_str, "%d", g->entry_count);
+         al_draw_textf(a5_font, is_selected ? col_sel_text : col_count,
+                        (float)(width - 32), (float)y, 0,
+                        "%s", count_str);
+
+         y += SB_LINE_H;
+      }
+      draw_row++;
+   }
+}
+
+/* Draw collapsed sidebar tab — small ">" button at left edge. */
+void area_browser_draw_sidebar_tab(int height)
+{
+   int top_bar_h = glb_ds1edit.show_2nd_row ? 20 : 9;
+   int bottom_bar_h = 10;
+   int panel_top = top_bar_h;
+   int panel_bottom = height - bottom_bar_h;
+   ALLEGRO_COLOR col_bg   = al_map_rgba(36, 30, 24, 180);
+   ALLEGRO_COLOR col_text = al_map_rgb(160, 160, 160);
+
+   al_draw_filled_rectangle(0, (float)panel_top, (float)SB_TAB_W, (float)panel_bottom, col_bg);
+   al_draw_line((float)SB_TAB_W - 0.5f, (float)panel_top,
+                (float)SB_TAB_W - 0.5f, (float)panel_bottom,
+                al_map_rgb(60, 50, 40), 1.0f);
+   al_draw_textf(a5_font, col_text, 4, (float)((panel_top + panel_bottom) / 2 - 4), 0, ">");
+}
+
+/* Handle a mouse click in the sidebar. Returns group index if clicked,
+ * -1 if no action, -2 if close button clicked. */
+int area_browser_sidebar_click(int mx, int my, int sidebar_w, int disp_h)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   int y, i, last_act = -1;
+   int draw_row = 0;
+   int top_bar_h = glb_ds1edit.show_2nd_row ? 20 : 9;
+   int panel_top = top_bar_h;
+
+   /* Close button */
+   if (my >= panel_top && my < panel_top + SB_HEADER_H && mx > sidebar_w - 20)
+      return -2;
+
+   /* Find which group was clicked */
+   y = panel_top + SB_HEADER_H + 4;
+   for (i = 0; i < ab->group_count; i++)
+   {
+      AREA_GROUP_S * g = &ab->groups[i];
+
+      if (g->act != last_act)
+      {
+         if (draw_row >= ab->scroll_offset)
+            y += SB_LINE_H;
+         draw_row++;
+         last_act = g->act;
+      }
+
+      if (draw_row >= ab->scroll_offset)
+      {
+         if (my >= y && my < y + SB_LINE_H)
+         {
+            if (g->entry_count > 0)
+            {
+               ab->selected_group = i;
+               return i;
+            }
+            return -1;
+         }
+         y += SB_LINE_H;
+      }
+      draw_row++;
+   }
+   return -1;
+}
+
+/* Handle mouse wheel scroll in sidebar. Returns 1 if handled. */
+int area_browser_sidebar_scroll(int dz)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   ab->scroll_offset -= dz * 3;
+   if (ab->scroll_offset < 0)
+      ab->scroll_offset = 0;
+   return 1;
+}
+
+/* ---- GUI area browser (full-screen, for --no-arg startup fallback) ---- */
 
 #define AB_FONT_H      8
 #define AB_LINE_H      14
