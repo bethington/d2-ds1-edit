@@ -40,6 +40,7 @@ set(SOURCES
     # core/
     src/core/area_browser.c
     src/core/ds1.c
+    src/core/ds1_manager.c
     src/core/dt1.c
     src/core/dt1_draw.c
     src/core/dt1_decode.c

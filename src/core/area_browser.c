@@ -57,7 +57,7 @@ static const char * area_strip_prefix(const char * name)
 }
 
 /* Add a DS1 entry to a group, growing the array if needed. */
-static void area_group_add_entry(AREA_GROUP_S * grp, int lvltype_id,
+void area_group_add_entry(AREA_GROUP_S * grp, int lvltype_id,
                                   int def, const char * ds1_path)
 {
    AREA_DS1_ENTRY_S * e;

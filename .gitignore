@@ -1,5 +1,6 @@
 # Build output (entire bin/ directory is build output now)
 bin/
+backup/
 build/
 cmake-build/
 *.obj

@@ -14,6 +14,7 @@
 #include "ui/dialogs.h"
 #include "ui/interface.h"
 #include "core/area_browser.h"
+#include "core/ds1_manager.h"
 
 
 typedef struct
@@ -629,6 +630,62 @@ void interfac_user_handler(int start_ds1_idx)
             ds1_idx = nav_idx;
          while (key_pressed(KEY_END))
          { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+      }
+
+      // Delete key — backup and remove current DS1 file
+      if (key_pressed(KEY_DEL) && glb_ds1edit.has_loaded_ds1 &&
+          glb_ds1edit.area_browser.selected_group >= 0 &&
+          glb_ds1edit.area_browser.selected_entry >= 0)
+      {
+         while (key_pressed(KEY_DEL))
+         { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+
+         {
+            int gi = glb_ds1edit.area_browser.selected_group;
+            int ei = glb_ds1edit.area_browser.selected_entry;
+
+            if (ds1_manager_delete(gi, ei) == 0)
+            {
+               /* Adjust selection after deletion */
+               if (ei >= glb_ds1edit.area_browser.groups[gi].entry_count)
+                  glb_ds1edit.area_browser.selected_entry = glb_ds1edit.area_browser.groups[gi].entry_count - 1;
+               if (glb_ds1edit.area_browser.selected_entry < 0)
+                  glb_ds1edit.area_browser.selected_entry = -1;
+            }
+         }
+      }
+
+      // Insert key — create new DS1 or clone current
+      if (key_pressed(KEY_INSERT) &&
+          glb_ds1edit.area_browser.selected_group >= 0)
+      {
+         int gi = glb_ds1edit.area_browser.selected_group;
+         AREA_GROUP_S * ins_g = &glb_ds1edit.area_browser.groups[gi];
+
+         while (key_pressed(KEY_INSERT))
+         { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+
+         if (ins_g->entry_count > 0)
+         {
+            /* Shift+Insert = clone current, Insert alone = new empty */
+            if (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT))
+            {
+               /* Clone current DS1 */
+               if (glb_ds1edit.has_loaded_ds1)
+               {
+                  if (ds1_manager_clone(ds1_idx, gi) == 0)
+                     printf("Insert: cloned DS1 successfully\n");
+               }
+            }
+            else
+            {
+               /* Create new empty DS1 (default 20x20, same act as group) */
+               int new_act = ins_g->act > 0 ? ins_g->act : 1;
+               if (ds1_manager_create_empty(gi, 20, 20, new_act) == 0)
+                  printf("Insert: created new empty DS1 (20x20)\n");
+            }
+            fflush(stdout);
+         }
       }
 
       // layers toggle
