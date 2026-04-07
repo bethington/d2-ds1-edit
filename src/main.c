@@ -1083,12 +1083,47 @@ int main(int argc, char * argv[])
    }
    else
    {
-      // no arguments — will show GUI browser after display creation (Phase 3)
-      ds1edit_error("main(), error.\nNo .DS1, .INI, or --area argument.\n\n"
-                    "Usage:\n"
-                    "  ds1edit <file.ds1> <LvlTypes ID> <LvlPrest DEF>\n"
-                    "  ds1edit <file.ini>\n"
-                    "  ds1edit --area \"Act 5 - Town\"");
+      // no arguments — show GUI area browser after display creation
+      glb_ds1edit.area_browser.is_active = TRUE;
+   }
+
+   // GUI area browser mode — no arguments provided
+   if (glb_ds1edit.area_browser.is_active == TRUE)
+   {
+      int browser_result;
+
+      // Create display early for GUI browser
+      if (glb_config.fullscreen == TRUE)
+         al_set_new_display_flags(ALLEGRO_FULLSCREEN);
+      else
+         al_set_new_display_flags(ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE);
+
+      if (glb_config.screen.refresh > 0)
+         al_set_new_display_refresh_rate(glb_config.screen.refresh);
+
+      a5_display = al_create_display(glb_config.screen.width, glb_config.screen.height);
+      if (a5_display == NULL)
+         ds1edit_error("main(), error.\nCan't create display for area browser.");
+
+      al_set_window_title(a5_display, "DS1 Editor - Area Browser");
+      al_install_mouse();
+
+      // Load Excel data and build area groups
+      if (area_browser_init() != 0)
+         ds1edit_error("main(), error.\nFailed to load Excel data for area browser.");
+
+      // Run the GUI browser
+      browser_result = area_browser_run();
+      if (browser_result < 0)
+      {
+         // User pressed Escape or closed window
+         al_destroy_display(a5_display);
+         exit(0);
+      }
+
+      // Load the selected area's DS1 files
+      area_browser_open_group(browser_result);
+      glb_ds1edit.area_browser.is_active = FALSE;
    }
 
    // syntaxe of the command line
@@ -1103,7 +1138,8 @@ int main(int argc, char * argv[])
             glb_ds1edit.cmd_line.list_areas == TRUE ||
             glb_ds1edit.cmd_line.list_areas_ext == TRUE ||
             glb_ds1edit.cmd_line.list_files == TRUE ||
-            glb_ds1edit.cmd_line.file_path != NULL)
+            glb_ds1edit.cmd_line.file_path != NULL ||
+            argc == 1) /* no args = GUI browser mode */
    {
    }
    else // syntax error
@@ -1195,26 +1231,29 @@ int main(int argc, char * argv[])
    fflush(stdout);
    fflush(stderr);
 
-   // display setup
-   if (glb_config.fullscreen == TRUE)
-      al_set_new_display_flags(ALLEGRO_FULLSCREEN);
-   else
-      al_set_new_display_flags(ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE);
-
-   if (glb_config.screen.refresh > 0)
-      al_set_new_display_refresh_rate(glb_config.screen.refresh);
-
-   a5_display = al_create_display(glb_config.screen.width, glb_config.screen.height);
+   // display setup (skip if already created by the area browser)
    if (a5_display == NULL)
    {
-      sprintf(
-         tmp,
-         "main(), error.\nCan't create display (%i*%i %s).",
-         glb_config.screen.width,
-         glb_config.screen.height,
-         glb_config.fullscreen ? "Fullscreen" : "Windowed"
-      );
-      ds1edit_error(tmp);
+      if (glb_config.fullscreen == TRUE)
+         al_set_new_display_flags(ALLEGRO_FULLSCREEN);
+      else
+         al_set_new_display_flags(ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE);
+
+      if (glb_config.screen.refresh > 0)
+         al_set_new_display_refresh_rate(glb_config.screen.refresh);
+
+      a5_display = al_create_display(glb_config.screen.width, glb_config.screen.height);
+      if (a5_display == NULL)
+      {
+         sprintf(
+            tmp,
+            "main(), error.\nCan't create display (%i*%i %s).",
+            glb_config.screen.width,
+            glb_config.screen.height,
+            glb_config.fullscreen ? "Fullscreen" : "Windowed"
+         );
+         ds1edit_error(tmp);
+      }
    }
 
    sprintf(
@@ -1269,14 +1308,17 @@ int main(int argc, char * argv[])
    }
 
 
-   // mouse
-   if (!al_install_mouse())
+   // mouse (skip if already installed by area browser)
+   if (!al_is_mouse_installed())
    {
-      sprintf(
-         tmp,
-         "main(), error.\nCan't install the Mouse handler."
-      );
-      ds1edit_error(tmp);
+      if (!al_install_mouse())
+      {
+         sprintf(
+            tmp,
+            "main(), error.\nCan't install the Mouse handler."
+         );
+         ds1edit_error(tmp);
+      }
    }
 
    // event queue

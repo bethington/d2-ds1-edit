@@ -770,9 +770,267 @@ int area_browser_open_group(int group_idx)
 }
 
 /* GUI area browser — placeholder for Phase 3 */
+/* ---- GUI area browser ---- */
+
+#define AB_FONT_H      8
+#define AB_LINE_H      14
+#define AB_MARGIN_X    20
+#define AB_HEADER_H    30
+#define AB_FOOTER_H    24
+
+static void area_browser_draw(void)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   int w = al_get_display_width(a5_display);
+   int h = al_get_display_height(a5_display);
+   int visible_lines = (h - AB_HEADER_H - AB_FOOTER_H) / AB_LINE_H;
+   int y, i, last_act = -1;
+   int draw_row = 0; /* counts rows including act headers */
+   ALLEGRO_COLOR col_bg       = al_map_rgb(20, 16, 12);
+   ALLEGRO_COLOR col_title    = al_map_rgb(255, 200, 80);
+   ALLEGRO_COLOR col_act      = al_map_rgb(200, 170, 80);
+   ALLEGRO_COLOR col_item     = al_map_rgb(220, 220, 220);
+   ALLEGRO_COLOR col_sel_bg   = al_map_rgb(40, 60, 120);
+   ALLEGRO_COLOR col_sel_text = al_map_rgb(255, 255, 255);
+   ALLEGRO_COLOR col_count    = al_map_rgb(140, 140, 140);
+   ALLEGRO_COLOR col_footer   = al_map_rgb(120, 120, 120);
+   ALLEGRO_COLOR col_zero     = al_map_rgb(80, 80, 80);
+
+   al_set_target_backbuffer(a5_display);
+   al_clear_to_color(col_bg);
+
+   /* Title bar */
+   al_draw_filled_rectangle(0, 0, (float)w, (float)AB_HEADER_H, al_map_rgb(40, 32, 24));
+   al_draw_textf(a5_font, col_title, (float)AB_MARGIN_X, 10, 0,
+                 "DS1 Editor - Area Browser");
+   al_draw_textf(a5_font, col_footer, (float)(w - 100), 10, 0, "Esc = Exit");
+
+   /* Area list */
+   y = AB_HEADER_H + 4;
+   for (i = 0; i < ab->group_count; i++)
+   {
+      AREA_GROUP_S * g = &ab->groups[i];
+      int is_selected = (i == ab->selected_group);
+
+      /* Act header */
+      if (g->act != last_act)
+      {
+         if (draw_row >= ab->scroll_offset && y + AB_LINE_H < h - AB_FOOTER_H)
+         {
+            if (g->act > 0)
+               al_draw_textf(a5_font, col_act, (float)AB_MARGIN_X, (float)y, 0,
+                              "Act %d", g->act);
+            else
+               al_draw_textf(a5_font, col_act, (float)AB_MARGIN_X, (float)y, 0,
+                              "Other");
+            y += AB_LINE_H;
+         }
+         draw_row++;
+         last_act = g->act;
+      }
+
+      /* Group row */
+      if (draw_row >= ab->scroll_offset && y + AB_LINE_H < h - AB_FOOTER_H)
+      {
+         ALLEGRO_COLOR text_col = g->entry_count > 0 ? col_item : col_zero;
+
+         if (is_selected)
+         {
+            al_draw_filled_rectangle((float)(AB_MARGIN_X + 10), (float)(y - 1),
+                                     (float)(w - AB_MARGIN_X), (float)(y + AB_LINE_H - 1),
+                                     col_sel_bg);
+            text_col = col_sel_text;
+         }
+
+         al_draw_textf(a5_font, text_col, (float)(AB_MARGIN_X + 16), (float)y, 0,
+                        "%s", g->name);
+
+         al_draw_textf(a5_font, is_selected ? col_sel_text : col_count,
+                        (float)(w - 160), (float)y, 0,
+                        "%d maps", g->entry_count);
+
+         y += AB_LINE_H;
+      }
+      draw_row++;
+   }
+
+   /* Footer */
+   al_draw_filled_rectangle(0, (float)(h - AB_FOOTER_H), (float)w, (float)h,
+                             al_map_rgb(40, 32, 24));
+   al_draw_textf(a5_font, col_footer, (float)AB_MARGIN_X, (float)(h - AB_FOOTER_H + 8), 0,
+                  "Up/Down = Navigate    Enter = Load Area    Wheel = Scroll    Esc = Exit");
+
+   al_flip_display();
+}
+
+/* GUI area browser main loop. Returns selected group index, or -1 to exit. */
 int area_browser_run(void)
 {
-   /* TODO: Phase 3 — GUI area selector */
-   printf("area_browser_run: GUI not implemented yet\n");
-   return -1;
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   ALLEGRO_EVENT_QUEUE * eq;
+   ALLEGRO_EVENT ev;
+   int done = 0;
+   int result = -1;
+   int redraw = 1;
+
+   /* Init GUI state */
+   ab->selected_group = 0;
+   ab->scroll_offset = 0;
+
+   /* Skip to first group with maps */
+   {
+      int i;
+      for (i = 0; i < ab->group_count; i++)
+      {
+         if (ab->groups[i].entry_count > 0)
+         {
+            ab->selected_group = i;
+            break;
+         }
+      }
+   }
+
+   /* Create event queue for the browser */
+   eq = al_create_event_queue();
+   al_register_event_source(eq, al_get_keyboard_event_source());
+   al_register_event_source(eq, al_get_mouse_event_source());
+   al_register_event_source(eq, al_get_display_event_source(a5_display));
+
+   while (!done)
+   {
+      if (redraw)
+      {
+         area_browser_draw();
+         redraw = 0;
+      }
+
+      al_wait_for_event(eq, &ev);
+
+      if (ev.type == ALLEGRO_EVENT_DISPLAY_CLOSE)
+      {
+         done = 1;
+         result = -1;
+      }
+      else if (ev.type == ALLEGRO_EVENT_KEY_DOWN)
+      {
+         switch (ev.keyboard.keycode)
+         {
+         case ALLEGRO_KEY_ESCAPE:
+            done = 1;
+            result = -1;
+            break;
+
+         case ALLEGRO_KEY_ENTER:
+         case ALLEGRO_KEY_PAD_ENTER:
+            if (ab->selected_group >= 0 &&
+                ab->selected_group < ab->group_count &&
+                ab->groups[ab->selected_group].entry_count > 0)
+            {
+               done = 1;
+               result = ab->selected_group;
+            }
+            break;
+
+         case ALLEGRO_KEY_UP:
+            if (ab->selected_group > 0)
+            {
+               ab->selected_group--;
+               redraw = 1;
+            }
+            break;
+
+         case ALLEGRO_KEY_DOWN:
+            if (ab->selected_group < ab->group_count - 1)
+            {
+               ab->selected_group++;
+               redraw = 1;
+            }
+            break;
+
+         case ALLEGRO_KEY_PGUP:
+            ab->selected_group -= 10;
+            if (ab->selected_group < 0) ab->selected_group = 0;
+            redraw = 1;
+            break;
+
+         case ALLEGRO_KEY_PGDN:
+            ab->selected_group += 10;
+            if (ab->selected_group >= ab->group_count)
+               ab->selected_group = ab->group_count - 1;
+            redraw = 1;
+            break;
+
+         case ALLEGRO_KEY_HOME:
+            ab->selected_group = 0;
+            ab->scroll_offset = 0;
+            redraw = 1;
+            break;
+
+         case ALLEGRO_KEY_END:
+            ab->selected_group = ab->group_count - 1;
+            redraw = 1;
+            break;
+         }
+      }
+      else if (ev.type == ALLEGRO_EVENT_MOUSE_AXES)
+      {
+         if (ev.mouse.dz != 0)
+         {
+            ab->scroll_offset -= ev.mouse.dz * 3;
+            if (ab->scroll_offset < 0)
+               ab->scroll_offset = 0;
+            redraw = 1;
+         }
+         else
+         {
+            /* Hover: find which group the mouse is over */
+            int my = ev.mouse.y;
+            int row_y = AB_HEADER_H + 4;
+            int draw_idx = 0;
+            int last_a = -1;
+            int gi;
+
+            for (gi = 0; gi < ab->group_count; gi++)
+            {
+               /* Account for act header rows */
+               if (ab->groups[gi].act != last_a)
+               {
+                  if (draw_idx >= ab->scroll_offset)
+                     row_y += AB_LINE_H;
+                  draw_idx++;
+                  last_a = ab->groups[gi].act;
+               }
+
+               if (draw_idx >= ab->scroll_offset)
+               {
+                  if (my >= row_y && my < row_y + AB_LINE_H)
+                  {
+                     if (ab->selected_group != gi)
+                     {
+                        ab->selected_group = gi;
+                        redraw = 1;
+                     }
+                     break;
+                  }
+                  row_y += AB_LINE_H;
+               }
+               draw_idx++;
+            }
+         }
+      }
+      else if (ev.type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN)
+      {
+         /* Click on selected group = load it */
+         if (ab->selected_group >= 0 &&
+             ab->selected_group < ab->group_count &&
+             ab->groups[ab->selected_group].entry_count > 0)
+         {
+            done = 1;
+            result = ab->selected_group;
+         }
+      }
+   }
+
+   al_destroy_event_queue(eq);
+   return result;
 }
