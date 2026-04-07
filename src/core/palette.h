@@ -19,7 +19,7 @@ typedef struct {
     RGBA_COLOR colors[PAL_COLORS];
 } RGBA_PALETTE;
 
-/* 256x256 index-to-index lookup table (replaces Allegro 4 COLOR_MAP) */
+/* 256x256 index-to-index lookup table for palette blending operations */
 typedef struct {
     uint8_t data[PAL_COLORS][PAL_COLORS];
 } INDEX_COLORMAP;

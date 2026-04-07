@@ -349,28 +349,11 @@ void wpreview_gouraud_f(ALLEGRO_BITMAP * tmp_bmp, int x0, int y0, int ds1_idx,
       if (c1 >= 248)
          wpreview_draw_bitmap(tmp_bmp, x0, y0);
       else
-      {
-         if (glb_ds1edit.cmd_line.force_pal_num == -1)
-            ((void)0);
-         else
-            ((void)0);
          wpreview_draw_trans_bitmap(tmp_bmp, x0, y0, a5_trans_alpha);
-      }
    }
    else
    {
-      if (glb_ds1edit.cmd_line.force_pal_num == -1)
-         ((void)0);
-      else
-         ((void)0);
-      if (glb_ds1edit.night_mode == 1)
-      {
-         wpreview_draw_trans_bitmap(tmp_bmp, x0, y0, a5_trans_alpha);
-      }
-      else
-      {
-         wpreview_draw_trans_bitmap(tmp_bmp, x0, y0, a5_trans_alpha);
-      }
+      wpreview_draw_trans_bitmap(tmp_bmp, x0, y0, a5_trans_alpha);
    }
 }
 
@@ -380,34 +363,16 @@ void wpreview_gouraud_f(ALLEGRO_BITMAP * tmp_bmp, int x0, int y0, int ds1_idx,
 void wpreview_gouraud_w(ALLEGRO_BITMAP * tmp_bmp, int x0, int y0, int ds1_idx,
                         int c1, int c2, int c3, int c4)
 {
-   if (glb_ds1edit.cmd_line.force_pal_num == -1)
-      ((void)0);
-   else
-      ((void)0);
-   
    if ((c1 == c2) && (c2 == c3) && (c3 == c4))
    {
       if (c1 >= 248)
          wpreview_draw_bitmap(tmp_bmp, x0, y0);
       else
-      {
-         if (glb_ds1edit.cmd_line.force_pal_num == -1)
-            ((void)0);
-         else
-            ((void)0);
          wpreview_draw_trans_bitmap(tmp_bmp, x0, y0, a5_trans_alpha);
-      }
    }
    else
    {
-      if (glb_ds1edit.night_mode == 1)
-      {
-         wpreview_draw_trans_bitmap(tmp_bmp, x0, y0, a5_trans_alpha);
-      }
-      else
-      {
-         wpreview_draw_trans_bitmap(tmp_bmp, x0, y0, a5_trans_alpha);
-      }
+      wpreview_draw_trans_bitmap(tmp_bmp, x0, y0, a5_trans_alpha);
    }
 }
 
@@ -1269,10 +1234,6 @@ void wpreview_draw_r(int ds1_idx, int x, int y, int mx, int my, int z,
       if (glb_ds1edit.mode == MOD_L)
       {
          // draw it
-         if (glb_ds1edit.cmd_line.force_pal_num == -1)
-            ((void)0);
-         else
-            ((void)0);
          wpreview_draw_trans_bitmap(
             tmp_bmp,
             mx - glb_ds1edit.win_preview.x0,
