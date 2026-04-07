@@ -1035,10 +1035,27 @@ int main(int argc, char * argv[])
       // list of ds1 to open
       misc_open_several_ds1(argv[1]);
    }
+   else if (glb_ds1edit.cmd_line.area_name != NULL)
+   {
+      // --area "Act X - Name" : load from Excel data
+      if (area_browser_init() != 0)
+         ds1edit_error("main(), error.\nFailed to load Excel data for area browser.");
+
+      if (area_browser_open_by_name(glb_ds1edit.cmd_line.area_name) < 0)
+      {
+         sprintf(tmp, "main(), error.\nArea '%s' not found in Excel data.",
+                 glb_ds1edit.cmd_line.area_name);
+         ds1edit_error(tmp);
+      }
+   }
    else
    {
-      // bug
-      ds1edit_error("main(), error.\nBug : neither .DS1 nor a .INI in the command line.");
+      // no arguments — will show GUI browser after display creation (Phase 3)
+      ds1edit_error("main(), error.\nNo .DS1, .INI, or --area argument.\n\n"
+                    "Usage:\n"
+                    "  ds1edit <file.ds1> <LvlTypes ID> <LvlPrest DEF>\n"
+                    "  ds1edit <file.ini>\n"
+                    "  ds1edit --area \"Act 5 - Town\"");
    }
 
    // syntaxe of the command line
@@ -1047,6 +1064,9 @@ int main(int argc, char * argv[])
    {
    }
    else if (argc == 2) // 1 argument (assume it's a .ini file)
+   {
+   }
+   else if (glb_ds1edit.cmd_line.area_name != NULL) // --area mode
    {
    }
    else // syntax error

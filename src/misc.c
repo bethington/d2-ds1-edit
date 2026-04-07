@@ -1318,7 +1318,18 @@ int misc_cmd_line_parse(int argc, char ** argv)
    // scan all parameters 1 by 1
    for (i=1; i < argc; i++)
    {
-      if (i == 1)
+      if (i == 1 && stricmp(argv[i], "--area") == 0)
+      {
+         // --area "Act X - Name" : load area by name from Excel data
+         i++;
+         if (i >= argc)
+         {
+            printf("misc_cmd_line_parse(), error : --area requires an area name\n");
+            return -1;
+         }
+         glb_ds1edit.cmd_line.area_name = argv[i];
+      }
+      else if (i == 1)
       {
          // .ini or .ds1 ?
          ext = a5_get_extension(argv[i]);
@@ -1328,7 +1339,7 @@ int misc_cmd_line_parse(int argc, char ** argv)
             glb_ds1edit.cmd_line.ds1_filename = argv[i];
          else
          {
-            printf("misc_cmd_line_parse(), error : the first argument must be a .INI or a .DS1 file (current extension = \"%s\")\n", ext);
+            printf("misc_cmd_line_parse(), error : the first argument must be a .INI, .DS1, or --area\n");
             return -1;
          }
       }
