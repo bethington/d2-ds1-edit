@@ -1214,6 +1214,7 @@ int misc_get_txt_column_num(RQ_ENUM txt_idx, char * col_name)
             {"Data\\Global\\Excel\\LvlPrest.txt"},
             {"data\\obj.txt"},
             {"Data\\Global\\Excel\\Objects.txt"},
+            {"Data\\Global\\Excel\\Levels.txt"},
          };
 
    if (txt_idx >= RQ_MAX)

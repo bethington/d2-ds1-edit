@@ -38,6 +38,7 @@ set(SOURCES
     src/error.c
     src/misc.c
     # core/
+    src/core/area_browser.c
     src/core/ds1.c
     src/core/dt1.c
     src/core/dt1_draw.c

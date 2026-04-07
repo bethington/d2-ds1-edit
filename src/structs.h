@@ -455,7 +455,41 @@ typedef struct CMD_LINE_S
    // --headless : render one frame and save to file, then exit (no display)
    int    headless_mode;
    char * headless_output; // output filename, NULL if not used
+
+   // --area : load area by name from Excel data instead of INI file
+   char * area_name; // NULL if not used
 } CMD_LINE_S;
+
+/* ---- Area Browser data structures ---- */
+
+typedef struct AREA_DS1_ENTRY_S
+{
+   int  lvltype_id;     /* LvlTypes.txt Id (tileset id)          */
+   int  lvlprest_def;   /* LvlPrest.txt Def                      */
+   char ds1_path[256];  /* DS1 file path from LvlPrest File1-6   */
+} AREA_DS1_ENTRY_S;
+
+typedef struct AREA_GROUP_S
+{
+   char name[80];              /* Display name, e.g. "Town"           */
+   int  lvltype_id;            /* LvlTypes.txt Id for this group      */
+   int  act;                   /* 1-5 for standard areas, 0 = "Other" */
+   AREA_DS1_ENTRY_S * entries; /* malloc'd array of DS1 entries        */
+   int  entry_count;           /* Number of entries                    */
+   int  entry_max;             /* Allocated capacity                   */
+} AREA_GROUP_S;
+
+typedef struct AREA_BROWSER_S
+{
+   AREA_GROUP_S * groups;      /* malloc'd array of all groups         */
+   int  group_count;           /* Total number of groups               */
+   int  group_max;             /* Allocated capacity                   */
+
+   /* GUI state */
+   int  selected_group;        /* Currently highlighted group, -1=none */
+   int  scroll_offset;         /* First visible group index            */
+   int  is_active;             /* TRUE if browser is showing           */
+} AREA_BROWSER_S;
 
 // Tile Grid states
 typedef enum TILEGRID_ENUM
@@ -498,8 +532,10 @@ typedef struct GLB_DS1EDIT_S
    int           night_mode;
    TXT_S         * lvltypes_buff;
    TXT_S         * lvlprest_buff;
+   TXT_S         * levels_buff;
    TXT_S         * obj_buff;
    TXT_S         * objects_buff;
+   AREA_BROWSER_S area_browser;
    int           new_dir1[1],
                  new_dir4[4],
                  new_dir8[8],
@@ -986,6 +1022,7 @@ typedef enum RQ_ENUM
    RQ_LVLPREST,
    RQ_OBJ,
    RQ_OBJECTS,
+   RQ_LEVELS,
    RQ_MAX
 } RQ_ENUM;
 

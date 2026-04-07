@@ -993,3 +993,28 @@ int read_objects_txt(void)
    glb_ds1edit.col_orderflag[7] = misc_get_txt_column_num(RQ_OBJECTS, "OrderFlag7");
    return 0;
 }
+
+
+// ==========================================================================
+// load Levels.txt into memory (for area browser)
+// return 0 if ok, -1 if error
+int read_levels_txt(void)
+{
+   TXT_S * txt = NULL;
+   char  levels[] = "Data\\Global\\Excel\\Levels.txt";
+   char  * buff;
+
+   if (glb_ds1edit.levels_buff == NULL)
+   {
+      buff = txt_read_in_mem(levels);
+      if (buff == NULL)
+         return -1;
+
+      txt = txt_load(buff, RQ_LEVELS, levels);
+      glb_ds1edit.levels_buff = txt;
+      free(buff);
+      if (txt == NULL)
+         return -1;
+   }
+   return 0;
+}

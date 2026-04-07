@@ -38,6 +38,7 @@ October 30 2011 :
 #include "ui/edit_window.h"
 #include "editor/undo.h"
 #include "core/txtread.h"
+#include "core/area_browser.h"
 #include "misc.h"
 #include "config.h"
 #include "core/animdata.h"
@@ -74,7 +75,7 @@ GAMMA_S glb_gamma_str[GC_MAX] = // gamma correction string table
 
 char * txt_def_lvltype_req[] =
 {
-   ("Id"),      ("Act"),
+   ("Id"),      ("Act"),     ("Name"),
    ("File 1"),  ("File 2"),  ("File 3"),  ("File 4"),  ("File 5"),
    ("File 6"),  ("File 7"),  ("File 8"),  ("File 9"),  ("File 10"),
    ("File 11"), ("File 12"), ("File 13"), ("File 14"), ("File 15"),
@@ -89,6 +90,13 @@ char * txt_def_lvlprest_req[] =
 {
    ("Def"),   ("Dt1Mask"),
    ("File1"), ("File2"), ("File3"), ("File4"), ("File5"), ("File6"),
+   ("Name"),  ("LevelId"),
+   NULL // DO NOT REMOVE !
+};
+
+char * txt_def_levels_req[] =
+{
+   ("Name"), ("Id"), ("Act"), ("LevelType"),
    NULL // DO NOT REMOVE !
 };
 
@@ -219,7 +227,7 @@ char * txt_def_objects_req[] =
    NULL // DO NOT REMOVE !
 };
 
-char ** glb_txt_req_ptr[RQ_MAX] = {NULL, NULL, NULL, NULL};
+char ** glb_txt_req_ptr[RQ_MAX] = {NULL, NULL, NULL, NULL, NULL};
        
 CONFIG_S      glb_config;                     // global configuration datas
 GLB_DS1EDIT_S glb_ds1edit;                    // global datas of the editor
@@ -360,6 +368,7 @@ void ds1edit_init(void)
    glb_txt_req_ptr[RQ_LVLPREST] = txt_def_lvlprest_req;
    glb_txt_req_ptr[RQ_OBJ]      = txt_def_obj_req;
    glb_txt_req_ptr[RQ_OBJECTS]  = txt_def_objects_req;
+   glb_txt_req_ptr[RQ_LEVELS]   = txt_def_levels_req;
 
    // debug files
    remove(glb_path_lvltypes_mem);
@@ -403,6 +412,7 @@ void ds1edit_init(void)
    glb_ds1edit.cmd_line.dt1_list_num  = -1;
    glb_ds1edit.cmd_line.headless_mode = FALSE;
    glb_ds1edit.cmd_line.headless_output = NULL;
+   glb_ds1edit.cmd_line.area_name = NULL;
    for (i=0; i < DT1_IN_DS1_MAX; i++)
       glb_ds1edit.cmd_line.dt1_list_filename[i] = NULL;
 
@@ -592,6 +602,9 @@ void ds1edit_exit(void)
       glb_ds1edit.lvlprest_buff = txt_destroy(glb_ds1edit.lvlprest_buff);
    if (glb_ds1edit.obj_buff != NULL)
       glb_ds1edit.obj_buff = txt_destroy(glb_ds1edit.obj_buff);
+   if (glb_ds1edit.levels_buff != NULL)
+      glb_ds1edit.levels_buff = txt_destroy(glb_ds1edit.levels_buff);
+   area_browser_destroy();
 
    // animdata.d2
    fprintf(stderr, "   * animdata.d2 buffer ...\n");
