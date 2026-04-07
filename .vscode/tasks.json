@@ -29,6 +29,30 @@
             "problemMatcher": "$msCompile"
         },
         {
+            "label": "Clean Build DS1Edit Debug",
+            "type": "shell",
+            "command": "cmake",
+            "args": ["--build", "--preset", "dev", "--clean-first"],
+            "group": "build",
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "Clean Build DS1Edit Release",
+            "type": "shell",
+            "command": "cmake",
+            "args": ["--build", "--preset", "release", "--clean-first"],
+            "group": "build",
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "Clean Bin",
+            "type": "shell",
+            "command": "cmake",
+            "args": ["--build", "build", "--target", "clean-bin"],
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
             "label": "Run Tests",
             "type": "shell",
             "command": "ctest",

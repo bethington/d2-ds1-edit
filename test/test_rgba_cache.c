@@ -5,7 +5,7 @@
 
 #include <string.h>
 #include "unity/unity.h"
-#include "../Sources/rgba_cache.h"
+#include "core/rgba_cache.h"
 
 void setUp(void) {}
 void tearDown(void) {}

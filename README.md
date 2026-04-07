@@ -29,7 +29,7 @@ bin\ds1edit.exe assets\act5_town.ini
 - **Object Animation** - DCC/DC6 sprite rendering with shadow projection
 - **Multi-Zoom** - 7 zoom levels from 1:1 to 1:16
 - **Headless Mode** - Command-line screenshot rendering for CI/testing
-- **Performance Profiling** - Built-in per-frame and per-section timing (stderr.txt, perf_log.csv)
+- **Performance Profiling** - Optional per-frame and per-section timing (`-DDS1EDIT_PERF_LOG=ON`)
 
 ## Building
 
@@ -73,7 +73,7 @@ Renders maps in headless mode and compares against reference PNGs in `test/golde
 
 ## Configuration
 
-Copy `bin/Ds1edit.ini.sample` to `bin/Ds1edit.ini` and set your Diablo II MPQ paths:
+After building, copy `Ds1edit.ini.sample` from the project root (or `bin/`) to `bin/Ds1edit.ini` and set your Diablo II MPQ paths:
 
 ```ini
 d2char   = C:\Diablo2\d2char.mpq
@@ -89,17 +89,17 @@ See the sample file for all available settings (resolution, scroll speed, gamma,
 See [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for detailed layout.
 
 Key directories:
-- `Sources/` - C source code (rendering, editing, file I/O)
+- `src/` - C source code organized into `core/`, `render/`, `editor/`, `ui/`, `mpq/`
+- `data/`, `pcx/`, `assets/` - Runtime data (copied to `bin/` at build time)
 - `test/` - Unit tests (Unity framework)
 - `scripts/` - Golden test scripts (Python)
-- `bin/` - Runtime directory (exe, DLLs, assets, config)
-- `docs/` - Documentation and guides
+- `bin/` - Build output directory (gitignored)
 
 ## Architecture
 
 ### Rendering Pipeline
 
-7-pass compositing pipeline in `wPreview.c`, all GPU-accelerated:
+7-pass compositing pipeline in `src/render/preview.c`, all GPU-accelerated:
 
 1. Base terrain (floors, lower walls, tile shadows)
 2. Object shadows (tinted black silhouettes)

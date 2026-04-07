@@ -11,6 +11,7 @@ add_compile_definitions(
 
 # Options
 option(USE_SOFTWARE_RENDERER "Force software rendering (no GPU)" OFF)
+option(DS1EDIT_PERF_LOG "Enable per-frame perf logging to stderr and perf_log.csv" OFF)
 
 # Find Allegro 5 (installed via vcpkg or system)
 # vcpkg toolchain is set via CMakePresets.json or -DCMAKE_TOOLCHAIN_FILE
@@ -31,48 +32,49 @@ endif()
 
 # Source files
 set(SOURCES
-    Sources/a5_globals.c
-    Sources/anim.c
-    Sources/animdata.c
-    Sources/dc6info.c
-    Sources/dccinfo.c
-    Sources/ds1misc.c
-    Sources/ds1save.c
-    Sources/dt1misc.c
-    Sources/dt1_draw.c
-    Sources/dt1_decode.c
-    Sources/editobj.c
-    Sources/editpath.c
-    Sources/edittile.c
-    Sources/error.c
-    Sources/gfx_custom.c
-    Sources/inicreat.c
-    Sources/iniread.c
-    Sources/interfac.c
-    Sources/main.c
-    Sources/misc.c
-    Sources/msg_quit.c
-    Sources/msg_save.c
-    Sources/palette.c
-    Sources/rgba_cache.c
-    Sources/txtread.c
-    Sources/undo.c
-    Sources/wBits.c
-    Sources/wEdit.c
-    Sources/wMsg.c
-    Sources/wPreview.c
-    Sources/mpq/Dcl_tbl.c
-    Sources/mpq/Explode.c
-    Sources/mpq/MpqView.c
-    Sources/mpq/Wav_unp.c
+    src/main.c
+    src/globals.c
+    src/config.c
+    src/error.c
+    src/misc.c
+    # core/
+    src/core/ds1.c
+    src/core/dt1.c
+    src/core/dt1_draw.c
+    src/core/dt1_decode.c
+    src/core/cof.c
+    src/core/animdata.c
+    src/core/dcc.c
+    src/core/dc6.c
+    src/core/palette.c
+    src/core/rgba_cache.c
+    src/core/txtread.c
+    # render/
+    src/render/preview.c
+    src/render/gfx.c
+    # editor/
+    src/editor/tiles.c
+    src/editor/objects.c
+    src/editor/paths.c
+    src/editor/undo.c
+    # ui/
+    src/ui/interface.c
+    src/ui/dialogs.c
+    src/ui/edit_window.c
+    src/ui/bits_window.c
+    # mpq/
+    src/mpq/Dcl_tbl.c
+    src/mpq/Explode.c
+    src/mpq/MpqView.c
+    src/mpq/Wav_unp.c
 )
 
 # Main executable
 add_executable(ds1edit ${SOURCES})
 
 target_include_directories(ds1edit PRIVATE
-    ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/Sources
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/mpq
     ${ALLEGRO5_INCLUDE_DIR}
 )
 
@@ -111,6 +113,10 @@ if(USE_SOFTWARE_RENDERER)
     target_compile_definitions(ds1edit PRIVATE DS1EDIT_SOFTWARE_RENDERER)
 endif()
 
+if(DS1EDIT_PERF_LOG)
+    target_compile_definitions(ds1edit PRIVATE DS1EDIT_PERF_LOG)
+endif()
+
 # Output to bin/ directory
 set_target_properties(ds1edit PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
@@ -118,6 +124,31 @@ set_target_properties(ds1edit PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/bin
     RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_SOURCE_DIR}/bin
     OUTPUT_NAME "ds1edit"
+)
+
+# Clean bin/ target — removes everything except Ds1edit.ini (user config)
+add_custom_target(clean-bin
+    COMMAND ${CMAKE_COMMAND} -E echo "Cleaning bin/ (preserving Ds1edit.ini)..."
+    COMMAND ${CMAKE_COMMAND} -P "${CMAKE_SOURCE_DIR}/cmake/clean-bin.cmake"
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    COMMENT "Removing bin/ contents except Ds1edit.ini"
+)
+
+# Copy runtime data files to bin/ at build time
+add_custom_command(TARGET ds1edit POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/data" "${CMAKE_SOURCE_DIR}/bin/data"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/pcx" "${CMAKE_SOURCE_DIR}/bin/pcx"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/assets" "${CMAKE_SOURCE_DIR}/bin/assets"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/examples" "${CMAKE_SOURCE_DIR}/bin/examples"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_SOURCE_DIR}/Ds1edit.ini.sample" "${CMAKE_SOURCE_DIR}/bin/Ds1edit.ini.sample"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_SOURCE_DIR}/allegro5.cfg" "${CMAKE_SOURCE_DIR}/bin/allegro5.cfg"
+    COMMENT "Copying data, pcx, assets, and examples to bin/"
 )
 
 # Copy required DLLs to output directory (vcpkg puts them next to the libs)
@@ -147,12 +178,13 @@ set(CPACK_GENERATOR "ZIP")
 
 # Install rules for packaging
 install(TARGETS ds1edit RUNTIME DESTINATION .)
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/bin/data/ DESTINATION data)
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/bin/assets/
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/data/ DESTINATION data)
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/pcx/ DESTINATION pcx)
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets/
     DESTINATION assets
     FILES_MATCHING PATTERN "*.ini"
 )
-install(FILES ${CMAKE_SOURCE_DIR}/bin/Ds1edit.ini.sample DESTINATION .)
+install(FILES ${CMAKE_SOURCE_DIR}/Ds1edit.ini.sample DESTINATION .)
 install(FILES ${CMAKE_SOURCE_DIR}/LICENSE DESTINATION .)
 
 # Install required DLLs

@@ -8,16 +8,20 @@ target_link_libraries(test_placeholder PRIVATE unity)
 add_test(NAME placeholder COMMAND test_placeholder)
 
 # Phase 1: Palette abstraction layer tests
-add_executable(test_palette test_palette.c ../Sources/palette.c)
+add_executable(test_palette test_palette.c ../src/core/palette.c)
 target_link_libraries(test_palette PRIVATE unity)
-target_include_directories(test_palette PRIVATE ${CMAKE_SOURCE_DIR}/Sources)
+target_include_directories(test_palette PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/mpq
+)
 add_test(NAME palette COMMAND test_palette)
 
 # Phase 1: RGBA cache tests (needs Allegro 5 for cache_tile_to_a5_bitmap)
-add_executable(test_rgba_cache test_rgba_cache.c ../Sources/rgba_cache.c)
+add_executable(test_rgba_cache test_rgba_cache.c ../src/core/rgba_cache.c)
 target_link_libraries(test_rgba_cache PRIVATE unity ${ALLEGRO5_LIB})
 target_include_directories(test_rgba_cache PRIVATE
-    ${CMAKE_SOURCE_DIR}/Sources
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/mpq
     ${ALLEGRO5_INCLUDE_DIR}
 )
 add_test(NAME rgba_cache COMMAND test_rgba_cache)
@@ -33,7 +37,9 @@ if(WIN32 AND DEFINED ALLEGRO5_BIN_DIR AND EXISTS "${ALLEGRO5_BIN_DIR}")
 endif()
 
 # Phase 2: DT1 sub-tile decoder tests (no Allegro dependency)
-add_executable(test_dt1_decode test_dt1_decode.c ../Sources/dt1_decode.c)
+add_executable(test_dt1_decode test_dt1_decode.c ../src/core/dt1_decode.c)
 target_link_libraries(test_dt1_decode PRIVATE unity)
-target_include_directories(test_dt1_decode PRIVATE ${CMAKE_SOURCE_DIR}/Sources)
+target_include_directories(test_dt1_decode PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
 add_test(NAME dt1_decode COMMAND test_dt1_decode)
