@@ -14,6 +14,7 @@
 #include "ui/dialogs.h"
 #include "ui/interface.h"
 #include "core/area_browser.h"
+#include "core/ds1_manager.h"
 
 
 typedef struct
@@ -629,6 +630,45 @@ void interfac_user_handler(int start_ds1_idx)
             ds1_idx = nav_idx;
          while (key_pressed(KEY_END))
          { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+      }
+
+      // Delete key — backup and remove current DS1 file
+      if (key_pressed(KEY_DEL) && glb_ds1edit.has_loaded_ds1 &&
+          glb_ds1edit.area_browser.selected_group >= 0 &&
+          glb_ds1edit.area_browser.selected_entry >= 0)
+      {
+         while (key_pressed(KEY_DEL))
+         { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+
+         /* Backup the DS1 file */
+         {
+            int gi = glb_ds1edit.area_browser.selected_group;
+            int ei = glb_ds1edit.area_browser.selected_entry;
+            AREA_GROUP_S * g = &glb_ds1edit.area_browser.groups[gi];
+            AREA_DS1_ENTRY_S * e = &g->entries[ei];
+
+            printf("Backing up and deleting: %s\n", e->ds1_path);
+            fflush(stdout);
+
+            ds1_manager_backup(gi, ei);
+
+            /* Clear the File slot in LvlPrest.txt */
+            /* TODO: determine which file_slot this entry occupies */
+            /* For now, just log the action */
+            printf("Delete: backup created. LvlPrest update not yet implemented.\n");
+            fflush(stdout);
+         }
+      }
+
+      // Insert key — create new DS1 or clone current
+      if (key_pressed(KEY_INSERT) &&
+          glb_ds1edit.area_browser.selected_group >= 0)
+      {
+         while (key_pressed(KEY_INSERT))
+         { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+
+         printf("Insert DS1: not yet implemented (submenu needed)\n");
+         fflush(stdout);
       }
 
       // layers toggle
