@@ -1595,11 +1595,6 @@ void change_zoom(int ds1_idx, ZOOM_E z)
    }
 
    glb_ds1[ds1_idx].cur_zoom = z;
-   glb_ds1edit.last_zoom = z;
-
-   /* Generate tile bitmaps for this zoom level if not yet created */
-   dt1_ensure_zoom(z);
-
    glb_ds1[ds1_idx].height_mul = mul;
    glb_ds1[ds1_idx].height_div = div;
    glb_ds1[ds1_idx].tile_w = 160 * mul / div;

@@ -209,15 +209,25 @@ void interfac_user_handler(int start_ds1_idx)
             }
             else if (click_result == -3)
             {
-               /* Individual DS1 entry clicked — load single file */
-               if (area_browser_switch_single(
+               /* Individual DS1 entry clicked — switch to it (instant if preloaded) */
+               {
+                  int new_idx = area_browser_switch_single(
                      glb_ds1edit.area_browser.selected_group,
-                     glb_ds1edit.area_browser.selected_entry) >= 0)
-                  ds1_idx = 0;
+                     glb_ds1edit.area_browser.selected_entry);
+                  if (new_idx >= 0)
+                     ds1_idx = new_idx;
+               }
             }
             else if (click_result >= 0)
             {
-               /* Group clicked — expand/collapse (already toggled in click handler) */
+               /* Group clicked — expand/collapse + preload all DS1s */
+               if (glb_ds1edit.area_browser.groups[click_result].is_expanded &&
+                   glb_ds1edit.area_browser.loaded_group != click_result)
+               {
+                  /* Just expanded — preload all DS1s for this group */
+                  if (area_browser_switch_area(click_result) >= 0)
+                     ds1_idx = 0;
+               }
             }
 
             while (a5_mouse_b & 1)

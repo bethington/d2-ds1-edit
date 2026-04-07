@@ -721,10 +721,7 @@ int area_browser_switch_area(int group_idx)
    wpreview_init_palette_state(0);
    glb_ds1edit.has_loaded_ds1 = TRUE;
    glb_ds1edit.ds1_group_idx = 0;
-
-   /* Apply sticky zoom */
-   if (glb_ds1edit.last_zoom > ZM_11 && glb_ds1edit.last_zoom < ZM_MAX)
-      change_zoom(0, glb_ds1edit.last_zoom);
+   glb_ds1edit.area_browser.loaded_group = group_idx;
 
    if (opened > 1)
       glb_ds1edit.show_2nd_row = TRUE;
@@ -734,100 +731,35 @@ int area_browser_switch_area(int group_idx)
    return 0;
 }
 
-/* Switch to a single DS1 file from an expanded group entry. */
+/* Switch to a single DS1 file from an expanded group entry.
+ * If the group is already loaded, just switch ds1_idx (instant).
+ * If a different group is loaded, load the full new group first. */
 int area_browser_switch_single(int group_idx, int entry_idx)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
-   AREA_GROUP_S * g;
-   AREA_DS1_ENTRY_S * e;
-   int i;
-   char ds1_path[256];
 
    if (group_idx < 0 || group_idx >= ab->group_count)
       return -1;
-   g = &ab->groups[group_idx];
-   if (entry_idx < 0 || entry_idx >= g->entry_count)
+   if (entry_idx < 0 || entry_idx >= ab->groups[group_idx].entry_count)
       return -1;
-   e = &g->entries[entry_idx];
 
-   /* Free all currently loaded DS1 files */
-   for (i = 0; i < DS1_MAX; i++)
+   /* If a different group is loaded (or none), load the full group first */
+   if (ab->loaded_group != group_idx)
    {
-      if (glb_ds1[i].name[0] != '\0')
-         ds1_free(i);
-   }
-   memset(glb_ds1, 0, sizeof(DS1_S) * DS1_MAX);
-
-   /* Destroy COF animation data */
-   {
-      int od;
-      for (od = 0; od < glb_ds1edit.obj_desc_num; od++)
-      {
-         if (glb_ds1edit.obj_desc[od].cof != NULL)
-         {
-            anim_destroy_cof(glb_ds1edit.obj_desc[od].cof);
-            glb_ds1edit.obj_desc[od].cof = NULL;
-         }
-      }
+      if (area_browser_switch_area(group_idx) < 0)
+         return -1;
    }
 
-   /* Load just one DS1 */
-   sprintf(ds1_path, "assets/tiles/%s", e->ds1_path);
-   misc_open_1_ds1(0, ds1_path, e->lvltype_id, e->lvlprest_def, 0, 0);
-
-   /* Post-load */
-   animdata_load();
-   anim_update_gfx(FALSE);
-   misc_make_cmaps();
-
-   al_set_new_bitmap_flags(ALLEGRO_VIDEO_BITMAP);
-   ds1edit_recreate_render_targets();
-   if (a5_current_palette != NULL)
-      dt1_rebuild_bitmaps_from_cache(a5_current_palette);
-
-   /* Promote animation bitmaps */
+   /* Now all DS1s for this group are loaded — just switch the active index.
+    * entry_idx maps to ds1_idx since open_group loads them in order. */
+   if (entry_idx < DS1_MAX && glb_ds1[entry_idx].name[0] != '\0')
    {
-      int oi, li, fi;
-      for (oi = 0; oi < glb_ds1edit.obj_desc_num; oi++)
-      {
-         COF_S *cof = glb_ds1edit.obj_desc[oi].cof;
-         if (cof == NULL) continue;
-         for (li = 0; li < COMPOSIT_NB; li++)
-         {
-            LAY_INF_S *lay = &cof->lay_inf[li];
-            if (lay->bmp == NULL) continue;
-            for (fi = 0; fi < lay->bmp_num; fi++)
-            {
-               ALLEGRO_BITMAP *old_bmp = lay->bmp[fi];
-               if (old_bmp == NULL) continue;
-               if (al_get_bitmap_flags(old_bmp) & ALLEGRO_MEMORY_BITMAP)
-               {
-                  ALLEGRO_BITMAP *new_bmp = al_clone_bitmap(old_bmp);
-                  if (new_bmp != NULL)
-                  {
-                     al_destroy_bitmap(old_bmp);
-                     lay->bmp[fi] = new_bmp;
-                  }
-               }
-            }
-         }
-      }
+      glb_ds1edit.win_preview.x0 = glb_ds1[entry_idx].own_wpreview.x0;
+      glb_ds1edit.win_preview.y0 = glb_ds1[entry_idx].own_wpreview.y0;
+      glb_ds1edit.win_preview.w  = glb_config.screen.width;
+      glb_ds1edit.win_preview.h  = glb_config.screen.height;
+      return entry_idx;
    }
-
-   /* Reset viewport */
-   glb_ds1edit.win_preview.x0 = glb_ds1[0].own_wpreview.x0;
-   glb_ds1edit.win_preview.y0 = glb_ds1[0].own_wpreview.y0;
-   glb_ds1edit.win_preview.w  = glb_config.screen.width;
-   glb_ds1edit.win_preview.h  = glb_config.screen.height;
-
-   wpreview_init_palette_state(0);
-   glb_ds1edit.has_loaded_ds1 = TRUE;
-   glb_ds1edit.ds1_group_idx = 0;
-   glb_ds1edit.show_2nd_row = FALSE;
-
-   /* Apply sticky zoom */
-   if (glb_ds1edit.last_zoom > ZM_11 && glb_ds1edit.last_zoom < ZM_MAX)
-      change_zoom(0, glb_ds1edit.last_zoom);
 
    return 0;
 }

@@ -20,8 +20,8 @@
 #define MAX_MPQ_FILE           4
 #define MAX_MOD_DIR            1
 #define DT1_IN_DS1_MAX        33
-#define DS1_MAX              100
-#define DT1_MAX              300
+#define DS1_MAX             2048
+#define DT1_MAX              512
 #define ACT_MAX                5
 #define FLOOR_MAX_LAYER        2
 #define SHADOW_MAX_LAYER       1
@@ -500,6 +500,7 @@ typedef struct AREA_BROWSER_S
    int  selected_entry;        /* Highlighted entry within expanded group, -1=none */
    int  scroll_offset;         /* First visible group index            */
    int  is_active;             /* TRUE if browser is showing           */
+   int  loaded_group;          /* group_idx of currently loaded area, -1=none */
 } AREA_BROWSER_S;
 
 // Tile Grid states
@@ -571,7 +572,6 @@ typedef struct GLB_DS1EDIT_S
    int           sidebar_visible;
    int           sidebar_width;
    int           has_loaded_ds1;  /* TRUE after at least one DS1 is loaded */
-   ZOOM_E        last_zoom;       /* remembered zoom level for sticky zoom */
 } GLB_DS1EDIT_S;
 
 extern GLB_DS1EDIT_S glb_ds1edit;

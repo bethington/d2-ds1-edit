@@ -14,6 +14,5 @@ void dt1_struct_update  (int i);
 int  dt1_add            (char * dt1name);
 int  dt1_add_special    (char * dt1name);
 void dt1_rebuild_bitmaps_from_cache(const RGBA_PALETTE *pal);
-void dt1_ensure_zoom               (int z);
 
 #endif
