@@ -206,38 +206,169 @@ void area_browser_build(void)
       if (grp == NULL)
          continue;
 
-      /* find all LvlPrest rows whose Name starts with this LvlType's Name */
-      lt_name_len = strlen(lt_name);
-      for (lp_row = 0; lp_row < lvlprest->line_num; lp_row++)
+      /* Find all LvlPrest rows that belong to this LvlType.
+       *
+       * Matching strategy: extract the act prefix ("Act X - ") and the first
+       * keyword of the area name from the LvlType name. Then match LvlPrest
+       * rows that share the same act prefix and start with that keyword.
+       *
+       * Examples:
+       *   LvlType "Act 1 - Wilderness" → match "Act 1 - Wild"
+       *   LvlType "Act 5 - Ice Caves"  → match "Act 5 - Ice"
+       *   LvlType "Act 1 - Monestary"  → match "Act 1 - Mon"
+       *   LvlType "Imperial Palace"    → match "Imperial Palace"
+       */
       {
-         char * lp_name;
-         long * lp_def_ptr;
-         long lp_def;
+         const char * area_part;
+         char match_prefix[80];
+         int match_len;
+         int act = area_parse_act(lt_name);
 
-         lp_name = lvlprest->data + (lp_row * lvlprest->line_size)
-                   + lvlprest->col[lp_name_col].offset;
-
-         /* prefix match: LvlPrest name must start with LvlType name,
-          * followed by end-of-string, space, or digit */
-         if (strnicmp(lp_name, lt_name, lt_name_len) != 0)
-            continue;
-         if (lp_name[lt_name_len] != '\0' &&
-             lp_name[lt_name_len] != ' ' &&
-             !(lp_name[lt_name_len] >= '0' && lp_name[lt_name_len] <= '9'))
-            continue;
-
-         lp_def_ptr = (long *)(lvlprest->data + (lp_row * lvlprest->line_size)
-                      + lvlprest->col[lp_def_col].offset);
-         lp_def = *lp_def_ptr;
-         if (lp_def <= 0)
-            continue;
-
-         /* add each non-empty File1-6 as an entry */
-         for (f = 0; f < 6; f++)
+         if (act > 0)
          {
-            char * ds1_path = lvlprest->data + (lp_row * lvlprest->line_size)
-                              + lvlprest->col[lp_file_col[f]].offset;
-            area_group_add_entry(grp, (int)lt_id, (int)lp_def, ds1_path);
+            /* Standard "Act X - AreaName" — use the act prefix plus the
+             * first word of the area name (up to first space), minimum 3
+             * chars. This handles abbreviated LvlPrest names like
+             * "Act 1 - Wild Border" matching LvlType "Act 1 - Wilderness",
+             * and "Act 1 - Mon Front" matching "Act 1 - Monestary". */
+            int k;
+            area_part = lt_name + 8; /* skip "Act X - " */
+            /* Use first 4 characters of area name as match key.
+             * 4 chars is enough to be unique within each act (e.g.,
+             * "Cath" vs "Cata", "Barr" for Barracks/Barricade in
+             * different acts) while still matching abbreviated LvlPrest
+             * names (e.g., "Wild" matches "Wild Border"). */
+            k = (int)strlen(area_part);
+            if (k > 4) k = 4;
+            sprintf(match_prefix, "Act %d - ", act);
+            strncat(match_prefix, area_part, k);
+         }
+         else
+         {
+            /* Non-standard name — use full name as prefix */
+            strncpy(match_prefix, lt_name, sizeof(match_prefix) - 1);
+            match_prefix[sizeof(match_prefix) - 1] = '\0';
+         }
+         match_len = strlen(match_prefix);
+
+         /* Also try a shorter 3-char prefix if the 4-char prefix might
+          * miss abbreviated LvlPrest names (e.g., "Mone" misses "Mon Front").
+          * We do a first pass with the 4-char prefix, and if we get 0 matches,
+          * retry with 3 chars. For non-act names (like "Kurast"), also try
+          * matching LvlPrest rows that contain the area name without act prefix. */
+         for (lp_row = 0; lp_row < lvlprest->line_num; lp_row++)
+         {
+            char * lp_name;
+            long * lp_def_ptr;
+            long lp_def;
+
+            lp_name = lvlprest->data + (lp_row * lvlprest->line_size)
+                      + lvlprest->col[lp_name_col].offset;
+
+            /* prefix match using the computed match key */
+            if (strnicmp(lp_name, match_prefix, match_len) != 0)
+               continue;
+
+            lp_def_ptr = (long *)(lvlprest->data + (lp_row * lvlprest->line_size)
+                         + lvlprest->col[lp_def_col].offset);
+            lp_def = *lp_def_ptr;
+            if (lp_def <= 0)
+               continue;
+
+            /* add each non-empty File1-6 as an entry */
+            for (f = 0; f < 6; f++)
+            {
+               char * ds1_path = lvlprest->data + (lp_row * lvlprest->line_size)
+                                 + lvlprest->col[lp_file_col[f]].offset;
+               area_group_add_entry(grp, (int)lt_id, (int)lp_def, ds1_path);
+            }
+         }
+      } /* end match_prefix block */
+   }
+
+   /* Retry pass: for groups with 0 entries, try shorter 3-char prefix.
+    * This handles cases like "Monestary" where LvlPrest uses "Mon Front". */
+   {
+      int gi;
+      for (gi = 0; gi < ab->group_count; gi++)
+      {
+         AREA_GROUP_S * grp = &ab->groups[gi];
+         if (grp->entry_count > 0 || grp->act == 0)
+            continue;
+
+         /* Try 3-char prefix */
+         {
+            char short_prefix[80];
+            const char * ap = grp->name; /* already stripped of "Act X - " */
+            int slen = (int)strlen(ap);
+            int sk = slen > 3 ? 3 : slen;
+            int sm;
+
+            sprintf(short_prefix, "Act %d - ", grp->act);
+            strncat(short_prefix, ap, sk);
+            sm = strlen(short_prefix);
+
+            for (lp_row = 0; lp_row < lvlprest->line_num; lp_row++)
+            {
+               char * lp_name;
+               long * lp_def_ptr;
+               long lp_def;
+
+               lp_name = lvlprest->data + (lp_row * lvlprest->line_size)
+                         + lvlprest->col[lp_name_col].offset;
+               if (strnicmp(lp_name, short_prefix, sm) != 0)
+                  continue;
+
+               lp_def_ptr = (long *)(lvlprest->data + (lp_row * lvlprest->line_size)
+                            + lvlprest->col[lp_def_col].offset);
+               lp_def = *lp_def_ptr;
+               if (lp_def <= 0)
+                  continue;
+
+               for (f = 0; f < 6; f++)
+               {
+                  char * ds1_path = lvlprest->data + (lp_row * lvlprest->line_size)
+                                    + lvlprest->col[lp_file_col[f]].offset;
+                  area_group_add_entry(grp, grp->lvltype_id, (int)lp_def, ds1_path);
+               }
+            }
+         }
+
+         /* If still 0, try matching LvlPrest rows by area name without act prefix.
+          * Handles "Kurast" in LvlPrest matching LvlType "Act 3 - Kurast". */
+         if (grp->entry_count == 0)
+         {
+            const char * ap = grp->name; /* already stripped */
+            int alen = (int)strlen(ap);
+
+
+            if (alen >= 3)
+            {
+               for (lp_row = 0; lp_row < lvlprest->line_num; lp_row++)
+               {
+                  char * lp_name;
+                  long * lp_def_ptr;
+                  long lp_def;
+
+                  lp_name = lvlprest->data + (lp_row * lvlprest->line_size)
+                            + lvlprest->col[lp_name_col].offset;
+                  if (strnicmp(lp_name, ap, alen) != 0)
+                     continue;
+
+                  lp_def_ptr = (long *)(lvlprest->data + (lp_row * lvlprest->line_size)
+                               + lvlprest->col[lp_def_col].offset);
+                  lp_def = *lp_def_ptr;
+                  if (lp_def <= 0)
+                     continue;
+
+                  for (f = 0; f < 6; f++)
+                  {
+                     char * ds1_path = lvlprest->data + (lp_row * lvlprest->line_size)
+                                       + lvlprest->col[lp_file_col[f]].offset;
+                     area_group_add_entry(grp, grp->lvltype_id, (int)lp_def, ds1_path);
+                  }
+               }
+            }
          }
       }
    }
@@ -263,6 +394,35 @@ void area_browser_build(void)
       printf("\n");
       fflush(stdout);
    }
+}
+
+/* Print all available areas to stdout. */
+void area_browser_list(void)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   int i, last_act = -1;
+
+   printf("\nAvailable areas (%d groups):\n\n", ab->group_count);
+   for (i = 0; i < ab->group_count; i++)
+   {
+      AREA_GROUP_S * g = &ab->groups[i];
+      if (g->act != last_act)
+      {
+         if (g->act > 0)
+            printf("  Act %d:\n", g->act);
+         else
+            printf("  Other:\n");
+         last_act = g->act;
+      }
+      if (g->act > 0)
+         printf("    %-30s %3d maps  (--area \"Act %d - %s\")\n",
+                g->name, g->entry_count, g->act, g->name);
+      else
+         printf("    %-30s %3d maps  (--area \"%s\")\n",
+                g->name, g->entry_count, g->name);
+   }
+   printf("\n");
+   fflush(stdout);
 }
 
 /* Free all area browser dynamic memory. */

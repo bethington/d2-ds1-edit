@@ -458,6 +458,9 @@ typedef struct CMD_LINE_S
 
    // --area : load area by name from Excel data instead of INI file
    char * area_name; // NULL if not used
+
+   // --list-areas : print available areas and exit
+   int    list_areas;
 } CMD_LINE_S;
 
 /* ---- Area Browser data structures ---- */

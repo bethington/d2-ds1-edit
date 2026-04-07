@@ -13,7 +13,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -27,7 +26,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -41,7 +39,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -55,7 +52,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -69,7 +65,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -83,7 +78,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -97,7 +91,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -111,7 +104,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -125,7 +117,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -139,7 +130,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -153,7 +143,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         // ========== ACT 2 ==========
@@ -168,7 +157,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -182,7 +170,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -196,7 +183,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -210,7 +196,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -224,7 +209,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -238,7 +222,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -252,7 +235,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         // ========== ACT 3 ==========
@@ -267,7 +249,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -281,7 +262,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -295,7 +275,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -309,7 +288,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -323,7 +301,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -337,7 +314,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -351,7 +327,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -365,7 +340,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -379,7 +353,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -393,7 +366,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -407,7 +379,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         // ========== ACT 4 ==========
@@ -422,7 +393,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -436,7 +406,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -450,7 +419,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -464,7 +432,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         // ========== ACT 5 ==========
@@ -473,9 +440,10 @@
             "type": "node",
             "request": "launch",
             "runtimeExecutable": "${workspaceFolder}/bin/ds1edit.exe",
-            "runtimeArgs": ["assets/act5_town.ini"],
+            "runtimeArgs": [
+                "assets/act5_town.ini"
+            ],
             "cwd": "${workspaceFolder}/bin",
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Release"
         },
         {
@@ -489,7 +457,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -503,7 +470,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -517,7 +483,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -531,7 +496,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -545,7 +509,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -559,7 +522,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -576,7 +538,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -590,7 +551,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -608,7 +568,6 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Debug"
         },
         {
@@ -622,9 +581,7 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
             "preLaunchTask": "Build DS1Edit Release"
-
         }
     ]
 }

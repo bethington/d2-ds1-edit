@@ -413,6 +413,7 @@ void ds1edit_init(void)
    glb_ds1edit.cmd_line.headless_mode = FALSE;
    glb_ds1edit.cmd_line.headless_output = NULL;
    glb_ds1edit.cmd_line.area_name = NULL;
+   glb_ds1edit.cmd_line.list_areas = FALSE;
    for (i=0; i < DT1_IN_DS1_MAX; i++)
       glb_ds1edit.cmd_line.dt1_list_filename[i] = NULL;
 
@@ -1035,6 +1036,14 @@ int main(int argc, char * argv[])
       // list of ds1 to open
       misc_open_several_ds1(argv[1]);
    }
+   else if (glb_ds1edit.cmd_line.list_areas == TRUE)
+   {
+      // --list-areas : print available areas and exit
+      if (area_browser_init() != 0)
+         ds1edit_error("main(), error.\nFailed to load Excel data for area browser.");
+      area_browser_list();
+      exit(0);
+   }
    else if (glb_ds1edit.cmd_line.area_name != NULL)
    {
       // --area "Act X - Name" : load from Excel data
@@ -1066,7 +1075,8 @@ int main(int argc, char * argv[])
    else if (argc == 2) // 1 argument (assume it's a .ini file)
    {
    }
-   else if (glb_ds1edit.cmd_line.area_name != NULL) // --area mode
+   else if (glb_ds1edit.cmd_line.area_name != NULL ||
+            glb_ds1edit.cmd_line.list_areas == TRUE)
    {
    }
    else // syntax error

@@ -1329,6 +1329,10 @@ int misc_cmd_line_parse(int argc, char ** argv)
          }
          glb_ds1edit.cmd_line.area_name = argv[i];
       }
+      else if (i == 1 && stricmp(argv[i], "--list-areas") == 0)
+      {
+         glb_ds1edit.cmd_line.list_areas = TRUE;
+      }
       else if (i == 1)
       {
          // .ini or .ds1 ?

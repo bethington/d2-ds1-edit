@@ -7,5 +7,6 @@ void area_browser_destroy       (void);
 int  area_browser_open_by_name  (const char * area_name);
 int  area_browser_open_group    (int group_idx);
 int  area_browser_run           (void);
+void area_browser_list          (void);
 
 #endif
