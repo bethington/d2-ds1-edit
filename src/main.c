@@ -837,6 +837,26 @@ int main(int argc, char * argv[])
    ini_read(ininame);
    ds1edit_debug();
 
+   // optional data_dir override from ini (default is "Data\")
+   {
+      const char *data_dir_val = al_get_config_value(a5_config, "", "data_dir");
+      if (data_dir_val != NULL && data_dir_val[0] != '\0')
+      {
+         strncpy(glb_ds1edit_data_dir, data_dir_val, sizeof(glb_ds1edit_data_dir) - 2);
+         glb_ds1edit_data_dir[sizeof(glb_ds1edit_data_dir) - 2] = '\0';
+         // ensure trailing backslash
+         {
+            int len = strlen(glb_ds1edit_data_dir);
+            if (len > 0 && glb_ds1edit_data_dir[len-1] != '\\' && glb_ds1edit_data_dir[len-1] != '/')
+            {
+               glb_ds1edit_data_dir[len] = '\\';
+               glb_ds1edit_data_dir[len+1] = '\0';
+            }
+         }
+         printf("data_dir                = %s\n", glb_ds1edit_data_dir);
+      }
+   }
+
    // check mod directory
    mod_num = 0;
    if (glb_config.mod_dir[0] != NULL)

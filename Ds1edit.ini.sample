@@ -19,6 +19,11 @@ mod_dir  =
 ; mod_dir is an optional Mod Directory, like :
 ; mod_dir = C:\Diablo2\mods\my_mod
 
+; data_dir overrides where the editor looks for its runtime data
+; (palettes, gamma table, obj.txt, ds1edit.dt1, undo temp files).
+; Default is "Data\" relative to the exe. Leave blank for default.
+; data_dir =
+
 
 ; screen configuration
 ; if full_screen is not set to YES, it'll be a windowed screen
