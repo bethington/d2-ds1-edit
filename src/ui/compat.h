@@ -267,6 +267,7 @@ extern ALLEGRO_KEYBOARD_STATE a5_kb_state;
 /* Short KEY_* aliases for Allegro 5 key constants used by the editor */
 #define KEY_A         ALLEGRO_KEY_A
 #define KEY_C         ALLEGRO_KEY_C
+#define KEY_D         ALLEGRO_KEY_D
 #define KEY_G         ALLEGRO_KEY_G
 #define KEY_H         ALLEGRO_KEY_H
 #define KEY_I         ALLEGRO_KEY_I
@@ -277,6 +278,7 @@ extern ALLEGRO_KEYBOARD_STATE a5_kb_state;
 #define KEY_S         ALLEGRO_KEY_S
 #define KEY_T         ALLEGRO_KEY_T
 #define KEY_U         ALLEGRO_KEY_U
+#define KEY_W         ALLEGRO_KEY_W
 #define KEY_X         ALLEGRO_KEY_X
 #define KEY_0         ALLEGRO_KEY_0
 #define KEY_1         ALLEGRO_KEY_1
@@ -319,6 +321,7 @@ extern ALLEGRO_KEYBOARD_STATE a5_kb_state;
 #define KEY_MINUS     ALLEGRO_KEY_MINUS
 #define KEY_BACKSPACE ALLEGRO_KEY_BACKSPACE
 #define KEY_HOME      ALLEGRO_KEY_HOME
+#define KEY_END       ALLEGRO_KEY_END
 #define KEY_TILDE     ALLEGRO_KEY_TILDE
 #define KEY_DEL_PAD   ALLEGRO_KEY_PAD_DELETE
 #define KEY_ENTER_PAD ALLEGRO_KEY_PAD_ENTER

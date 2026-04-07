@@ -289,8 +289,7 @@ int msg_quit_main(void)
    buttons[1].off.fg             = col_green;
    buttons[1].off.bg             = col_black;
    buttons[1].off.border         = col_green;
-   buttons[1].shortcut[0].key[0] = KEY_A;
-   buttons[1].shortcut[1].key[0] = KEY_Q;
+   buttons[1].shortcut[0].key[0] = KEY_Q;
 
    // button "Cancel"
    buttons[2].text               = " (Esc) CANCEL ";
