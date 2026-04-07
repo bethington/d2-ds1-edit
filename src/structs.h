@@ -20,8 +20,8 @@
 #define MAX_MPQ_FILE           4
 #define MAX_MOD_DIR            1
 #define DT1_IN_DS1_MAX        33
-#define DS1_MAX              100
-#define DT1_MAX              300
+#define DS1_MAX             2048
+#define DT1_MAX              512
 #define ACT_MAX                5
 #define FLOOR_MAX_LAYER        2
 #define SHADOW_MAX_LAYER       1
@@ -154,6 +154,7 @@ typedef struct CONFIG_S
    int      winobj_scroll_keyb;
    int      winobj_scroll_mouse;
    int      center_zoom;
+   int      default_zoom;
    int      nb_type1_per_act;
    int      nb_type2_per_act;
    int      minimize_ds1;
@@ -455,7 +456,53 @@ typedef struct CMD_LINE_S
    // --headless : render one frame and save to file, then exit (no display)
    int    headless_mode;
    char * headless_output; // output filename, NULL if not used
+
+   // --area : load area by name from Excel data instead of INI file
+   char * area_name; // NULL if not used
+
+   // --list-areas / --list-areas-ext / --list-files : print info and exit
+   int    list_areas;
+   int    list_areas_ext;
+   int    list_files;
+   char * list_files_filter; // optional substring filter for --list-files
+
+   // --file : load a single DS1 by path
+   char * file_path;
 } CMD_LINE_S;
+
+/* ---- Area Browser data structures ---- */
+
+typedef struct AREA_DS1_ENTRY_S
+{
+   int  lvltype_id;     /* LvlTypes.txt Id (tileset id)          */
+   int  lvlprest_def;   /* LvlPrest.txt Def                      */
+   char ds1_path[256];  /* DS1 file path from LvlPrest File1-6   */
+} AREA_DS1_ENTRY_S;
+
+typedef struct AREA_GROUP_S
+{
+   char name[80];              /* Display name, e.g. "Town"           */
+   int  lvltype_id;            /* LvlTypes.txt Id for this group      */
+   int  act;                   /* 1-5 for standard areas, 0 = "Other" */
+   AREA_DS1_ENTRY_S * entries; /* malloc'd array of DS1 entries        */
+   int  entry_count;           /* Number of entries                    */
+   int  entry_max;             /* Allocated capacity                   */
+   int  is_expanded;           /* TRUE if showing individual DS1 files */
+} AREA_GROUP_S;
+
+typedef struct AREA_BROWSER_S
+{
+   AREA_GROUP_S * groups;      /* malloc'd array of all groups         */
+   int  group_count;           /* Total number of groups               */
+   int  group_max;             /* Allocated capacity                   */
+
+   /* GUI state */
+   int  selected_group;        /* Currently highlighted group, -1=none */
+   int  selected_entry;        /* Highlighted entry within expanded group, -1=none */
+   int  scroll_offset;         /* First visible group index            */
+   int  is_active;             /* TRUE if browser is showing           */
+   int  loaded_group;          /* group_idx of currently loaded area, -1=none */
+} AREA_BROWSER_S;
 
 // Tile Grid states
 typedef enum TILEGRID_ENUM
@@ -498,8 +545,10 @@ typedef struct GLB_DS1EDIT_S
    int           night_mode;
    TXT_S         * lvltypes_buff;
    TXT_S         * lvlprest_buff;
+   TXT_S         * levels_buff;
    TXT_S         * obj_buff;
    TXT_S         * objects_buff;
+   AREA_BROWSER_S area_browser;
    int           new_dir1[1],
                  new_dir4[4],
                  new_dir8[8],
@@ -521,6 +570,9 @@ typedef struct GLB_DS1EDIT_S
    TILEGRID_ENUM display_tile_grid;
    char          * version_build;
    char          * version_dll;
+   int           sidebar_visible;
+   int           sidebar_width;
+   int           has_loaded_ds1;  /* TRUE after at least one DS1 is loaded */
 } GLB_DS1EDIT_S;
 
 extern GLB_DS1EDIT_S glb_ds1edit;
@@ -986,6 +1038,7 @@ typedef enum RQ_ENUM
    RQ_LVLPREST,
    RQ_OBJ,
    RQ_OBJECTS,
+   RQ_LEVELS,
    RQ_MAX
 } RQ_ENUM;
 

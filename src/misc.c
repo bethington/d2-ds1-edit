@@ -5,6 +5,7 @@
 #include "core/txtread.h"
 #include "core/dt1.h"
 #include "mpq/mpqview.h"
+#include "core/area_browser.h"
 #include "misc.h"
 
 
@@ -1214,6 +1215,7 @@ int misc_get_txt_column_num(RQ_ENUM txt_idx, char * col_name)
             {"Data\\Global\\Excel\\LvlPrest.txt"},
             {"data\\obj.txt"},
             {"Data\\Global\\Excel\\Objects.txt"},
+            {"Data\\Global\\Excel\\Levels.txt"},
          };
 
    if (txt_idx >= RQ_MAX)
@@ -1317,7 +1319,46 @@ int misc_cmd_line_parse(int argc, char ** argv)
    // scan all parameters 1 by 1
    for (i=1; i < argc; i++)
    {
-      if (i == 1)
+      if (i == 1 && stricmp(argv[i], "--area") == 0)
+      {
+         // --area "Act X - Name" : load area by name from Excel data
+         i++;
+         if (i >= argc)
+         {
+            printf("misc_cmd_line_parse(), error : --area requires an area name\n");
+            return -1;
+         }
+         glb_ds1edit.cmd_line.area_name = argv[i];
+      }
+      else if (i == 1 && stricmp(argv[i], "--list-areas") == 0)
+      {
+         glb_ds1edit.cmd_line.list_areas = TRUE;
+      }
+      else if (i == 1 && stricmp(argv[i], "--list-areas-ext") == 0)
+      {
+         glb_ds1edit.cmd_line.list_areas_ext = TRUE;
+      }
+      else if (i == 1 && stricmp(argv[i], "--list-files") == 0)
+      {
+         glb_ds1edit.cmd_line.list_files = TRUE;
+         /* optional filter argument */
+         if (i + 1 < argc && argv[i + 1][0] != '-')
+         {
+            i++;
+            glb_ds1edit.cmd_line.list_files_filter = argv[i];
+         }
+      }
+      else if (i == 1 && stricmp(argv[i], "--file") == 0)
+      {
+         i++;
+         if (i >= argc)
+         {
+            printf("misc_cmd_line_parse(), error : --file requires a DS1 file path\n");
+            return -1;
+         }
+         glb_ds1edit.cmd_line.file_path = argv[i];
+      }
+      else if (i == 1)
       {
          // .ini or .ds1 ?
          ext = a5_get_extension(argv[i]);
@@ -1327,7 +1368,7 @@ int misc_cmd_line_parse(int argc, char ** argv)
             glb_ds1edit.cmd_line.ds1_filename = argv[i];
          else
          {
-            printf("misc_cmd_line_parse(), error : the first argument must be a .INI or a .DS1 file (current extension = \"%s\")\n", ext);
+            printf("misc_cmd_line_parse(), error : the first argument must be a .INI, .DS1, or --area\n");
             return -1;
          }
       }
@@ -1472,6 +1513,7 @@ int misc_cmd_line_parse(int argc, char ** argv)
 void misc_draw_screen(int mx, int my)
 {
    ALLEGRO_BITMAP * mouse_sprite = glb_ds1edit.mouse_cursor[glb_ds1edit.mode];
+   int disp_h = al_get_display_height(a5_display);
 
    al_set_target_backbuffer(a5_display);
    al_clear_to_color(al_map_rgb(0, 0, 0));
@@ -1481,6 +1523,12 @@ void misc_draw_screen(int mx, int my)
    al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_ZERO);
    al_draw_bitmap(glb_ds1edit.screen_buff, 0, 0, 0);
    al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
+
+   /* Draw sidebar overlay or collapsed tab on top of the map */
+   if (glb_ds1edit.sidebar_visible)
+      area_browser_draw_sidebar(glb_ds1edit.sidebar_width, disp_h);
+   else
+      area_browser_draw_sidebar_tab(disp_h);
 
    if (mouse_sprite != NULL)
       al_draw_bitmap(mouse_sprite, (float)mx, (float)my, 0);

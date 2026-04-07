@@ -17,5 +17,6 @@ int   read_lvltypes_txt        (int ds1_idx, int type);
 int   read_lvlprest_txt        (int ds1_idx, int def);
 int   read_obj_txt             (void);
 int   read_objects_txt         (void);
+int   read_levels_txt          (void);
 
 #endif

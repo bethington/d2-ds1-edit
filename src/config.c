@@ -121,6 +121,12 @@ void ini_create(char *ininame)
        "center_zoom = 1:1\n"
        "\n"
        "\n"
+       "; default zoom level when opening a DS1 file\n"
+       "; possible values : 1:1, 1:2, 1:4, 1:8, 1:16\n"
+       "; -----------------------------------------------\n"
+       "default_zoom = 1:1\n"
+       "\n"
+       "\n"
        "; What are the sizes of object tables in DLL for type 1 and 2 ?\n"
        "; normal values are :\n"
        ";    *  60 entries per act for type 1 objects\n"
@@ -196,6 +202,7 @@ void ini_read(char *ininame)
            {"winobj_can_scroll_keyb", T_YES, &glb_config.winobj_scroll_keyb, "YES"},
            {"winobj_can_scroll_mouse", T_YES, &glb_config.winobj_scroll_mouse, "NO"},
            {"center_zoom", T_ZOOM, &glb_config.center_zoom, "1:1"},
+           {"default_zoom", T_ZOOM, &glb_config.default_zoom, "1:1"},
            {"nb_type1_per_act", T_INT, &glb_config.nb_type1_per_act, (void *)60},
            {"nb_type2_per_act", T_INT, &glb_config.nb_type2_per_act, (void *)150},
            {"ds1_saved_minimize", T_YES, &glb_config.minimize_ds1, "YES"},

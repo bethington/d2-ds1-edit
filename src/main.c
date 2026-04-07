@@ -38,6 +38,7 @@ October 30 2011 :
 #include "ui/edit_window.h"
 #include "editor/undo.h"
 #include "core/txtread.h"
+#include "core/area_browser.h"
 #include "misc.h"
 #include "config.h"
 #include "core/animdata.h"
@@ -74,7 +75,7 @@ GAMMA_S glb_gamma_str[GC_MAX] = // gamma correction string table
 
 char * txt_def_lvltype_req[] =
 {
-   ("Id"),      ("Act"),
+   ("Id"),      ("Act"),     ("Name"),
    ("File 1"),  ("File 2"),  ("File 3"),  ("File 4"),  ("File 5"),
    ("File 6"),  ("File 7"),  ("File 8"),  ("File 9"),  ("File 10"),
    ("File 11"), ("File 12"), ("File 13"), ("File 14"), ("File 15"),
@@ -89,6 +90,13 @@ char * txt_def_lvlprest_req[] =
 {
    ("Def"),   ("Dt1Mask"),
    ("File1"), ("File2"), ("File3"), ("File4"), ("File5"), ("File6"),
+   ("Name"),  ("LevelId"),
+   NULL // DO NOT REMOVE !
+};
+
+char * txt_def_levels_req[] =
+{
+   ("Name"), ("Id"), ("Act"), ("LevelType"),
    NULL // DO NOT REMOVE !
 };
 
@@ -219,7 +227,7 @@ char * txt_def_objects_req[] =
    NULL // DO NOT REMOVE !
 };
 
-char ** glb_txt_req_ptr[RQ_MAX] = {NULL, NULL, NULL, NULL};
+char ** glb_txt_req_ptr[RQ_MAX] = {NULL, NULL, NULL, NULL, NULL};
        
 CONFIG_S      glb_config;                     // global configuration datas
 GLB_DS1EDIT_S glb_ds1edit;                    // global datas of the editor
@@ -283,6 +291,7 @@ void ds1edit_init(void)
    printf("ds1edit_init()\n");
    memset( & glb_config,  0, sizeof(glb_config));
    memset( & glb_ds1edit, 0, sizeof(glb_ds1edit));
+   glb_ds1edit.sidebar_width = 250;
 
    // allocate mem for DT1 & DS1
    i = sizeof(DS1_S) * DS1_MAX;
@@ -360,6 +369,7 @@ void ds1edit_init(void)
    glb_txt_req_ptr[RQ_LVLPREST] = txt_def_lvlprest_req;
    glb_txt_req_ptr[RQ_OBJ]      = txt_def_obj_req;
    glb_txt_req_ptr[RQ_OBJECTS]  = txt_def_objects_req;
+   glb_txt_req_ptr[RQ_LEVELS]   = txt_def_levels_req;
 
    // debug files
    remove(glb_path_lvltypes_mem);
@@ -403,6 +413,12 @@ void ds1edit_init(void)
    glb_ds1edit.cmd_line.dt1_list_num  = -1;
    glb_ds1edit.cmd_line.headless_mode = FALSE;
    glb_ds1edit.cmd_line.headless_output = NULL;
+   glb_ds1edit.cmd_line.area_name = NULL;
+   glb_ds1edit.cmd_line.list_areas = FALSE;
+   glb_ds1edit.cmd_line.list_areas_ext = FALSE;
+   glb_ds1edit.cmd_line.list_files = FALSE;
+   glb_ds1edit.cmd_line.list_files_filter = NULL;
+   glb_ds1edit.cmd_line.file_path = NULL;
    for (i=0; i < DT1_IN_DS1_MAX; i++)
       glb_ds1edit.cmd_line.dt1_list_filename[i] = NULL;
 
@@ -450,7 +466,7 @@ UDWORD ds1edit_get_RLE_bitmap_size(ALLEGRO_BITMAP * bmp)
 // ==========================================================================
 // Recreate the offscreen render targets after the display exists so Allegro
 // can allocate them as display bitmaps instead of memory bitmaps.
-static void ds1edit_recreate_render_targets(void)
+void ds1edit_recreate_render_targets(void)
 {
    ALLEGRO_BITMAP * new_big_screen_buff;
    ALLEGRO_BITMAP * new_screen_buff;
@@ -592,6 +608,9 @@ void ds1edit_exit(void)
       glb_ds1edit.lvlprest_buff = txt_destroy(glb_ds1edit.lvlprest_buff);
    if (glb_ds1edit.obj_buff != NULL)
       glb_ds1edit.obj_buff = txt_destroy(glb_ds1edit.obj_buff);
+   if (glb_ds1edit.levels_buff != NULL)
+      glb_ds1edit.levels_buff = txt_destroy(glb_ds1edit.levels_buff);
+   area_browser_destroy();
 
    // animdata.d2
    fprintf(stderr, "   * animdata.d2 buffer ...\n");
@@ -662,6 +681,16 @@ void ds1edit_debug(void)
       default : printf("?\n"); break;
    }
 
+   printf("default_zoom            = ");
+   switch(glb_config.default_zoom)
+   {
+      case ZM_11 : printf("1:1\n"); break;
+      case ZM_12 : printf("1:2\n"); break;
+      case ZM_14 : printf("1:4\n"); break;
+      case ZM_18 : printf("1:8\n"); break;
+      case ZM_116: printf("1:16\n"); break;
+      default : printf("1:1\n"); break;
+   }
    printf("nb_type1_per_act        = %i\n", glb_config.nb_type1_per_act);
    printf("nb_type2_per_act        = %i\n", glb_config.nb_type2_per_act);
    printf("ds1_saved_minimize      = %s\n", glb_config.minimize_ds1         ? "YES" : "NO");
@@ -1011,6 +1040,7 @@ int main(int argc, char * argv[])
             glb_ds1edit.cmd_line.resize_height
          );
       }
+      glb_ds1edit.has_loaded_ds1 = TRUE;
    }
    else if (glb_ds1edit.cmd_line.ini_filename != NULL)
    {
@@ -1021,12 +1051,60 @@ int main(int argc, char * argv[])
 
       // list of ds1 to open
       misc_open_several_ds1(argv[1]);
+      glb_ds1edit.has_loaded_ds1 = TRUE;
+   }
+   else if (glb_ds1edit.cmd_line.list_areas == TRUE ||
+            glb_ds1edit.cmd_line.list_areas_ext == TRUE ||
+            glb_ds1edit.cmd_line.list_files == TRUE)
+   {
+      // --list-areas, --list-areas-ext, or --list-files
+      if (area_browser_init() != 0)
+         ds1edit_error("main(), error.\nFailed to load Excel data for area browser.");
+      if (glb_ds1edit.cmd_line.list_files == TRUE)
+         area_browser_list_files(glb_ds1edit.cmd_line.list_files_filter);
+      else if (glb_ds1edit.cmd_line.list_areas_ext == TRUE)
+         area_browser_list_ext();
+      else
+         area_browser_list();
+      exit(0);
+   }
+   else if (glb_ds1edit.cmd_line.file_path != NULL)
+   {
+      // --file "path/to/file.ds1" : load single DS1 from Excel data
+      if (area_browser_init() != 0)
+         ds1edit_error("main(), error.\nFailed to load Excel data for area browser.");
+
+      if (area_browser_open_by_file(glb_ds1edit.cmd_line.file_path) < 0)
+      {
+         sprintf(tmp, "main(), error.\nDS1 file '%s' not found in Excel data.",
+                 glb_ds1edit.cmd_line.file_path);
+         ds1edit_error(tmp);
+      }
+      glb_ds1edit.has_loaded_ds1 = TRUE;
+   }
+   else if (glb_ds1edit.cmd_line.area_name != NULL)
+   {
+      // --area "Act X - Name" : load from Excel data
+      if (area_browser_init() != 0)
+         ds1edit_error("main(), error.\nFailed to load Excel data for area browser.");
+
+      if (area_browser_open_by_name(glb_ds1edit.cmd_line.area_name) < 0)
+      {
+         sprintf(tmp, "main(), error.\nArea '%s' not found in Excel data.",
+                 glb_ds1edit.cmd_line.area_name);
+         ds1edit_error(tmp);
+      }
+      glb_ds1edit.has_loaded_ds1 = TRUE;
    }
    else
    {
-      // bug
-      ds1edit_error("main(), error.\nBug : neither .DS1 nor a .INI in the command line.");
+      // no arguments — open editor with sidebar visible, no map loaded
+      glb_ds1edit.sidebar_visible = TRUE;
+      if (area_browser_init() != 0)
+         ds1edit_error("main(), error.\nFailed to load Excel data for area browser.");
    }
+
+   /* (Full-screen browser removed — sidebar is used instead) */
 
    // syntaxe of the command line
    printf("============================================================\n");
@@ -1034,6 +1112,14 @@ int main(int argc, char * argv[])
    {
    }
    else if (argc == 2) // 1 argument (assume it's a .ini file)
+   {
+   }
+   else if (glb_ds1edit.cmd_line.area_name != NULL ||
+            glb_ds1edit.cmd_line.list_areas == TRUE ||
+            glb_ds1edit.cmd_line.list_areas_ext == TRUE ||
+            glb_ds1edit.cmd_line.list_files == TRUE ||
+            glb_ds1edit.cmd_line.file_path != NULL ||
+            argc == 1) /* no args = GUI browser mode */
    {
    }
    else // syntax error
@@ -1055,31 +1141,35 @@ int main(int argc, char * argv[])
    }
    printf("============================================================\n");
 
-   // animdata.d2
-   printf("\nanimdata_load()\n");
-   fflush(stdout);
-   fflush(stderr);
-   animdata_load();
+   // animdata, animations, and colormaps — only if DS1 files are loaded
+   if (glb_ds1edit.has_loaded_ds1)
+   {
+      // animdata.d2
+      printf("\nanimdata_load()\n");
+      fflush(stdout);
+      fflush(stderr);
+      animdata_load();
 
-   // load necessary objects animation
-   printf("loading ds1 objects animations :\n");
-   fprintf(stderr, "loading ds1 objects animations : ");
-   fflush(stdout);
-   fflush(stderr);
+      // load necessary objects animation
+      printf("loading ds1 objects animations :\n");
+      fprintf(stderr, "loading ds1 objects animations : ");
+      fflush(stdout);
+      fflush(stderr);
 
-   anim_update_gfx(TRUE); // TRUE is for "show dot progression"
+      anim_update_gfx(TRUE); // TRUE is for "show dot progression"
 
-   printf("\n");
-   fprintf(stderr, "\n");
-   fflush(stdout);
-   fflush(stderr);
-   
-   // colormaps
-   printf("\ncolor maps...");
-   fprintf(stderr, "color maps");
-   misc_make_cmaps();
-   printf("done\n");
-   fprintf(stderr, "done\n");
+      printf("\n");
+      fprintf(stderr, "\n");
+      fflush(stdout);
+      fflush(stderr);
+
+      // colormaps
+      printf("\ncolor maps...");
+      fprintf(stderr, "color maps");
+      misc_make_cmaps();
+      printf("done\n");
+      fprintf(stderr, "done\n");
+   }
 
    // headless mode : render one frame and save to file, then exit
    if (glb_ds1edit.cmd_line.headless_mode == TRUE)
@@ -1125,26 +1215,29 @@ int main(int argc, char * argv[])
    fflush(stdout);
    fflush(stderr);
 
-   // display setup
-   if (glb_config.fullscreen == TRUE)
-      al_set_new_display_flags(ALLEGRO_FULLSCREEN);
-   else
-      al_set_new_display_flags(ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE);
-
-   if (glb_config.screen.refresh > 0)
-      al_set_new_display_refresh_rate(glb_config.screen.refresh);
-
-   a5_display = al_create_display(glb_config.screen.width, glb_config.screen.height);
+   // display setup (skip if already created by the area browser)
    if (a5_display == NULL)
    {
-      sprintf(
-         tmp,
-         "main(), error.\nCan't create display (%i*%i %s).",
-         glb_config.screen.width,
-         glb_config.screen.height,
-         glb_config.fullscreen ? "Fullscreen" : "Windowed"
-      );
-      ds1edit_error(tmp);
+      if (glb_config.fullscreen == TRUE)
+         al_set_new_display_flags(ALLEGRO_FULLSCREEN);
+      else
+         al_set_new_display_flags(ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE);
+
+      if (glb_config.screen.refresh > 0)
+         al_set_new_display_refresh_rate(glb_config.screen.refresh);
+
+      a5_display = al_create_display(glb_config.screen.width, glb_config.screen.height);
+      if (a5_display == NULL)
+      {
+         sprintf(
+            tmp,
+            "main(), error.\nCan't create display (%i*%i %s).",
+            glb_config.screen.width,
+            glb_config.screen.height,
+            glb_config.fullscreen ? "Fullscreen" : "Windowed"
+         );
+         ds1edit_error(tmp);
+      }
    }
 
    sprintf(
@@ -1199,14 +1292,17 @@ int main(int argc, char * argv[])
    }
 
 
-   // mouse
-   if (!al_install_mouse())
+   // mouse (skip if already installed by area browser)
+   if (!al_is_mouse_installed())
    {
-      sprintf(
-         tmp,
-         "main(), error.\nCan't install the Mouse handler."
-      );
-      ds1edit_error(tmp);
+      if (!al_install_mouse())
+      {
+         sprintf(
+            tmp,
+            "main(), error.\nCan't install the Mouse handler."
+         );
+         ds1edit_error(tmp);
+      }
    }
 
    // event queue
@@ -1224,15 +1320,28 @@ int main(int argc, char * argv[])
    al_register_event_source(a5_event_queue, al_get_timer_event_source(a5_fps_timer));
    al_start_timer(a5_fps_timer);
 
-   glb_ds1edit.win_preview.x0 = glb_ds1[ds1_idx].own_wpreview.x0;
-   glb_ds1edit.win_preview.y0 = glb_ds1[ds1_idx].own_wpreview.y0;
-   glb_ds1edit.win_preview.w  = glb_ds1[ds1_idx].own_wpreview.w ;
-   glb_ds1edit.win_preview.h  = glb_ds1[ds1_idx].own_wpreview.h ;
+   if (glb_ds1edit.has_loaded_ds1)
+   {
+      glb_ds1edit.win_preview.x0 = glb_ds1[ds1_idx].own_wpreview.x0;
+      glb_ds1edit.win_preview.y0 = glb_ds1[ds1_idx].own_wpreview.y0;
+      glb_ds1edit.win_preview.w  = glb_ds1[ds1_idx].own_wpreview.w ;
+      glb_ds1edit.win_preview.h  = glb_ds1[ds1_idx].own_wpreview.h ;
 
+      // Initialize palette state so the first frame doesn't trigger a redundant
+      // dt1_rebuild_bitmaps_from_cache (already done during init above).
+      wpreview_init_palette_state(ds1_idx);
+   }
+   else
+   {
+      glb_ds1edit.win_preview.x0 = 0;
+      glb_ds1edit.win_preview.y0 = 0;
+      glb_ds1edit.win_preview.w  = glb_config.screen.width;
+      glb_ds1edit.win_preview.h  = glb_config.screen.height;
+   }
 
-   // Initialize palette state so the first frame doesn't trigger a redundant
-   // dt1_rebuild_bitmaps_from_cache (already done during init above).
-   wpreview_init_palette_state(ds1_idx);
+   // Ensure area browser data is available for the sidebar (all launch modes)
+   if (glb_ds1edit.area_browser.group_count == 0)
+      area_browser_init();
 
    // main loop
    freopen("stderr.txt", "wt", stderr);

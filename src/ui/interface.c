@@ -13,6 +13,7 @@
 #include "ui/edit_window.h"
 #include "ui/dialogs.h"
 #include "ui/interface.h"
+#include "core/area_browser.h"
 
 
 typedef struct
@@ -160,11 +161,137 @@ void interfac_user_handler(int start_ds1_idx)
       section_start_ms = perf_now_ms();
       al_get_keyboard_state(&a5_kb_state);
       al_get_mouse_state(&a5_ms_state);
+
       perf_accumulate(
          &glb_perf_stats.input_ms_total,
          &glb_perf_stats.input_ms_max,
          perf_now_ms() - section_start_ms
       );
+
+      cur_mouse_z = a5_mouse_z;
+
+      /* Sidebar toggle: backtick key (`) */
+      if (key_pressed(KEY_TILDE))
+      {
+         glb_ds1edit.sidebar_visible = !glb_ds1edit.sidebar_visible;
+         while (key_pressed(KEY_TILDE))
+         { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+      }
+
+      /* Sidebar: handle click on collapsed tab to expand */
+      if (!glb_ds1edit.sidebar_visible && a5_mouse_b &&
+          a5_mouse_x < 16) /* collapsed tab width */
+      {
+         glb_ds1edit.sidebar_visible = TRUE;
+         while (a5_mouse_b)
+         { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
+      }
+
+      /* Sidebar: handle mouse interactions */
+      if (glb_ds1edit.sidebar_visible &&
+          a5_mouse_x < glb_ds1edit.sidebar_width)
+      {
+         /* Mouse wheel scrolls the sidebar (consume delta so zoom doesn't fire) */
+         if (cur_mouse_z != old_mouse_z)
+         {
+            area_browser_sidebar_scroll(cur_mouse_z - old_mouse_z);
+            old_mouse_z = cur_mouse_z;
+         }
+
+         /* Mouse click in sidebar */
+         if (a5_mouse_b & 1)
+         {
+            int click_result = area_browser_sidebar_click(
+               a5_mouse_x, a5_mouse_y,
+               glb_ds1edit.sidebar_width,
+               al_get_display_height(a5_display)
+            );
+
+            if (click_result == -2)
+            {
+               /* Close button */
+               glb_ds1edit.sidebar_visible = FALSE;
+            }
+            else if (click_result == -3)
+            {
+               /* Individual DS1 entry clicked — switch to it (instant if preloaded) */
+               {
+                  int new_idx = area_browser_switch_single(
+                     glb_ds1edit.area_browser.selected_group,
+                     glb_ds1edit.area_browser.selected_entry);
+                  if (new_idx >= 0)
+                     ds1_idx = new_idx;
+               }
+            }
+            else if (click_result >= 0)
+            {
+               /* Group clicked — expand/collapse + preload all DS1s */
+               if (glb_ds1edit.area_browser.groups[click_result].is_expanded &&
+                   glb_ds1edit.area_browser.loaded_group != click_result)
+               {
+                  /* Just expanded — preload all DS1s for this group */
+                  if (area_browser_switch_area(click_result) >= 0)
+                     ds1_idx = 0;
+               }
+            }
+
+            while (a5_mouse_b & 1)
+            { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
+         }
+
+         /* Update hover selection */
+         {
+            AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+            int sy, si, s_last_act = -1, s_draw_row = 0;
+            int s_top = glb_ds1edit.show_2nd_row ? 20 : 9;
+            int found = 0;
+
+            ab->selected_entry = -1;
+            sy = s_top + 22 + 4; /* panel_top + SB_HEADER_H + 4 */
+            for (si = 0; si < ab->group_count && !found; si++)
+            {
+               if (ab->groups[si].act != s_last_act)
+               {
+                  if (s_draw_row >= ab->scroll_offset)
+                     sy += 14;
+                  s_draw_row++;
+                  s_last_act = ab->groups[si].act;
+               }
+               /* Group row */
+               if (s_draw_row >= ab->scroll_offset)
+               {
+                  if (a5_mouse_y >= sy && a5_mouse_y < sy + 14)
+                  {
+                     ab->selected_group = si;
+                     found = 1;
+                  }
+                  sy += 14;
+               }
+               s_draw_row++;
+
+               /* Expanded entry rows */
+               if (ab->groups[si].is_expanded && !found)
+               {
+                  int sj;
+                  for (sj = 0; sj < ab->groups[si].entry_count; sj++)
+                  {
+                     if (s_draw_row >= ab->scroll_offset)
+                     {
+                        if (a5_mouse_y >= sy && a5_mouse_y < sy + 14)
+                        {
+                           ab->selected_group = si;
+                           ab->selected_entry = sj;
+                           found = 1;
+                           break;
+                        }
+                        sy += 14;
+                     }
+                     s_draw_row++;
+                  }
+               }
+            }
+         }
+      }
 
       can_swich_mode = TRUE;
       if (glb_ds1edit.mode == MOD_P)
@@ -261,7 +388,10 @@ void interfac_user_handler(int start_ds1_idx)
 
       // redraw the whole screen
       section_start_ms = perf_now_ms();
-      wpreview_draw_tiles(ds1_idx);
+      if (glb_ds1edit.has_loaded_ds1)
+         wpreview_draw_tiles(ds1_idx);
+      else
+         misc_draw_screen(a5_mouse_x, a5_mouse_y);
       glb_ds1edit.fps++;
       perf_accumulate(
          &glb_perf_stats.render_ms_total,

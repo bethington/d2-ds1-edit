@@ -1149,7 +1149,7 @@ int ds1_read(const char * ds1name, int ds1_idx, int new_width, int new_height)
    glb_ds1[ds1_idx].own_wpreview.w  = glb_config.screen.width;
    glb_ds1[ds1_idx].own_wpreview.h  = glb_config.screen.height;
    
-   change_zoom(ds1_idx, ZM_14); // start with zoom of 1:4 in this ds1
+   change_zoom(ds1_idx, glb_config.default_zoom >= 0 ? glb_config.default_zoom : ZM_11);
 
    // some inits
    cptr = glb_ds1[ds1_idx].file_buff;
@@ -1214,10 +1214,8 @@ int ds1_read(const char * ds1name, int ds1_idx, int new_width, int new_height)
       }
 
       // update ds1 values with workspace datas
-      if (zoom != -1)
-      {
-         change_zoom(ds1_idx, zoom);
-      }
+      // (zoom ignored — always default to 1:1)
+      (void)zoom;
       if ((tile_x != -1) && (tile_y != -1))
       {
          if (tile_x < 0)

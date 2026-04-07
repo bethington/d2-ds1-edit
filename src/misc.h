@@ -34,4 +34,5 @@ void   misc_set_mouse_cursor           (BITMAP * sprite);
 */
 void   misc_draw_screen                (int mx, int my);
 int    misc_increase_ds1_objects_max   (int ds1_idx, long nb_objects);
+void   ds1edit_recreate_render_targets (void);
 #endif
