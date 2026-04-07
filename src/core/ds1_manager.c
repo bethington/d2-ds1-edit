@@ -322,6 +322,118 @@ int ds1_manager_lvlprest_find_empty_slot(int def)
    return -1; /* Def not found */
 }
 
+/* Find which File slot (1-6) contains a specific DS1 path for a given Def.
+ * Matches by filename (case-insensitive). Returns slot 1-6, or -1 if not found. */
+int ds1_manager_lvlprest_find_file_slot(int def, const char * ds1_path)
+{
+   TXT_S * txt = glb_ds1edit.lvlprest_buff;
+   int i, f;
+   int def_col, file_cols[6];
+   char col_name[16];
+   const char * search_name;
+
+   if (txt == NULL || ds1_path == NULL) return -1;
+
+   /* Extract just the filename for matching */
+   search_name = strrchr(ds1_path, '/');
+   if (search_name == NULL) search_name = strrchr(ds1_path, '\\');
+   if (search_name != NULL) search_name++; else search_name = ds1_path;
+
+   def_col = misc_get_txt_column_num(RQ_LVLPREST, "Def");
+   for (f = 0; f < 6; f++)
+   {
+      sprintf(col_name, "File%d", f + 1);
+      file_cols[f] = misc_get_txt_column_num(RQ_LVLPREST, col_name);
+   }
+
+   for (i = 0; i < txt->line_num; i++)
+   {
+      long * def_ptr = (long *)(txt->data + (i * txt->line_size) + txt->col[def_col].offset);
+      if (*def_ptr == def)
+      {
+         for (f = 0; f < 6; f++)
+         {
+            char * path = txt->data + (i * txt->line_size) + txt->col[file_cols[f]].offset;
+            const char * entry_name;
+
+            if (path[0] == '\0' || path[0] == '0')
+               continue;
+
+            /* Match by filename */
+            entry_name = strrchr(path, '/');
+            if (entry_name == NULL) entry_name = strrchr(path, '\\');
+            if (entry_name != NULL) entry_name++; else entry_name = path;
+
+            if (stricmp(entry_name, search_name) == 0)
+               return f + 1;
+         }
+         return -1; /* Def found but file not in any slot */
+      }
+   }
+   return -1;
+}
+
+/* Full delete operation: backup, update LvlPrest.txt, remove file. */
+int ds1_manager_delete(int group_idx, int entry_idx)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   AREA_GROUP_S * g;
+   AREA_DS1_ENTRY_S * e;
+   int file_slot;
+   char src_path[512];
+
+   if (group_idx < 0 || group_idx >= ab->group_count) return -1;
+   g = &ab->groups[group_idx];
+   if (entry_idx < 0 || entry_idx >= g->entry_count) return -1;
+   e = &g->entries[entry_idx];
+
+   /* 1. Create backup */
+   if (ds1_manager_backup(group_idx, entry_idx) != 0)
+   {
+      printf("ds1_manager_delete: backup failed, aborting delete\n");
+      return -1;
+   }
+
+   /* 2. Find the file slot in LvlPrest.txt */
+   file_slot = ds1_manager_lvlprest_find_file_slot(e->lvlprest_def, e->ds1_path);
+   if (file_slot > 0)
+   {
+      /* 3. Clear the File slot in LvlPrest.txt */
+      if (ds1_manager_lvlprest_clear_file(e->lvlprest_def, file_slot) == 0)
+         printf("ds1_manager_delete: cleared File%d for Def %d in LvlPrest.txt\n",
+                file_slot, e->lvlprest_def);
+      else
+         printf("ds1_manager_delete: warning, failed to update LvlPrest.txt\n");
+   }
+   else
+   {
+      printf("ds1_manager_delete: warning, couldn't find file slot in LvlPrest.txt\n");
+   }
+
+   /* 4. Delete the DS1 file from disk */
+   if (glb_config.mod_dir[0] != NULL)
+      sprintf(src_path, "%s\\Global\\Tiles\\%s", glb_config.mod_dir[0], e->ds1_path);
+   else
+      sprintf(src_path, "assets/tiles/%s", e->ds1_path);
+
+   if (remove(src_path) == 0)
+      printf("ds1_manager_delete: removed %s\n", src_path);
+   else
+      printf("ds1_manager_delete: warning, couldn't remove %s (may not exist on disk)\n", src_path);
+
+   /* 5. Remove entry from the in-memory area browser */
+   {
+      int j;
+      for (j = entry_idx; j < g->entry_count - 1; j++)
+         g->entries[j] = g->entries[j + 1];
+      g->entry_count--;
+   }
+
+   printf("ds1_manager_delete: complete\n");
+   fflush(stdout);
+   return 0;
+}
+
 
 /* ---- Backup System ---- */
 
@@ -469,18 +581,248 @@ int ds1_manager_backup(int group_idx, int entry_idx)
    return 0;
 }
 
-/* Create an empty DS1 file at the appropriate path for the given area group. */
+/* Write a minimal empty DS1 file to disk. Returns 0 on success. */
+static int write_empty_ds1(const char * path, int width, int height, int act)
+{
+   FILE * out;
+   long val;
+   int x, y;
+
+   out = fopen(path, "wb");
+   if (out == NULL) return -1;
+
+   /* Version 18 */
+   val = 18; fwrite(&val, 4, 1, out);
+
+   /* Width - 1 */
+   val = width - 1; fwrite(&val, 4, 1, out);
+
+   /* Height - 1 */
+   val = height - 1; fwrite(&val, 4, 1, out);
+
+   /* Act - 1 */
+   val = act - 1; fwrite(&val, 4, 1, out);
+
+   /* Tag type = 0 */
+   val = 0; fwrite(&val, 4, 1, out);
+
+   /* File count = 0 (no embedded filenames) */
+   val = 0; fwrite(&val, 4, 1, out);
+
+   /* Wall layers = 1, Floor layers = 1 */
+   val = 1; fwrite(&val, 4, 1, out); /* wall_num */
+   val = 1; fwrite(&val, 4, 1, out); /* floor_num */
+
+   /* Walls: props layer (4 bytes per cell) + orientation layer (4 bytes per cell) */
+   for (y = 0; y < height; y++)
+      for (x = 0; x < width; x++)
+      { val = 0; fwrite(&val, 4, 1, out); }
+   for (y = 0; y < height; y++)
+      for (x = 0; x < width; x++)
+      { val = 0; fwrite(&val, 4, 1, out); }
+
+   /* Floors: props layer */
+   for (y = 0; y < height; y++)
+      for (x = 0; x < width; x++)
+      { val = 0; fwrite(&val, 4, 1, out); }
+
+   /* Shadows: props layer */
+   for (y = 0; y < height; y++)
+      for (x = 0; x < width; x++)
+      { val = 0; fwrite(&val, 4, 1, out); }
+
+   /* Objects: count = 0 */
+   val = 0; fwrite(&val, 4, 1, out);
+
+   /* NPC paths: count = 0 */
+   val = 0; fwrite(&val, 4, 1, out);
+
+   fclose(out);
+   return 0;
+}
+
+/* Create an empty DS1 file and add it to the given area group.
+ * Saves to mod_dir and updates LvlPrest.txt. Returns 0 on success. */
 int ds1_manager_create_empty(int group_idx, int width, int height, int act)
 {
-   /* TODO: Phase 3 — create empty DS1 */
-   printf("ds1_manager_create_empty: not yet implemented\n");
-   return -1;
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   AREA_GROUP_S * g;
+   char filename[128], rel_path[256], full_path[512], dir_path[512];
+   int def, file_slot;
+   int counter = 1;
+
+   if (group_idx < 0 || group_idx >= ab->group_count) return -1;
+   g = &ab->groups[group_idx];
+   if (g->entry_count == 0) return -1;
+   if (glb_config.mod_dir[0] == NULL)
+   {
+      printf("ds1_manager_create_empty: no mod_dir configured\n");
+      return -1;
+   }
+
+   /* Use the first entry's Def and path structure as a template */
+   def = g->entries[0].lvlprest_def;
+
+   /* Find an empty file slot */
+   file_slot = ds1_manager_lvlprest_find_empty_slot(def);
+   if (file_slot < 0)
+   {
+      printf("ds1_manager_create_empty: no empty File slot for Def %d\n", def);
+      return -1;
+   }
+
+   /* Generate a unique filename based on the area name */
+   {
+      /* Extract the directory from the first entry's path */
+      const char * first_path = g->entries[0].ds1_path;
+      const char * last_slash = strrchr(first_path, '/');
+      int dir_len;
+
+      if (last_slash == NULL) last_slash = strrchr(first_path, '\\');
+      if (last_slash == NULL)
+      {
+         printf("ds1_manager_create_empty: can't determine directory from %s\n", first_path);
+         return -1;
+      }
+      dir_len = (int)(last_slash - first_path);
+
+      /* Generate filename: NewMap1.ds1, NewMap2.ds1, etc. */
+      do {
+         sprintf(filename, "NewMap%d.ds1", counter++);
+         sprintf(rel_path, "%.*s/%s", dir_len, first_path, filename);
+         sprintf(full_path, "%s\\Global\\Tiles\\%.*s\\%s",
+                 glb_config.mod_dir[0], dir_len, first_path, filename);
+      } while (a5_file_exists(full_path) && counter < 999);
+   }
+
+   /* Ensure directory exists */
+   {
+      const char * last_slash = strrchr(full_path, '\\');
+      if (last_slash == NULL) last_slash = strrchr(full_path, '/');
+      if (last_slash != NULL)
+      {
+         int dlen = (int)(last_slash - full_path);
+         strncpy(dir_path, full_path, dlen);
+         dir_path[dlen] = '\0';
+         MKDIR(dir_path);
+      }
+   }
+
+   /* Write the empty DS1 */
+   if (write_empty_ds1(full_path, width, height, act) != 0)
+   {
+      printf("ds1_manager_create_empty: failed to write %s\n", full_path);
+      return -1;
+   }
+   printf("ds1_manager_create_empty: created %s (%dx%d, act %d)\n",
+          full_path, width, height, act);
+
+   /* Update LvlPrest.txt */
+   if (ds1_manager_lvlprest_set_file(def, file_slot, rel_path) == 0)
+      printf("ds1_manager_create_empty: added to LvlPrest.txt File%d for Def %d\n",
+             file_slot, def);
+
+   /* Add to in-memory area browser */
+   {
+      AREA_DS1_ENTRY_S new_entry;
+      new_entry.lvltype_id = g->lvltype_id;
+      new_entry.lvlprest_def = def;
+      strncpy(new_entry.ds1_path, rel_path, sizeof(new_entry.ds1_path) - 1);
+      new_entry.ds1_path[sizeof(new_entry.ds1_path) - 1] = '\0';
+      area_group_add_entry(g, g->lvltype_id, def, rel_path);
+   }
+
+   printf("ds1_manager_create_empty: complete\n");
+   fflush(stdout);
+   return 0;
 }
 
 /* Clone the current DS1 and add it to the given area group. */
 int ds1_manager_clone(int src_ds1_idx, int group_idx)
 {
-   /* TODO: Phase 3 — clone DS1 */
-   printf("ds1_manager_clone: not yet implemented\n");
-   return -1;
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   AREA_GROUP_S * g;
+   char src_path[512], dst_path[512], rel_path[256], filename[128];
+   int def, file_slot, counter = 1;
+   const char * first_path;
+   const char * last_slash;
+   int dir_len;
+
+   if (group_idx < 0 || group_idx >= ab->group_count) return -1;
+   g = &ab->groups[group_idx];
+   if (g->entry_count == 0) return -1;
+   if (glb_config.mod_dir[0] == NULL) return -1;
+   if (src_ds1_idx < 0 || src_ds1_idx >= DS1_MAX) return -1;
+   if (glb_ds1[src_ds1_idx].name[0] == '\0') return -1;
+
+   def = g->entries[0].lvlprest_def;
+   file_slot = ds1_manager_lvlprest_find_empty_slot(def);
+   if (file_slot < 0)
+   {
+      printf("ds1_manager_clone: no empty File slot for Def %d\n", def);
+      return -1;
+   }
+
+   /* Build source path */
+   strcpy(src_path, glb_ds1[src_ds1_idx].name);
+
+   /* Generate destination filename based on source */
+   first_path = g->entries[0].ds1_path;
+   last_slash = strrchr(first_path, '/');
+   if (last_slash == NULL) last_slash = strrchr(first_path, '\\');
+   if (last_slash == NULL) return -1;
+   dir_len = (int)(last_slash - first_path);
+
+   {
+      const char * src_fname = strrchr(glb_ds1[src_ds1_idx].filename, '.');
+      int base_len = src_fname ? (int)(src_fname - glb_ds1[src_ds1_idx].filename) : (int)strlen(glb_ds1[src_ds1_idx].filename);
+
+      do {
+         sprintf(filename, "%.*s_copy%d.ds1", base_len, glb_ds1[src_ds1_idx].filename, counter++);
+         sprintf(rel_path, "%.*s/%s", dir_len, first_path, filename);
+         sprintf(dst_path, "%s\\Global\\Tiles\\%.*s\\%s",
+                 glb_config.mod_dir[0], dir_len, first_path, filename);
+      } while (a5_file_exists(dst_path) && counter < 999);
+   }
+
+   /* Copy the file */
+   {
+      FILE * in = fopen(src_path, "rb");
+      if (in == NULL)
+      {
+         printf("ds1_manager_clone: can't read %s\n", src_path);
+         return -1;
+      }
+      {
+         FILE * out = fopen(dst_path, "wb");
+         if (out != NULL)
+         {
+            char copy_buf[8192];
+            int n;
+            while ((n = (int)fread(copy_buf, 1, sizeof(copy_buf), in)) > 0)
+               fwrite(copy_buf, 1, n, out);
+            fclose(out);
+         }
+         else
+         {
+            fclose(in);
+            printf("ds1_manager_clone: can't write %s\n", dst_path);
+            return -1;
+         }
+      }
+      fclose(in);
+   }
+   printf("ds1_manager_clone: copied %s -> %s\n", src_path, dst_path);
+
+   /* Update LvlPrest.txt */
+   if (ds1_manager_lvlprest_set_file(def, file_slot, rel_path) == 0)
+      printf("ds1_manager_clone: added to LvlPrest.txt File%d for Def %d\n",
+             file_slot, def);
+
+   /* Add to in-memory area browser */
+   area_group_add_entry(g, g->lvltype_id, def, rel_path);
+
+   printf("ds1_manager_clone: complete\n");
+   fflush(stdout);
+   return 0;
 }

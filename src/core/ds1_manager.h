@@ -5,6 +5,8 @@
 int  ds1_manager_lvlprest_set_file(int def, int file_slot, const char * ds1_path);
 int  ds1_manager_lvlprest_clear_file(int def, int file_slot);
 int  ds1_manager_lvlprest_find_empty_slot(int def);
+int  ds1_manager_lvlprest_find_file_slot(int def, const char * ds1_path);
+int  ds1_manager_delete(int group_idx, int entry_idx);
 
 /* Backup system */
 int  ds1_manager_backup(int group_idx, int entry_idx);

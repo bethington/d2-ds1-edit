@@ -640,23 +640,18 @@ void interfac_user_handler(int start_ds1_idx)
          while (key_pressed(KEY_DEL))
          { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
 
-         /* Backup the DS1 file */
          {
             int gi = glb_ds1edit.area_browser.selected_group;
             int ei = glb_ds1edit.area_browser.selected_entry;
-            AREA_GROUP_S * g = &glb_ds1edit.area_browser.groups[gi];
-            AREA_DS1_ENTRY_S * e = &g->entries[ei];
 
-            printf("Backing up and deleting: %s\n", e->ds1_path);
-            fflush(stdout);
-
-            ds1_manager_backup(gi, ei);
-
-            /* Clear the File slot in LvlPrest.txt */
-            /* TODO: determine which file_slot this entry occupies */
-            /* For now, just log the action */
-            printf("Delete: backup created. LvlPrest update not yet implemented.\n");
-            fflush(stdout);
+            if (ds1_manager_delete(gi, ei) == 0)
+            {
+               /* Adjust selection after deletion */
+               if (ei >= glb_ds1edit.area_browser.groups[gi].entry_count)
+                  glb_ds1edit.area_browser.selected_entry = glb_ds1edit.area_browser.groups[gi].entry_count - 1;
+               if (glb_ds1edit.area_browser.selected_entry < 0)
+                  glb_ds1edit.area_browser.selected_entry = -1;
+            }
          }
       }
 
@@ -664,11 +659,33 @@ void interfac_user_handler(int start_ds1_idx)
       if (key_pressed(KEY_INSERT) &&
           glb_ds1edit.area_browser.selected_group >= 0)
       {
+         int gi = glb_ds1edit.area_browser.selected_group;
+         AREA_GROUP_S * ins_g = &glb_ds1edit.area_browser.groups[gi];
+
          while (key_pressed(KEY_INSERT))
          { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
 
-         printf("Insert DS1: not yet implemented (submenu needed)\n");
-         fflush(stdout);
+         if (ins_g->entry_count > 0)
+         {
+            /* Shift+Insert = clone current, Insert alone = new empty */
+            if (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT))
+            {
+               /* Clone current DS1 */
+               if (glb_ds1edit.has_loaded_ds1)
+               {
+                  if (ds1_manager_clone(ds1_idx, gi) == 0)
+                     printf("Insert: cloned DS1 successfully\n");
+               }
+            }
+            else
+            {
+               /* Create new empty DS1 (default 20x20, same act as group) */
+               int new_act = ins_g->act > 0 ? ins_g->act : 1;
+               if (ds1_manager_create_empty(gi, 20, 20, new_act) == 0)
+                  printf("Insert: created new empty DS1 (20x20)\n");
+            }
+            fflush(stdout);
+         }
       }
 
       // layers toggle

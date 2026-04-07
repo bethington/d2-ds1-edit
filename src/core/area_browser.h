@@ -7,6 +7,8 @@ void area_browser_destroy       (void);
 int  area_browser_open_by_name  (const char * area_name);
 int  area_browser_open_group    (int group_idx);
 int  area_browser_run           (void);
+void area_group_add_entry       (AREA_GROUP_S * grp, int lvltype_id,
+                                  int def, const char * ds1_path);
 void area_browser_list          (void);
 void area_browser_list_ext      (void);
 void area_browser_draw_sidebar  (int width, int height);
