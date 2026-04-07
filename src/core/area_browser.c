@@ -425,6 +425,73 @@ void area_browser_list(void)
    fflush(stdout);
 }
 
+/* Print extended list: individual levels from Levels.txt grouped by Act,
+ * showing which LvlType (tileset) each level uses. */
+void area_browser_list_ext(void)
+{
+   TXT_S * levels = glb_ds1edit.levels_buff;
+   int lv_name_col, lv_id_col, lv_act_col, lv_type_col;
+   int row, last_act = -1;
+
+   if (levels == NULL)
+   {
+      printf("Levels.txt not loaded\n");
+      return;
+   }
+
+   lv_name_col = misc_get_txt_column_num(RQ_LEVELS, "Name");
+   lv_id_col   = misc_get_txt_column_num(RQ_LEVELS, "Id");
+   lv_act_col  = misc_get_txt_column_num(RQ_LEVELS, "Act");
+   lv_type_col = misc_get_txt_column_num(RQ_LEVELS, "LevelType");
+
+   printf("\nAll levels (%d entries):\n\n", levels->line_num);
+
+   for (row = 0; row < levels->line_num; row++)
+   {
+      char * name;
+      long * id_ptr, * act_ptr, * type_ptr;
+      long id, act, lvltype;
+      int gi, map_count = 0;
+
+      name = levels->data + (row * levels->line_size) + levels->col[lv_name_col].offset;
+      id_ptr = (long *)(levels->data + (row * levels->line_size) + levels->col[lv_id_col].offset);
+      act_ptr = (long *)(levels->data + (row * levels->line_size) + levels->col[lv_act_col].offset);
+      type_ptr = (long *)(levels->data + (row * levels->line_size) + levels->col[lv_type_col].offset);
+
+      id = *id_ptr;
+      act = *act_ptr;
+      lvltype = *type_ptr;
+
+      if (id <= 0 || name[0] == '\0')
+         continue;
+
+      /* Find the group for this LvlType to show map count */
+      for (gi = 0; gi < glb_ds1edit.area_browser.group_count; gi++)
+      {
+         if (glb_ds1edit.area_browser.groups[gi].lvltype_id == (int)lvltype)
+         {
+            map_count = glb_ds1edit.area_browser.groups[gi].entry_count;
+            break;
+         }
+      }
+
+      /* Act header */
+      if (act != last_act)
+      {
+         if (act >= 0 && act <= 4)
+            printf("  Act %ld:\n", act + 1);
+         else
+            printf("  Other:\n");
+         last_act = (int)act;
+      }
+
+      printf("    %-40s Id=%-3ld LvlType=%-3ld %3d maps  (--area \"%s\")\n",
+             name, id, lvltype, map_count, name);
+   }
+   printf("\n");
+   fflush(stdout);
+}
+
 /* Free all area browser dynamic memory. */
 void area_browser_destroy(void)
 {
@@ -473,6 +540,45 @@ int area_browser_open_by_name(const char * area_name)
       /* also try matching just the short name */
       if (stricmp(g->name, area_name) == 0)
          return area_browser_open_group(i);
+   }
+
+   /* No group matched — try individual level name from Levels.txt.
+    * Look up the level's LevelType, then open that group. */
+   {
+      TXT_S * levels = glb_ds1edit.levels_buff;
+      if (levels != NULL)
+      {
+         int lv_name_col = misc_get_txt_column_num(RQ_LEVELS, "Name");
+         int lv_type_col = misc_get_txt_column_num(RQ_LEVELS, "LevelType");
+         int row;
+
+         for (row = 0; row < levels->line_num; row++)
+         {
+            char * lv_name = levels->data + (row * levels->line_size)
+                             + levels->col[lv_name_col].offset;
+            if (stricmp(lv_name, area_name) == 0)
+            {
+               long * type_ptr = (long *)(levels->data + (row * levels->line_size)
+                                 + levels->col[lv_type_col].offset);
+               long lvltype = *type_ptr;
+
+               /* Find the group for this LevelType */
+               for (i = 0; i < ab->group_count; i++)
+               {
+                  if (ab->groups[i].lvltype_id == (int)lvltype)
+                  {
+                     printf("Level '%s' uses LvlType %ld (group: %s)\n",
+                            area_name, lvltype,
+                            ab->groups[i].act > 0 ? ab->groups[i].name : ab->groups[i].name);
+                     return area_browser_open_group(i);
+                  }
+               }
+               printf("area_browser_open_by_name: level '%s' has LvlType %ld but no group found\n",
+                      area_name, lvltype);
+               return -1;
+            }
+         }
+      }
    }
 
    printf("area_browser_open_by_name: area '%s' not found\n", area_name);

@@ -414,6 +414,7 @@ void ds1edit_init(void)
    glb_ds1edit.cmd_line.headless_output = NULL;
    glb_ds1edit.cmd_line.area_name = NULL;
    glb_ds1edit.cmd_line.list_areas = FALSE;
+   glb_ds1edit.cmd_line.list_areas_ext = FALSE;
    for (i=0; i < DT1_IN_DS1_MAX; i++)
       glb_ds1edit.cmd_line.dt1_list_filename[i] = NULL;
 
@@ -1036,12 +1037,15 @@ int main(int argc, char * argv[])
       // list of ds1 to open
       misc_open_several_ds1(argv[1]);
    }
-   else if (glb_ds1edit.cmd_line.list_areas == TRUE)
+   else if (glb_ds1edit.cmd_line.list_areas == TRUE || glb_ds1edit.cmd_line.list_areas_ext == TRUE)
    {
-      // --list-areas : print available areas and exit
+      // --list-areas or --list-areas-ext : print available areas and exit
       if (area_browser_init() != 0)
          ds1edit_error("main(), error.\nFailed to load Excel data for area browser.");
-      area_browser_list();
+      if (glb_ds1edit.cmd_line.list_areas_ext == TRUE)
+         area_browser_list_ext();
+      else
+         area_browser_list();
       exit(0);
    }
    else if (glb_ds1edit.cmd_line.area_name != NULL)
@@ -1076,7 +1080,8 @@ int main(int argc, char * argv[])
    {
    }
    else if (glb_ds1edit.cmd_line.area_name != NULL ||
-            glb_ds1edit.cmd_line.list_areas == TRUE)
+            glb_ds1edit.cmd_line.list_areas == TRUE ||
+            glb_ds1edit.cmd_line.list_areas_ext == TRUE)
    {
    }
    else // syntax error
