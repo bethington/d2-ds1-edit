@@ -486,6 +486,7 @@ typedef struct AREA_GROUP_S
    AREA_DS1_ENTRY_S * entries; /* malloc'd array of DS1 entries        */
    int  entry_count;           /* Number of entries                    */
    int  entry_max;             /* Allocated capacity                   */
+   int  is_expanded;           /* TRUE if showing individual DS1 files */
 } AREA_GROUP_S;
 
 typedef struct AREA_BROWSER_S
@@ -496,6 +497,7 @@ typedef struct AREA_BROWSER_S
 
    /* GUI state */
    int  selected_group;        /* Currently highlighted group, -1=none */
+   int  selected_entry;        /* Highlighted entry within expanded group, -1=none */
    int  scroll_offset;         /* First visible group index            */
    int  is_active;             /* TRUE if browser is showing           */
 } AREA_BROWSER_S;

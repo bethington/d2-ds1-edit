@@ -207,11 +207,17 @@ void interfac_user_handler(int start_ds1_idx)
                /* Close button */
                glb_ds1edit.sidebar_visible = FALSE;
             }
+            else if (click_result == -3)
+            {
+               /* Individual DS1 entry clicked — load single file */
+               if (area_browser_switch_single(
+                     glb_ds1edit.area_browser.selected_group,
+                     glb_ds1edit.area_browser.selected_entry) >= 0)
+                  ds1_idx = 0;
+            }
             else if (click_result >= 0)
             {
-               /* Area selected — switch to it */
-               if (area_browser_switch_area(click_result) >= 0)
-                  ds1_idx = 0;
+               /* Group clicked — expand/collapse (already toggled in click handler) */
             }
 
             while (a5_mouse_b & 1)
@@ -223,27 +229,51 @@ void interfac_user_handler(int start_ds1_idx)
             AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
             int sy, si, s_last_act = -1, s_draw_row = 0;
             int s_top = glb_ds1edit.show_2nd_row ? 20 : 9;
+            int found = 0;
 
+            ab->selected_entry = -1;
             sy = s_top + 22 + 4; /* panel_top + SB_HEADER_H + 4 */
-            for (si = 0; si < ab->group_count; si++)
+            for (si = 0; si < ab->group_count && !found; si++)
             {
                if (ab->groups[si].act != s_last_act)
                {
                   if (s_draw_row >= ab->scroll_offset)
-                     sy += 14; /* SB_LINE_H */
+                     sy += 14;
                   s_draw_row++;
                   s_last_act = ab->groups[si].act;
                }
+               /* Group row */
                if (s_draw_row >= ab->scroll_offset)
                {
                   if (a5_mouse_y >= sy && a5_mouse_y < sy + 14)
                   {
                      ab->selected_group = si;
-                     break;
+                     found = 1;
                   }
                   sy += 14;
                }
                s_draw_row++;
+
+               /* Expanded entry rows */
+               if (ab->groups[si].is_expanded && !found)
+               {
+                  int sj;
+                  for (sj = 0; sj < ab->groups[si].entry_count; sj++)
+                  {
+                     if (s_draw_row >= ab->scroll_offset)
+                     {
+                        if (a5_mouse_y >= sy && a5_mouse_y < sy + 14)
+                        {
+                           ab->selected_group = si;
+                           ab->selected_entry = sj;
+                           found = 1;
+                           break;
+                        }
+                        sy += 14;
+                     }
+                     s_draw_row++;
+                  }
+               }
             }
          }
       }

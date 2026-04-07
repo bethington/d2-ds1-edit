@@ -730,6 +730,100 @@ int area_browser_switch_area(int group_idx)
    return 0;
 }
 
+/* Switch to a single DS1 file from an expanded group entry. */
+int area_browser_switch_single(int group_idx, int entry_idx)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   AREA_GROUP_S * g;
+   AREA_DS1_ENTRY_S * e;
+   int i;
+   char ds1_path[256];
+
+   if (group_idx < 0 || group_idx >= ab->group_count)
+      return -1;
+   g = &ab->groups[group_idx];
+   if (entry_idx < 0 || entry_idx >= g->entry_count)
+      return -1;
+   e = &g->entries[entry_idx];
+
+   /* Free all currently loaded DS1 files */
+   for (i = 0; i < DS1_MAX; i++)
+   {
+      if (glb_ds1[i].name[0] != '\0')
+         ds1_free(i);
+   }
+   memset(glb_ds1, 0, sizeof(DS1_S) * DS1_MAX);
+
+   /* Destroy COF animation data */
+   {
+      int od;
+      for (od = 0; od < glb_ds1edit.obj_desc_num; od++)
+      {
+         if (glb_ds1edit.obj_desc[od].cof != NULL)
+         {
+            anim_destroy_cof(glb_ds1edit.obj_desc[od].cof);
+            glb_ds1edit.obj_desc[od].cof = NULL;
+         }
+      }
+   }
+
+   /* Load just one DS1 */
+   sprintf(ds1_path, "assets/tiles/%s", e->ds1_path);
+   misc_open_1_ds1(0, ds1_path, e->lvltype_id, e->lvlprest_def, 0, 0);
+
+   /* Post-load */
+   animdata_load();
+   anim_update_gfx(FALSE);
+   misc_make_cmaps();
+
+   al_set_new_bitmap_flags(ALLEGRO_VIDEO_BITMAP);
+   ds1edit_recreate_render_targets();
+   if (a5_current_palette != NULL)
+      dt1_rebuild_bitmaps_from_cache(a5_current_palette);
+
+   /* Promote animation bitmaps */
+   {
+      int oi, li, fi;
+      for (oi = 0; oi < glb_ds1edit.obj_desc_num; oi++)
+      {
+         COF_S *cof = glb_ds1edit.obj_desc[oi].cof;
+         if (cof == NULL) continue;
+         for (li = 0; li < COMPOSIT_NB; li++)
+         {
+            LAY_INF_S *lay = &cof->lay_inf[li];
+            if (lay->bmp == NULL) continue;
+            for (fi = 0; fi < lay->bmp_num; fi++)
+            {
+               ALLEGRO_BITMAP *old_bmp = lay->bmp[fi];
+               if (old_bmp == NULL) continue;
+               if (al_get_bitmap_flags(old_bmp) & ALLEGRO_MEMORY_BITMAP)
+               {
+                  ALLEGRO_BITMAP *new_bmp = al_clone_bitmap(old_bmp);
+                  if (new_bmp != NULL)
+                  {
+                     al_destroy_bitmap(old_bmp);
+                     lay->bmp[fi] = new_bmp;
+                  }
+               }
+            }
+         }
+      }
+   }
+
+   /* Reset viewport */
+   glb_ds1edit.win_preview.x0 = glb_ds1[0].own_wpreview.x0;
+   glb_ds1edit.win_preview.y0 = glb_ds1[0].own_wpreview.y0;
+   glb_ds1edit.win_preview.w  = glb_config.screen.width;
+   glb_ds1edit.win_preview.h  = glb_config.screen.height;
+
+   wpreview_init_palette_state(0);
+   glb_ds1edit.has_loaded_ds1 = TRUE;
+   glb_ds1edit.ds1_group_idx = 0;
+   glb_ds1edit.show_2nd_row = FALSE;
+
+   return 0;
+}
+
 /* Free all area browser dynamic memory. */
 void area_browser_destroy(void)
 {
@@ -943,11 +1037,12 @@ void area_browser_draw_sidebar(int width, int height)
          last_act = g->act;
       }
 
-      /* Group row */
+      /* Group row — with expand/collapse arrow */
       if (draw_row >= ab->scroll_offset && y + SB_LINE_H < panel_bottom)
       {
          ALLEGRO_COLOR text_col = g->entry_count > 0 ? col_item : col_zero;
          char count_str[16];
+         const char * arrow = g->is_expanded ? "-" : "+";
 
          if (is_selected && g->entry_count > 0)
          {
@@ -957,9 +1052,16 @@ void area_browser_draw_sidebar(int width, int height)
             text_col = col_sel_text;
          }
 
-         al_draw_textf(a5_font, text_col, (float)(SB_MARGIN_X + 10), (float)y, 0,
+         /* Arrow */
+         if (g->entry_count > 0)
+            al_draw_textf(a5_font, text_col, (float)(SB_MARGIN_X + 4), (float)y, 0,
+                           "%s", arrow);
+
+         /* Name */
+         al_draw_textf(a5_font, text_col, (float)(SB_MARGIN_X + 16), (float)y, 0,
                         "%s", g->name);
 
+         /* Count */
          sprintf(count_str, "%d", g->entry_count);
          al_draw_textf(a5_font, is_selected ? col_sel_text : col_count,
                         (float)(width - 32), (float)y, 0,
@@ -968,6 +1070,43 @@ void area_browser_draw_sidebar(int width, int height)
          y += SB_LINE_H;
       }
       draw_row++;
+
+      /* Expanded entries */
+      if (g->is_expanded)
+      {
+         int j;
+         ALLEGRO_COLOR col_file = al_map_rgb(160, 180, 200);
+         ALLEGRO_COLOR col_file_sel = al_map_rgb(255, 255, 255);
+
+         for (j = 0; j < g->entry_count; j++)
+         {
+            if (draw_row >= ab->scroll_offset && y + SB_LINE_H < panel_bottom)
+            {
+               const char * fname;
+               ALLEGRO_COLOR fc = col_file;
+
+               /* Extract just the filename */
+               fname = strrchr(g->entries[j].ds1_path, '/');
+               if (fname == NULL) fname = strrchr(g->entries[j].ds1_path, '\\');
+               if (fname != NULL) fname++; else fname = g->entries[j].ds1_path;
+
+               /* Highlight on hover — use selected_entry field */
+               if (i == ab->selected_group && j == ab->selected_entry)
+               {
+                  al_draw_filled_rectangle((float)(SB_MARGIN_X + 18), (float)(y - 1),
+                                           (float)(width - 4), (float)(y + SB_LINE_H - 1),
+                                           al_map_rgba(60, 80, 100, 200));
+                  fc = col_file_sel;
+               }
+
+               al_draw_textf(a5_font, fc, (float)(SB_MARGIN_X + 22), (float)y, 0,
+                              "%s", fname);
+
+               y += SB_LINE_H;
+            }
+            draw_row++;
+         }
+      }
    }
 }
 
@@ -988,8 +1127,9 @@ void area_browser_draw_sidebar_tab(int height)
    al_draw_textf(a5_font, col_text, 4, (float)((panel_top + panel_bottom) / 2 - 4), 0, ">");
 }
 
-/* Handle a mouse click in the sidebar. Returns group index if clicked,
- * -1 if no action, -2 if close button clicked. */
+/* Handle a mouse click in the sidebar.
+ * Returns: -2=close, -1=no action, -3=entry clicked (loads single DS1),
+ *          0+=group clicked (toggles expand/collapse). */
 int area_browser_sidebar_click(int mx, int my, int sidebar_w, int disp_h)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
@@ -1002,12 +1142,13 @@ int area_browser_sidebar_click(int mx, int my, int sidebar_w, int disp_h)
    if (my >= panel_top && my < panel_top + SB_HEADER_H && mx > sidebar_w - 20)
       return -2;
 
-   /* Find which group was clicked */
+   /* Find which row was clicked */
    y = panel_top + SB_HEADER_H + 4;
    for (i = 0; i < ab->group_count; i++)
    {
       AREA_GROUP_S * g = &ab->groups[i];
 
+      /* Act header row */
       if (g->act != last_act)
       {
          if (draw_row >= ab->scroll_offset)
@@ -1016,13 +1157,17 @@ int area_browser_sidebar_click(int mx, int my, int sidebar_w, int disp_h)
          last_act = g->act;
       }
 
+      /* Group row */
       if (draw_row >= ab->scroll_offset)
       {
          if (my >= y && my < y + SB_LINE_H)
          {
             if (g->entry_count > 0)
             {
+               /* Toggle expand/collapse */
+               g->is_expanded = !g->is_expanded;
                ab->selected_group = i;
+               ab->selected_entry = -1;
                return i;
             }
             return -1;
@@ -1030,6 +1175,27 @@ int area_browser_sidebar_click(int mx, int my, int sidebar_w, int disp_h)
          y += SB_LINE_H;
       }
       draw_row++;
+
+      /* Expanded entry rows */
+      if (g->is_expanded)
+      {
+         int j;
+         for (j = 0; j < g->entry_count; j++)
+         {
+            if (draw_row >= ab->scroll_offset)
+            {
+               if (my >= y && my < y + SB_LINE_H)
+               {
+                  /* Entry clicked — load single DS1 */
+                  ab->selected_group = i;
+                  ab->selected_entry = j;
+                  return -3;
+               }
+               y += SB_LINE_H;
+            }
+            draw_row++;
+         }
+      }
    }
    return -1;
 }
