@@ -212,6 +212,18 @@ static int pp_draw_button(int x, int y, int w, int panel_bottom,
 }
 
 
+/* Global field index counter — tracks which field we're drawing/checking.
+ * Reset to 0 at the start of each draw/click pass. */
+static int pp_field_idx = 0;
+
+/* Row counter for keyboard navigation (counts ALL rows: headers + fields + buttons). */
+static int pp_row_idx = 0;
+
+/* Mouse position for hover highlights (set at start of draw). */
+static int pp_hover_mx = 0, pp_hover_my = 0;
+static int pp_hover_panel_x = 0, pp_hover_panel_right = 0;
+
+
 /* Draw a collapsible section header with optional scope badge.
  * scope: NULL for no badge, or text like "[this file only]" / "[shared: 5 maps]" */
 static int pp_draw_section(int panel_x, int panel_right, int y,
@@ -225,6 +237,18 @@ static int pp_draw_section(int panel_x, int panel_right, int y,
    if (draw_row >= scroll_off && y + PP_LINE_H < panel_bottom)
    {
       const char * arrow = pp->section_expanded[section] ? "-" : "+";
+
+      /* Focus highlight for keyboard navigation */
+      if (pp->has_focus && pp_row_idx == pp->focused_row)
+      {
+         al_draw_filled_rectangle((float)(panel_x + 2), (float)(y - 1),
+                                   (float)(panel_right - 2), (float)(y + PP_LINE_H - 1),
+                                   al_map_rgba(50, 60, 90, 150));
+         al_draw_rectangle((float)(panel_x + 2) + 0.5f, (float)(y - 1) + 0.5f,
+                            (float)(panel_right - 2) - 0.5f, (float)(y + PP_LINE_H - 1) - 0.5f,
+                            al_map_rgb(80, 100, 160), 1.0f);
+      }
+
       al_draw_textf(a5_font, col_section,
                      (float)(panel_x + PP_MARGIN_X), (float)y, 0,
                      "%s %s", arrow, title);
@@ -236,16 +260,9 @@ static int pp_draw_section(int panel_x, int panel_right, int y,
                         "%s", scope);
       }
    }
+   pp_row_idx++;
    return y + PP_LINE_H;
 }
-
-/* Global field index counter — tracks which field we're drawing/checking.
- * Reset to 0 at the start of each draw/click pass. */
-static int pp_field_idx = 0;
-
-/* Mouse position for hover highlights (set at start of draw). */
-static int pp_hover_mx = 0, pp_hover_my = 0;
-static int pp_hover_panel_x = 0, pp_hover_panel_right = 0;
 
 /* Check if field_idx has a pending change. Returns the pending index or -1. */
 static int pp_find_pending(int field_idx)
@@ -294,6 +311,19 @@ static int pp_draw_field(int panel_x, int panel_right, int y,
       is_hovered = (pp_hover_my >= y && pp_hover_my < y + PP_LINE_H &&
                     pp_hover_mx >= pp_hover_panel_x &&
                     pp_hover_mx < pp_hover_panel_right);
+
+      /* Keyboard focus highlight */
+      if (pp->has_focus && pp_row_idx == pp->focused_row && !is_hovered)
+      {
+         al_draw_filled_rectangle((float)(panel_x + PP_MARGIN_X + 6), (float)(y - 1),
+                                   (float)(panel_right - 4), (float)(y + PP_LINE_H - 1),
+                                   al_map_rgba(40, 50, 80, 100));
+         if (!is_ro)
+            al_draw_rectangle((float)(val_x - 2) + 0.5f, (float)(y - 1) + 0.5f,
+                               (float)(panel_right - 4) - 0.5f,
+                               (float)(y + PP_LINE_H - 1) - 0.5f,
+                               al_map_rgba(60, 80, 120, 120), 1.0f);
+      }
 
       /* Mouse hover: show edit box outline for editable fields */
       if (is_hovered && !is_ro)
@@ -353,6 +383,7 @@ static int pp_draw_field(int panel_x, int panel_right, int y,
                             al_map_rgb(255, 255, 255), 1.0f);
             }
          }
+         pp_row_idx++;
          return y + PP_LINE_H;
       }
 
@@ -382,6 +413,7 @@ static int pp_draw_field(int panel_x, int panel_right, int y,
          }
       }
    }
+   pp_row_idx++;
    return y + PP_LINE_H;
 }
 
@@ -564,6 +596,7 @@ void props_panel_draw(int width, int height)
    y = panel_top + PP_HEADER_H + 4;
    draw_row = 0;
    pp_field_idx = 0;  /* Reset field counter for edit tracking */
+   pp_row_idx = 0;    /* Reset row counter for keyboard navigation */
    pp_hover_mx = a5_mouse_x;
    pp_hover_my = a5_mouse_y;
    pp_hover_panel_x = panel_x;
@@ -927,6 +960,9 @@ void props_panel_draw(int width, int height)
       }
       } /* end scope badge string block */
    }
+
+   /* Save total rows for keyboard navigation bounds */
+   pp->total_rows = pp_row_idx;
 
    /* ---- Footer bar (always visible) ---- */
    {
@@ -1531,14 +1567,41 @@ static void pp_commit_edit(void)
    pp->editing = FALSE;
 }
 
-/* Handle key character input during inline editing. */
+/* Handle key character input — navigation when not editing, text input when editing. */
 void props_panel_handle_keychar(int unichar, int keycode)
 {
    PROPS_PANEL_S * pp = &glb_ds1edit.props_panel;
    int len;
 
-   if (!pp->editing) return;
+   /* --- Navigation mode (not editing) --- */
+   if (!pp->editing)
+   {
+      switch (keycode)
+      {
+         case ALLEGRO_KEY_UP:
+            if (pp->focused_row > 0)
+               pp->focused_row--;
+            pp->has_focus = TRUE;
+            break;
+         case ALLEGRO_KEY_DOWN:
+            if (pp->focused_row < pp->total_rows - 1)
+               pp->focused_row++;
+            pp->has_focus = TRUE;
+            break;
+         case ALLEGRO_KEY_ENTER:
+         case ALLEGRO_KEY_PAD_ENTER:
+            /* Start editing the focused field if editable — handled by click logic
+             * For now just set has_focus */
+            pp->has_focus = TRUE;
+            break;
+         case ALLEGRO_KEY_ESCAPE:
+            pp->has_focus = FALSE;
+            break;
+      }
+      return;
+   }
 
+   /* --- Editing mode --- */
    len = (int)strlen(pp->edit_buf);
 
    switch (keycode)

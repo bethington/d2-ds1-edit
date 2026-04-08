@@ -168,7 +168,8 @@ void interfac_user_handler(int start_ds1_idx)
                           glb_ds1edit.props_panel.editing = FALSE;
                       }
                   }
-                  else if (glb_ds1edit.props_panel.editing)
+                  else if (glb_ds1edit.props_panel.editing ||
+                           glb_ds1edit.props_panel.has_focus)
                   {
                       props_panel_handle_keychar(
                           event.keyboard.unichar,
@@ -208,6 +209,10 @@ void interfac_user_handler(int start_ds1_idx)
       if (key_pressed(KEY_BACKSPACE) && !glb_ds1edit.props_panel.editing)
       {
          glb_ds1edit.props_panel_visible = !glb_ds1edit.props_panel_visible;
+         if (glb_ds1edit.props_panel_visible)
+            glb_ds1edit.props_panel.has_focus = TRUE;
+         else
+            glb_ds1edit.props_panel.has_focus = FALSE;
          while (key_pressed(KEY_BACKSPACE))
          { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
       }
@@ -475,6 +480,8 @@ void interfac_user_handler(int start_ds1_idx)
 
                if (pp_result == -2)
                   glb_ds1edit.props_panel_visible = FALSE;
+               else
+                  glb_ds1edit.props_panel.has_focus = TRUE;
 
                while (a5_mouse_b & 1)
                { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }

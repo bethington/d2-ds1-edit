@@ -556,6 +556,11 @@ typedef struct PROPS_PANEL_S
    int            scroll_offset;
    int            section_expanded[PPS_MAX];
 
+   /* Keyboard focus */
+   int            has_focus;   /* TRUE when panel accepts arrow keys   */
+   int            focused_row; /* Index of focused row (-1=none)       */
+   int            total_rows;  /* Total rows last frame (for bounds)   */
+
    /* Inline editing */
    int            editing;     /* TRUE if a field is being edited      */
    PP_FIELD_ID_S  edit_field;
