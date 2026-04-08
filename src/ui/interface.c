@@ -240,6 +240,13 @@ void interfac_user_handler(int start_ds1_idx)
             { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
          }
 
+         /* Consume right-click in sidebar — prevent tile editor from opening */
+         if (a5_mouse_b & 2)
+         {
+            while (a5_mouse_b & 2)
+            { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
+         }
+
          /* Update hover selection */
          {
             AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
