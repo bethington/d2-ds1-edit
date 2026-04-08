@@ -205,14 +205,27 @@ void interfac_user_handler(int start_ds1_idx)
          { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
       }
 
-      /* Properties panel toggle: Backspace key (only when not editing inline) */
+      /* Properties panel: Backspace opens+focuses.
+       * If closed: open and focus. If open but unfocused: focus. If focused: close. */
       if (key_pressed(KEY_BACKSPACE) && !glb_ds1edit.props_panel.editing)
       {
-         glb_ds1edit.props_panel_visible = !glb_ds1edit.props_panel_visible;
-         if (glb_ds1edit.props_panel_visible)
+         if (!glb_ds1edit.props_panel_visible)
+         {
+            /* Closed -> open + focused */
+            glb_ds1edit.props_panel_visible = TRUE;
             glb_ds1edit.props_panel.has_focus = TRUE;
+         }
+         else if (!glb_ds1edit.props_panel.has_focus)
+         {
+            /* Open but unfocused -> focused */
+            glb_ds1edit.props_panel.has_focus = TRUE;
+         }
          else
+         {
+            /* Focused -> close */
+            glb_ds1edit.props_panel_visible = FALSE;
             glb_ds1edit.props_panel.has_focus = FALSE;
+         }
          while (key_pressed(KEY_BACKSPACE))
          { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
       }
@@ -493,6 +506,17 @@ void interfac_user_handler(int start_ds1_idx)
                while (a5_mouse_b & 2)
                { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
             }
+         }
+      }
+
+      /* Click outside properties panel removes its focus */
+      if (glb_ds1edit.props_panel.has_focus && (a5_mouse_b & 1))
+      {
+         int pp_dw = al_get_display_width(a5_display);
+         if (!glb_ds1edit.props_panel_visible ||
+             a5_mouse_x <= pp_dw - glb_ds1edit.props_panel_width)
+         {
+            glb_ds1edit.props_panel.has_focus = FALSE;
          }
       }
 

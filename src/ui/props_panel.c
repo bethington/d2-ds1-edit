@@ -223,6 +223,13 @@ static int pp_row_idx = 0;
 static int pp_hover_mx = 0, pp_hover_my = 0;
 static int pp_hover_panel_x = 0, pp_hover_panel_right = 0;
 
+/* Track which rows are section headers (for PgUp/PgDn and Left/Right).
+ * Set during draw, used by keyboard handler. */
+#define PP_MAX_SECTIONS  20
+static int pp_section_rows[PP_MAX_SECTIONS]; /* row indices of section headers */
+static int pp_section_ids[PP_MAX_SECTIONS];  /* PP_SECTION_E for each */
+static int pp_section_count = 0;
+
 
 /* Draw a collapsible section header with optional scope badge.
  * scope: NULL for no badge, or text like "[this file only]" / "[shared: 5 maps]" */
@@ -233,6 +240,14 @@ static int pp_draw_section(int panel_x, int panel_right, int y,
 {
    PROPS_PANEL_S * pp = &glb_ds1edit.props_panel;
    ALLEGRO_COLOR col_section = al_map_rgb(255, 200, 80);
+
+   /* Record this section header for keyboard nav */
+   if (pp_section_count < PP_MAX_SECTIONS)
+   {
+      pp_section_rows[pp_section_count] = pp_row_idx;
+      pp_section_ids[pp_section_count] = (int)section;
+      pp_section_count++;
+   }
 
    if (draw_row >= scroll_off && y + PP_LINE_H < panel_bottom)
    {
@@ -566,8 +581,9 @@ void props_panel_draw(int width, int height)
    int panel_x = disp_w - width;
    int panel_right = disp_w;
    int y, draw_row, idx;
+   int focused = pp->has_focus;
    ALLEGRO_COLOR col_title  = al_map_rgb(255, 200, 80);
-   ALLEGRO_COLOR col_border = al_map_rgb(60, 50, 40);
+   ALLEGRO_COLOR col_border = focused ? al_map_rgb(80, 110, 180) : al_map_rgb(60, 50, 40);
    ALLEGRO_COLOR col_close  = al_map_rgb(160, 160, 160);
    ALLEGRO_COLOR col_none   = al_map_rgb(80, 80, 80);
 
@@ -576,15 +592,17 @@ void props_panel_draw(int width, int height)
                              (float)panel_right, (float)panel_bottom,
                              al_map_rgba(20, 16, 12, 200));
 
-   /* Left border */
+   /* Left border — brighter when focused */
    al_draw_line((float)panel_x + 0.5f, (float)panel_top,
-                (float)panel_x + 0.5f, (float)panel_bottom, col_border, 1.0f);
+                (float)panel_x + 0.5f, (float)panel_bottom, col_border,
+                focused ? 2.0f : 1.0f);
 
-   /* Header bar */
+   /* Header bar — blue tint when focused */
    al_draw_filled_rectangle((float)panel_x, (float)panel_top,
                              (float)panel_right,
                              (float)(panel_top + PP_HEADER_H),
-                             al_map_rgba(36, 30, 24, 220));
+                             focused ? al_map_rgba(28, 32, 48, 230)
+                                     : al_map_rgba(36, 30, 24, 220));
    al_draw_textf(a5_font, col_title,
                   (float)(panel_x + PP_MARGIN_X), (float)(panel_top + 7),
                   0, "Properties");
@@ -595,8 +613,9 @@ void props_panel_draw(int width, int height)
    /* Content area */
    y = panel_top + PP_HEADER_H + 4;
    draw_row = 0;
-   pp_field_idx = 0;  /* Reset field counter for edit tracking */
-   pp_row_idx = 0;    /* Reset row counter for keyboard navigation */
+   pp_field_idx = 0;    /* Reset field counter for edit tracking */
+   pp_row_idx = 0;      /* Reset row counter for keyboard navigation */
+   pp_section_count = 0; /* Reset section header tracking */
    pp_hover_mx = a5_mouse_x;
    pp_hover_my = a5_mouse_y;
    pp_hover_panel_x = panel_x;
@@ -1583,17 +1602,138 @@ void props_panel_handle_keychar(int unichar, int keycode)
                pp->focused_row--;
             pp->has_focus = TRUE;
             break;
+
          case ALLEGRO_KEY_DOWN:
             if (pp->focused_row < pp->total_rows - 1)
                pp->focused_row++;
             pp->has_focus = TRUE;
             break;
-         case ALLEGRO_KEY_ENTER:
-         case ALLEGRO_KEY_PAD_ENTER:
-            /* Start editing the focused field if editable — handled by click logic
-             * For now just set has_focus */
+
+         case ALLEGRO_KEY_LEFT:
+            /* Collapse the current or nearest section */
+            {
+               int si;
+               for (si = pp_section_count - 1; si >= 0; si--)
+               {
+                  if (pp_section_rows[si] <= pp->focused_row)
+                  {
+                     pp->section_expanded[pp_section_ids[si]] = FALSE;
+                     pp->focused_row = pp_section_rows[si];
+                     break;
+                  }
+               }
+            }
+            break;
+
+         case ALLEGRO_KEY_RIGHT:
+            /* Expand the section at focused row (if it's a header) */
+            {
+               int si;
+               for (si = 0; si < pp_section_count; si++)
+               {
+                  if (pp_section_rows[si] == pp->focused_row)
+                  {
+                     pp->section_expanded[pp_section_ids[si]] = TRUE;
+                     break;
+                  }
+               }
+            }
+            break;
+
+         case ALLEGRO_KEY_PGUP:
+            /* Jump to previous section header */
+            {
+               int si;
+               for (si = pp_section_count - 1; si >= 0; si--)
+               {
+                  if (pp_section_rows[si] < pp->focused_row)
+                  {
+                     pp->focused_row = pp_section_rows[si];
+                     break;
+                  }
+               }
+            }
             pp->has_focus = TRUE;
             break;
+
+         case ALLEGRO_KEY_PGDN:
+            /* Jump to next section header */
+            {
+               int si;
+               for (si = 0; si < pp_section_count; si++)
+               {
+                  if (pp_section_rows[si] > pp->focused_row)
+                  {
+                     pp->focused_row = pp_section_rows[si];
+                     break;
+                  }
+               }
+            }
+            pp->has_focus = TRUE;
+            break;
+
+         case ALLEGRO_KEY_HOME:
+            pp->focused_row = 0;
+            pp->has_focus = TRUE;
+            break;
+
+         case ALLEGRO_KEY_END:
+            pp->focused_row = pp->total_rows - 1;
+            pp->has_focus = TRUE;
+            break;
+
+         case ALLEGRO_KEY_TAB:
+            /* Tab to next editable field, Shift+Tab to previous */
+            {
+               int dir = 1; /* forward by default */
+               int r;
+               ALLEGRO_KEYBOARD_STATE ks;
+               al_get_keyboard_state(&ks);
+               if (al_key_down(&ks, ALLEGRO_KEY_LSHIFT) ||
+                   al_key_down(&ks, ALLEGRO_KEY_RSHIFT))
+                  dir = -1;
+
+               r = pp->focused_row + dir;
+               while (r >= 0 && r < pp->total_rows)
+               {
+                  /* Check if this row is an editable field (not read-only, not section header) */
+                  int is_section = 0;
+                  int si;
+                  for (si = 0; si < pp_section_count; si++)
+                  {
+                     if (pp_section_rows[si] == r)
+                     { is_section = 1; break; }
+                  }
+                  if (!is_section)
+                  {
+                     pp->focused_row = r;
+                     break;
+                  }
+                  r += dir;
+               }
+            }
+            pp->has_focus = TRUE;
+            break;
+
+         case ALLEGRO_KEY_ENTER:
+         case ALLEGRO_KEY_PAD_ENTER:
+            /* TODO: Start editing focused field via keyboard.
+             * For now, Enter on a section header toggles expand. */
+            {
+               int si;
+               for (si = 0; si < pp_section_count; si++)
+               {
+                  if (pp_section_rows[si] == pp->focused_row)
+                  {
+                     pp->section_expanded[pp_section_ids[si]] =
+                        !pp->section_expanded[pp_section_ids[si]];
+                     break;
+                  }
+               }
+            }
+            pp->has_focus = TRUE;
+            break;
+
          case ALLEGRO_KEY_ESCAPE:
             pp->has_focus = FALSE;
             break;
