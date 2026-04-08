@@ -671,6 +671,7 @@ void ds1edit_debug(void)
    switch(glb_config.center_zoom)
    {
       case -1    : printf("NO_CHANGE\n"); break;
+      case ZM_21 : printf("2:1\n"); break;
       case ZM_11 : printf("1:1\n"); break;
       case ZM_12 : printf("1:2\n"); break;
       case ZM_14 : printf("1:4\n"); break;
@@ -682,6 +683,7 @@ void ds1edit_debug(void)
    printf("default_zoom            = ");
    switch(glb_config.default_zoom)
    {
+      case ZM_21 : printf("2:1\n"); break;
       case ZM_11 : printf("1:1\n"); break;
       case ZM_12 : printf("1:2\n"); break;
       case ZM_14 : printf("1:4\n"); break;

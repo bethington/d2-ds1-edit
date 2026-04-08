@@ -183,14 +183,23 @@ void dt1_zoom(ALLEGRO_BITMAP * src, int i, int b, int z,
 
    switch(z)
    {
+      case ZM_21  : d = -2; break; /* negative = scale up */
       case ZM_11  : break;
       case ZM_12  : d =  2; break;
       case ZM_14  : d =  4; break;
       case ZM_18  : d =  8; break;
       case ZM_116 : d = 16; break;
    }
-   w /= d;
-   h /= d;
+   if (d < 0)
+   {
+      w *= (-d);
+      h *= (-d);
+   }
+   else
+   {
+      w /= d;
+      h /= d;
+   }
 
    // create the zoomed tile bitmap
    dst = al_create_bitmap(w, h);
@@ -397,9 +406,8 @@ void dt1_all_zoom_make(int i)
          }
       }
 
-      // make zoom from the bitmap (and cached tile), for each zoom
-      for (z=0; z<ZM_MAX; z++)
-         dt1_zoom(tmp_bmp, i, b, z, idx_buf, w, h);
+      // Only generate ZM_11 (1:1) — all other zoom levels use GPU scaling
+      dt1_zoom(tmp_bmp, i, b, ZM_11, idx_buf, w, h);
 
       // destroy tmp bitmap and index buffer
       al_destroy_bitmap(tmp_bmp);

@@ -251,7 +251,8 @@ typedef struct WIN_EDIT_S
 
 typedef enum ZOOM_E
 {
-   ZM_11,
+   ZM_21,    /* 2:1 — zoomed in (2x pixel size) */
+   ZM_11,    /* 1:1 — native resolution */
    ZM_12,
    ZM_14,
    ZM_18,

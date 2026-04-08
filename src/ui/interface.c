@@ -508,7 +508,7 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       if ( (key_pressed(KEY_PLUS_PAD) || key_pressed(KEY_EQUALS) || (cur_mouse_z > old_mouse_z) ) &&
-           glb_ds1[ds1_idx].cur_zoom > ZM_11)
+           glb_ds1[ds1_idx].cur_zoom > ZM_21)
       {
          if (key_pressed(KEY_PLUS_PAD) || key_pressed(KEY_EQUALS))
          {

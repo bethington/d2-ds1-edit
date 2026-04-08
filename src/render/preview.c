@@ -170,30 +170,82 @@ static int _draw_call_mem_count = 0;
 static void wpreview_draw_bitmap(ALLEGRO_BITMAP * bmp, int x, int y)
 {
    double t0 = al_get_time();
-   al_draw_bitmap(bmp, (float) x, (float) y, 0);
+   {
+      int mul = 1, div = 1;
+      if (glb_ds1edit.has_loaded_ds1)
+      {
+         mul = glb_ds1[glb_ds1edit.ds1_group_idx].height_mul;
+         div = glb_ds1[glb_ds1edit.ds1_group_idx].height_div;
+      }
+      if (mul == 1 && div == 1)
+         al_draw_bitmap(bmp, (float) x, (float) y, 0);
+      else
+      {
+         float sw = (float)al_get_bitmap_width(bmp);
+         float sh = (float)al_get_bitmap_height(bmp);
+         al_draw_scaled_bitmap(bmp, 0, 0, sw, sh,
+                               (float)x, (float)y,
+                               sw * (float)mul / (float)div,
+                               sh * (float)mul / (float)div, 0);
+      }
+   }
+   {
    double dt = (al_get_time() - t0) * 1000.0;
    _draw_call_count++;
    _draw_call_total_ms += dt;
    if (dt > _draw_call_max_ms) _draw_call_max_ms = dt;
    if (bmp && (al_get_bitmap_flags(bmp) & ALLEGRO_MEMORY_BITMAP))
       _draw_call_mem_count++;
+   }
 }
 #else
 static void wpreview_draw_bitmap(ALLEGRO_BITMAP * bmp, int x, int y)
 {
-   al_draw_bitmap(bmp, (float) x, (float) y, 0);
+   /* All zoom levels use 1:1 bitmaps scaled by GPU */
+   int mul = 1, div = 1;
+   if (glb_ds1edit.has_loaded_ds1)
+   {
+      mul = glb_ds1[glb_ds1edit.ds1_group_idx].height_mul;
+      div = glb_ds1[glb_ds1edit.ds1_group_idx].height_div;
+   }
+   if (mul == 1 && div == 1)
+   {
+      al_draw_bitmap(bmp, (float) x, (float) y, 0);
+   }
+   else
+   {
+      float sw = (float)al_get_bitmap_width(bmp);
+      float sh = (float)al_get_bitmap_height(bmp);
+      float dw = sw * (float)mul / (float)div;
+      float dh = sh * (float)mul / (float)div;
+      al_draw_scaled_bitmap(bmp, 0, 0, sw, sh,
+                            (float)x, (float)y, dw, dh, 0);
+   }
 }
 #endif /* DS1EDIT_PERF_LOG */
 
 static void wpreview_draw_trans_bitmap(ALLEGRO_BITMAP * bmp, int x, int y, float alpha)
 {
-   al_draw_tinted_bitmap(
-      bmp,
-      al_map_rgba_f(alpha, alpha, alpha, alpha),
-      (float) x,
-      (float) y,
-      0
-   );
+   int mul = 1, div = 1;
+   if (glb_ds1edit.has_loaded_ds1)
+   {
+      mul = glb_ds1[glb_ds1edit.ds1_group_idx].height_mul;
+      div = glb_ds1[glb_ds1edit.ds1_group_idx].height_div;
+   }
+   if (mul == 1 && div == 1)
+   {
+      al_draw_tinted_bitmap(bmp, al_map_rgba_f(alpha, alpha, alpha, alpha),
+                            (float)x, (float)y, 0);
+   }
+   else
+   {
+      float sw = (float)al_get_bitmap_width(bmp);
+      float sh = (float)al_get_bitmap_height(bmp);
+      float dw = sw * (float)mul / (float)div;
+      float dh = sh * (float)mul / (float)div;
+      al_draw_tinted_scaled_bitmap(bmp, al_map_rgba_f(alpha, alpha, alpha, alpha),
+                                    0, 0, sw, sh, (float)x, (float)y, dw, dh, 0);
+   }
 }
 
 static void wpreview_draw_blended_bitmap(ALLEGRO_BITMAP * bmp, int x, int y, int trans_b)
@@ -1535,8 +1587,8 @@ void change_zoom(int ds1_idx, ZOOM_E z)
 {
    int mul, div, dx, dy, cx, cy;
    
-   if (z < ZM_11)
-      z = ZM_11;
+   if (z < ZM_21)
+      z = ZM_21;
    else if (z > ZM_116)
       z = ZM_116;
    
@@ -1547,6 +1599,7 @@ void change_zoom(int ds1_idx, ZOOM_E z)
    
    switch(z)
    {
+      case ZM_21  : mul = 2, div =  1;  break;
       case ZM_11  : mul = 1, div =  1;  break;
       case ZM_12  : mul = 1, div =  2;  break;
       case ZM_14  : mul = 1, div =  4;  break;
@@ -1968,24 +2021,29 @@ void wpreview_draw_an_object(int ds1_idx, int o)
       bmp = bmp_ptr[f];
       if (bmp == NULL)
          continue;
-      dx = dx0 - glb_ds1edit.win_preview.x0 + cof->xoffset + lay->off_x;
-      dy = dy0 - glb_ds1edit.win_preview.y0 + cof->yoffset + lay->off_y;
+      {
+         int o_mul = glb_ds1[ds1_idx].height_mul;
+         int o_div = glb_ds1[ds1_idx].height_div;
+         dx = dx0 - glb_ds1edit.win_preview.x0 +
+              (cof->xoffset + lay->off_x) * o_mul / o_div;
+         dy = dy0 - glb_ds1edit.win_preview.y0 +
+              (cof->yoffset + lay->off_y) * o_mul / o_div;
+      }
       if (((dx + al_get_bitmap_width(bmp)) < 0) || ((dy + al_get_bitmap_height(bmp)) < 0))
          continue;
       if ( (dx >= glb_ds1edit.win_preview.w) ||
            (dy >= glb_ds1edit.win_preview.h))
          continue;
 
-      if ((glb_ds1[ds1_idx].cur_zoom == ZM_11) || (glb_config.stretch_sprites != TRUE))
+      if ((glb_ds1[ds1_idx].cur_zoom == ZM_11) || (glb_ds1[ds1_idx].cur_zoom == ZM_21) || (glb_config.stretch_sprites != TRUE))
       {
-         // normal drawing
+         // normal drawing — wpreview_draw_bitmap/trans handles GPU scaling
          if ((lay->trans_a) && (lay->trans_b <= 6) && (lay->trans_b != 5))
          {
             wpreview_draw_blended_bitmap(bmp, dx, dy, lay->trans_b);
          }
          else
          {
-            // normal colors
             wpreview_draw_bitmap(bmp, dx, dy);
          }
       }
@@ -2113,15 +2171,30 @@ void wpreview_draw_an_object_shad(int ds1_idx, int o)
       {
          int shadow_level = lay->trans_a ? 28 : 10;
 
-         if ((glb_ds1[ds1_idx].cur_zoom == ZM_11) || (glb_config.stretch_sprites != TRUE))
+         if ((glb_ds1[ds1_idx].cur_zoom == ZM_11) || (glb_ds1[ds1_idx].cur_zoom == ZM_21) || (glb_config.stretch_sprites != TRUE))
          {
-            offx = cof->xoffset + lay->off_x;
-            offy = cof->yoffset + lay->off_y;
+            int s_mul = glb_ds1[ds1_idx].height_mul;
+            int s_div = glb_ds1[ds1_idx].height_div;
+
+            offx = cof->xoffset * s_mul / s_div + lay->off_x * s_mul / s_div;
+            offy = cof->yoffset * s_mul / s_div + lay->off_y * s_mul / s_div;
 
             dx = dx0 - glb_ds1edit.win_preview.x0 + offx;
             dy = dy0 - glb_ds1edit.win_preview.y0 + offy;
 
-            a5_draw_shadow_sprite(glb_ds1edit.screen_buff, bmp, dx, dy, shadow_level);
+            if (s_mul == 1 && s_div == 1)
+               a5_draw_shadow_sprite(glb_ds1edit.screen_buff, bmp, dx, dy, shadow_level);
+            else
+            {
+               /* Scale shadow sprite using tinted scaled bitmap */
+               float alpha = 1.0f - (float)shadow_level / 32.0f;
+               float sw = (float)al_get_bitmap_width(bmp);
+               float sh = (float)al_get_bitmap_height(bmp);
+               float dw = sw * (float)s_mul / (float)s_div;
+               float dh = sh * (float)s_mul / (float)s_div;
+               al_draw_tinted_scaled_bitmap(bmp, al_map_rgba_f(0, 0, 0, alpha),
+                                            0, 0, sw, sh, (float)dx, (float)dy, dw, dh, 0);
+            }
          }
          else
          {
@@ -2430,7 +2503,7 @@ void wpreview_draw_tiles(int ds1_idx)
    double            perf_total_start_ms, perf_section_start_ms, perf_call_start_ms;
 
 
-   z = glb_ds1[ds1_idx].cur_zoom;
+   z = ZM_11; /* Always use 1:1 bitmaps — GPU scales at draw time */
    perf_total_start_ms = render_perf_now_ms();
    perf_section_start_ms = render_perf_now_ms();
    a5_clear(glb_ds1edit.screen_buff);

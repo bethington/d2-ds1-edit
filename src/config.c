@@ -324,7 +324,9 @@ void ini_read(char *ininame)
             *((int *)datas[i].data_ptr) = -1;
 
             // read value
-            if (stricmp(str, "1:1") == 0)
+            if (stricmp(str, "2:1") == 0)
+               *((int *)datas[i].data_ptr) = ZM_21;
+            else if (stricmp(str, "1:1") == 0)
                *((int *)datas[i].data_ptr) = ZM_11;
             else if (stricmp(str, "1:2") == 0)
                *((int *)datas[i].data_ptr) = ZM_12;
