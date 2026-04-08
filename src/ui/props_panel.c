@@ -32,9 +32,13 @@ void props_panel_init(void)
    pp->pending_count = 0;
    pp->ds1_idx = 0;
 
-   /* All sections start expanded */
+   /* Core sections start expanded, detailed ones start collapsed */
    for (i = 0; i < PPS_MAX; i++)
       pp->section_expanded[i] = TRUE;
+   pp->section_expanded[PPS_TXT_VISIBILITY]  = FALSE;
+   pp->section_expanded[PPS_TXT_ENVIRONMENT] = FALSE;
+   pp->section_expanded[PPS_TXT_MONTYPES]    = FALSE;
+   pp->section_expanded[PPS_TXT_PROPERTIES]  = FALSE;
 }
 
 
@@ -977,6 +981,134 @@ void props_panel_draw(int width, int height)
                   pp_txt_get_num(lv, RQ_LEVELS, lv_row, "Quest"), "[Levels]");
          }
       }
+      /* ---- Section: Visibility ---- */
+      y = pp_draw_section(panel_x, panel_right, y, draw_row, pp->scroll_offset,
+                           panel_bottom, PPS_TXT_VISIBILITY, "Visibility (Levels)",
+                           scope_types);
+      draw_row++;
+
+      if (pp->section_expanded[PPS_TXT_VISIBILITY])
+      {
+         if (lv_row >= 0)
+         {
+            int vi;
+            char vcol[8];
+            for (vi = 0; vi < 8; vi++)
+            {
+               sprintf(vcol, "Vis%d", vi);
+               y = pp_draw_field_num_tagged(panel_x, width, y, draw_row++, pp->scroll_offset,
+                     panel_bottom, vcol, pp_txt_get_num(lv, RQ_LEVELS, lv_row, vcol), NULL);
+            }
+            for (vi = 0; vi < 8; vi++)
+            {
+               sprintf(vcol, "Warp%d", vi);
+               y = pp_draw_field_num_tagged(panel_x, width, y, draw_row++, pp->scroll_offset,
+                     panel_bottom, vcol, pp_txt_get_num(lv, RQ_LEVELS, lv_row, vcol), NULL);
+            }
+         }
+      }
+
+      /* ---- Section: Environment ---- */
+      y = pp_draw_section(panel_x, panel_right, y, draw_row, pp->scroll_offset,
+                           panel_bottom, PPS_TXT_ENVIRONMENT, "Environment (Levels)",
+                           scope_types);
+      draw_row++;
+
+      if (pp->section_expanded[PPS_TXT_ENVIRONMENT])
+      {
+         if (lv_row >= 0)
+         {
+            y = pp_draw_field_num_tagged(panel_x, width, y, draw_row++, pp->scroll_offset,
+                  panel_bottom, "Rain", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "Rain"), NULL);
+            y = pp_draw_field_num_tagged(panel_x, width, y, draw_row++, pp->scroll_offset,
+                  panel_bottom, "Mud", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "Mud"), NULL);
+            y = pp_draw_field_num_tagged(panel_x, width, y, draw_row++, pp->scroll_offset,
+                  panel_bottom, "IsInside", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "IsInside"), NULL);
+            y = pp_draw_field_num_tagged(panel_x, width, y, draw_row++, pp->scroll_offset,
+                  panel_bottom, "Teleport", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "Teleport"), NULL);
+            y = pp_draw_field_num_tagged(panel_x, width, y, draw_row++, pp->scroll_offset,
+                  panel_bottom, "Intensity", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "Intensity"), NULL);
+            y = pp_draw_field_num_tagged(panel_x, width, y, draw_row++, pp->scroll_offset,
+                  panel_bottom, "Red", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "Red"), NULL);
+            y = pp_draw_field_num_tagged(panel_x, width, y, draw_row++, pp->scroll_offset,
+                  panel_bottom, "Green", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "Green"), NULL);
+            y = pp_draw_field_num_tagged(panel_x, width, y, draw_row++, pp->scroll_offset,
+                  panel_bottom, "Blue", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "Blue"), NULL);
+         }
+      }
+
+      /* ---- Section: Monster Types ---- */
+      y = pp_draw_section(panel_x, panel_right, y, draw_row, pp->scroll_offset,
+                           panel_bottom, PPS_TXT_MONTYPES, "Monster Types (Levels)",
+                           scope_types);
+      draw_row++;
+
+      if (pp->section_expanded[PPS_TXT_MONTYPES])
+      {
+         if (lv_row >= 0)
+         {
+            int mi;
+            char mcol[12];
+            y = pp_draw_field_num_tagged(panel_x, width, y, draw_row++, pp->scroll_offset,
+                  panel_bottom, "NumMon", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "NumMon"), NULL);
+            for (mi = 1; mi <= 10; mi++)
+            {
+               sprintf(mcol, "mon%d", mi);
+               y = pp_draw_field_num_tagged(panel_x, width, y, draw_row++, pp->scroll_offset,
+                     panel_bottom, mcol, pp_txt_get_num(lv, RQ_LEVELS, lv_row, mcol), NULL);
+            }
+            for (mi = 1; mi <= 10; mi++)
+            {
+               sprintf(mcol, "nmon%d", mi);
+               y = pp_draw_field_num_tagged(panel_x, width, y, draw_row++, pp->scroll_offset,
+                     panel_bottom, mcol, pp_txt_get_num(lv, RQ_LEVELS, lv_row, mcol), NULL);
+            }
+            for (mi = 1; mi <= 10; mi++)
+            {
+               sprintf(mcol, "umon%d", mi);
+               y = pp_draw_field_num_tagged(panel_x, width, y, draw_row++, pp->scroll_offset,
+                     panel_bottom, mcol, pp_txt_get_num(lv, RQ_LEVELS, lv_row, mcol), NULL);
+            }
+         }
+      }
+
+      /* ---- Section: Properties ---- */
+      y = pp_draw_section(panel_x, panel_right, y, draw_row, pp->scroll_offset,
+                           panel_bottom, PPS_TXT_PROPERTIES, "Properties (Levels)",
+                           scope_types);
+      draw_row++;
+
+      if (pp->section_expanded[PPS_TXT_PROPERTIES])
+      {
+         if (lv_row >= 0)
+         {
+            y = pp_draw_field_num_tagged(panel_x, width, y, draw_row++, pp->scroll_offset,
+                  panel_bottom, "DrlgType", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "DrlgType"), NULL);
+            y = pp_draw_field_num_tagged(panel_x, width, y, draw_row++, pp->scroll_offset,
+                  panel_bottom, "SubType", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "SubType"), NULL);
+            y = pp_draw_field_num_tagged(panel_x, width, y, draw_row++, pp->scroll_offset,
+                  panel_bottom, "SubTheme", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "SubTheme"), NULL);
+            y = pp_draw_field_num_tagged(panel_x, width, y, draw_row++, pp->scroll_offset,
+                  panel_bottom, "Depend", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "Depend"), NULL);
+            y = pp_draw_field_num_tagged(panel_x, width, y, draw_row++, pp->scroll_offset,
+                  panel_bottom, "Layer", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "Layer"), NULL);
+            y = pp_draw_field_num_tagged(panel_x, width, y, draw_row++, pp->scroll_offset,
+                  panel_bottom, "Pal", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "Pal"), NULL);
+            y = pp_draw_field_tagged(panel_x, width, y, draw_row++, pp->scroll_offset,
+                  panel_bottom, "LevelName", pp_txt_get_str(lv, RQ_LEVELS, lv_row, "LevelName"), NULL);
+            y = pp_draw_field_tagged(panel_x, width, y, draw_row++, pp->scroll_offset,
+                  panel_bottom, "LevelWarp", pp_txt_get_str(lv, RQ_LEVELS, lv_row, "LevelWarp"), NULL);
+            y = pp_draw_field_num_tagged(panel_x, width, y, draw_row++, pp->scroll_offset,
+                  panel_bottom, "SoundEnv", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "SoundEnv"), NULL);
+            y = pp_draw_field_num_tagged(panel_x, width, y, draw_row++, pp->scroll_offset,
+                  panel_bottom, "Portal", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "Portal"), NULL);
+            y = pp_draw_field_num_tagged(panel_x, width, y, draw_row++, pp->scroll_offset,
+                  panel_bottom, "Position", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "Position"), NULL);
+            y = pp_draw_field_num_tagged(panel_x, width, y, draw_row++, pp->scroll_offset,
+                  panel_bottom, "SaveMon", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "SaveMonsters"), NULL);
+         }
+      }
+
       } /* end scope badge string block */
    }
 
@@ -1500,6 +1632,106 @@ int props_panel_click(int mx, int my, int panel_w, int disp_h)
             PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, "Waypoint", vbuf)
             sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "Quest"));
             PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, "Quest", vbuf)
+         }
+
+         /* Visibility */
+         cur_sec = PPS_TXT_VISIBILITY;
+         PP_CLICK_SECTION(PPS_TXT_VISIBILITY)
+         if (lv_row >= 0 && pp->section_expanded[PPS_TXT_VISIBILITY])
+         {
+            int vi;
+            char vcol[8];
+            for (vi = 0; vi < 8; vi++)
+            {
+               sprintf(vcol, "Vis%d", vi);
+               sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, vcol));
+               PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, vcol, vbuf)
+            }
+            for (vi = 0; vi < 8; vi++)
+            {
+               sprintf(vcol, "Warp%d", vi);
+               sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, vcol));
+               PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, vcol, vbuf)
+            }
+         }
+
+         /* Environment */
+         cur_sec = PPS_TXT_ENVIRONMENT;
+         PP_CLICK_SECTION(PPS_TXT_ENVIRONMENT)
+         if (lv_row >= 0 && pp->section_expanded[PPS_TXT_ENVIRONMENT])
+         {
+            static const char * env_cols[] = {
+               "Rain", "Mud", "IsInside", "Teleport",
+               "Intensity", "Red", "Green", "Blue", NULL
+            };
+            int ei;
+            for (ei = 0; env_cols[ei] != NULL; ei++)
+            {
+               sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, env_cols[ei]));
+               PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, env_cols[ei], vbuf)
+            }
+         }
+
+         /* Monster Types */
+         cur_sec = PPS_TXT_MONTYPES;
+         PP_CLICK_SECTION(PPS_TXT_MONTYPES)
+         if (lv_row >= 0 && pp->section_expanded[PPS_TXT_MONTYPES])
+         {
+            int mi;
+            char mcol[12];
+            sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "NumMon"));
+            PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, "NumMon", vbuf)
+            for (mi = 1; mi <= 10; mi++)
+            {
+               sprintf(mcol, "mon%d", mi);
+               sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, mcol));
+               PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, mcol, vbuf)
+            }
+            for (mi = 1; mi <= 10; mi++)
+            {
+               sprintf(mcol, "nmon%d", mi);
+               sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, mcol));
+               PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, mcol, vbuf)
+            }
+            for (mi = 1; mi <= 10; mi++)
+            {
+               sprintf(mcol, "umon%d", mi);
+               sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, mcol));
+               PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, mcol, vbuf)
+            }
+         }
+
+         /* Properties */
+         cur_sec = PPS_TXT_PROPERTIES;
+         PP_CLICK_SECTION(PPS_TXT_PROPERTIES)
+         if (lv_row >= 0 && pp->section_expanded[PPS_TXT_PROPERTIES])
+         {
+            static const char * prop_num_cols[] = {
+               "DrlgType", "SubType", "SubTheme", "Depend",
+               "Layer", "Pal", NULL
+            };
+            static const char * prop_str_cols[] = {
+               "LevelName", "LevelWarp", NULL
+            };
+            static const char * prop_num2_cols[] = {
+               "SoundEnv", "Portal", "Position", "SaveMonsters", NULL
+            };
+            int pi;
+            for (pi = 0; prop_num_cols[pi] != NULL; pi++)
+            {
+               sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, prop_num_cols[pi]));
+               PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, prop_num_cols[pi], vbuf)
+            }
+            for (pi = 0; prop_str_cols[pi] != NULL; pi++)
+            {
+               PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, prop_str_cols[pi],
+                  pp_txt_get_str(lv, RQ_LEVELS, lv_row, prop_str_cols[pi]))
+            }
+            for (pi = 0; prop_num2_cols[pi] != NULL; pi++)
+            {
+               sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, prop_num2_cols[pi]));
+               PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, prop_num2_cols[pi], vbuf)
+            }
          }
       }
 

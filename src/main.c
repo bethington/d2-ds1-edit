@@ -102,6 +102,26 @@ char * txt_def_levels_req[] =
    ("Waypoint"), ("Quest"),
    ("MonLvl1"), ("MonLvl2"), ("MonLvl3"),
    ("MonDen"), ("MonDen(N)"), ("MonDen(H)"),
+   /* Visibility */
+   ("Vis0"), ("Vis1"), ("Vis2"), ("Vis3"),
+   ("Vis4"), ("Vis5"), ("Vis6"), ("Vis7"),
+   ("Warp0"), ("Warp1"), ("Warp2"), ("Warp3"),
+   ("Warp4"), ("Warp5"), ("Warp6"), ("Warp7"),
+   /* Environment */
+   ("Rain"), ("Mud"), ("Intensity"), ("Red"), ("Green"), ("Blue"),
+   ("IsInside"), ("Teleport"),
+   /* Monster Types */
+   ("NumMon"),
+   ("mon1"), ("mon2"), ("mon3"), ("mon4"), ("mon5"),
+   ("mon6"), ("mon7"), ("mon8"), ("mon9"), ("mon10"),
+   ("nmon1"), ("nmon2"), ("nmon3"), ("nmon4"), ("nmon5"),
+   ("nmon6"), ("nmon7"), ("nmon8"), ("nmon9"), ("nmon10"),
+   ("umon1"), ("umon2"), ("umon3"), ("umon4"), ("umon5"),
+   ("umon6"), ("umon7"), ("umon8"), ("umon9"), ("umon10"),
+   /* Properties */
+   ("DrlgType"), ("SubType"), ("SubTheme"), ("Depend"),
+   ("Layer"), ("Pal"), ("LevelName"), ("LevelWarp"),
+   ("SoundEnv"), ("Portal"), ("Position"), ("SaveMonsters"),
    NULL // DO NOT REMOVE !
 };
 
