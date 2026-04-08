@@ -1257,8 +1257,8 @@ void props_panel_apply(void)
                break;
             case PFS_LEVELS:
                rq = RQ_LEVELS;
-               key_col = "LevelType";
-               key_val = lvltype_id;
+               key_col = "Id";  /* Use unique level Id, not shared LevelType */
+               key_val = p->key_val;  /* lv_id stored by click handler */
                break;
             default:
                break;
@@ -1512,17 +1512,19 @@ int props_panel_click(int mx, int my, int panel_w, int disp_h)
       {
          PP_SECTION_E cur_sec;
          char vbuf[64];
+         /* Use Levels.txt unique Id as key (not LevelType which can be shared) */
+         int lv_id = (lv_row >= 0) ? (int)pp_txt_get_num(lv, RQ_LEVELS, lv_row, "Id") : 0;
 
          /* Identity */
          cur_sec = PPS_TXT_IDENTITY;
          PP_CLICK_SECTION(PPS_TXT_IDENTITY)
          if (lv_row >= 0)
          {
-            PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, "Name", pp_txt_get_str(lv, RQ_LEVELS, lv_row, "Name"))
+            PP_CLICK_FIELD(PFS_LEVELS, lv_id, "Name", pp_txt_get_str(lv, RQ_LEVELS, lv_row, "Name"))
             sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "Id"));
-            PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, "Id", vbuf)
+            PP_CLICK_FIELD(PFS_LEVELS, lv_id, "Id", vbuf)
             sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "Act"));
-            PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, "Act", vbuf)
+            PP_CLICK_FIELD(PFS_LEVELS, lv_id, "Act", vbuf)
          }
          if (lp_row >= 0)
          {
@@ -1595,13 +1597,13 @@ int props_panel_click(int mx, int my, int panel_w, int disp_h)
          if (lv_row >= 0 && pp->section_expanded[PPS_TXT_ROOMSIZE])
          {
             sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "SizeX"));
-            PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, "SizeX", vbuf)
+            PP_CLICK_FIELD(PFS_LEVELS, lv_id, "SizeX", vbuf)
             sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "SizeY"));
-            PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, "SizeY", vbuf)
+            PP_CLICK_FIELD(PFS_LEVELS, lv_id, "SizeY", vbuf)
             sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "OffsetX"));
-            PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, "OffsetX", vbuf)
+            PP_CLICK_FIELD(PFS_LEVELS, lv_id, "OffsetX", vbuf)
             sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "OffsetY"));
-            PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, "OffsetY", vbuf)
+            PP_CLICK_FIELD(PFS_LEVELS, lv_id, "OffsetY", vbuf)
          }
 
          /* Monsters */
@@ -1610,17 +1612,17 @@ int props_panel_click(int mx, int my, int panel_w, int disp_h)
          if (lv_row >= 0 && pp->section_expanded[PPS_TXT_MONSTERS])
          {
             sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "MonLvl1"));
-            PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, "MonLvl1", vbuf)
+            PP_CLICK_FIELD(PFS_LEVELS, lv_id, "MonLvl1", vbuf)
             sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "MonLvl2"));
-            PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, "MonLvl2", vbuf)
+            PP_CLICK_FIELD(PFS_LEVELS, lv_id, "MonLvl2", vbuf)
             sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "MonLvl3"));
-            PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, "MonLvl3", vbuf)
+            PP_CLICK_FIELD(PFS_LEVELS, lv_id, "MonLvl3", vbuf)
             sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "MonDen"));
-            PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, "MonDen", vbuf)
+            PP_CLICK_FIELD(PFS_LEVELS, lv_id, "MonDen", vbuf)
             sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "MonDen(N)"));
-            PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, "MonDen(N)", vbuf)
+            PP_CLICK_FIELD(PFS_LEVELS, lv_id, "MonDen(N)", vbuf)
             sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "MonDen(H)"));
-            PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, "MonDen(H)", vbuf)
+            PP_CLICK_FIELD(PFS_LEVELS, lv_id, "MonDen(H)", vbuf)
          }
 
          /* Quests/Waypoints */
@@ -1629,9 +1631,9 @@ int props_panel_click(int mx, int my, int panel_w, int disp_h)
          if (lv_row >= 0 && pp->section_expanded[PPS_TXT_QUESTS])
          {
             sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "Waypoint"));
-            PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, "Waypoint", vbuf)
+            PP_CLICK_FIELD(PFS_LEVELS, lv_id, "Waypoint", vbuf)
             sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "Quest"));
-            PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, "Quest", vbuf)
+            PP_CLICK_FIELD(PFS_LEVELS, lv_id, "Quest", vbuf)
          }
 
          /* Visibility */
@@ -1645,13 +1647,13 @@ int props_panel_click(int mx, int my, int panel_w, int disp_h)
             {
                sprintf(vcol, "Vis%d", vi);
                sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, vcol));
-               PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, vcol, vbuf)
+               PP_CLICK_FIELD(PFS_LEVELS, lv_id, vcol, vbuf)
             }
             for (vi = 0; vi < 8; vi++)
             {
                sprintf(vcol, "Warp%d", vi);
                sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, vcol));
-               PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, vcol, vbuf)
+               PP_CLICK_FIELD(PFS_LEVELS, lv_id, vcol, vbuf)
             }
          }
 
@@ -1668,7 +1670,7 @@ int props_panel_click(int mx, int my, int panel_w, int disp_h)
             for (ei = 0; env_cols[ei] != NULL; ei++)
             {
                sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, env_cols[ei]));
-               PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, env_cols[ei], vbuf)
+               PP_CLICK_FIELD(PFS_LEVELS, lv_id, env_cols[ei], vbuf)
             }
          }
 
@@ -1680,24 +1682,24 @@ int props_panel_click(int mx, int my, int panel_w, int disp_h)
             int mi;
             char mcol[12];
             sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "NumMon"));
-            PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, "NumMon", vbuf)
+            PP_CLICK_FIELD(PFS_LEVELS, lv_id, "NumMon", vbuf)
             for (mi = 1; mi <= 10; mi++)
             {
                sprintf(mcol, "mon%d", mi);
                sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, mcol));
-               PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, mcol, vbuf)
+               PP_CLICK_FIELD(PFS_LEVELS, lv_id, mcol, vbuf)
             }
             for (mi = 1; mi <= 10; mi++)
             {
                sprintf(mcol, "nmon%d", mi);
                sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, mcol));
-               PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, mcol, vbuf)
+               PP_CLICK_FIELD(PFS_LEVELS, lv_id, mcol, vbuf)
             }
             for (mi = 1; mi <= 10; mi++)
             {
                sprintf(mcol, "umon%d", mi);
                sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, mcol));
-               PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, mcol, vbuf)
+               PP_CLICK_FIELD(PFS_LEVELS, lv_id, mcol, vbuf)
             }
          }
 
@@ -1720,17 +1722,17 @@ int props_panel_click(int mx, int my, int panel_w, int disp_h)
             for (pi = 0; prop_num_cols[pi] != NULL; pi++)
             {
                sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, prop_num_cols[pi]));
-               PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, prop_num_cols[pi], vbuf)
+               PP_CLICK_FIELD(PFS_LEVELS, lv_id, prop_num_cols[pi], vbuf)
             }
             for (pi = 0; prop_str_cols[pi] != NULL; pi++)
             {
-               PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, prop_str_cols[pi],
+               PP_CLICK_FIELD(PFS_LEVELS, lv_id, prop_str_cols[pi],
                   pp_txt_get_str(lv, RQ_LEVELS, lv_row, prop_str_cols[pi]))
             }
             for (pi = 0; prop_num2_cols[pi] != NULL; pi++)
             {
                sprintf(vbuf, "%ld", pp_txt_get_num(lv, RQ_LEVELS, lv_row, prop_num2_cols[pi]));
-               PP_CLICK_FIELD(PFS_LEVELS, lvltype_id, prop_num2_cols[pi], vbuf)
+               PP_CLICK_FIELD(PFS_LEVELS, lv_id, prop_num2_cols[pi], vbuf)
             }
          }
       }
@@ -1792,7 +1794,7 @@ static void pp_commit_edit(void)
 
    if (!pp->editing) return;
 
-   /* Check if value actually changed */
+   /* Check if already have a pending entry for this field */
    pend_idx = pp_find_pending(pp->edit_field.row);
    if (pend_idx >= 0)
    {
@@ -1800,18 +1802,21 @@ static void pp_commit_edit(void)
       strncpy(pp->pending[pend_idx].new_value, pp->edit_buf, PP_EDIT_BUF_MAX - 1);
       pp->pending[pend_idx].new_value[PP_EDIT_BUF_MAX - 1] = '\0';
    }
-   else if (strcmp(pp->edit_buf, pp->pending[0].old_value) != 0 ||
-            pp->pending_count == 0)
+   else
    {
-      /* Add new pending entry */
+      /* Add new pending entry (old_value, col_name, key_val were pre-populated
+       * by the click handler into pp->pending[pp->pending_count]) */
       if (pp->pending_count < PP_MAX_PENDING)
       {
          PP_PENDING_S * p = &pp->pending[pp->pending_count];
-         p->field = pp->edit_field;
-         strncpy(p->new_value, pp->edit_buf, PP_EDIT_BUF_MAX - 1);
-         p->new_value[PP_EDIT_BUF_MAX - 1] = '\0';
-         /* old_value was set when edit started */
-         pp->pending_count++;
+         /* Check if value actually changed from old_value */
+         if (strcmp(pp->edit_buf, p->old_value) != 0)
+         {
+            p->field = pp->edit_field;
+            strncpy(p->new_value, pp->edit_buf, PP_EDIT_BUF_MAX - 1);
+            p->new_value[PP_EDIT_BUF_MAX - 1] = '\0';
+            pp->pending_count++;
+         }
       }
    }
 
@@ -1949,18 +1954,37 @@ void props_panel_handle_keychar(int unichar, int keycode)
 
          case ALLEGRO_KEY_ENTER:
          case ALLEGRO_KEY_PAD_ENTER:
-            /* TODO: Start editing focused field via keyboard.
-             * For now, Enter on a section header toggles expand. */
+            /* If focused row is a section header, toggle expand/collapse.
+             * Otherwise, simulate a click to start editing. */
             {
-               int si;
+               int si, is_section = 0;
                for (si = 0; si < pp_section_count; si++)
                {
                   if (pp_section_rows[si] == pp->focused_row)
                   {
                      pp->section_expanded[pp_section_ids[si]] =
                         !pp->section_expanded[pp_section_ids[si]];
+                     is_section = 1;
                      break;
                   }
+               }
+               /* If not a section header and not read-only, start editing
+                * by calling the click handler with a synthetic position.
+                * We use focused_row to derive what field it is — the click
+                * handler will walk the same layout and find the match.
+                * For simplicity, just call props_panel_click with the panel
+                * center and a y that corresponds to the focused row. */
+               if (!is_section)
+               {
+                  int disp_w = al_get_display_width(a5_display);
+                  int disp_h = al_get_display_height(a5_display);
+                  int top_h = glb_ds1edit.show_2nd_row ? 20 : 9;
+                  int click_x = disp_w - glb_ds1edit.props_panel_width / 2;
+                  int click_y = top_h + PP_HEADER_H + 4
+                                + pp->focused_row * PP_LINE_H
+                                - pp->scroll_offset * PP_LINE_H;
+                  props_panel_click(click_x, click_y,
+                                    glb_ds1edit.props_panel_width, disp_h);
                }
             }
             pp->has_focus = TRUE;

@@ -1009,8 +1009,12 @@ int ds1_manager_txt_set_cell(RQ_ENUM txt_type, const char * key_col, int key_val
                {
                   char * tab2 = strchr(cell_start, '\t');
                   cell_end = (tab2 && tab2 < row_end) ? tab2 : row_end;
-                  /* Handle \r before \n */
-                  if (cell_end > cell_start && *(cell_end - 1) == '\r')
+                  /* Skip \r at end of cell value (before \r\n or \t).
+                   * We DON'T consume it — the \r stays in the output
+                   * as part of the line ending. Only strip it from
+                   * the cell value boundary so we replace just the text. */
+                  if (cell_end == row_end && cell_end > cell_start &&
+                      *(cell_end - 1) == '\r')
                      cell_end--;
 
                   /* Build new file: before_cell + new_value + after_cell */
