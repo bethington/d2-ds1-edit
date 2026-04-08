@@ -652,6 +652,14 @@ int area_browser_switch_area(int group_idx)
    if (ab->groups[group_idx].entry_count == 0)
       return -1;
 
+   /* Backup groups can't be loaded */
+   if (ab->groups[group_idx].is_backup)
+   {
+      printf("Backup files are read-only references\n");
+      fflush(stdout);
+      return -1;
+   }
+
    printf("Switching to area: ");
    fflush(stdout);
 
@@ -753,6 +761,14 @@ int area_browser_switch_single(int group_idx, int entry_idx)
       return -1;
    if (entry_idx < 0 || entry_idx >= ab->groups[group_idx].entry_count)
       return -1;
+
+   /* Backup groups can't be loaded for editing (no valid LvlType/Def) */
+   if (ab->groups[group_idx].is_backup)
+   {
+      printf("Backup files are read-only references\n");
+      fflush(stdout);
+      return -1;
+   }
 
    /* If a different group is loaded (or none), load the full group first */
    if (ab->loaded_group != group_idx)
@@ -893,11 +909,11 @@ int area_browser_nav_right(void)
    if (!ab->groups[gi].is_expanded)
    {
       ab->groups[gi].is_expanded = TRUE;
-      /* Preload if not already loaded */
-      if (ab->loaded_group != gi)
+      /* Preload if not already loaded (skip backup groups) */
+      if (ab->loaded_group != gi && !ab->groups[gi].is_backup)
       {
-         area_browser_switch_area(gi);
-         return 0;
+         if (area_browser_switch_area(gi) >= 0)
+            return 0;
       }
    }
 
