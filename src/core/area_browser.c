@@ -1,3 +1,6 @@
+#ifdef WIN32
+#include <windows.h>
+#endif
 #include "structs.h"
 #include "error.h"
 #include "misc.h"
@@ -127,12 +130,17 @@ static int area_group_cmp(const void * a, const void * b)
    const AREA_GROUP_S * gb = (const AREA_GROUP_S *) b;
    int act_a, act_b;
 
-   /* act 0 ("Other") sorts last */
+   /* act 0 ("Other") sorts last, backup groups sort after regular groups */
    act_a = ga->act > 0 ? ga->act : 100;
    act_b = gb->act > 0 ? gb->act : 100;
 
    if (act_a != act_b)
       return act_a - act_b;
+
+   /* Within same act, backup groups go after regular groups */
+   if (ga->is_backup != gb->is_backup)
+      return ga->is_backup ? 1 : -1;
+
    return stricmp(ga->name, gb->name);
 }
 
@@ -396,6 +404,9 @@ void area_browser_build(void)
    /* sort groups: by act then alphabetically */
    if (ab->group_count > 1)
       qsort(ab->groups, ab->group_count, sizeof(AREA_GROUP_S), area_group_cmp);
+
+   /* Scan backup/ directory for backed-up DS1 files */
+   area_browser_scan_backups();
 
    /* debug output */
    {
@@ -954,6 +965,148 @@ int area_browser_nav_end(void)
 }
 
 /* Free all area browser dynamic memory. */
+/* Scan the backup/ directory for backed-up DS1 files and add them
+ * as "Backup" sub-groups under each Act. */
+void area_browser_scan_backups(void)
+{
+#ifdef WIN32
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   WIN32_FIND_DATAA fd;
+   HANDLE hFind;
+   char search_path[512];
+
+   sprintf(search_path, "backup\\*");
+   hFind = FindFirstFileA(search_path, &fd);
+   if (hFind == INVALID_HANDLE_VALUE)
+      return;
+
+   do {
+      if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+      {
+         char json_search[512];
+         WIN32_FIND_DATAA jfd;
+         HANDLE jFind;
+
+         if (fd.cFileName[0] == '.')
+            continue;
+
+         /* Search for .json files in this backup subdirectory */
+         sprintf(json_search, "backup\\%s\\*.json", fd.cFileName);
+         jFind = FindFirstFileA(json_search, &jfd);
+         if (jFind != INVALID_HANDLE_VALUE)
+         {
+            do {
+               /* Parse the JSON to get the act and area info */
+               char json_path[512], ds1_path[512];
+               FILE * jf;
+               int act = 0;
+               char area_name[80] = "Backup";
+
+               sprintf(json_path, "backup\\%s\\%s", fd.cFileName, jfd.cFileName);
+               jf = fopen(json_path, "rt");
+               if (jf != NULL)
+               {
+                  char line[512];
+                  while (fgets(line, sizeof(line), jf) != NULL)
+                  {
+                     /* Simple JSON parsing — find "area" and extract act number */
+                     if (strstr(line, "\"area\"") != NULL)
+                     {
+                        char * p = strstr(line, "Act ");
+                        if (p != NULL)
+                           act = p[4] - '0';
+                     }
+                     if (strstr(line, "\"original_path\"") != NULL)
+                     {
+                        char * p = strchr(line, ':');
+                        if (p != NULL)
+                        {
+                           p++; while (*p == ' ' || *p == '"') p++;
+                           {
+                              char * end = strchr(p, '"');
+                              if (end) *end = '\0';
+                              strncpy(ds1_path, p, sizeof(ds1_path) - 1);
+                              ds1_path[sizeof(ds1_path) - 1] = '\0';
+                           }
+                        }
+                     }
+                  }
+                  fclose(jf);
+               }
+
+               /* Find or create the backup group for this act */
+               {
+                  AREA_GROUP_S * bgrp = NULL;
+                  int gi;
+                  char backup_name[80];
+
+                  if (act >= 1 && act <= 5)
+                     sprintf(backup_name, "Backup");
+                  else
+                     sprintf(backup_name, "Backup");
+
+                  /* Search for existing backup group with this act */
+                  for (gi = 0; gi < ab->group_count; gi++)
+                  {
+                     if (ab->groups[gi].is_backup && ab->groups[gi].act == act)
+                     {
+                        bgrp = &ab->groups[gi];
+                        break;
+                     }
+                  }
+
+                  /* Create if not found */
+                  if (bgrp == NULL)
+                  {
+                     bgrp = area_find_or_create_group(ab, -1 - act, backup_name);
+                     if (bgrp != NULL)
+                     {
+                        bgrp->act = act;
+                        bgrp->is_backup = TRUE;
+                     }
+                  }
+
+                  /* Add the DS1 file as an entry */
+                  if (bgrp != NULL)
+                  {
+                     char full_backup_path[512];
+                     char * ds1_name;
+
+                     /* Build path to the backed-up DS1 file */
+                     ds1_name = jfd.cFileName;
+                     {
+                        int nlen = (int)strlen(ds1_name);
+                        if (nlen > 5 && stricmp(ds1_name + nlen - 5, ".json") == 0)
+                        {
+                           /* Replace .json with .ds1 */
+                           strncpy(full_backup_path, ds1_name, nlen - 5);
+                           strcpy(full_backup_path + nlen - 5, ".ds1");
+                        }
+                        else
+                        {
+                           strcpy(full_backup_path, ds1_name);
+                        }
+                     }
+                     sprintf(ds1_path, "backup/%s/%s", fd.cFileName, full_backup_path);
+                     area_group_add_entry(bgrp, 0, 0, ds1_path);
+                  }
+               }
+            } while (FindNextFileA(jFind, &jfd));
+            FindClose(jFind);
+         }
+      }
+   } while (FindNextFileA(hFind, &fd));
+   FindClose(hFind);
+
+   /* Re-sort groups so backup groups appear after their act's regular groups */
+   if (ab->group_count > 1)
+      qsort(ab->groups, ab->group_count, sizeof(AREA_GROUP_S), area_group_cmp);
+
+   printf("[area browser] scanned backups, %d groups total\n", ab->group_count);
+   fflush(stdout);
+#endif
+}
+
 void area_browser_destroy(void)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
@@ -1172,6 +1325,10 @@ void area_browser_draw_sidebar(int width, int height)
          ALLEGRO_COLOR text_col = g->entry_count > 0 ? col_item : col_zero;
          char count_str[16];
          const char * arrow = g->is_expanded ? "-" : "+";
+
+         /* Backup groups shown in a muted orange color */
+         if (g->is_backup)
+            text_col = g->entry_count > 0 ? al_map_rgb(180, 140, 80) : col_zero;
 
          if (is_selected && g->entry_count > 0 && ab->selected_entry == -1)
          {

@@ -489,6 +489,7 @@ typedef struct AREA_GROUP_S
    int  entry_count;           /* Number of entries                    */
    int  entry_max;             /* Allocated capacity                   */
    int  is_expanded;           /* TRUE if showing individual DS1 files */
+   int  is_backup;             /* TRUE if this is a backup group       */
 } AREA_GROUP_S;
 
 typedef struct AREA_BROWSER_S
