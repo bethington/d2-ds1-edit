@@ -487,6 +487,37 @@ void * txt_read_in_mem(char * txtname)
       ds1edit_error(tmp);
    }
 
+   /* Check if a local assets copy has more data (PD2 mod entries).
+    * Use the larger file to ensure all entries are available. */
+   {
+      char local_path[256];
+      FILE * local_file;
+      sprintf(local_path, "assets/excel/%s", strrchr(txtname, '\\') ? strrchr(txtname, '\\') + 1 : txtname);
+      local_file = fopen(local_path, "rb");
+      if (local_file != NULL)
+      {
+         long local_len;
+         fseek(local_file, 0, SEEK_END);
+         local_len = ftell(local_file);
+         if (local_len > len)
+         {
+            void * local_buff;
+            fseek(local_file, 0, SEEK_SET);
+            local_buff = malloc(local_len + 1);
+            if (local_buff != NULL)
+            {
+               fread(local_buff, 1, local_len, local_file);
+               printf("  using local %s (%ld bytes > mpq %ld bytes)\n",
+                      local_path, local_len, len);
+               free(buff);
+               buff = local_buff;
+               len = local_len;
+            }
+         }
+         fclose(local_file);
+      }
+   }
+
    len++;
    new_buff = realloc(buff, len);
    if (new_buff == NULL)
@@ -500,7 +531,7 @@ void * txt_read_in_mem(char * txtname)
 
    if (new_buff != buff)
       memcpy(new_buff, buff, len - 1);
-   
+
    * (((char *) new_buff) + len - 1) = 0;
 
    return buff;
