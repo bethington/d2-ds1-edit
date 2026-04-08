@@ -650,12 +650,13 @@ int read_lvltypes_txt(int ds1_idx, int type)
          act  = * lptr;
          if ((act != glb_ds1[ds1_idx].act) && (glb_ds1edit.cmd_line.no_check_act == FALSE))
          {
-            sprintf(tmp, "read_lvltypes_txt() : Acts from LvlTypes.txt (%li) and the Ds1 (%li) "
-               "are different",
+            printf("WARNING: read_lvltypes_txt() : Acts from LvlTypes.txt (%li) and the Ds1 (%li) "
+               "are different, using DS1 act value\n",
                act,
                glb_ds1[ds1_idx].act
             );
-            ds1edit_error(tmp);
+            fflush(stdout);
+            act = glb_ds1[ds1_idx].act;
          }
 
          // opening dt1
@@ -682,6 +683,9 @@ int read_lvltypes_txt(int ds1_idx, int type)
                   sprintf(tmp, "%li", * tmp_long);
                }
                txt_convert_slash(tmp);
+               /* Skip "0" placeholder entries (empty DT1 slots in LvlTypes.txt) */
+               if (tmp[0] == '0' && tmp[1] == '\0')
+                  continue;
                strcpy(name, glb_tiles_path);
                strcat(name, tmp);
                if (glb_ds1[ds1_idx].dt1_mask[f])

@@ -156,7 +156,13 @@ static int wpreview_old_pal = -1;
 void wpreview_init_palette_state(int ds1_idx)
 {
    if (glb_ds1edit.cmd_line.force_pal_num == -1)
-      wpreview_old_pal = glb_ds1[ds1_idx].act - 1;
+   {
+      /* Use txt_act (from LvlTypes.txt) when available — the DS1 file's
+       * .act field defaults to 1 for old format files (version < 8). */
+      int act = glb_ds1[ds1_idx].txt_act > 0 ? glb_ds1[ds1_idx].txt_act
+                                               : glb_ds1[ds1_idx].act;
+      wpreview_old_pal = act - 1;
+   }
    else
       wpreview_old_pal = glb_ds1edit.cmd_line.force_pal_num - 1;
 }
@@ -2517,10 +2523,12 @@ void wpreview_draw_tiles(int ds1_idx)
    perf_section_start_ms = render_perf_now_ms();
    if (glb_ds1edit.cmd_line.force_pal_num == -1)
    {
-      // use .ds1 act value for palette
-      if (wpreview_old_pal != glb_ds1[ds1_idx].act - 1)
+      // use txt_act (LvlTypes.txt) for palette, fall back to .act
+      int cur_act = glb_ds1[ds1_idx].txt_act > 0 ? glb_ds1[ds1_idx].txt_act
+                                                   : glb_ds1[ds1_idx].act;
+      if (wpreview_old_pal != cur_act - 1)
       {
-         wpreview_old_pal = glb_ds1[ds1_idx].act - 1;
+         wpreview_old_pal = cur_act - 1;
          a5_current_palette = &glb_ds1edit.vga_pal[wpreview_old_pal];
          dt1_rebuild_bitmaps_from_cache(a5_current_palette);
       }
@@ -3492,10 +3500,12 @@ int wpreview_draw_tiles_big_screenshot(int ds1_idx)
    // handle palette
    if (glb_ds1edit.cmd_line.force_pal_num == -1)
    {
-      // use .ds1 act value for palette
-      if (old_pal != glb_ds1[ds1_idx].act - 1)
+      // use txt_act (LvlTypes.txt) for palette, fall back to .act
+      int cur_act = glb_ds1[ds1_idx].txt_act > 0 ? glb_ds1[ds1_idx].txt_act
+                                                   : glb_ds1[ds1_idx].act;
+      if (old_pal != cur_act - 1)
       {
-         old_pal = glb_ds1[ds1_idx].act - 1;
+         old_pal = cur_act - 1;
          a5_current_palette = &glb_ds1edit.vga_pal[old_pal];
          dt1_rebuild_bitmaps_from_cache(a5_current_palette);
       }

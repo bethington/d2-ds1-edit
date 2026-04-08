@@ -10,6 +10,8 @@ int  ds1_manager_delete(int group_idx, int entry_idx);
 
 /* Backup system */
 int  ds1_manager_backup(int group_idx, int entry_idx);
+int  ds1_manager_restore(int group_idx, int entry_idx);
+int  ds1_manager_delete_permanent(int group_idx, int entry_idx);
 
 /* DS1 creation */
 int  ds1_manager_create_empty(int group_idx, int entry_idx, int width, int height, int act);
@@ -19,6 +21,10 @@ int  ds1_manager_clone(int src_ds1_idx, int group_idx, int entry_idx);
 void ds1_manager_suggest_name(const char * base_ds1_path,
                                const AREA_GROUP_S * group,
                                char * out_name, int out_size);
+
+/* Generic TXT cell editor */
+int  ds1_manager_txt_set_cell(RQ_ENUM txt_type, const char * key_col, int key_val,
+                               const char * target_col, const char * new_value);
 
 /* JSON metadata */
 int  ds1_manager_write_backup_json(const char * json_path, int group_idx,

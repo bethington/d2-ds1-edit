@@ -64,6 +64,7 @@ set(SOURCES
     src/ui/dialogs.c
     src/ui/edit_window.c
     src/ui/bits_window.c
+    src/ui/props_panel.c
     # mpq/
     src/mpq/Dcl_tbl.c
     src/mpq/Explode.c

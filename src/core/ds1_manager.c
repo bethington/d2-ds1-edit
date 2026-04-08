@@ -13,9 +13,12 @@
 #ifdef WIN32
 #include <direct.h>
 #define MKDIR(path) _mkdir(path)
+#define RMDIR(path) _rmdir(path)
 #else
 #include <sys/stat.h>
+#include <unistd.h>
 #define MKDIR(path) mkdir(path, 0755)
+#define RMDIR(path) rmdir(path)
 #endif
 
 #define LVLPREST_MAX_LINE   4096
@@ -421,7 +424,14 @@ int ds1_manager_delete(int group_idx, int entry_idx)
    else
       printf("ds1_manager_delete: warning, couldn't remove %s (may not exist on disk)\n", src_path);
 
-   /* 5. Remove entry from the in-memory area browser */
+   /* 5. Invalidate cached LvlPrest buffer so next load re-reads from disk */
+   if (glb_ds1edit.lvlprest_buff != NULL)
+   {
+      glb_ds1edit.lvlprest_buff = txt_destroy(glb_ds1edit.lvlprest_buff);
+      printf("ds1_manager_delete: invalidated LvlPrest cache\n");
+   }
+
+   /* 6. Remove entry from the in-memory area browser */
    {
       int j;
       for (j = entry_idx; j < g->entry_count - 1; j++)
@@ -721,6 +731,10 @@ int ds1_manager_create_empty(int group_idx, int entry_idx, int width, int height
       printf("ds1_manager_create_empty: added to LvlPrest.txt File%d for Def %d\n",
              file_slot, def);
 
+   /* Invalidate cached LvlPrest buffer */
+   if (glb_ds1edit.lvlprest_buff != NULL)
+      glb_ds1edit.lvlprest_buff = txt_destroy(glb_ds1edit.lvlprest_buff);
+
    /* Add to in-memory area browser */
    {
       AREA_DS1_ENTRY_S new_entry;
@@ -819,10 +833,484 @@ int ds1_manager_clone(int src_ds1_idx, int group_idx, int entry_idx)
       printf("ds1_manager_clone: added to LvlPrest.txt File%d for Def %d\n",
              file_slot, def);
 
+   /* Invalidate cached LvlPrest buffer */
+   if (glb_ds1edit.lvlprest_buff != NULL)
+      glb_ds1edit.lvlprest_buff = txt_destroy(glb_ds1edit.lvlprest_buff);
+
    /* Add to in-memory area browser */
    area_group_add_entry(g, g->lvltype_id, def, rel_path);
 
    printf("ds1_manager_clone: complete\n");
+   fflush(stdout);
+   return 0;
+}
+
+
+/* ---- Generic TXT file cell editor ---- */
+
+/* Read a raw TXT file by RQ_ENUM type. Returns malloc'd buffer. */
+static char * txt_read_raw_by_type(RQ_ENUM txt_type, long * out_len)
+{
+   char path[512];
+   FILE * in;
+   long len;
+   char * buf;
+   const char * filenames[] = {
+      "LvlTypes.txt", "LvlPrest.txt", "obj.txt", "Objects.txt", "Levels.txt"
+   };
+   const char * fname;
+
+   if (txt_type >= RQ_MAX) return NULL;
+   fname = filenames[txt_type];
+
+   /* Try mod_dir first */
+   if (glb_config.mod_dir[0] != NULL)
+   {
+      if (txt_type == RQ_OBJ)
+         sprintf(path, "%s\\%s", glb_config.mod_dir[0], fname);
+      else
+         sprintf(path, "%s\\Global\\Excel\\%s", glb_config.mod_dir[0], fname);
+      in = fopen(path, "rb");
+      if (in != NULL)
+      {
+         fseek(in, 0, SEEK_END);
+         len = ftell(in);
+         fseek(in, 0, SEEK_SET);
+         buf = (char *)malloc(len + 1);
+         if (buf != NULL) { fread(buf, 1, len, in); buf[len] = '\0'; }
+         fclose(in);
+         *out_len = len;
+         return buf;
+      }
+   }
+
+   /* Fallback to local assets */
+   if (txt_type == RQ_OBJ)
+      sprintf(path, "assets/data/%s", fname);
+   else
+      sprintf(path, "assets/excel/%s", fname);
+   in = fopen(path, "rb");
+   if (in == NULL) return NULL;
+   fseek(in, 0, SEEK_END);
+   len = ftell(in);
+   fseek(in, 0, SEEK_SET);
+   buf = (char *)malloc(len + 1);
+   if (buf != NULL) { fread(buf, 1, len, in); buf[len] = '\0'; }
+   fclose(in);
+   *out_len = len;
+   return buf;
+}
+
+/* Write a raw TXT file by type to mod_dir. */
+static int txt_write_raw_by_type(RQ_ENUM txt_type, const char * buf, long len)
+{
+   char path[512], dir[512];
+   FILE * out;
+   const char * filenames[] = {
+      "LvlTypes.txt", "LvlPrest.txt", "obj.txt", "Objects.txt", "Levels.txt"
+   };
+
+   if (glb_config.mod_dir[0] == NULL) return -1;
+   if (txt_type >= RQ_MAX) return -1;
+
+   sprintf(dir, "%s\\Global", glb_config.mod_dir[0]);
+   MKDIR(dir);
+   sprintf(dir, "%s\\Global\\Excel", glb_config.mod_dir[0]);
+   MKDIR(dir);
+
+   if (txt_type == RQ_OBJ)
+      sprintf(path, "%s\\%s", glb_config.mod_dir[0], filenames[txt_type]);
+   else
+      sprintf(path, "%s\\Global\\Excel\\%s", glb_config.mod_dir[0], filenames[txt_type]);
+
+   out = fopen(path, "wb");
+   if (out == NULL) return -1;
+   fwrite(buf, 1, len, out);
+   fclose(out);
+   printf("ds1_manager_txt_set_cell: wrote %s (%ld bytes)\n", path, len);
+   return 0;
+}
+
+/* Set a cell value in a TXT file by key column lookup.
+ * key_col/key_val identify the row (e.g. "Def"/167 for LvlPrest).
+ * target_col is the column to modify. new_value is the new cell text.
+ * Returns 0 on success. */
+int ds1_manager_txt_set_cell(RQ_ENUM txt_type, const char * key_col, int key_val,
+                              const char * target_col, const char * new_value)
+{
+   char * buf;
+   long len;
+   char * header_end, * row_start, * row_end, * cell_start, * cell_end;
+   int key_col_idx, target_col_idx;
+   int cur_col;
+   char * p;
+   char * new_buf;
+   long new_len;
+
+   buf = txt_read_raw_by_type(txt_type, &len);
+   if (buf == NULL) return -1;
+
+   /* Find header line end */
+   header_end = strchr(buf, '\n');
+   if (header_end == NULL) { free(buf); return -1; }
+
+   /* Find column indices in header */
+   key_col_idx = lvlprest_find_col(buf, key_col);
+   target_col_idx = lvlprest_find_col(buf, target_col);
+   if (key_col_idx < 0 || target_col_idx < 0)
+   {
+      printf("ds1_manager_txt_set_cell: column '%s' or '%s' not found\n",
+             key_col, target_col);
+      free(buf);
+      return -1;
+   }
+
+   /* Search rows for matching key value */
+   row_start = header_end + 1;
+   while (row_start < buf + len && *row_start != '\0')
+   {
+      char key_buf[64];
+
+      row_end = strchr(row_start, '\n');
+      if (row_end == NULL) row_end = buf + len;
+
+      /* Extract key column value from this row */
+      p = row_start;
+      for (cur_col = 0; cur_col < key_col_idx && p < row_end; cur_col++)
+      {
+         p = strchr(p, '\t');
+         if (p == NULL || p >= row_end) break;
+         p++;
+      }
+
+      if (cur_col == key_col_idx && p < row_end)
+      {
+         char * tab = strchr(p, '\t');
+         int vlen = (tab && tab < row_end) ? (int)(tab - p) : (int)(row_end - p);
+         if (vlen > 0 && vlen < 63)
+         {
+            strncpy(key_buf, p, vlen);
+            key_buf[vlen] = '\0';
+            /* Strip \r */
+            if (vlen > 0 && key_buf[vlen-1] == '\r') key_buf[vlen-1] = '\0';
+
+            if (atoi(key_buf) == key_val)
+            {
+               /* Found the row — now find the target column cell */
+               cell_start = row_start;
+               for (cur_col = 0; cur_col < target_col_idx && cell_start < row_end; cur_col++)
+               {
+                  cell_start = strchr(cell_start, '\t');
+                  if (cell_start == NULL || cell_start >= row_end) break;
+                  cell_start++;
+               }
+
+               if (cur_col == target_col_idx && cell_start < row_end)
+               {
+                  char * tab2 = strchr(cell_start, '\t');
+                  cell_end = (tab2 && tab2 < row_end) ? tab2 : row_end;
+                  /* Handle \r before \n */
+                  if (cell_end > cell_start && *(cell_end - 1) == '\r')
+                     cell_end--;
+
+                  /* Build new file: before_cell + new_value + after_cell */
+                  {
+                     int before_len = (int)(cell_start - buf);
+                     int after_start = (int)(cell_end - buf);
+                     int new_val_len = (int)strlen(new_value);
+                     new_len = before_len + new_val_len + (len - after_start);
+                     new_buf = (char *)malloc(new_len + 1);
+                     if (new_buf != NULL)
+                     {
+                        memcpy(new_buf, buf, before_len);
+                        memcpy(new_buf + before_len, new_value, new_val_len);
+                        memcpy(new_buf + before_len + new_val_len,
+                               buf + after_start, len - after_start);
+                        new_buf[new_len] = '\0';
+
+                        txt_write_raw_by_type(txt_type, new_buf, new_len);
+                        free(new_buf);
+                     }
+                  }
+                  free(buf);
+                  return 0;
+               }
+            }
+         }
+      }
+
+      row_start = (*row_end == '\n') ? row_end + 1 : row_end;
+   }
+
+   printf("ds1_manager_txt_set_cell: key %s=%d not found\n", key_col, key_val);
+   free(buf);
+   return -1;
+}
+
+
+/* ---- Restore and permanent delete ---- */
+
+/* Restore a backup DS1 to its original location and re-add to LvlPrest.txt.
+ * Returns 0 on success, -1 on error. */
+int ds1_manager_restore(int group_idx, int entry_idx)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   AREA_GROUP_S * g;
+   AREA_DS1_ENTRY_S * e;
+   char backup_ds1_path[512], backup_json_path[512];
+   char dst_path[512], original_path[256];
+   int def, lvltype_id, file_slot;
+   FILE * jf;
+   char backup_dir[512];
+
+   if (group_idx < 0 || group_idx >= ab->group_count) return -1;
+   g = &ab->groups[group_idx];
+   if (!g->is_backup) return -1;
+   if (entry_idx < 0 || entry_idx >= g->entry_count) return -1;
+   e = &g->entries[entry_idx];
+
+   /* The entry ds1_path is like "backup/2026-04-06_Act1-Town_TownN1/TownN1.ds1" */
+   strncpy(backup_ds1_path, e->ds1_path, sizeof(backup_ds1_path) - 1);
+   backup_ds1_path[sizeof(backup_ds1_path) - 1] = '\0';
+
+   /* Build JSON path: replace .ds1 with .json */
+   {
+      int plen = (int)strlen(backup_ds1_path);
+      if (plen > 4 && stricmp(backup_ds1_path + plen - 4, ".ds1") == 0)
+      {
+         strncpy(backup_json_path, backup_ds1_path, plen - 4);
+         strcpy(backup_json_path + plen - 4, ".json");
+      }
+      else
+      {
+         printf("ds1_manager_restore: unexpected path format: %s\n", backup_ds1_path);
+         return -1;
+      }
+   }
+
+   /* Extract the backup subdirectory for later cleanup */
+   {
+      const char * last_slash = strrchr(backup_ds1_path, '/');
+      if (last_slash == NULL) last_slash = strrchr(backup_ds1_path, '\\');
+      if (last_slash != NULL)
+      {
+         int dlen = (int)(last_slash - backup_ds1_path);
+         strncpy(backup_dir, backup_ds1_path, dlen);
+         backup_dir[dlen] = '\0';
+      }
+      else
+      {
+         strcpy(backup_dir, ".");
+      }
+   }
+
+   /* Parse JSON to get original_path, def, lvltype_id */
+   original_path[0] = '\0';
+   def = e->lvlprest_def;
+   lvltype_id = e->lvltype_id;
+
+   jf = fopen(backup_json_path, "rt");
+   if (jf != NULL)
+   {
+      char line[512];
+      while (fgets(line, sizeof(line), jf) != NULL)
+      {
+         if (strstr(line, "\"original_path\"") != NULL)
+         {
+            char * p = strchr(line, ':');
+            if (p != NULL)
+            {
+               p++; while (*p == ' ' || *p == '"') p++;
+               {
+                  char * end = strchr(p, '"');
+                  if (end) *end = '\0';
+                  strncpy(original_path, p, sizeof(original_path) - 1);
+                  original_path[sizeof(original_path) - 1] = '\0';
+               }
+            }
+         }
+         if (strstr(line, "\"def\"") != NULL)
+         {
+            char * p = strchr(line, ':');
+            if (p != NULL)
+               def = atoi(p + 1);
+         }
+         if (strstr(line, "\"lvltype_id\"") != NULL)
+         {
+            char * p = strchr(line, ':');
+            if (p != NULL)
+               lvltype_id = atoi(p + 1);
+         }
+      }
+      fclose(jf);
+   }
+   else
+   {
+      printf("ds1_manager_restore: can't read JSON %s\n", backup_json_path);
+      return -1;
+   }
+
+   if (original_path[0] == '\0')
+   {
+      printf("ds1_manager_restore: no original_path in JSON\n");
+      return -1;
+   }
+
+   /* Build destination path */
+   if (glb_config.mod_dir[0] != NULL)
+      sprintf(dst_path, "%s\\Global\\Tiles\\%s", glb_config.mod_dir[0], original_path);
+   else
+      sprintf(dst_path, "assets/tiles/%s", original_path);
+
+   /* Copy DS1 back to original location */
+   {
+      FILE * in = fopen(backup_ds1_path, "rb");
+      if (in != NULL)
+      {
+         FILE * out = fopen(dst_path, "wb");
+         if (out != NULL)
+         {
+            char copy_buf[8192];
+            int n;
+            while ((n = (int)fread(copy_buf, 1, sizeof(copy_buf), in)) > 0)
+               fwrite(copy_buf, 1, n, out);
+            fclose(out);
+            printf("ds1_manager_restore: restored %s -> %s\n", backup_ds1_path, dst_path);
+         }
+         else
+         {
+            printf("ds1_manager_restore: can't write %s\n", dst_path);
+            fclose(in);
+            return -1;
+         }
+         fclose(in);
+      }
+      else
+      {
+         printf("ds1_manager_restore: can't read %s\n", backup_ds1_path);
+         return -1;
+      }
+   }
+
+   /* Re-add to LvlPrest.txt */
+   if (def > 0)
+   {
+      file_slot = ds1_manager_lvlprest_find_empty_slot(def);
+      if (file_slot > 0)
+      {
+         if (ds1_manager_lvlprest_set_file(def, file_slot, original_path) == 0)
+            printf("ds1_manager_restore: added to LvlPrest.txt File%d for Def %d\n",
+                   file_slot, def);
+      }
+      else
+      {
+         printf("ds1_manager_restore: no empty File slot for Def %d\n", def);
+      }
+   }
+
+   /* Invalidate cached LvlPrest buffer so next load re-reads from disk */
+   if (glb_ds1edit.lvlprest_buff != NULL)
+   {
+      glb_ds1edit.lvlprest_buff = txt_destroy(glb_ds1edit.lvlprest_buff);
+      printf("ds1_manager_restore: invalidated LvlPrest cache\n");
+   }
+
+   /* Find the matching regular group and add the entry */
+   {
+      int gi;
+      for (gi = 0; gi < ab->group_count; gi++)
+      {
+         if (!ab->groups[gi].is_backup && ab->groups[gi].lvltype_id == lvltype_id)
+         {
+            area_group_add_entry(&ab->groups[gi], lvltype_id, def, original_path);
+            printf("ds1_manager_restore: added to group '%s'\n", ab->groups[gi].name);
+            break;
+         }
+      }
+   }
+
+   /* Remove the backup entry from the backup group */
+   if (entry_idx < g->entry_count - 1)
+   {
+      memmove(&g->entries[entry_idx], &g->entries[entry_idx + 1],
+              sizeof(AREA_DS1_ENTRY_S) * (g->entry_count - entry_idx - 1));
+   }
+   g->entry_count--;
+
+   /* Clean up backup files */
+   remove(backup_ds1_path);
+   remove(backup_json_path);
+   RMDIR(backup_dir);  /* Will only succeed if empty */
+
+   printf("ds1_manager_restore: complete\n");
+   fflush(stdout);
+   return 0;
+}
+
+/* Permanently delete a backup DS1 (remove from backup/ without restoring).
+ * Returns 0 on success, -1 on error. */
+int ds1_manager_delete_permanent(int group_idx, int entry_idx)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   AREA_GROUP_S * g;
+   AREA_DS1_ENTRY_S * e;
+   char backup_ds1_path[512], backup_json_path[512], backup_dir[512];
+
+   if (group_idx < 0 || group_idx >= ab->group_count) return -1;
+   g = &ab->groups[group_idx];
+   if (!g->is_backup) return -1;
+   if (entry_idx < 0 || entry_idx >= g->entry_count) return -1;
+   e = &g->entries[entry_idx];
+
+   strncpy(backup_ds1_path, e->ds1_path, sizeof(backup_ds1_path) - 1);
+   backup_ds1_path[sizeof(backup_ds1_path) - 1] = '\0';
+
+   /* Build JSON path */
+   {
+      int plen = (int)strlen(backup_ds1_path);
+      if (plen > 4 && stricmp(backup_ds1_path + plen - 4, ".ds1") == 0)
+      {
+         strncpy(backup_json_path, backup_ds1_path, plen - 4);
+         strcpy(backup_json_path + plen - 4, ".json");
+      }
+      else
+      {
+         sprintf(backup_json_path, "%s.json", backup_ds1_path);
+      }
+   }
+
+   /* Extract backup subdirectory */
+   {
+      const char * last_slash = strrchr(backup_ds1_path, '/');
+      if (last_slash == NULL) last_slash = strrchr(backup_ds1_path, '\\');
+      if (last_slash != NULL)
+      {
+         int dlen = (int)(last_slash - backup_ds1_path);
+         strncpy(backup_dir, backup_ds1_path, dlen);
+         backup_dir[dlen] = '\0';
+      }
+      else
+      {
+         strcpy(backup_dir, ".");
+      }
+   }
+
+   /* Delete files */
+   remove(backup_ds1_path);
+   remove(backup_json_path);
+   RMDIR(backup_dir);  /* Only succeeds if empty */
+
+   printf("ds1_manager_delete_permanent: removed %s\n", backup_ds1_path);
+
+   /* Remove entry from backup group */
+   if (entry_idx < g->entry_count - 1)
+   {
+      memmove(&g->entries[entry_idx], &g->entries[entry_idx + 1],
+              sizeof(AREA_DS1_ENTRY_S) * (g->entry_count - entry_idx - 1));
+   }
+   g->entry_count--;
+
+   printf("ds1_manager_delete_permanent: complete\n");
    fflush(stdout);
    return 0;
 }

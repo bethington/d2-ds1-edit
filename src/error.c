@@ -11,7 +11,6 @@ void ds1edit_error(const char * text)
    // log
    printf("\nds1edit_error() :\n%s\n\n", text);
    fflush(stdout);
-   fclose(stdout);
 
    // console output
    fprintf(
@@ -21,9 +20,8 @@ void ds1edit_error(const char * text)
    );
    fflush(stderr);
 
-   // window GUI, if possible
-   printf("%s\n", text);
-
-   // exit
+   // exit — do NOT fclose(stdout) before exit, the CRT handles stream
+   // cleanup during exit(). Closing stdout early causes the CRT debug
+   // invalid-parameter handler to fire (0xC0000409).
    exit(DS1ERR_OTHER);
 }

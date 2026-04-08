@@ -10,6 +10,7 @@
 #include "core/cof.h"
 #include "render/preview.h"
 #include "core/area_browser.h"
+#include "ui/props_panel.h"
 
 #define AREA_INIT_GROUPS    64
 #define AREA_INIT_ENTRIES   32
@@ -628,8 +629,21 @@ int area_browser_open_by_file(const char * ds1_path)
          }
 
          {
-            char full_path[256];
-            sprintf(full_path, "assets/tiles/%s", e->ds1_path);
+            char full_path[512];
+            int found_mod = 0;
+            if (glb_config.mod_dir[0] != NULL)
+            {
+               FILE * test;
+               sprintf(full_path, "%s\\Global\\Tiles\\%s", glb_config.mod_dir[0], e->ds1_path);
+               test = fopen(full_path, "rb");
+               if (test != NULL)
+               {
+                  fclose(test);
+                  found_mod = 1;
+               }
+            }
+            if (!found_mod)
+               sprintf(full_path, "assets/tiles/%s", e->ds1_path);
             misc_open_1_ds1(ds1_idx, full_path, e->lvltype_id, e->lvlprest_def, 0, 0);
          }
          return 0;
@@ -651,14 +665,6 @@ int area_browser_switch_area(int group_idx)
       return -1;
    if (ab->groups[group_idx].entry_count == 0)
       return -1;
-
-   /* Backup groups can't be loaded */
-   if (ab->groups[group_idx].is_backup)
-   {
-      printf("Backup files are read-only references\n");
-      fflush(stdout);
-      return -1;
-   }
 
    printf("Switching to area: ");
    fflush(stdout);
@@ -690,40 +696,55 @@ int area_browser_switch_area(int group_idx)
    /* Load the new area */
    opened = area_browser_open_group(group_idx);
    if (opened <= 0)
-      return -1;
-
-   /* Post-load: animdata, animations, colormaps */
-   animdata_load();
-   anim_update_gfx(FALSE);
-   misc_make_cmaps();
-
-   /* Promote bitmaps to VIDEO */
-   al_set_new_bitmap_flags(ALLEGRO_VIDEO_BITMAP);
-   ds1edit_recreate_render_targets();
-   if (a5_current_palette != NULL)
-      dt1_rebuild_bitmaps_from_cache(a5_current_palette);
-   /* Promote animation bitmaps */
    {
-      int oi, li, fi;
-      for (oi = 0; oi < glb_ds1edit.obj_desc_num; oi++)
+      glb_ds1edit.has_loaded_ds1 = FALSE;
+      return -1;
+   }
+
+   if (!ab->groups[group_idx].is_backup)
+   {
+      /* Post-load: animdata, animations, colormaps (skip for backup — no DT1s) */
+      animdata_load();
+      anim_update_gfx(FALSE);
+      misc_make_cmaps();
+
+      /* Promote bitmaps to VIDEO */
+      al_set_new_bitmap_flags(ALLEGRO_VIDEO_BITMAP);
+      ds1edit_recreate_render_targets();
+      /* Set correct palette for new area BEFORE rebuilding DT1 bitmaps.
+       * Use txt_act (from LvlTypes.txt) — the DS1 .act field defaults
+       * to 1 for old format files (version < 8). */
       {
-         COF_S *cof = glb_ds1edit.obj_desc[oi].cof;
-         if (cof == NULL) continue;
-         for (li = 0; li < COMPOSIT_NB; li++)
+         int pal_idx = glb_ds1[0].txt_act > 0 ? glb_ds1[0].txt_act - 1
+                                                : glb_ds1[0].act - 1;
+         if (pal_idx < 0) pal_idx = 0;
+         if (pal_idx > 4) pal_idx = 4;
+         a5_current_palette = &glb_ds1edit.vga_pal[pal_idx];
+      }
+      dt1_rebuild_bitmaps_from_cache(a5_current_palette);
+      /* Promote animation bitmaps */
+      {
+         int oi, li, fi;
+         for (oi = 0; oi < glb_ds1edit.obj_desc_num; oi++)
          {
-            LAY_INF_S *lay = &cof->lay_inf[li];
-            if (lay->bmp == NULL) continue;
-            for (fi = 0; fi < lay->bmp_num; fi++)
+            COF_S *cof = glb_ds1edit.obj_desc[oi].cof;
+            if (cof == NULL) continue;
+            for (li = 0; li < COMPOSIT_NB; li++)
             {
-               ALLEGRO_BITMAP *old_bmp = lay->bmp[fi];
-               if (old_bmp == NULL) continue;
-               if (al_get_bitmap_flags(old_bmp) & ALLEGRO_MEMORY_BITMAP)
+               LAY_INF_S *lay = &cof->lay_inf[li];
+               if (lay->bmp == NULL) continue;
+               for (fi = 0; fi < lay->bmp_num; fi++)
                {
-                  ALLEGRO_BITMAP *new_bmp = al_clone_bitmap(old_bmp);
-                  if (new_bmp != NULL)
+                  ALLEGRO_BITMAP *old_bmp = lay->bmp[fi];
+                  if (old_bmp == NULL) continue;
+                  if (al_get_bitmap_flags(old_bmp) & ALLEGRO_MEMORY_BITMAP)
                   {
-                     al_destroy_bitmap(old_bmp);
-                     lay->bmp[fi] = new_bmp;
+                     ALLEGRO_BITMAP *new_bmp = al_clone_bitmap(old_bmp);
+                     if (new_bmp != NULL)
+                     {
+                        al_destroy_bitmap(old_bmp);
+                        lay->bmp[fi] = new_bmp;
+                     }
                   }
                }
             }
@@ -741,6 +762,7 @@ int area_browser_switch_area(int group_idx)
    glb_ds1edit.has_loaded_ds1 = TRUE;
    glb_ds1edit.ds1_group_idx = 0;
    glb_ds1edit.area_browser.loaded_group = group_idx;
+   props_panel_calc_shared_counts();
 
    if (opened > 1)
       glb_ds1edit.show_2nd_row = TRUE;
@@ -761,14 +783,6 @@ int area_browser_switch_single(int group_idx, int entry_idx)
       return -1;
    if (entry_idx < 0 || entry_idx >= ab->groups[group_idx].entry_count)
       return -1;
-
-   /* Backup groups can't be loaded for editing (no valid LvlType/Def) */
-   if (ab->groups[group_idx].is_backup)
-   {
-      printf("Backup files are read-only references\n");
-      fflush(stdout);
-      return -1;
-   }
 
    /* If a different group is loaded (or none), load the full group first */
    if (ab->loaded_group != group_idx)
@@ -909,8 +923,8 @@ int area_browser_nav_right(void)
    if (!ab->groups[gi].is_expanded)
    {
       ab->groups[gi].is_expanded = TRUE;
-      /* Preload if not already loaded (skip backup groups) */
-      if (ab->loaded_group != gi && !ab->groups[gi].is_backup)
+      /* Preload if not already loaded */
+      if (ab->loaded_group != gi)
       {
          if (area_browser_switch_area(gi) >= 0)
             return 0;
@@ -1016,6 +1030,7 @@ void area_browser_scan_backups(void)
                char json_path[512], ds1_path[512];
                FILE * jf;
                int act = 0;
+               int backup_def = 0, backup_lvltype = 0;
                char area_name[80] = "Backup";
 
                sprintf(json_path, "backup\\%s\\%s", fd.cFileName, jfd.cFileName);
@@ -1045,6 +1060,19 @@ void area_browser_scan_backups(void)
                               ds1_path[sizeof(ds1_path) - 1] = '\0';
                            }
                         }
+                     }
+                     /* Parse def and lvltype_id for restore */
+                     if (strstr(line, "\"def\"") != NULL)
+                     {
+                        char * p = strchr(line, ':');
+                        if (p != NULL)
+                           backup_def = atoi(p + 1);
+                     }
+                     if (strstr(line, "\"lvltype_id\"") != NULL)
+                     {
+                        char * p = strchr(line, ':');
+                        if (p != NULL)
+                           backup_lvltype = atoi(p + 1);
                      }
                   }
                   fclose(jf);
@@ -1104,7 +1132,7 @@ void area_browser_scan_backups(void)
                         }
                      }
                      sprintf(ds1_path, "backup/%s/%s", fd.cFileName, full_backup_path);
-                     area_group_add_entry(bgrp, 0, 0, ds1_path);
+                     area_group_add_entry(bgrp, backup_lvltype, backup_def, ds1_path);
                   }
                }
             } while (FindNextFileA(jFind, &jfd));
@@ -1246,14 +1274,48 @@ int area_browser_open_group(int group_idx)
       if (ds1_idx >= DS1_MAX)
          break;
 
-      /* Build the full path — LvlPrest paths look like "Act1/Town/TownN1.ds1",
-       * the editor needs "assets/tiles/..." or the MPQ internal path */
-      sprintf(ds1_path, "assets/tiles/%s", e->ds1_path);
+      if (g->is_backup)
+      {
+         /* Backup DS1 paths are already relative from CWD (backup/...) */
+         strncpy(ds1_path, e->ds1_path, sizeof(ds1_path) - 1);
+         ds1_path[sizeof(ds1_path) - 1] = '\0';
 
-      printf("  [%d] lvltype=%d def=%d %s\n", i, e->lvltype_id, e->lvlprest_def, ds1_path);
-      fflush(stdout);
+         printf("  [%d] (backup) %s\n", i, ds1_path);
+         fflush(stdout);
 
-      misc_open_1_ds1(ds1_idx, ds1_path, e->lvltype_id, e->lvlprest_def, 0, 0);
+         /* Load DS1 structure only — skip LvlPrest/LvlTypes (no DT1 tiles) */
+         ds1_read(ds1_path, ds1_idx, 0, 0);
+         misc_make_block_table(ds1_idx);
+         ds1_make_prop_2_block(ds1_idx);
+      }
+      else
+      {
+         /* Build the full path — check mod_dir first, fall back to assets/tiles/ */
+         {
+            int found_mod = 0;
+            if (glb_config.mod_dir[0] != NULL)
+            {
+               char mod_path[512];
+               FILE * test;
+               sprintf(mod_path, "%s\\Global\\Tiles\\%s", glb_config.mod_dir[0], e->ds1_path);
+               test = fopen(mod_path, "rb");
+               if (test != NULL)
+               {
+                  fclose(test);
+                  strncpy(ds1_path, mod_path, sizeof(ds1_path) - 1);
+                  ds1_path[sizeof(ds1_path) - 1] = '\0';
+                  found_mod = 1;
+               }
+            }
+            if (!found_mod)
+               sprintf(ds1_path, "assets/tiles/%s", e->ds1_path);
+         }
+
+         printf("  [%d] lvltype=%d def=%d %s\n", i, e->lvltype_id, e->lvlprest_def, ds1_path);
+         fflush(stdout);
+
+         misc_open_1_ds1(ds1_idx, ds1_path, e->lvltype_id, e->lvlprest_def, 0, 0);
+      }
       ds1_idx++;
       opened++;
    }

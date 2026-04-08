@@ -15,6 +15,7 @@
 #include "ui/interface.h"
 #include "core/area_browser.h"
 #include "core/ds1_manager.h"
+#include "ui/props_panel.h"
 
 
 typedef struct
@@ -150,6 +151,30 @@ void interfac_user_handler(int start_ds1_idx)
               else if (event.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
                   done = TRUE;
               }
+              else if (event.type == ALLEGRO_EVENT_KEY_CHAR) {
+                  /* Ctrl+Enter = Apply, Ctrl+Z = Discard */
+                  if (glb_ds1edit.props_panel_visible &&
+                      (event.keyboard.modifiers & ALLEGRO_KEYMOD_CTRL))
+                  {
+                      if (event.keyboard.keycode == ALLEGRO_KEY_ENTER ||
+                          event.keyboard.keycode == ALLEGRO_KEY_PAD_ENTER)
+                      {
+                          if (glb_ds1edit.props_panel.pending_count > 0)
+                              props_panel_apply();
+                      }
+                      else if (event.keyboard.keycode == ALLEGRO_KEY_Z)
+                      {
+                          glb_ds1edit.props_panel.pending_count = 0;
+                          glb_ds1edit.props_panel.editing = FALSE;
+                      }
+                  }
+                  else if (glb_ds1edit.props_panel.editing)
+                  {
+                      props_panel_handle_keychar(
+                          event.keyboard.unichar,
+                          event.keyboard.keycode);
+                  }
+              }
           }
       }
       perf_accumulate(
@@ -179,6 +204,14 @@ void interfac_user_handler(int start_ds1_idx)
          { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
       }
 
+      /* Properties panel toggle: Backspace key (only when not editing inline) */
+      if (key_pressed(KEY_BACKSPACE) && !glb_ds1edit.props_panel.editing)
+      {
+         glb_ds1edit.props_panel_visible = !glb_ds1edit.props_panel_visible;
+         while (key_pressed(KEY_BACKSPACE))
+         { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+      }
+
       /* Sidebar: handle click on collapsed tab to expand */
       if (!glb_ds1edit.sidebar_visible && a5_mouse_b &&
           a5_mouse_x < 16) /* collapsed tab width */
@@ -186,6 +219,18 @@ void interfac_user_handler(int start_ds1_idx)
          glb_ds1edit.sidebar_visible = TRUE;
          while (a5_mouse_b)
          { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
+      }
+
+      /* Properties panel: handle click on collapsed tab to expand */
+      {
+         int pp_disp_w = al_get_display_width(a5_display);
+         if (!glb_ds1edit.props_panel_visible && a5_mouse_b &&
+             a5_mouse_x > pp_disp_w - 16)
+         {
+            glb_ds1edit.props_panel_visible = TRUE;
+            while (a5_mouse_b)
+            { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
+         }
       }
 
       /* Sidebar: handle mouse interactions */
@@ -240,11 +285,116 @@ void interfac_user_handler(int start_ds1_idx)
             { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
          }
 
-         /* Consume right-click in sidebar — prevent tile editor from opening */
+         /* Right-click in sidebar — context menu for backup entries */
          if (a5_mouse_b & 2)
          {
+            AREA_BROWSER_S * rc_ab = &glb_ds1edit.area_browser;
+            int rc_gi = rc_ab->selected_group;
+            int rc_ei = rc_ab->selected_entry;
+
+            /* Wait for button release */
             while (a5_mouse_b & 2)
             { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
+
+            /* Show context menu if right-clicked on a backup entry */
+            if (rc_gi >= 0 && rc_gi < rc_ab->group_count &&
+                rc_ab->groups[rc_gi].is_backup && rc_ei >= 0 &&
+                rc_ei < rc_ab->groups[rc_gi].entry_count)
+            {
+               /* Simple 2-item popup menu */
+               int menu_x = a5_mouse_x;
+               int menu_y = a5_mouse_y;
+               int menu_w = 140;
+               int menu_h = 28;
+               int menu_sel = -1;
+               int menu_done = 0;
+               int disp_w = al_get_display_width(a5_display);
+               int disp_h = al_get_display_height(a5_display);
+               ALLEGRO_COLOR mc_bg     = al_map_rgba(40, 36, 30, 240);
+               ALLEGRO_COLOR mc_hover  = al_map_rgba(60, 80, 120, 220);
+               ALLEGRO_COLOR mc_text   = al_map_rgb(220, 220, 220);
+               ALLEGRO_COLOR mc_border = al_map_rgb(80, 70, 50);
+
+               /* Clamp to display bounds */
+               if (menu_x + menu_w > disp_w) menu_x = disp_w - menu_w;
+               if (menu_y + menu_h > disp_h) menu_y = disp_h - menu_h;
+
+               while (!menu_done)
+               {
+                  int mx, my;
+
+                  al_get_keyboard_state(&a5_kb_state);
+                  al_get_mouse_state(&a5_ms_state);
+                  mx = al_get_mouse_state_axis(&a5_ms_state, 0);
+                  my = al_get_mouse_state_axis(&a5_ms_state, 1);
+
+                  /* Determine which menu item is hovered */
+                  menu_sel = -1;
+                  if (mx >= menu_x && mx < menu_x + menu_w)
+                  {
+                     if (my >= menu_y && my < menu_y + 14)
+                        menu_sel = 0;  /* Restore */
+                     else if (my >= menu_y + 14 && my < menu_y + 28)
+                        menu_sel = 1;  /* Delete permanently */
+                  }
+
+                  /* Draw the popup over current frame */
+                  al_set_target_backbuffer(a5_display);
+                  al_draw_filled_rectangle((float)menu_x, (float)menu_y,
+                     (float)(menu_x + menu_w), (float)(menu_y + menu_h), mc_bg);
+                  al_draw_rectangle((float)menu_x + 0.5f, (float)menu_y + 0.5f,
+                     (float)(menu_x + menu_w) - 0.5f, (float)(menu_y + menu_h) - 0.5f,
+                     mc_border, 1.0f);
+
+                  /* Item 0: Restore */
+                  if (menu_sel == 0)
+                     al_draw_filled_rectangle((float)menu_x, (float)menu_y,
+                        (float)(menu_x + menu_w), (float)(menu_y + 14), mc_hover);
+                  al_draw_textf(a5_font, mc_text, (float)(menu_x + 6), (float)(menu_y + 3), 0,
+                     "Restore");
+
+                  /* Item 1: Delete permanently */
+                  if (menu_sel == 1)
+                     al_draw_filled_rectangle((float)menu_x, (float)(menu_y + 14),
+                        (float)(menu_x + menu_w), (float)(menu_y + 28), mc_hover);
+                  al_draw_textf(a5_font, mc_text, (float)(menu_x + 6), (float)(menu_y + 17), 0,
+                     "Delete permanently");
+
+                  al_flip_display();
+                  al_rest(0.02);
+
+                  /* Click selects item */
+                  if (al_mouse_button_down(&a5_ms_state, 1))
+                  {
+                     if (menu_sel >= 0)
+                     {
+                        if (menu_sel == 0)
+                        {
+                           if (ds1_manager_restore(rc_gi, rc_ei) == 0)
+                              printf("Backup restored successfully\n");
+                        }
+                        else
+                        {
+                           if (ds1_manager_delete_permanent(rc_gi, rc_ei) == 0)
+                              printf("Backup deleted permanently\n");
+                        }
+                        fflush(stdout);
+                     }
+                     menu_done = 1;
+                     /* Wait for release */
+                     while (al_mouse_button_down(&a5_ms_state, 1))
+                     { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
+                  }
+                  /* Right-click or Escape cancels */
+                  if (al_mouse_button_down(&a5_ms_state, 2) ||
+                      al_key_down(&a5_kb_state, ALLEGRO_KEY_ESCAPE))
+                  {
+                     menu_done = 1;
+                     while (al_mouse_button_down(&a5_ms_state, 2))
+                     { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
+                  }
+               }
+            }
          }
 
          /* Update hover selection */
@@ -301,6 +451,44 @@ void interfac_user_handler(int start_ds1_idx)
          }
       }
 
+      /* Properties panel: handle mouse interactions (right side) */
+      {
+         int pp_disp_w = al_get_display_width(a5_display);
+         if (glb_ds1edit.props_panel_visible &&
+             a5_mouse_x > pp_disp_w - glb_ds1edit.props_panel_width)
+         {
+            /* Mouse wheel scrolls the panel */
+            if (cur_mouse_z != old_mouse_z)
+            {
+               props_panel_scroll(cur_mouse_z - old_mouse_z);
+               old_mouse_z = cur_mouse_z;
+            }
+
+            /* Mouse click in panel */
+            if (a5_mouse_b & 1)
+            {
+               int pp_result = props_panel_click(
+                  a5_mouse_x, a5_mouse_y,
+                  glb_ds1edit.props_panel_width,
+                  al_get_display_height(a5_display)
+               );
+
+               if (pp_result == -2)
+                  glb_ds1edit.props_panel_visible = FALSE;
+
+               while (a5_mouse_b & 1)
+               { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
+            }
+
+            /* Consume right-click in panel */
+            if (a5_mouse_b & 2)
+            {
+               while (a5_mouse_b & 2)
+               { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
+            }
+         }
+      }
+
       can_swich_mode = TRUE;
       if (glb_ds1edit.mode == MOD_P)
       {
@@ -320,7 +508,8 @@ void interfac_user_handler(int start_ds1_idx)
       
       // which tile (or sub-tile) is RIGHT NOW under the mouse ?
       section_start_ms = perf_now_ms();
-      mouse_to_tile(ds1_idx, &cx, &cy);
+      if (glb_ds1edit.has_loaded_ds1 && glb_ds1[ds1_idx].tile_w > 0)
+         mouse_to_tile(ds1_idx, &cx, &cy);
       if (glb_ds1edit.mode == MOD_T)
       {
          if (cx < 0)

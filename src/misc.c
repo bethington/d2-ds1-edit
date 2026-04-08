@@ -6,6 +6,7 @@
 #include "core/dt1.h"
 #include "mpq/mpqview.h"
 #include "core/area_browser.h"
+#include "ui/props_panel.h"
 #include "misc.h"
 
 
@@ -1529,6 +1530,12 @@ void misc_draw_screen(int mx, int my)
       area_browser_draw_sidebar(glb_ds1edit.sidebar_width, disp_h);
    else
       area_browser_draw_sidebar_tab(disp_h);
+
+   /* Draw properties panel or collapsed tab on right side */
+   if (glb_ds1edit.props_panel_visible)
+      props_panel_draw(glb_ds1edit.props_panel_width, disp_h);
+   else
+      props_panel_draw_tab(disp_h);
 
    if (mouse_sprite != NULL)
       al_draw_bitmap(mouse_sprite, (float)mx, (float)my, 0);

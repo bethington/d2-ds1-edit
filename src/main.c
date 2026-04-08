@@ -39,6 +39,7 @@ October 30 2011 :
 #include "editor/undo.h"
 #include "core/txtread.h"
 #include "core/area_browser.h"
+#include "ui/props_panel.h"
 #include "misc.h"
 #include "config.h"
 #include "core/animdata.h"
@@ -97,6 +98,10 @@ char * txt_def_lvlprest_req[] =
 char * txt_def_levels_req[] =
 {
    ("Name"), ("Id"), ("Act"), ("LevelType"),
+   ("SizeX"), ("SizeY"), ("OffsetX"), ("OffsetY"),
+   ("Waypoint"), ("Quest"),
+   ("MonLvl1"), ("MonLvl2"), ("MonLvl3"),
+   ("MonDen"), ("MonDen(N)"), ("MonDen(H)"),
    NULL // DO NOT REMOVE !
 };
 
@@ -292,6 +297,8 @@ void ds1edit_init(void)
    memset( & glb_config,  0, sizeof(glb_config));
    memset( & glb_ds1edit, 0, sizeof(glb_ds1edit));
    glb_ds1edit.sidebar_width = 250;
+   glb_ds1edit.props_panel_width = 360;
+   props_panel_init();
 
    // allocate mem for DT1 & DS1
    i = sizeof(DS1_S) * DS1_MAX;
