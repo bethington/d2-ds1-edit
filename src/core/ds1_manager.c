@@ -642,14 +642,15 @@ static int write_empty_ds1(const char * path, int width, int height, int act)
 }
 
 /* Create an empty DS1 file and add it to the given area group.
+ * Uses smart name suggestion based on the selected entry.
  * Saves to mod_dir and updates LvlPrest.txt. Returns 0 on success. */
-int ds1_manager_create_empty(int group_idx, int width, int height, int act)
+int ds1_manager_create_empty(int group_idx, int entry_idx, int width, int height, int act)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
    AREA_GROUP_S * g;
    char filename[128], rel_path[256], full_path[512], dir_path[512];
    int def, file_slot;
-   int counter = 1;
+   int base_entry;
 
    if (group_idx < 0 || group_idx >= ab->group_count) return -1;
    g = &ab->groups[group_idx];
@@ -660,8 +661,9 @@ int ds1_manager_create_empty(int group_idx, int width, int height, int act)
       return -1;
    }
 
-   /* Use the first entry's Def and path structure as a template */
-   def = g->entries[0].lvlprest_def;
+   /* Use selected entry (or first entry) as template for naming and Def */
+   base_entry = (entry_idx >= 0 && entry_idx < g->entry_count) ? entry_idx : 0;
+   def = g->entries[base_entry].lvlprest_def;
 
    /* Find an empty file slot */
    file_slot = ds1_manager_lvlprest_find_empty_slot(def);
@@ -671,10 +673,12 @@ int ds1_manager_create_empty(int group_idx, int width, int height, int act)
       return -1;
    }
 
-   /* Generate a unique filename based on the area name */
+   /* Generate smart filename based on selected entry */
+   ds1_manager_suggest_name(g->entries[base_entry].ds1_path, g, filename, sizeof(filename));
+
+   /* Build full path */
    {
-      /* Extract the directory from the first entry's path */
-      const char * first_path = g->entries[0].ds1_path;
+      const char * first_path = g->entries[base_entry].ds1_path;
       const char * last_slash = strrchr(first_path, '/');
       int dir_len;
 
@@ -685,14 +689,9 @@ int ds1_manager_create_empty(int group_idx, int width, int height, int act)
          return -1;
       }
       dir_len = (int)(last_slash - first_path);
-
-      /* Generate filename: NewMap1.ds1, NewMap2.ds1, etc. */
-      do {
-         sprintf(filename, "NewMap%d.ds1", counter++);
-         sprintf(rel_path, "%.*s/%s", dir_len, first_path, filename);
-         sprintf(full_path, "%s\\Global\\Tiles\\%.*s\\%s",
-                 glb_config.mod_dir[0], dir_len, first_path, filename);
-      } while (a5_file_exists(full_path) && counter < 999);
+      sprintf(rel_path, "%.*s/%s", dir_len, first_path, filename);
+      sprintf(full_path, "%s\\Global\\Tiles\\%.*s\\%s",
+              glb_config.mod_dir[0], dir_len, first_path, filename);
    }
 
    /* Ensure directory exists */
@@ -737,8 +736,9 @@ int ds1_manager_create_empty(int group_idx, int width, int height, int act)
    return 0;
 }
 
-/* Clone the current DS1 and add it to the given area group. */
-int ds1_manager_clone(int src_ds1_idx, int group_idx)
+/* Clone the current DS1 and add it to the given area group.
+ * Uses smart name suggestion based on the selected entry. */
+int ds1_manager_clone(int src_ds1_idx, int group_idx, int entry_idx)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
    AREA_GROUP_S * g;
@@ -755,7 +755,10 @@ int ds1_manager_clone(int src_ds1_idx, int group_idx)
    if (src_ds1_idx < 0 || src_ds1_idx >= DS1_MAX) return -1;
    if (glb_ds1[src_ds1_idx].name[0] == '\0') return -1;
 
-   def = g->entries[0].lvlprest_def;
+   {
+      int base_entry = (entry_idx >= 0 && entry_idx < g->entry_count) ? entry_idx : 0;
+      def = g->entries[base_entry].lvlprest_def;
+   }
    file_slot = ds1_manager_lvlprest_find_empty_slot(def);
    if (file_slot < 0)
    {
@@ -766,23 +769,20 @@ int ds1_manager_clone(int src_ds1_idx, int group_idx)
    /* Build source path */
    strcpy(src_path, glb_ds1[src_ds1_idx].name);
 
-   /* Generate destination filename based on source */
-   first_path = g->entries[0].ds1_path;
-   last_slash = strrchr(first_path, '/');
-   if (last_slash == NULL) last_slash = strrchr(first_path, '\\');
-   if (last_slash == NULL) return -1;
-   dir_len = (int)(last_slash - first_path);
-
+   /* Generate smart destination filename */
    {
-      const char * src_fname = strrchr(glb_ds1[src_ds1_idx].filename, '.');
-      int base_len = src_fname ? (int)(src_fname - glb_ds1[src_ds1_idx].filename) : (int)strlen(glb_ds1[src_ds1_idx].filename);
+      int base_entry = (entry_idx >= 0 && entry_idx < g->entry_count) ? entry_idx : 0;
+      ds1_manager_suggest_name(g->entries[base_entry].ds1_path, g, filename, sizeof(filename));
 
-      do {
-         sprintf(filename, "%.*s_copy%d.ds1", base_len, glb_ds1[src_ds1_idx].filename, counter++);
-         sprintf(rel_path, "%.*s/%s", dir_len, first_path, filename);
-         sprintf(dst_path, "%s\\Global\\Tiles\\%.*s\\%s",
-                 glb_config.mod_dir[0], dir_len, first_path, filename);
-      } while (a5_file_exists(dst_path) && counter < 999);
+      first_path = g->entries[base_entry].ds1_path;
+      last_slash = strrchr(first_path, '/');
+      if (last_slash == NULL) last_slash = strrchr(first_path, '\\');
+      if (last_slash == NULL) return -1;
+      dir_len = (int)(last_slash - first_path);
+
+      sprintf(rel_path, "%.*s/%s", dir_len, first_path, filename);
+      sprintf(dst_path, "%s\\Global\\Tiles\\%.*s\\%s",
+              glb_config.mod_dir[0], dir_len, first_path, filename);
    }
 
    /* Copy the file */
@@ -825,4 +825,109 @@ int ds1_manager_clone(int src_ds1_idx, int group_idx)
    printf("ds1_manager_clone: complete\n");
    fflush(stdout);
    return 0;
+}
+
+
+/* ---- Smart filename generation ---- */
+
+/* Extract the base name root and trailing number from a DS1 filename.
+ * "BarE.ds1" → root="BarE", num=0 (no number)
+ * "BarE2.ds1" → root="BarE", num=2
+ * "BarE3.ds1" → root="BarE", num=3 */
+static void parse_ds1_name(const char * fname, char * root, int root_size, int * num)
+{
+   int len, i, num_start;
+   const char * dot;
+
+   *num = 0;
+   root[0] = '\0';
+
+   /* Strip .ds1 extension */
+   dot = strrchr(fname, '.');
+   len = dot ? (int)(dot - fname) : (int)strlen(fname);
+
+   /* Find where trailing digits start */
+   num_start = len;
+   while (num_start > 0 && fname[num_start - 1] >= '0' && fname[num_start - 1] <= '9')
+      num_start--;
+
+   /* If the entire name is digits, treat it all as root */
+   if (num_start == 0)
+   {
+      strncpy(root, fname, len < root_size ? len : root_size - 1);
+      root[len < root_size ? len : root_size - 1] = '\0';
+      return;
+   }
+
+   /* Extract root */
+   i = num_start < root_size ? num_start : root_size - 1;
+   strncpy(root, fname, i);
+   root[i] = '\0';
+
+   /* Extract number */
+   if (num_start < len)
+      *num = atoi(fname + num_start);
+}
+
+/* Generate a suggested filename for a new DS1, finding the first gap
+ * in the numbering sequence. Examines existing entries in the group.
+ *
+ * Example: if BarE.ds1, BarE2.ds1, BarE4.ds1 exist:
+ *   base="BarE3.ds1" → suggests "BarE3.ds1" (fills gap)
+ *   base="BarE4.ds1" → suggests "BarE3.ds1" (fills gap from BarE root)
+ *   base="BarE.ds1"  → suggests "BarE3.ds1" (fills gap from BarE root) */
+void ds1_manager_suggest_name(const char * base_ds1_path,
+                               const AREA_GROUP_S * group,
+                               char * out_name, int out_size)
+{
+   char base_root[128];
+   int base_num, j, num;
+   int used[256];
+   int max_num = 0;
+   const char * base_fname;
+
+   /* Extract just the filename from the path */
+   base_fname = strrchr(base_ds1_path, '/');
+   if (base_fname == NULL) base_fname = strrchr(base_ds1_path, '\\');
+   if (base_fname != NULL) base_fname++; else base_fname = base_ds1_path;
+
+   parse_ds1_name(base_fname, base_root, sizeof(base_root), &base_num);
+
+   /* Scan all entries in the group with the same root name */
+   memset(used, 0, sizeof(used));
+   for (j = 0; j < group->entry_count; j++)
+   {
+      const char * entry_fname;
+      char entry_root[128];
+      int entry_num;
+
+      entry_fname = strrchr(group->entries[j].ds1_path, '/');
+      if (entry_fname == NULL) entry_fname = strrchr(group->entries[j].ds1_path, '\\');
+      if (entry_fname != NULL) entry_fname++; else entry_fname = group->entries[j].ds1_path;
+
+      parse_ds1_name(entry_fname, entry_root, sizeof(entry_root), &entry_num);
+
+      if (stricmp(entry_root, base_root) == 0)
+      {
+         /* Mark this number as used. No-number files count as "1" */
+         num = (entry_num == 0) ? 1 : entry_num;
+         if (num > 0 && num < 256)
+            used[num] = 1;
+         if (num > max_num)
+            max_num = num;
+      }
+   }
+
+   /* Find the first gap (starting from 2, since "no number" = 1) */
+   for (num = 2; num <= max_num + 1 && num < 256; num++)
+   {
+      if (!used[num])
+      {
+         sprintf(out_name, "%s%d.ds1", base_root, num);
+         return;
+      }
+   }
+
+   /* No gap found — use next after max */
+   sprintf(out_name, "%s%d.ds1", base_root, max_num + 1);
 }

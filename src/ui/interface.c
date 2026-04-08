@@ -707,22 +707,35 @@ void interfac_user_handler(int start_ds1_idx)
 
          if (ins_g->entry_count > 0)
          {
+            int ei = glb_ds1edit.area_browser.selected_entry;
+
             /* Shift+Insert = clone current, Insert alone = new empty */
             if (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT))
             {
-               /* Clone current DS1 */
+               /* Clone current DS1 (full copy including tiles/objects) */
                if (glb_ds1edit.has_loaded_ds1)
                {
-                  if (ds1_manager_clone(ds1_idx, gi) == 0)
+                  if (ds1_manager_clone(ds1_idx, gi, ei) == 0)
                      printf("Insert: cloned DS1 successfully\n");
                }
             }
             else
             {
-               /* Create new empty DS1 (default 20x20, same act as group) */
+               /* Create new empty DS1 (same size as selected, same act) */
                int new_act = ins_g->act > 0 ? ins_g->act : 1;
-               if (ds1_manager_create_empty(gi, 20, 20, new_act) == 0)
-                  printf("Insert: created new empty DS1 (20x20)\n");
+               int new_w = 20, new_h = 20;
+
+               /* Copy dimensions from selected DS1 if loaded */
+               if (glb_ds1edit.has_loaded_ds1 && ds1_idx >= 0 && ds1_idx < DS1_MAX &&
+                   glb_ds1[ds1_idx].name[0] != '\0')
+               {
+                  new_w = (int)glb_ds1[ds1_idx].width;
+                  new_h = (int)glb_ds1[ds1_idx].height;
+                  new_act = (int)glb_ds1[ds1_idx].act;
+               }
+
+               if (ds1_manager_create_empty(gi, ei, new_w, new_h, new_act) == 0)
+                  printf("Insert: created new empty DS1 (%dx%d)\n", new_w, new_h);
             }
             fflush(stdout);
          }

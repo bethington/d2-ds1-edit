@@ -12,8 +12,13 @@ int  ds1_manager_delete(int group_idx, int entry_idx);
 int  ds1_manager_backup(int group_idx, int entry_idx);
 
 /* DS1 creation */
-int  ds1_manager_create_empty(int group_idx, int width, int height, int act);
-int  ds1_manager_clone(int src_ds1_idx, int group_idx);
+int  ds1_manager_create_empty(int group_idx, int entry_idx, int width, int height, int act);
+int  ds1_manager_clone(int src_ds1_idx, int group_idx, int entry_idx);
+
+/* Smart filename generation — finds gap in numbering sequence */
+void ds1_manager_suggest_name(const char * base_ds1_path,
+                               const AREA_GROUP_S * group,
+                               char * out_name, int out_size);
 
 /* JSON metadata */
 int  ds1_manager_write_backup_json(const char * json_path, int group_idx,
