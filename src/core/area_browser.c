@@ -1173,7 +1173,7 @@ void area_browser_draw_sidebar(int width, int height)
          char count_str[16];
          const char * arrow = g->is_expanded ? "-" : "+";
 
-         if (is_selected && g->entry_count > 0)
+         if (is_selected && g->entry_count > 0 && ab->selected_entry == -1)
          {
             al_draw_filled_rectangle((float)(SB_MARGIN_X + 4), (float)(y - 1),
                                      (float)(width - 4), (float)(y + SB_LINE_H - 1),
