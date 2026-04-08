@@ -201,6 +201,9 @@ void dt1_zoom(ALLEGRO_BITMAP * src, int i, int b, int z,
       h /= d;
    }
 
+   if (w <= 0 || h <= 0)
+      return; /* skip 0-dimension tiles */
+
    // create the zoomed tile bitmap
    dst = al_create_bitmap(w, h);
    if (dst == NULL)

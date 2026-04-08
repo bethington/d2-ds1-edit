@@ -194,7 +194,10 @@ static inline void a5_stretch_blit(ALLEGRO_BITMAP *src, ALLEGRO_BITMAP *dst,
 
 static inline void a5_clear(ALLEGRO_BITMAP *bmp)
 {
-    ALLEGRO_BITMAP *old_target = a5_begin_target_bitmap(bmp);
+    ALLEGRO_BITMAP *old_target;
+    if (bmp == NULL || al_get_bitmap_width(bmp) == 0 || al_get_bitmap_height(bmp) == 0)
+        return;
+    old_target = a5_begin_target_bitmap(bmp);
     al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_ZERO);
     al_clear_to_color(al_map_rgba(0, 0, 0, 0));
     al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
@@ -210,7 +213,10 @@ static inline void a5_clear_to_color(ALLEGRO_BITMAP *bmp, int color)
 
 static inline void a5_putpixel(ALLEGRO_BITMAP *bmp, int x, int y, int color)
 {
-    ALLEGRO_BITMAP *old_target = a5_begin_target_bitmap(bmp);
+    ALLEGRO_BITMAP *old_target;
+    if (bmp == NULL || al_get_bitmap_width(bmp) == 0 || al_get_bitmap_height(bmp) == 0)
+        return;
+    old_target = a5_begin_target_bitmap(bmp);
     al_put_pixel(x, y, pal_color(color));
     a5_end_target_bitmap(old_target, bmp);
 }
