@@ -487,17 +487,12 @@ void interfac_user_handler(int start_ds1_idx)
          }
       }
 
-      // zoom
-      if ( (key_pressed(KEY_MINUS_PAD) || key_pressed(KEY_MINUS) || (cur_mouse_z < old_mouse_z) ) &&
+      // zoom — keyboard (+/- keys): zoom around screen center
+      if ( (key_pressed(KEY_MINUS_PAD) || key_pressed(KEY_MINUS)) &&
            glb_ds1[ds1_idx].cur_zoom < ZM_116)
       {
-         if (key_pressed(KEY_MINUS_PAD) || key_pressed(KEY_MINUS))
-         {
-            while(key_pressed(KEY_MINUS_PAD) || key_pressed(KEY_MINUS))
-            {
-               al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
-            }
-         }
+         while(key_pressed(KEY_MINUS_PAD) || key_pressed(KEY_MINUS))
+         { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
          glb_ds1[ds1_idx].own_wpreview.x0 = glb_ds1edit.win_preview.x0;
          glb_ds1[ds1_idx].own_wpreview.y0 = glb_ds1edit.win_preview.y0;
          glb_ds1[ds1_idx].own_wpreview.w  = glb_ds1edit.win_preview.w;
@@ -506,17 +501,11 @@ void interfac_user_handler(int start_ds1_idx)
          glb_ds1edit.win_preview.x0 = glb_ds1[ds1_idx].own_wpreview.x0;
          glb_ds1edit.win_preview.y0 = glb_ds1[ds1_idx].own_wpreview.y0;
       }
-
-      if ( (key_pressed(KEY_PLUS_PAD) || key_pressed(KEY_EQUALS) || (cur_mouse_z > old_mouse_z) ) &&
+      if ( (key_pressed(KEY_PLUS_PAD) || key_pressed(KEY_EQUALS)) &&
            glb_ds1[ds1_idx].cur_zoom > ZM_21)
       {
-         if (key_pressed(KEY_PLUS_PAD) || key_pressed(KEY_EQUALS))
-         {
-            while(key_pressed(KEY_PLUS_PAD) || key_pressed(KEY_EQUALS))
-            {
-               al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
-            }
-         }
+         while(key_pressed(KEY_PLUS_PAD) || key_pressed(KEY_EQUALS))
+         { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
          glb_ds1[ds1_idx].own_wpreview.x0 = glb_ds1edit.win_preview.x0;
          glb_ds1[ds1_idx].own_wpreview.y0 = glb_ds1edit.win_preview.y0;
          glb_ds1[ds1_idx].own_wpreview.w  = glb_ds1edit.win_preview.w;
@@ -524,6 +513,57 @@ void interfac_user_handler(int start_ds1_idx)
          change_zoom(ds1_idx, glb_ds1[ds1_idx].cur_zoom - 1);
          glb_ds1edit.win_preview.x0 = glb_ds1[ds1_idx].own_wpreview.x0;
          glb_ds1edit.win_preview.y0 = glb_ds1[ds1_idx].own_wpreview.y0;
+      }
+
+      // zoom — mouse wheel: zoom toward/away from cursor (Google Maps style)
+      if (cur_mouse_z != old_mouse_z && glb_ds1edit.has_loaded_ds1 &&
+          !(a5_mouse_b & 4)) /* don't zoom if middle button held (center-to-cursor) */
+      {
+         int zoom_dir = (cur_mouse_z < old_mouse_z) ? 1 : -1; /* 1=out, -1=in */
+         int new_zoom = glb_ds1[ds1_idx].cur_zoom + zoom_dir;
+
+         if (new_zoom >= ZM_21 && new_zoom <= ZM_116)
+         {
+            /* World position under the cursor before zoom */
+            int world_x = glb_ds1edit.win_preview.x0 + a5_mouse_x;
+            int world_y = glb_ds1edit.win_preview.y0 + a5_mouse_y;
+
+            /* Ratio of cursor position relative to viewport */
+            float rx = (float)a5_mouse_x / (float)glb_ds1edit.win_preview.w;
+            float ry = (float)a5_mouse_y / (float)glb_ds1edit.win_preview.h;
+
+            /* Save and zoom */
+            glb_ds1[ds1_idx].own_wpreview.x0 = glb_ds1edit.win_preview.x0;
+            glb_ds1[ds1_idx].own_wpreview.y0 = glb_ds1edit.win_preview.y0;
+            glb_ds1[ds1_idx].own_wpreview.w  = glb_ds1edit.win_preview.w;
+            glb_ds1[ds1_idx].own_wpreview.h  = glb_ds1edit.win_preview.h;
+            change_zoom(ds1_idx, new_zoom);
+
+            /* After zoom, the world coordinates are rescaled.
+             * Adjust viewport so the cursor world position stays fixed.
+             * new_world = new_viewport_origin + cursor_screen_pos
+             * We want: new_viewport_x0 + mouse_x = world_x * new_scale / old_scale */
+            {
+               int old_mul = (zoom_dir == 1) ?
+                  (new_zoom == ZM_11 ? 1 : (new_zoom == ZM_21 ? 2 : 1)) :
+                  (glb_ds1[ds1_idx].cur_zoom == ZM_21 ? 2 : 1);
+
+               /* Simpler: just set viewport so cursor world position is preserved */
+               float scale_ratio;
+               int old_tw = (zoom_dir == 1) ?
+                  glb_ds1[ds1_idx].tile_w * 2 : /* was bigger before zoom out */
+                  glb_ds1[ds1_idx].tile_w / 2;  /* was smaller before zoom in */
+
+               if (old_tw == 0) old_tw = 1;
+               scale_ratio = (float)glb_ds1[ds1_idx].tile_w / (float)old_tw;
+
+               glb_ds1edit.win_preview.x0 = (int)(world_x * scale_ratio) - a5_mouse_x;
+               glb_ds1edit.win_preview.y0 = (int)(world_y * scale_ratio) - a5_mouse_y;
+            }
+
+            glb_ds1[ds1_idx].own_wpreview.x0 = glb_ds1edit.win_preview.x0;
+            glb_ds1[ds1_idx].own_wpreview.y0 = glb_ds1edit.win_preview.y0;
+         }
       }
 
       if (old_mouse_z != cur_mouse_z)
