@@ -16,6 +16,7 @@
 #include "core/area_browser.h"
 #include "core/ds1_manager.h"
 #include "ui/props_panel.h"
+#include "ui/tile_picker.h"
 
 
 typedef struct
@@ -488,10 +489,15 @@ void interfac_user_handler(int start_ds1_idx)
          if (glb_ds1edit.props_panel_visible &&
              a5_mouse_x > pp_disp_w - glb_ds1edit.props_panel_width)
          {
-            /* Mouse wheel scrolls the panel */
+            /* Mouse wheel scrolls the panel (or zooms tile picker with Ctrl) */
             if (cur_mouse_z != old_mouse_z)
             {
-               props_panel_scroll(cur_mouse_z - old_mouse_z);
+               int dz = cur_mouse_z - old_mouse_z;
+               int ctrl = key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL);
+               if (glb_ds1edit.props_panel.active_tab == PP_TAB_TILES)
+                  tile_picker_scroll(dz, ctrl);
+               else
+                  props_panel_scroll(dz);
                old_mouse_z = cur_mouse_z;
             }
 
