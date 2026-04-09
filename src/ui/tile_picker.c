@@ -450,8 +450,22 @@ int tile_picker_scroll(int dz, int ctrl_held)
 
 void tile_picker_place_brush(int ds1_idx, int cx, int cy)
 {
-   /* TODO: Phase 2 */
-   (void)ds1_idx; (void)cx; (void)cy;
+   PROPS_PANEL_S * pp = &glb_ds1edit.props_panel;
+   TP_STATE_S * t = &pp->tiles;
+   CELL_F_S save_f[FLOOR_MAX_LAYER];
+   CELL_W_S save_w[WALL_MAX_LAYER];
+   CELL_S_S save_s[SHADOW_MAX_LAYER];
+
+   if (!t->brush.valid) return;
+   if (ds1_idx < 0 || ds1_idx >= DS1_MAX) return;
+   if (cx < 0 || cy < 0) return;
+   if (cx >= glb_ds1[ds1_idx].width || cy >= glb_ds1[ds1_idx].height) return;
+
+   wedit_save_tile(ds1_idx, cx, cy, save_f, save_w, save_s);
+   wedit_update_tile(ds1_idx, cx, cy, t->brush.button, t->brush.type,
+                      t->brush.m_idx, t->brush.s_idx);
+   wedit_keep_tile(ds1_idx, cx, cy, save_f, save_w, save_s);
+   tile_picker_push_mru(t->brush.type, t->brush.bt_idx);
 }
 
 

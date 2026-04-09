@@ -1854,8 +1854,39 @@ void interfac_user_handler(int start_ds1_idx)
          glb_ds1edit.ticks_elapsed = 0;
       }
       
+      /* Tile picker brush: paint active brush on left-click in MOD_T.
+       * Paints on click edge and on drag into new tiles. */
+      {
+         static int tp_last_paint_x = -1, tp_last_paint_y = -1;
+         if ((a5_mouse_b & 1) && glb_ds1edit.mode == MOD_T &&
+             glb_ds1edit.props_panel.tiles.brush.valid &&
+             glb_ds1edit.has_loaded_ds1)
+         {
+            int pp_disp_w = al_get_display_width(a5_display);
+            int panel_left = glb_ds1edit.props_panel_visible
+                             ? pp_disp_w - glb_ds1edit.props_panel_width
+                             : pp_disp_w;
+            if (a5_mouse_x < panel_left)
+            {
+               if (cx != tp_last_paint_x || cy != tp_last_paint_y)
+               {
+                  tile_picker_place_brush(ds1_idx, cx, cy);
+                  tp_last_paint_x = cx;
+                  tp_last_paint_y = cy;
+               }
+            }
+         }
+         else if (!(a5_mouse_b & 1))
+         {
+            tp_last_paint_x = -1;
+            tp_last_paint_y = -1;
+         }
+      }
+
       // left mouse button
-      if (old_mouse_b & 1)
+      if (old_mouse_b & 1 &&
+          !(glb_ds1edit.mode == MOD_T &&
+            glb_ds1edit.props_panel.tiles.brush.valid))
       {
          // mouse button 1 is pressed
          if (glb_ds1edit.mode == MOD_T)
