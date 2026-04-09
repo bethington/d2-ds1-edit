@@ -416,7 +416,7 @@ int ds1_read(const char * ds1name, int ds1_idx, int new_width, int new_height)
    glb_ds1[ds1_idx].walkable_layer_mask   = 0;
    glb_ds1[ds1_idx].subtile_help_display  = 1;
    glb_ds1[ds1_idx].animations_layer_mask = 1;
-   glb_ds1[ds1_idx].special_layer_mask    = 1;
+   glb_ds1[ds1_idx].special_layer_mask    = 0;
    
    // load from disk into memory
    in = fopen(ds1name, "rb");
