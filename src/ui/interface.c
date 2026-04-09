@@ -298,7 +298,10 @@ void interfac_user_handler(int start_ds1_idx)
                      glb_ds1edit.area_browser.selected_group,
                      glb_ds1edit.area_browser.selected_entry);
                   if (new_idx >= 0)
+                  {
                      ds1_idx = new_idx;
+                     tile_picker_on_ds1_change(new_idx);
+                  }
                }
             }
             else if (click_result >= 0)
@@ -309,7 +312,10 @@ void interfac_user_handler(int start_ds1_idx)
                {
                   /* Just expanded — preload all DS1s for this group */
                   if (area_browser_switch_area(click_result) >= 0)
+                  {
                      ds1_idx = 0;
+                     tile_picker_on_ds1_change(0);
+                  }
                }
             }
 

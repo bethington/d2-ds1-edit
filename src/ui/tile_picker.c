@@ -471,8 +471,43 @@ void tile_picker_place_brush(int ds1_idx, int cx, int cy)
 
 void tile_picker_push_mru(BLK_TYP_E type, int bt_idx)
 {
-   /* TODO: Phase 3 */
-   (void)type; (void)bt_idx;
+   PROPS_PANEL_S * pp = &glb_ds1edit.props_panel;
+   TP_STATE_S * t = &pp->tiles;
+   int i, found_idx;
+
+   if (type < 0 || type >= BT_MAX) return;
+   if (bt_idx <= 0) return;
+
+   /* Check if already in list — move to front */
+   found_idx = -1;
+   for (i = 0; i < t->mru_count[type]; i++)
+   {
+      if (t->mru_bt_idx[type][i] == bt_idx)
+      {
+         found_idx = i;
+         break;
+      }
+   }
+
+   if (found_idx > 0)
+   {
+      /* Shift [0..found-1] down by 1 */
+      for (i = found_idx; i > 0; i--)
+         t->mru_bt_idx[type][i] = t->mru_bt_idx[type][i - 1];
+      t->mru_bt_idx[type][0] = bt_idx;
+   }
+   else if (found_idx < 0)
+   {
+      /* New entry — shift all down */
+      int cap = t->mru_count[type];
+      if (cap >= TP_MRU_MAX) cap = TP_MRU_MAX - 1;
+      for (i = cap; i > 0; i--)
+         t->mru_bt_idx[type][i] = t->mru_bt_idx[type][i - 1];
+      t->mru_bt_idx[type][0] = bt_idx;
+      if (t->mru_count[type] < TP_MRU_MAX)
+         t->mru_count[type]++;
+   }
+   /* else found_idx == 0, already at front */
 }
 
 
@@ -488,21 +523,36 @@ int tile_picker_popup_run(int ds1_idx, int cx, int cy,
 
 BUT_TYP_E tile_picker_layer_button_for(int ds1_idx, BLK_TYP_E type)
 {
-   /* Phase 0/1: simple defaults, Phase 3 reads layer masks */
-   (void)ds1_idx;
+   /* Return the first enabled layer for the tile's family.
+    * Floors: FLOOR1/FLOOR2; Walls: WALL1-4; Shadows: SHADOW. */
+   if (ds1_idx < 0 || ds1_idx >= DS1_MAX) return BU_NULL;
+
    switch (type)
    {
       case BT_STATIC:
       case BT_ANIMATED:
+         if (glb_ds1[ds1_idx].floor_layer_mask[0]) return BU_FLOOR1;
+         if (FLOOR_MAX_LAYER > 1 &&
+             glb_ds1[ds1_idx].floor_layer_mask[1]) return BU_FLOOR2;
          return BU_FLOOR1;
+
       case BT_SHADOW:
          return BU_SHADOW;
+
       case BT_WALL_UP:
       case BT_WALL_DOWN:
       case BT_ROOF:
       case BT_SPECIAL:
       case BT_WALL_ANIMATED:
+         if (glb_ds1[ds1_idx].wall_layer_mask[0]) return BU_WALL1;
+         if (WALL_MAX_LAYER > 1 &&
+             glb_ds1[ds1_idx].wall_layer_mask[1]) return BU_WALL2;
+         if (WALL_MAX_LAYER > 2 &&
+             glb_ds1[ds1_idx].wall_layer_mask[2]) return BU_WALL3;
+         if (WALL_MAX_LAYER > 3 &&
+             glb_ds1[ds1_idx].wall_layer_mask[3]) return BU_WALL4;
          return BU_WALL1;
+
       default:
          return BU_NULL;
    }
