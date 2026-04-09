@@ -1028,10 +1028,12 @@ void wpreview_draw_w(int ds1_idx, int x, int y, int mx, int my, int z,
       if (bt_idx == 0) // no tiles here
          continue;
       
-      if (glb_ds1[ds1_idx].special_layer_mask && ((o == 10) || (o == 11)))
+      if ((o == 10) || (o == 11))
       {
-         // special tile asked to draw later
-         continue;
+         if (glb_ds1[ds1_idx].special_layer_mask)
+            continue;  /* draw later in Pass 6 as special tiles */
+         else
+            continue;  /* hidden — F9 toggled off */
       }
       
       if (w_ptr[order_data[n].idx].prop4 & 0x80) // binary : 1000-0000

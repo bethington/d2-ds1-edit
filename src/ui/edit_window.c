@@ -217,10 +217,12 @@ void wedit_draw_w(int ds1_idx, int x, int y, int upper)
       if ((upper == FALSE) && (o <= 15))
          continue;
 
-      if (glb_ds1[ds1_idx].special_layer_mask && ((o == 10) || (o == 11)))
+      if ((o == 10) || (o == 11))
       {
-         // special tile asked to draw later
-         continue;
+         if (glb_ds1[ds1_idx].special_layer_mask)
+            continue;  /* draw later as special tiles */
+         else
+            continue;  /* hidden — F9 toggled off */
       }
       
       bt_idx = w_ptr[order_data[n].idx].bt_idx; // index in block table
