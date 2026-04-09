@@ -275,7 +275,7 @@ static int pp_draw_section(int panel_x, int panel_right, int y,
       {
          ALLEGRO_COLOR col_scope = al_map_rgb(200, 160, 60);
          al_draw_textf(a5_font, col_scope,
-                        (float)(panel_right - 80), (float)y, 0,
+                        (float)(panel_right - 80 - PP_MARGIN_X), (float)y, 0,
                         "%s", scope);
       }
    }
