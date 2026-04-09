@@ -327,6 +327,29 @@ void tile_picker_draw(int ds1_idx, int panel_x, int panel_right,
    if (content_h < 32)
       return;
 
+   /* Check if the current category has any tiles */
+   {
+      WIN_EDIT_S * w = &glb_ds1edit.win_edit;
+      int total = 0;
+      int ti;
+      for (ti = 0; tp_cat_types[t->category][ti] != BT_NULL && ti < 4; ti++)
+      {
+         BLK_TYP_E type = tp_cat_types[t->category][ti];
+         int m;
+         int n_lines = w->main_line_num[type];
+         if (w->main_line_tab[type] == NULL) continue;
+         for (m = 0; m < n_lines; m++)
+            total += w->main_line_tab[type][m].bt_idx_num;
+      }
+      if (total == 0)
+      {
+         al_draw_textf(a5_font, al_map_rgb(100, 100, 100),
+                        (float)(panel_x + TP_MARGIN_X), (float)(content_y + 8),
+                        0, "No tiles in this category");
+         return;
+      }
+   }
+
    /* Clip to content area */
    al_set_clipping_rectangle(panel_x, content_y, panel_w, content_h);
    pp_iter_cells(ds1_idx, panel_x, content_y, panel_w, content_h,
