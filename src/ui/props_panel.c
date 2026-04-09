@@ -1160,7 +1160,7 @@ void props_panel_draw(int width, int height)
       {
          al_draw_textf(a5_font, al_map_rgb(80, 80, 80),
                         (float)((panel_x + panel_right) / 2), (float)(footer_y + 6),
-                        ALLEGRO_ALIGN_CENTRE, "No changes  (Ctrl+Enter = Apply)");
+                        ALLEGRO_ALIGN_CENTRE, "No changes  Ctrl+Enter=Apply");
       }
    }
 }

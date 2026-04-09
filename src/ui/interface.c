@@ -197,17 +197,17 @@ void interfac_user_handler(int start_ds1_idx)
 
       cur_mouse_z = a5_mouse_z;
 
-      /* Sidebar toggle: backtick key (`) */
-      if (key_pressed(KEY_TILDE))
+      /* Sidebar toggle: [ (left bracket) key */
+      if (key_pressed(KEY_LBRACKET))
       {
          glb_ds1edit.sidebar_visible = !glb_ds1edit.sidebar_visible;
-         while (key_pressed(KEY_TILDE))
+         while (key_pressed(KEY_LBRACKET))
          { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
       }
 
-      /* Properties panel: Backspace opens+focuses.
+      /* Properties panel: ] (right bracket) opens+focuses.
        * If closed: open and focus. If open but unfocused: focus. If focused: close. */
-      if (key_pressed(KEY_BACKSPACE) && !glb_ds1edit.props_panel.editing)
+      if (key_pressed(KEY_RBRACKET) && !glb_ds1edit.props_panel.editing)
       {
          if (!glb_ds1edit.props_panel_visible)
          {
@@ -226,7 +226,7 @@ void interfac_user_handler(int start_ds1_idx)
             glb_ds1edit.props_panel_visible = FALSE;
             glb_ds1edit.props_panel.has_focus = FALSE;
          }
-         while (key_pressed(KEY_BACKSPACE))
+         while (key_pressed(KEY_RBRACKET))
          { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
       }
 
