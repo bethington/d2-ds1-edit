@@ -65,6 +65,7 @@ set(SOURCES
     src/ui/edit_window.c
     src/ui/bits_window.c
     src/ui/props_panel.c
+    src/ui/tile_picker.c
     # mpq/
     src/mpq/Dcl_tbl.c
     src/mpq/Explode.c

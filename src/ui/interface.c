@@ -206,10 +206,23 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       /* Properties panel: ] (right bracket) opens+focuses.
-       * If closed: open and focus. If open but unfocused: focus. If focused: close. */
+       * If closed: open and focus. If open but unfocused: focus. If focused: close.
+       * Ctrl+] cycles Properties/Tiles tabs instead. */
       if (key_pressed(KEY_RBRACKET) && !glb_ds1edit.props_panel.editing)
       {
-         if (!glb_ds1edit.props_panel_visible)
+         int ctrl_held = key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL);
+         if (ctrl_held)
+         {
+            /* Cycle tabs — require panel visible so user sees the change */
+            if (!glb_ds1edit.props_panel_visible)
+            {
+               glb_ds1edit.props_panel_visible = TRUE;
+               glb_ds1edit.props_panel.has_focus = TRUE;
+            }
+            glb_ds1edit.props_panel.active_tab =
+               (glb_ds1edit.props_panel.active_tab + 1) % PP_TAB_MAX;
+         }
+         else if (!glb_ds1edit.props_panel_visible)
          {
             /* Closed -> open + focused */
             glb_ds1edit.props_panel_visible = TRUE;
@@ -1770,6 +1783,9 @@ void interfac_user_handler(int start_ds1_idx)
             glb_ds1edit.mode = MOD_P;
          if ((glb_ds1edit.mode >= MOD_MAX) || (glb_ds1edit.mode == MOD_L))
             glb_ds1edit.mode = MOD_T;
+         /* Auto-switch props panel tab on mode change */
+         if (glb_ds1edit.mode == MOD_T && glb_ds1edit.props_panel_visible)
+            glb_ds1edit.props_panel.active_tab = PP_TAB_TILES;
          // show_mouse(NULL);
 //         misc_set_mouse_cursor(glb_ds1edit.mouse_cursor[glb_ds1edit.mode]);
          // show_mouse(screen);

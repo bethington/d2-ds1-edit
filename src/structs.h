@@ -554,6 +554,50 @@ typedef enum PP_SECTION_E
    PPS_MAX
 } PP_SECTION_E;
 
+/* ---- Tile Picker types ---- */
+
+typedef enum PP_TAB_E
+{
+   PP_TAB_PROPERTIES = 0,
+   PP_TAB_TILES,
+   PP_TAB_MAX
+} PP_TAB_E;
+
+typedef enum TP_CATEGORY_E
+{
+   TPC_FLOORS = 0,    /* BT_STATIC + BT_ANIMATED                        */
+   TPC_WALLS,         /* BT_WALL_UP + BT_WALL_DOWN + BT_WALL_ANIMATED   */
+   TPC_SHADOWS,       /* BT_SHADOW                                      */
+   TPC_ROOFS,         /* BT_ROOF                                        */
+   TPC_SPECIAL,       /* BT_SPECIAL                                     */
+   TPC_MAX
+} TP_CATEGORY_E;
+
+#define TP_MRU_MAX            16
+#define TP_RECENT_POPUP_MAX    8
+#define TP_VARIANTS_POPUP_MAX 16
+
+typedef struct TP_BRUSH_S
+{
+   int        valid;
+   int        bt_idx;       /* index into glb_ds1[idx].block_table      */
+   BLK_TYP_E  type;         /* for wedit_update_tile type argument      */
+   BUT_TYP_E  button;       /* target layer: BU_FLOOR1/2/SHADOW/WALL1..4 */
+   int        m_idx;        /* main_line index                          */
+   int        s_idx;        /* sub_elm index                            */
+} TP_BRUSH_S;
+
+typedef struct TP_STATE_S
+{
+   TP_CATEGORY_E category;
+   int           zoom_cols;               /* 1..4, default 2            */
+   int           scroll_y;                /* pixels                     */
+   TP_BRUSH_S    brush;
+   int           mru_bt_idx[BT_MAX][TP_MRU_MAX];
+   int           mru_count [BT_MAX];
+   int           tiles_built_for_ds1;     /* -1 if not built            */
+} TP_STATE_S;
+
 typedef struct PROPS_PANEL_S
 {
    int            scroll_offset;
@@ -580,6 +624,10 @@ typedef struct PROPS_PANEL_S
 
    /* Which ds1_idx this panel shows */
    int            ds1_idx;
+
+   /* Tile picker tab */
+   PP_TAB_E       active_tab;
+   TP_STATE_S     tiles;
 } PROPS_PANEL_S;
 
 // Tile Grid states
