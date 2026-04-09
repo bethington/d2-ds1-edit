@@ -616,6 +616,10 @@ void wpreview_draw_s(int ds1_idx, int x, int y, int mx, int my, int z,
 
       if (bt_idx == -1)
       {
+         /* Skip drawing unknown/hidden shadow tiles when F9 is off */
+         if (!glb_ds1[ds1_idx].special_layer_mask)
+            continue;
+
          ux1 = mx - glb_ds1edit.win_preview.x0;
          ux2 = ux1 + glb_ds1[ds1_idx].tile_w / 2 - 1;
          ux3 = ux1 + glb_ds1[ds1_idx].tile_w / 2;
@@ -802,6 +806,10 @@ void wpreview_draw_f(int ds1_idx, int x, int y, int mx, int my, int z, int selec
 
       if (bt_idx == -1)
       {
+         /* Skip drawing unknown/hidden floor tiles when F9 is off */
+         if (!glb_ds1[ds1_idx].special_layer_mask)
+            continue;
+
          ux1 = mx - glb_ds1edit.win_preview.x0;
          ux2 = ux1 + glb_ds1[ds1_idx].tile_w / 2 - 1;
          ux3 = ux1 + glb_ds1[ds1_idx].tile_w / 2;
@@ -1045,6 +1053,10 @@ void wpreview_draw_w(int ds1_idx, int x, int y, int mx, int my, int z,
 
       if (bt_idx == -1)
       {
+         /* Skip drawing unknown/hidden wall tiles when F9 is off */
+         if (!glb_ds1[ds1_idx].special_layer_mask)
+            continue;
+
          ux1 = mx - glb_ds1edit.win_preview.x0;
          ux2 = ux1 + glb_ds1[ds1_idx].tile_w / 2 - 1;
          ux3 = ux1 + glb_ds1[ds1_idx].tile_w / 2;
@@ -1053,12 +1065,12 @@ void wpreview_draw_w(int ds1_idx, int x, int y, int mx, int my, int z,
          uy1 = my - glb_ds1edit.win_preview.y0;
          uy2 = uy1 + glb_ds1[ds1_idx].tile_h / 2 - 1;
          uy3 = uy1 + glb_ds1[ds1_idx].tile_h - 2;
-   
+
          wpreview_draw_line(ux1, uy2, ux2, uy1, 168);
          wpreview_draw_line(ux3, uy1, ux4, uy2, 168);
          wpreview_draw_line(ux3, uy3, ux4, uy2, 168);
          wpreview_draw_line(ux1, uy2, ux2, uy3, 168);
-         
+
          if (glb_ds1[ds1_idx].cur_zoom == ZM_11)
          {
             wpreview_textprintf(ux1+8, uy2-2, 0,
