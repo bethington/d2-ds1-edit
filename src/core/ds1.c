@@ -412,7 +412,7 @@ int ds1_read(const char * ds1name, int ds1_idx, int new_width, int new_height)
       glb_ds1[ds1_idx].shadow_layer_mask[x] = 3; // transparent is default
 
    glb_ds1[ds1_idx].objects_layer_mask    = OL_NONE;
-   glb_ds1[ds1_idx].paths_layer_mask      = 1;
+   glb_ds1[ds1_idx].paths_layer_mask      = 0;
    glb_ds1[ds1_idx].walkable_layer_mask   = 0;
    glb_ds1[ds1_idx].subtile_help_display  = 1;
    glb_ds1[ds1_idx].animations_layer_mask = 1;
