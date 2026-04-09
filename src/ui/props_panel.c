@@ -32,13 +32,11 @@ void props_panel_init(void)
    pp->pending_count = 0;
    pp->ds1_idx = 0;
 
-   /* Core sections start expanded, detailed ones start collapsed */
+   /* Identity + Layout expanded, everything else collapsed */
    for (i = 0; i < PPS_MAX; i++)
-      pp->section_expanded[i] = TRUE;
-   pp->section_expanded[PPS_TXT_VISIBILITY]  = FALSE;
-   pp->section_expanded[PPS_TXT_ENVIRONMENT] = FALSE;
-   pp->section_expanded[PPS_TXT_MONTYPES]    = FALSE;
-   pp->section_expanded[PPS_TXT_PROPERTIES]  = FALSE;
+      pp->section_expanded[i] = FALSE;
+   pp->section_expanded[PPS_TXT_IDENTITY] = TRUE;
+   pp->section_expanded[PPS_TXT_LAYOUT]   = TRUE;
 }
 
 
@@ -642,117 +640,7 @@ void props_panel_draw(int width, int height)
       return;
    }
 
-   /* ---- Section: DS1 Header ---- */
-   y = pp_draw_section(panel_x, panel_right, y, draw_row, pp->scroll_offset,
-                        panel_bottom, PPS_DS1_HEADER, "DS1 Header",
-                        "[this file]");
-   draw_row++;
-
-   if (pp->section_expanded[PPS_DS1_HEADER])
-   {
-      /* Filename at top for context */
-      y = pp_draw_field(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
-                         panel_bottom, "file", glb_ds1[idx].filename);
-      y = pp_draw_field_long(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
-                              panel_bottom, "version", glb_ds1[idx].version);
-      y = pp_draw_field_long(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
-                              panel_bottom, "width", glb_ds1[idx].width);
-      y = pp_draw_field_long(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
-                              panel_bottom, "height", glb_ds1[idx].height);
-      y = pp_draw_field_long(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
-                              panel_bottom, "act", glb_ds1[idx].act);
-      y = pp_draw_field_int(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
-                             panel_bottom, "txt_act", glb_ds1[idx].txt_act);
-      /* Sync act button (only show if act != txt_act) */
-      if (glb_ds1[idx].txt_act > 0 && glb_ds1[idx].act != glb_ds1[idx].txt_act)
-      {
-         if (draw_row >= pp->scroll_offset)
-            pp_draw_button(panel_x + PP_MARGIN_X + 8, y, 120, panel_bottom,
-                           "Sync act<-txt");
-         y += PP_LINE_H;
-         draw_row++;
-      }
-      y = pp_draw_field_long(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
-                              panel_bottom, "tag_type", glb_ds1[idx].tag_type);
-      y = pp_draw_field_int(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
-                             panel_bottom, "walls", glb_ds1[idx].wall_num);
-      y = pp_draw_field_int(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
-                             panel_bottom, "floors", glb_ds1[idx].floor_num);
-      y = pp_draw_field_int(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
-                             panel_bottom, "shadows", glb_ds1[idx].shadow_num);
-      y = pp_draw_field_int(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
-                             panel_bottom, "tags", glb_ds1[idx].tag_num);
-      y = pp_draw_field_long(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
-                              panel_bottom, "objects", glb_ds1[idx].obj_num);
-   }
-
-   /* ---- Section: Embedded DT1 Files ---- */
-   {
-      char sec_title[32];
-      sprintf(sec_title, "DT1 Files (%ld)", glb_ds1[idx].file_num);
-      y = pp_draw_section(panel_x, panel_right, y, draw_row, pp->scroll_offset,
-                           panel_bottom, PPS_DS1_FILES, sec_title,
-                           "[this file]");
-      draw_row++;
-   }
-
-   if (pp->section_expanded[PPS_DS1_FILES])
-   {
-      /* Sync from LvlTypes button */
-      if (draw_row >= pp->scroll_offset)
-         pp_draw_button(panel_x + PP_MARGIN_X + 8, y, 160, panel_bottom,
-                        "Sync from LvlTypes");
-      y += PP_LINE_H;
-      draw_row++;
-
-      if (glb_ds1[idx].file_num > 0 && glb_ds1[idx].file_buff != NULL)
-      {
-         char * cptr = glb_ds1[idx].file_buff;
-         int fi;
-         for (fi = 0; fi < glb_ds1[idx].file_num; fi++)
-         {
-            const char * fname;
-            int slen;
-
-            /* Extract just the filename from the path */
-            fname = strrchr(cptr, '\\');
-            if (fname == NULL) fname = strrchr(cptr, '/');
-            if (fname != NULL) fname++; else fname = cptr;
-
-            if (draw_row >= pp->scroll_offset && y + PP_LINE_H < panel_bottom)
-            {
-               ALLEGRO_COLOR col_file = al_map_rgb(160, 180, 200);
-               char idx_str[8];
-               sprintf(idx_str, "[%d]", fi + 1);
-               al_draw_textf(a5_font, al_map_rgb(100, 100, 100),
-                              (float)(panel_x + PP_MARGIN_X + 8), (float)y, 0,
-                              "%s", idx_str);
-               al_draw_textf(a5_font, col_file,
-                              (float)(panel_x + PP_MARGIN_X + 36), (float)y, 0,
-                              "%s", fname);
-            }
-            y += PP_LINE_H;
-            draw_row++;
-
-            /* Advance to next null-terminated string */
-            slen = (int)strlen(cptr);
-            cptr += slen + 1;
-         }
-      }
-      else
-      {
-         if (draw_row >= pp->scroll_offset && y + PP_LINE_H < panel_bottom)
-         {
-            al_draw_textf(a5_font, col_none,
-                           (float)(panel_x + PP_MARGIN_X + 8), (float)y, 0,
-                           "(none)");
-         }
-         y += PP_LINE_H;
-         draw_row++;
-      }
-   }
-
-   /* ---- Phase 3: TXT Map Configuration ---- */
+   /* ---- TXT Map Configuration + DS1 sections ---- */
    {
       int lvltype_id, lvlprest_def;
       int lp_row, lt_row, lv_row;
@@ -871,6 +759,48 @@ void props_panel_draw(int width, int height)
                }
             }
          }
+      }
+
+      /* ---- Section: DS1 Header ---- */
+      y = pp_draw_section(panel_x, panel_right, y, draw_row, pp->scroll_offset,
+                           panel_bottom, PPS_DS1_HEADER, "DS1 Header",
+                           "[this file]");
+      draw_row++;
+
+      if (pp->section_expanded[PPS_DS1_HEADER])
+      {
+         y = pp_draw_field(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
+                            panel_bottom, "file", glb_ds1[idx].filename);
+         y = pp_draw_field_long(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
+                                 panel_bottom, "version", glb_ds1[idx].version);
+         y = pp_draw_field_long(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
+                                 panel_bottom, "width", glb_ds1[idx].width);
+         y = pp_draw_field_long(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
+                                 panel_bottom, "height", glb_ds1[idx].height);
+         y = pp_draw_field_long(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
+                                 panel_bottom, "act", glb_ds1[idx].act);
+         y = pp_draw_field_int(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
+                                panel_bottom, "txt_act", glb_ds1[idx].txt_act);
+         if (glb_ds1[idx].txt_act > 0 && glb_ds1[idx].act != glb_ds1[idx].txt_act)
+         {
+            if (draw_row >= pp->scroll_offset)
+               pp_draw_button(panel_x + PP_MARGIN_X + 8, y, 120, panel_bottom,
+                              "Sync act<-txt");
+            y += PP_LINE_H;
+            draw_row++;
+         }
+         y = pp_draw_field_long(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
+                                 panel_bottom, "tag_type", glb_ds1[idx].tag_type);
+         y = pp_draw_field_int(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
+                                panel_bottom, "walls", glb_ds1[idx].wall_num);
+         y = pp_draw_field_int(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
+                                panel_bottom, "floors", glb_ds1[idx].floor_num);
+         y = pp_draw_field_int(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
+                                panel_bottom, "shadows", glb_ds1[idx].shadow_num);
+         y = pp_draw_field_int(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
+                                panel_bottom, "tags", glb_ds1[idx].tag_num);
+         y = pp_draw_field_long(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
+                                 panel_bottom, "objects", glb_ds1[idx].obj_num);
       }
 
       /* ---- Section: Layout ---- */
@@ -1106,6 +1036,67 @@ void props_panel_draw(int width, int height)
                   panel_bottom, "Position", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "Position"), NULL);
             y = pp_draw_field_num_tagged(panel_x, width, y, draw_row++, pp->scroll_offset,
                   panel_bottom, "SaveMon", pp_txt_get_num(lv, RQ_LEVELS, lv_row, "SaveMonsters"), NULL);
+         }
+      }
+
+      /* ---- Section: DT1 Files (DS1 embedded, non-functional) ---- */
+      {
+         char sec_title[40];
+         sprintf(sec_title, "DT1 Files - embedded (%ld)", glb_ds1[idx].file_num);
+         y = pp_draw_section(panel_x, panel_right, y, draw_row, pp->scroll_offset,
+                              panel_bottom, PPS_DS1_FILES, sec_title,
+                              "[this file]");
+         draw_row++;
+      }
+
+      if (pp->section_expanded[PPS_DS1_FILES])
+      {
+         /* Sync from LvlTypes button */
+         if (draw_row >= pp->scroll_offset)
+            pp_draw_button(panel_x + PP_MARGIN_X + 8, y, 160, panel_bottom,
+                           "Sync from LvlTypes");
+         y += PP_LINE_H;
+         draw_row++;
+
+         if (glb_ds1[idx].file_num > 0 && glb_ds1[idx].file_buff != NULL)
+         {
+            char * cptr = glb_ds1[idx].file_buff;
+            int fi;
+            for (fi = 0; fi < glb_ds1[idx].file_num; fi++)
+            {
+               const char * fname;
+               int slen;
+               fname = strrchr(cptr, '\\');
+               if (fname == NULL) fname = strrchr(cptr, '/');
+               if (fname != NULL) fname++; else fname = cptr;
+
+               if (draw_row >= pp->scroll_offset && y + PP_LINE_H < panel_bottom)
+               {
+                  char idx_str[8];
+                  sprintf(idx_str, "[%d]", fi + 1);
+                  al_draw_textf(a5_font, al_map_rgb(100, 100, 100),
+                                 (float)(panel_x + PP_MARGIN_X + 8), (float)y, 0,
+                                 "%s", idx_str);
+                  al_draw_textf(a5_font, al_map_rgb(160, 180, 200),
+                                 (float)(panel_x + PP_MARGIN_X + 36), (float)y, 0,
+                                 "%s", fname);
+               }
+               y += PP_LINE_H;
+               draw_row++;
+               slen = (int)strlen(cptr);
+               cptr += slen + 1;
+            }
+         }
+         else
+         {
+            if (draw_row >= pp->scroll_offset && y + PP_LINE_H < panel_bottom)
+            {
+               al_draw_textf(a5_font, col_none,
+                              (float)(panel_x + PP_MARGIN_X + 8), (float)y, 0,
+                              "(none)");
+            }
+            y += PP_LINE_H;
+            draw_row++;
          }
       }
 
@@ -1351,119 +1342,13 @@ int props_panel_click(int mx, int my, int panel_w, int disp_h)
    if (idx < 0 || idx >= DS1_MAX || glb_ds1[idx].name[0] == '\0')
       return -1;
 
-   /* Walk the same layout as draw to find clicked row */
+   /* Walk the same layout as draw to find clicked row.
+    * Order must match draw: Identity, Layout, Tilesets, DS1 Header,
+    * Room/Size, Monsters, Quests, Visibility, Environment,
+    * Monster Types, Properties, DT1 Files */
    y = panel_top + PP_HEADER_H + 4;
    draw_row = 0;
-
-   /* DS1 Header section header */
-   if (draw_row >= pp->scroll_offset && my >= y && my < y + PP_LINE_H)
-   {
-      pp->section_expanded[PPS_DS1_HEADER] = !pp->section_expanded[PPS_DS1_HEADER];
-      return 0;
-   }
-   y += PP_LINE_H;
-   draw_row++;
-
-   /* DS1 Header fields — check for field clicks if expanded */
-   if (pp->section_expanded[PPS_DS1_HEADER])
-   {
-      /* DS1 header field names for labeling */
-      static const char * ds1_field_labels[] = {
-         "file", "version", "width", "height", "act", "txt_act",
-         "tag_type", "walls", "floors", "shadows", "tags", "objects"
-      };
-      int fi;
-      int field_count = 12;
-      for (fi = 0; fi < field_count; fi++)
-      {
-         if (draw_row >= pp->scroll_offset && my >= y && my < y + PP_LINE_H)
-         {
-            /* Clicked a DS1 header field — start editing */
-            char cur_val[PP_EDIT_BUF_MAX];
-            cur_val[0] = '\0';
-            switch (fi)
-            {
-               case 0: strncpy(cur_val, glb_ds1[idx].filename, PP_EDIT_BUF_MAX-1); break;
-               case 1: sprintf(cur_val, "%ld", glb_ds1[idx].version); break;
-               case 2: sprintf(cur_val, "%ld", glb_ds1[idx].width); break;
-               case 3: sprintf(cur_val, "%ld", glb_ds1[idx].height); break;
-               case 4: sprintf(cur_val, "%ld", glb_ds1[idx].act); break;
-               case 5: sprintf(cur_val, "%d", glb_ds1[idx].txt_act); break;
-               case 6: sprintf(cur_val, "%ld", glb_ds1[idx].tag_type); break;
-               case 7: sprintf(cur_val, "%d", glb_ds1[idx].wall_num); break;
-               case 8: sprintf(cur_val, "%d", glb_ds1[idx].floor_num); break;
-               case 9: sprintf(cur_val, "%d", glb_ds1[idx].shadow_num); break;
-               case 10: sprintf(cur_val, "%d", glb_ds1[idx].tag_num); break;
-               case 11: sprintf(cur_val, "%ld", glb_ds1[idx].obj_num); break;
-            }
-
-            pp->editing = TRUE;
-            pp->edit_field.source = PFS_DS1;
-            pp->edit_field.row = fi;  /* field_idx = fi for DS1 header */
-            pp->edit_field.col = fi;
-            pp->edit_field.sub_idx = 0;
-            strncpy(pp->edit_buf, cur_val, PP_EDIT_BUF_MAX - 1);
-            pp->edit_buf[PP_EDIT_BUF_MAX - 1] = '\0';
-            pp->edit_cursor = (int)strlen(pp->edit_buf);
-
-            /* Save old value for pending */
-            if (pp->pending_count < PP_MAX_PENDING)
-            {
-               strncpy(pp->pending[pp->pending_count].old_value, cur_val,
-                       PP_EDIT_BUF_MAX - 1);
-            }
-            return 1;
-         }
-         y += PP_LINE_H;
-         draw_row++;
-
-         /* Sync act button (only present if act != txt_act, after field index 5 = txt_act) */
-         if (fi == 5 && glb_ds1[idx].txt_act > 0 &&
-             glb_ds1[idx].act != glb_ds1[idx].txt_act)
-         {
-            if (draw_row >= pp->scroll_offset && my >= y && my < y + PP_LINE_H)
-            {
-               pp_sync_act_from_txt(idx);
-               return 1;
-            }
-            y += PP_LINE_H;
-            draw_row++;
-         }
-      }
-   }
-
-   /* DT1 Files section header */
-   if (draw_row >= pp->scroll_offset && my >= y && my < y + PP_LINE_H)
-   {
-      pp->section_expanded[PPS_DS1_FILES] = !pp->section_expanded[PPS_DS1_FILES];
-      return 0;
-   }
-   y += PP_LINE_H;
-   draw_row++;
-
-   /* DT1 file entries if expanded */
-   if (pp->section_expanded[PPS_DS1_FILES])
-   {
-      int file_rows;
-
-      /* Sync from LvlTypes button */
-      if (draw_row >= pp->scroll_offset && my >= y && my < y + PP_LINE_H)
-      {
-         pp_sync_files_from_lvltypes(idx);
-         return 1;
-      }
-      y += PP_LINE_H;
-      draw_row++;
-
-      file_rows = glb_ds1[idx].file_num > 0 ? (int)glb_ds1[idx].file_num : 1;
-      y += PP_LINE_H * file_rows;
-      draw_row += file_rows;
-   }
-
-   /* TXT sections — use pp_field_idx to track fields for click-to-edit.
-    * We mirror the exact draw logic to get accurate field positions.
-    * pp_field_idx must be set to 12 here (after DS1 header's 12 fields). */
-   pp_field_idx = 12; /* DS1 header has 12 fields (indices 0-11) */
+   pp_field_idx = 0;
    {
       int lvltype_id, lvlprest_def;
       int lp_row, lt_row, lv_row;
@@ -1572,6 +1457,63 @@ int props_panel_click(int mx, int my, int panel_w, int disp_h)
          }
 
          /* Layout */
+         /* DS1 Header section (inside TXT click block for ordering) */
+         PP_CLICK_SECTION(PPS_DS1_HEADER)
+         if (pp->section_expanded[PPS_DS1_HEADER])
+         {
+            int fi;
+            for (fi = 0; fi < 12; fi++)
+            {
+               int _fi = pp_field_idx++;
+               if (draw_row >= pp->scroll_offset && my >= y && my < y + PP_LINE_H)
+               {
+                  char cur_val[PP_EDIT_BUF_MAX];
+                  cur_val[0] = '\0';
+                  switch (fi)
+                  {
+                     case 0: strncpy(cur_val, glb_ds1[idx].filename, PP_EDIT_BUF_MAX-1); break;
+                     case 1: sprintf(cur_val, "%ld", glb_ds1[idx].version); break;
+                     case 2: sprintf(cur_val, "%ld", glb_ds1[idx].width); break;
+                     case 3: sprintf(cur_val, "%ld", glb_ds1[idx].height); break;
+                     case 4: sprintf(cur_val, "%ld", glb_ds1[idx].act); break;
+                     case 5: sprintf(cur_val, "%d", glb_ds1[idx].txt_act); break;
+                     case 6: sprintf(cur_val, "%ld", glb_ds1[idx].tag_type); break;
+                     case 7: sprintf(cur_val, "%d", glb_ds1[idx].wall_num); break;
+                     case 8: sprintf(cur_val, "%d", glb_ds1[idx].floor_num); break;
+                     case 9: sprintf(cur_val, "%d", glb_ds1[idx].shadow_num); break;
+                     case 10: sprintf(cur_val, "%d", glb_ds1[idx].tag_num); break;
+                     case 11: sprintf(cur_val, "%ld", glb_ds1[idx].obj_num); break;
+                  }
+                  pp->editing = TRUE;
+                  pp->edit_field.source = PFS_DS1;
+                  pp->edit_field.row = _fi;
+                  pp->edit_field.col = fi;
+                  pp->edit_field.sub_idx = 0;
+                  strncpy(pp->edit_buf, cur_val, PP_EDIT_BUF_MAX - 1);
+                  pp->edit_buf[PP_EDIT_BUF_MAX - 1] = '\0';
+                  pp->edit_cursor = (int)strlen(pp->edit_buf);
+                  if (pp->pending_count < PP_MAX_PENDING)
+                     strncpy(pp->pending[pp->pending_count].old_value, cur_val, PP_EDIT_BUF_MAX - 1);
+                  return 1;
+               }
+               y += PP_LINE_H;
+               draw_row++;
+
+               /* Sync act button after txt_act field */
+               if (fi == 5 && glb_ds1[idx].txt_act > 0 &&
+                   glb_ds1[idx].act != glb_ds1[idx].txt_act)
+               {
+                  if (draw_row >= pp->scroll_offset && my >= y && my < y + PP_LINE_H)
+                  {
+                     pp_sync_act_from_txt(idx);
+                     return 1;
+                  }
+                  y += PP_LINE_H;
+                  draw_row++;
+               }
+            }
+         }
+
          cur_sec = PPS_TXT_LAYOUT;
          PP_CLICK_SECTION(PPS_TXT_LAYOUT)
          if (lp_row >= 0 && pp->section_expanded[PPS_TXT_LAYOUT])
@@ -1736,6 +1678,24 @@ int props_panel_click(int mx, int my, int panel_w, int disp_h)
             }
          }
       }
+
+         /* DT1 Files section (at the bottom) */
+         PP_CLICK_SECTION(PPS_DS1_FILES)
+         if (pp->section_expanded[PPS_DS1_FILES])
+         {
+            int file_rows;
+            /* Sync from LvlTypes button */
+            if (draw_row >= pp->scroll_offset && my >= y && my < y + PP_LINE_H)
+            {
+               pp_sync_files_from_lvltypes(idx);
+               return 1;
+            }
+            y += PP_LINE_H;
+            draw_row++;
+            file_rows = glb_ds1[idx].file_num > 0 ? (int)glb_ds1[idx].file_num : 1;
+            y += PP_LINE_H * file_rows;
+            draw_row += file_rows;
+         }
 
       #undef PP_CLICK_SECTION
       #undef PP_CLICK_FIELD
