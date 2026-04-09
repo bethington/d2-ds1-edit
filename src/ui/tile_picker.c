@@ -511,12 +511,292 @@ void tile_picker_push_mru(BLK_TYP_E type, int bt_idx)
 }
 
 
+/* Find (type, m_idx, s_idx) for a given bt_idx by walking main_line_tab.
+ * Returns TRUE if found. */
+static int tp_find_tile_in_main_line(int bt_idx, BLK_TYP_E * out_type,
+                                      int * out_m, int * out_s)
+{
+   WIN_EDIT_S * w = &glb_ds1edit.win_edit;
+   int t, m, s;
+   for (t = 0; t < BT_MAX; t++)
+   {
+      int n_lines = w->main_line_num[t];
+      if (w->main_line_tab[t] == NULL) continue;
+      for (m = 0; m < n_lines; m++)
+      {
+         MAIN_LINE_S * mptr = w->main_line_tab[t] + m;
+         for (s = 0; s < mptr->bt_idx_num; s++)
+         {
+            if (mptr->sub_elm[s].bt_idx_tab == bt_idx)
+            {
+               *out_type = (BLK_TYP_E)t;
+               *out_m = m;
+               *out_s = s;
+               return TRUE;
+            }
+         }
+      }
+   }
+   return FALSE;
+}
+
+
+/* Collect all variants (same main_index) of the given bt_idx from block_table.
+ * Writes up to max_out bt_idx values to out_bt_idxs. Returns count. */
+static int tp_collect_variants(int ds1_idx, int hovered_bt,
+                                int * out_bt_idxs, int max_out)
+{
+   BLOCK_TABLE_S * bt_ptr = glb_ds1[ds1_idx].block_table;
+   int bt_num = glb_ds1[ds1_idx].bt_num;
+   int i, count = 0;
+   long target_main;
+   BLK_TYP_E target_type;
+
+   if (hovered_bt <= 0 || hovered_bt >= bt_num) return 0;
+   target_main = bt_ptr[hovered_bt].main_index;
+   target_type = bt_ptr[hovered_bt].type;
+
+   for (i = 1; i < bt_num && count < max_out; i++)
+   {
+      if (bt_ptr[i].main_index == target_main &&
+          bt_ptr[i].type == target_type)
+      {
+         out_bt_idxs[count++] = i;
+      }
+   }
+   return count;
+}
+
+
+/* Determine the hovered tile's bt_idx at (cx, cy). Checks wall, floor,
+ * then shadow. Returns -1 if nothing. Also sets *out_button. */
+static int tp_find_hovered_bt(int ds1_idx, int cx, int cy, BUT_TYP_E * out_button)
+{
+   int bt;
+
+   /* Try walls first (top of stack visually) */
+   bt = wedit_search_tile(ds1_idx, cx, cy, BU_WALL1);
+   if (bt > 0) { *out_button = BU_WALL1; return bt; }
+   bt = wedit_search_tile(ds1_idx, cx, cy, BU_WALL2);
+   if (bt > 0) { *out_button = BU_WALL2; return bt; }
+
+   /* Then floor */
+   bt = wedit_search_tile(ds1_idx, cx, cy, BU_FLOOR1);
+   if (bt > 0) { *out_button = BU_FLOOR1; return bt; }
+   bt = wedit_search_tile(ds1_idx, cx, cy, BU_FLOOR2);
+   if (bt > 0) { *out_button = BU_FLOOR2; return bt; }
+
+   /* Shadow as last resort */
+   bt = wedit_search_tile(ds1_idx, cx, cy, BU_SHADOW);
+   if (bt > 0) { *out_button = BU_SHADOW; return bt; }
+
+   *out_button = BU_NULL;
+   return -1;
+}
+
+
 int tile_picker_popup_run(int ds1_idx, int cx, int cy,
                            int screen_x, int screen_y)
 {
-   /* TODO: Phase 4 */
-   (void)ds1_idx; (void)cx; (void)cy;
-   (void)screen_x; (void)screen_y;
+   PROPS_PANEL_S * pp = &glb_ds1edit.props_panel;
+   TP_STATE_S * t = &pp->tiles;
+   int hovered_bt;
+   BUT_TYP_E hovered_button = BU_NULL;
+   BLK_TYP_E hovered_type = BT_NULL;
+   int variants[TP_VARIANTS_POPUP_MAX];
+   int variant_count = 0;
+   int recent_count;
+   int recents[TP_RECENT_POPUP_MAX];
+   int total_cells, n_rows;
+   int cell_w = 64, cell_h = 32;
+   int gap = 4;
+   int popup_x, popup_y, popup_w, popup_h;
+   int disp_w, disp_h;
+   int menu_done = 0;
+   int hover_idx = -1;
+   int i;
+
+   tile_picker_ensure_built(ds1_idx);
+
+   /* Figure out which tile the cursor is on */
+   hovered_bt = tp_find_hovered_bt(ds1_idx, cx, cy, &hovered_button);
+   if (hovered_bt > 0)
+   {
+      BLOCK_TABLE_S * bt_ptr = glb_ds1[ds1_idx].block_table;
+      hovered_type = bt_ptr[hovered_bt].type;
+      variant_count = tp_collect_variants(ds1_idx, hovered_bt,
+                                           variants, TP_VARIANTS_POPUP_MAX);
+   }
+
+   /* Recent list from MRU for the hovered type (or first non-empty) */
+   {
+      BLK_TYP_E rt = hovered_type;
+      if (rt == BT_NULL || t->mru_count[rt] == 0)
+      {
+         /* Fall back to any type with recents */
+         int ti;
+         rt = BT_NULL;
+         for (ti = 1; ti < BT_MAX; ti++)
+         {
+            if (t->mru_count[ti] > 0)
+            {
+               rt = (BLK_TYP_E)ti;
+               break;
+            }
+         }
+      }
+      recent_count = (rt != BT_NULL) ? t->mru_count[rt] : 0;
+      if (recent_count > TP_RECENT_POPUP_MAX)
+         recent_count = TP_RECENT_POPUP_MAX;
+      for (i = 0; i < recent_count; i++)
+         recents[i] = t->mru_bt_idx[rt][i];
+   }
+
+   total_cells = recent_count + variant_count;
+   if (total_cells == 0)
+   {
+      /* Nothing to show — fall through to old wedit_test */
+      wedit_test(ds1_idx, cx, cy);
+      return 0;
+   }
+
+   /* Popup layout: 2 rows (recents top, variants bottom), cells 64x32 */
+   n_rows = 0;
+   if (recent_count > 0) n_rows++;
+   if (variant_count > 0) n_rows++;
+
+   {
+      int max_in_row = recent_count > variant_count ? recent_count : variant_count;
+      if (max_in_row < 1) max_in_row = 1;
+      popup_w = max_in_row * (cell_w + gap) + gap + 8;
+      popup_h = n_rows * (cell_h + gap) + gap + 8;
+   }
+
+   disp_w = al_get_display_width(a5_display);
+   disp_h = al_get_display_height(a5_display);
+
+   popup_x = screen_x - popup_w / 2;
+   popup_y = screen_y - popup_h / 2;
+   if (popup_x < 2) popup_x = 2;
+   if (popup_y < 2) popup_y = 2;
+   if (popup_x + popup_w > disp_w - 2) popup_x = disp_w - popup_w - 2;
+   if (popup_y + popup_h > disp_h - 2) popup_y = disp_h - popup_h - 2;
+
+   /* Modal loop while right-button is held */
+   while (!menu_done)
+   {
+      int mx, my, row, col;
+      int recent_y = popup_y + 4;
+      int variant_y = recent_count > 0
+                       ? popup_y + 4 + cell_h + gap
+                       : popup_y + 4;
+      int best_idx = -1;
+
+      al_get_mouse_state(&a5_ms_state);
+      al_get_keyboard_state(&a5_kb_state);
+      mx = al_get_mouse_state_axis(&a5_ms_state, 0);
+      my = al_get_mouse_state_axis(&a5_ms_state, 1);
+
+      /* Hit-test cells — negative index = none */
+      for (i = 0; i < recent_count; i++)
+      {
+         int cx_cell = popup_x + 4 + i * (cell_w + gap);
+         if (mx >= cx_cell && mx < cx_cell + cell_w &&
+             my >= recent_y && my < recent_y + cell_h)
+         {
+            best_idx = i;  /* 0..recent_count-1 = recents */
+            break;
+         }
+      }
+      if (best_idx < 0)
+      {
+         for (i = 0; i < variant_count; i++)
+         {
+            int cx_cell = popup_x + 4 + i * (cell_w + gap);
+            if (mx >= cx_cell && mx < cx_cell + cell_w &&
+                my >= variant_y && my < variant_y + cell_h)
+            {
+               best_idx = recent_count + i;  /* recent_count+.. = variants */
+               break;
+            }
+         }
+      }
+      hover_idx = best_idx;
+
+      /* Draw popup background on top of current backbuffer */
+      al_set_target_backbuffer(a5_display);
+      al_draw_filled_rectangle((float)popup_x, (float)popup_y,
+                                (float)(popup_x + popup_w),
+                                (float)(popup_y + popup_h),
+                                al_map_rgba(28, 32, 48, 240));
+      al_draw_rectangle((float)popup_x + 0.5f, (float)popup_y + 0.5f,
+                         (float)(popup_x + popup_w) - 0.5f,
+                         (float)(popup_y + popup_h) - 0.5f,
+                         al_map_rgb(80, 100, 160), 2.0f);
+
+      /* Recents row */
+      for (i = 0; i < recent_count; i++)
+      {
+         int cx_cell = popup_x + 4 + i * (cell_w + gap);
+         pp_draw_tile_cell(ds1_idx, recents[i], cx_cell, recent_y,
+                            cell_w, cell_h, hover_idx == i);
+      }
+
+      /* Separator between rows */
+      if (recent_count > 0 && variant_count > 0)
+      {
+         int sep_y = recent_y + cell_h + gap / 2;
+         al_draw_line((float)(popup_x + 4), (float)sep_y,
+                      (float)(popup_x + popup_w - 4), (float)sep_y,
+                      al_map_rgb(60, 70, 90), 1.0f);
+      }
+
+      /* Variants row */
+      for (i = 0; i < variant_count; i++)
+      {
+         int cx_cell = popup_x + 4 + i * (cell_w + gap);
+         pp_draw_tile_cell(ds1_idx, variants[i], cx_cell, variant_y,
+                            cell_w, cell_h, hover_idx == recent_count + i);
+      }
+
+      al_flip_display();
+      al_rest(0.016);
+
+      /* Right-button release or Escape exits loop */
+      if (!al_mouse_button_down(&a5_ms_state, 2))
+         menu_done = 1;
+      if (al_key_down(&a5_kb_state, ALLEGRO_KEY_ESCAPE))
+      {
+         hover_idx = -1;  /* cancel */
+         menu_done = 1;
+      }
+   }
+
+   /* On release: if hover_idx valid, set brush AND place it */
+   if (hover_idx >= 0)
+   {
+      int picked_bt;
+      BLK_TYP_E pick_type = BT_NULL;
+      int pick_m = 0, pick_s = 0;
+
+      if (hover_idx < recent_count)
+         picked_bt = recents[hover_idx];
+      else
+         picked_bt = variants[hover_idx - recent_count];
+
+      if (tp_find_tile_in_main_line(picked_bt, &pick_type, &pick_m, &pick_s))
+      {
+         t->brush.valid = TRUE;
+         t->brush.bt_idx = picked_bt;
+         t->brush.type = pick_type;
+         t->brush.m_idx = pick_m;
+         t->brush.s_idx = pick_s;
+         t->brush.button = hovered_button != BU_NULL
+                            ? hovered_button
+                            : tile_picker_layer_button_for(ds1_idx, pick_type);
+         tile_picker_place_brush(ds1_idx, cx, cy);
+      }
+   }
    return 0;
 }
 

@@ -2041,20 +2041,31 @@ void interfac_user_handler(int start_ds1_idx)
       {
          if (glb_ds1edit.mode == MOD_T)
          {
-            while (a5_mouse_b & 2) // NOT old_mouse_b else infinite loop
+            int rc_ctrl  = key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL);
+            int rc_shift = key_pressed(KEY_LSHIFT)   || key_pressed(KEY_RSHIFT);
+
+            if (rc_ctrl && rc_shift)
             {
-               al_rest(0.01); al_get_mouse_state(&a5_ms_state);
-            }
-            if ( (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)) &&
-                 (key_pressed(KEY_LSHIFT)   || key_pressed(KEY_RSHIFT)) )
-            {
-               // advanced tile editing window (bits)
+               /* Ctrl+Shift+right-click: advanced bits window (legacy) */
+               while (a5_mouse_b & 2)
+               { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
                wbits_main(ds1_idx, cx, cy);
+               al_set_mouse_xy(a5_display, old_mouse_x, old_mouse_y);
+            }
+            else if (rc_shift)
+            {
+               /* Shift+right-click: full wedit_test (legacy) */
+               while (a5_mouse_b & 2)
+               { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
+               wedit_test(ds1_idx, cx, cy);
                al_set_mouse_xy(a5_display, old_mouse_x, old_mouse_y);
             }
             else
             {
-               wedit_test(ds1_idx, cx, cy);
+               /* Plain right-click press-and-hold: radial popup.
+                * popup_run runs its own modal loop while button held. */
+               tile_picker_popup_run(ds1_idx, cx, cy,
+                                      a5_mouse_x, a5_mouse_y);
                al_set_mouse_xy(a5_display, old_mouse_x, old_mouse_y);
             }
          }
