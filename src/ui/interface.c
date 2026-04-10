@@ -16,6 +16,7 @@
 #include "core/area_browser.h"
 #include "core/ds1_manager.h"
 #include "ui/props_panel.h"
+#include "ui/tile_picker.h"
 
 
 typedef struct
@@ -206,10 +207,23 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       /* Properties panel: ] (right bracket) opens+focuses.
-       * If closed: open and focus. If open but unfocused: focus. If focused: close. */
+       * If closed: open and focus. If open but unfocused: focus. If focused: close.
+       * Ctrl+] cycles Properties/Tiles tabs instead. */
       if (key_pressed(KEY_RBRACKET) && !glb_ds1edit.props_panel.editing)
       {
-         if (!glb_ds1edit.props_panel_visible)
+         int ctrl_held = key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL);
+         if (ctrl_held)
+         {
+            /* Cycle tabs — require panel visible so user sees the change */
+            if (!glb_ds1edit.props_panel_visible)
+            {
+               glb_ds1edit.props_panel_visible = TRUE;
+               glb_ds1edit.props_panel.has_focus = TRUE;
+            }
+            glb_ds1edit.props_panel.active_tab =
+               (glb_ds1edit.props_panel.active_tab + 1) % PP_TAB_MAX;
+         }
+         else if (!glb_ds1edit.props_panel_visible)
          {
             /* Closed -> open + focused */
             glb_ds1edit.props_panel_visible = TRUE;
@@ -284,7 +298,10 @@ void interfac_user_handler(int start_ds1_idx)
                      glb_ds1edit.area_browser.selected_group,
                      glb_ds1edit.area_browser.selected_entry);
                   if (new_idx >= 0)
+                  {
                      ds1_idx = new_idx;
+                     tile_picker_on_ds1_change(new_idx);
+                  }
                }
             }
             else if (click_result >= 0)
@@ -295,7 +312,10 @@ void interfac_user_handler(int start_ds1_idx)
                {
                   /* Just expanded — preload all DS1s for this group */
                   if (area_browser_switch_area(click_result) >= 0)
+                  {
                      ds1_idx = 0;
+                     tile_picker_on_ds1_change(0);
+                  }
                }
             }
 
@@ -475,10 +495,15 @@ void interfac_user_handler(int start_ds1_idx)
          if (glb_ds1edit.props_panel_visible &&
              a5_mouse_x > pp_disp_w - glb_ds1edit.props_panel_width)
          {
-            /* Mouse wheel scrolls the panel */
+            /* Mouse wheel scrolls the panel (or zooms tile picker with Ctrl) */
             if (cur_mouse_z != old_mouse_z)
             {
-               props_panel_scroll(cur_mouse_z - old_mouse_z);
+               int dz = cur_mouse_z - old_mouse_z;
+               int ctrl = key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL);
+               if (glb_ds1edit.props_panel.active_tab == PP_TAB_TILES)
+                  tile_picker_scroll(dz, ctrl);
+               else
+                  props_panel_scroll(dz);
                old_mouse_z = cur_mouse_z;
             }
 
@@ -1770,6 +1795,9 @@ void interfac_user_handler(int start_ds1_idx)
             glb_ds1edit.mode = MOD_P;
          if ((glb_ds1edit.mode >= MOD_MAX) || (glb_ds1edit.mode == MOD_L))
             glb_ds1edit.mode = MOD_T;
+         /* Auto-switch props panel tab on mode change */
+         if (glb_ds1edit.mode == MOD_T && glb_ds1edit.props_panel_visible)
+            glb_ds1edit.props_panel.active_tab = PP_TAB_TILES;
          // show_mouse(NULL);
 //         misc_set_mouse_cursor(glb_ds1edit.mouse_cursor[glb_ds1edit.mode]);
          // show_mouse(screen);
@@ -1832,8 +1860,39 @@ void interfac_user_handler(int start_ds1_idx)
          glb_ds1edit.ticks_elapsed = 0;
       }
       
+      /* Tile picker brush: paint active brush on left-click in MOD_T.
+       * Paints on click edge and on drag into new tiles. */
+      {
+         static int tp_last_paint_x = -1, tp_last_paint_y = -1;
+         if ((a5_mouse_b & 1) && glb_ds1edit.mode == MOD_T &&
+             glb_ds1edit.props_panel.tiles.brush.valid &&
+             glb_ds1edit.has_loaded_ds1)
+         {
+            int pp_disp_w = al_get_display_width(a5_display);
+            int panel_left = glb_ds1edit.props_panel_visible
+                             ? pp_disp_w - glb_ds1edit.props_panel_width
+                             : pp_disp_w;
+            if (a5_mouse_x < panel_left)
+            {
+               if (cx != tp_last_paint_x || cy != tp_last_paint_y)
+               {
+                  tile_picker_place_brush(ds1_idx, cx, cy);
+                  tp_last_paint_x = cx;
+                  tp_last_paint_y = cy;
+               }
+            }
+         }
+         else if (!(a5_mouse_b & 1))
+         {
+            tp_last_paint_x = -1;
+            tp_last_paint_y = -1;
+         }
+      }
+
       // left mouse button
-      if (old_mouse_b & 1)
+      if (old_mouse_b & 1 &&
+          !(glb_ds1edit.mode == MOD_T &&
+            glb_ds1edit.props_panel.tiles.brush.valid))
       {
          // mouse button 1 is pressed
          if (glb_ds1edit.mode == MOD_T)
@@ -1982,20 +2041,31 @@ void interfac_user_handler(int start_ds1_idx)
       {
          if (glb_ds1edit.mode == MOD_T)
          {
-            while (a5_mouse_b & 2) // NOT old_mouse_b else infinite loop
+            int rc_ctrl  = key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL);
+            int rc_shift = key_pressed(KEY_LSHIFT)   || key_pressed(KEY_RSHIFT);
+
+            if (rc_ctrl && rc_shift)
             {
-               al_rest(0.01); al_get_mouse_state(&a5_ms_state);
-            }
-            if ( (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)) &&
-                 (key_pressed(KEY_LSHIFT)   || key_pressed(KEY_RSHIFT)) )
-            {
-               // advanced tile editing window (bits)
+               /* Ctrl+Shift+right-click: advanced bits window (legacy) */
+               while (a5_mouse_b & 2)
+               { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
                wbits_main(ds1_idx, cx, cy);
+               al_set_mouse_xy(a5_display, old_mouse_x, old_mouse_y);
+            }
+            else if (rc_shift)
+            {
+               /* Shift+right-click: full wedit_test (legacy) */
+               while (a5_mouse_b & 2)
+               { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
+               wedit_test(ds1_idx, cx, cy);
                al_set_mouse_xy(a5_display, old_mouse_x, old_mouse_y);
             }
             else
             {
-               wedit_test(ds1_idx, cx, cy);
+               /* Plain right-click press-and-hold: radial popup.
+                * popup_run runs its own modal loop while button held. */
+               tile_picker_popup_run(ds1_idx, cx, cy,
+                                      a5_mouse_x, a5_mouse_y);
                al_set_mouse_xy(a5_display, old_mouse_x, old_mouse_y);
             }
          }

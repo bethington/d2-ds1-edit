@@ -5,12 +5,15 @@
 #include "core/txtread.h"
 #include "ui/compat.h"
 #include "ui/props_panel.h"
+#include "ui/tile_picker.h"
 
 /* Layout constants — match left sidebar style */
 #define PP_FONT_H      8
 #define PP_LINE_H      14
 #define PP_MARGIN_X    8
-#define PP_HEADER_H    22
+#define PP_TITLE_H     22   /* title bar with "Properties" and X       */
+#define PP_TAB_BAR_H   14   /* tab bar below title                     */
+#define PP_HEADER_H    (PP_TITLE_H + PP_TAB_BAR_H)
 #define PP_TAB_W       16
 #define PP_LABEL_W     90   /* pixels reserved for field label column */
 
@@ -37,6 +40,10 @@ void props_panel_init(void)
       pp->section_expanded[i] = FALSE;
    pp->section_expanded[PPS_TXT_IDENTITY] = TRUE;
    pp->section_expanded[PPS_TXT_LAYOUT]   = TRUE;
+
+   /* Tile picker state */
+   pp->active_tab = PP_TAB_PROPERTIES;
+   tile_picker_init();
 }
 
 
@@ -602,7 +609,7 @@ void props_panel_draw(int width, int height)
    /* Header bar — blue tint when focused */
    al_draw_filled_rectangle((float)panel_x, (float)panel_top,
                              (float)panel_right,
-                             (float)(panel_top + PP_HEADER_H),
+                             (float)(panel_top + PP_TITLE_H),
                              focused ? al_map_rgba(28, 32, 48, 230)
                                      : al_map_rgba(36, 30, 24, 220));
    al_draw_textf(a5_font, col_title,
@@ -611,6 +618,44 @@ void props_panel_draw(int width, int height)
    al_draw_textf(a5_font, col_close,
                   (float)(panel_right - 16), (float)(panel_top + 7),
                   0, "X");
+
+   /* Tab bar below title */
+   {
+      int tab_y0 = panel_top + PP_TITLE_H;
+      int tab_y1 = tab_y0 + PP_TAB_BAR_H;
+      int tab_mid = (panel_x + panel_right) / 2;
+      ALLEGRO_COLOR col_active   = al_map_rgba(50, 60, 90, 255);
+      ALLEGRO_COLOR col_inactive = al_map_rgba(28, 24, 20, 200);
+      ALLEGRO_COLOR col_tab_text = al_map_rgb(200, 200, 200);
+      ALLEGRO_COLOR col_tab_act  = al_map_rgb(255, 220, 120);
+
+      /* Properties tab (left half) */
+      al_draw_filled_rectangle((float)(panel_x + 2), (float)tab_y0,
+                                (float)(tab_mid - 1), (float)tab_y1,
+                                pp->active_tab == PP_TAB_PROPERTIES
+                                   ? col_active : col_inactive);
+      al_draw_textf(a5_font,
+                     pp->active_tab == PP_TAB_PROPERTIES
+                        ? col_tab_act : col_tab_text,
+                     (float)((panel_x + tab_mid) / 2), (float)(tab_y0 + 3),
+                     ALLEGRO_ALIGN_CENTRE, "Properties");
+
+      /* Tiles tab (right half) */
+      al_draw_filled_rectangle((float)(tab_mid + 1), (float)tab_y0,
+                                (float)(panel_right - 2), (float)tab_y1,
+                                pp->active_tab == PP_TAB_TILES
+                                   ? col_active : col_inactive);
+      al_draw_textf(a5_font,
+                     pp->active_tab == PP_TAB_TILES
+                        ? col_tab_act : col_tab_text,
+                     (float)((tab_mid + panel_right) / 2), (float)(tab_y0 + 3),
+                     ALLEGRO_ALIGN_CENTRE, "Tiles");
+
+      /* Thin separator below tab bar */
+      al_draw_line((float)panel_x, (float)tab_y1 + 0.5f,
+                   (float)panel_right, (float)tab_y1 + 0.5f,
+                   al_map_rgb(60, 50, 40), 1.0f);
+   }
 
    /* Content area */
    y = panel_top + PP_HEADER_H + 4;
@@ -638,6 +683,13 @@ void props_panel_draw(int width, int height)
                      (float)(panel_x + PP_MARGIN_X), (float)y,
                      0, "No DS1 selected");
       return;
+   }
+
+   /* Branch on active tab: tiles draws the picker, properties draws sections */
+   if (pp->active_tab == PP_TAB_TILES)
+   {
+      tile_picker_draw(idx, panel_x, panel_right, y, panel_bottom - 24);
+      goto draw_footer;
    }
 
    /* ---- TXT Map Configuration + DS1 sections ---- */
@@ -1106,6 +1158,7 @@ void props_panel_draw(int width, int height)
    /* Save total rows for keyboard navigation bounds */
    pp->total_rows = pp_row_idx;
 
+draw_footer:
    /* ---- Footer bar (always visible) ---- */
    {
       int footer_h = 22;
@@ -1155,6 +1208,13 @@ void props_panel_draw(int width, int height)
          al_draw_textf(a5_font, fc_text,
                         (float)(discard_x + btn_w / 2), (float)(footer_y + 6),
                         ALLEGRO_ALIGN_CENTRE, "Discard");
+      }
+      else if (pp->active_tab == PP_TAB_TILES)
+      {
+         al_draw_textf(a5_font, al_map_rgb(80, 80, 80),
+                        (float)((panel_x + panel_right) / 2), (float)(footer_y + 6),
+                        ALLEGRO_ALIGN_CENTRE,
+                        "Click=brush  Ctrl+wheel=zoom  Ctrl+]=tabs");
       }
       else
       {
@@ -1331,9 +1391,24 @@ int props_panel_click(int mx, int my, int panel_w, int disp_h)
    int y, draw_row;
    int idx;
 
-   /* Close button */
-   if (my >= panel_top && my < panel_top + PP_HEADER_H && mx > disp_w - 20)
+   /* Close button (in title bar) */
+   if (my >= panel_top && my < panel_top + PP_TITLE_H && mx > disp_w - 20)
       return -2;
+
+   /* Tab bar click — check before anything else */
+   {
+      int tab_y0 = panel_top + PP_TITLE_H;
+      int tab_y1 = tab_y0 + PP_TAB_BAR_H;
+      int tab_mid = (panel_x + disp_w) / 2;
+      if (my >= tab_y0 && my < tab_y1)
+      {
+         if (mx >= panel_x + 2 && mx < tab_mid - 1)
+            pp->active_tab = PP_TAB_PROPERTIES;
+         else if (mx >= tab_mid + 1 && mx < disp_w - 2)
+            pp->active_tab = PP_TAB_TILES;
+         return 0;
+      }
+   }
 
    if (!glb_ds1edit.has_loaded_ds1)
       return -1;
@@ -1341,6 +1416,14 @@ int props_panel_click(int mx, int my, int panel_w, int disp_h)
    idx = pp->ds1_idx;
    if (idx < 0 || idx >= DS1_MAX || glb_ds1[idx].name[0] == '\0')
       return -1;
+
+   /* If tiles tab is active, route clicks to tile picker */
+   if (pp->active_tab == PP_TAB_TILES)
+   {
+      int y_top = panel_top + PP_HEADER_H + 4;
+      return tile_picker_click(idx, mx, my, panel_x, disp_w,
+                                y_top, panel_bottom - 24);
+   }
 
    /* Walk the same layout as draw to find clicked row.
     * Order must match draw: Identity, Layout, Tilesets, DS1 Header,
@@ -1788,6 +1871,16 @@ void props_panel_handle_keychar(int unichar, int keycode)
 {
    PROPS_PANEL_S * pp = &glb_ds1edit.props_panel;
    int len;
+
+   /* On tiles tab, keyboard navigation has no section/field rows to traverse.
+    * Only Escape removes focus. Everything else is a no-op for now. */
+   if (pp->active_tab == PP_TAB_TILES)
+   {
+      if (keycode == ALLEGRO_KEY_ESCAPE)
+         pp->has_focus = FALSE;
+      (void)unichar;
+      return;
+   }
 
    /* --- Navigation mode (not editing) --- */
    if (!pp->editing)
