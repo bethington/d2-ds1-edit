@@ -7,6 +7,7 @@
 #include "editor/paths.h"
 #include "render/preview.h"
 #include "core/dt1.h"
+#include "core/project.h"
 
 typedef struct
 {
@@ -3195,6 +3196,17 @@ void wpreview_draw_tiles(int ds1_idx)
       glb_ds1[ds1_idx].obj_num,
 	  glb_ds1[ds1_idx].current_obj_max
    );
+
+   // active project (when one is open); sits between [Objects] and Mode
+   if (glb_project.is_open)
+   {
+      wpreview_textprintf(
+         420, glb_config.screen.height-8,
+         109,
+         "Proj:%.40s",
+         glb_project.name[0] ? glb_project.name : "<unnamed>"
+      );
+   }
 
    // editing mode
    switch(glb_ds1edit.mode)

@@ -7,7 +7,6 @@
 #include "mpq/mpqview.h"
 #include "core/area_browser.h"
 #include "ui/props_panel.h"
-#include "ui/project_menu.h"
 #include "misc.h"
 
 
@@ -1537,9 +1536,6 @@ void misc_draw_screen(int mx, int my)
       props_panel_draw(glb_ds1edit.props_panel_width, disp_h);
    else
       props_panel_draw_tab(disp_h);
-
-   /* Project indicator — overlays top-left when a project is open */
-   project_menu_draw_indicator(al_get_backbuffer(a5_display));
 
    if (mouse_sprite != NULL)
       al_draw_bitmap(mouse_sprite, (float)mx, (float)my, 0);

@@ -4,8 +4,6 @@
 
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_native_dialog.h>
-#include <allegro5/allegro_primitives.h>
-#include <allegro5/allegro_font.h>
 
 #include "structs.h"
 #include "ui/compat.h"
@@ -257,29 +255,3 @@ void project_menu_handle_shortcuts(void)
    }
 }
 
-void project_menu_draw_indicator(ALLEGRO_BITMAP *target)
-{
-   char label[PROJECT_NAME_MAX + 32];
-   int  text_w;
-   int  pad = 4;
-
-   if (!glb_project.is_open || target == NULL) return;
-
-   snprintf(label, sizeof(label), "Project: %s",
-            glb_project.name[0] ? glb_project.name : "<unnamed>");
-
-   ALLEGRO_BITMAP *prev = al_get_target_bitmap();
-   al_set_target_bitmap(target);
-
-   text_w = al_get_text_width(a5_font, label);
-
-   al_draw_filled_rectangle(
-      0, 0,
-      (float)(text_w + pad * 2), (float)(al_get_font_line_height(a5_font) + pad * 2),
-      al_map_rgba(0, 0, 0, 180));
-   al_draw_text(a5_font,
-      al_map_rgb(180, 220, 255),
-      (float)pad, (float)pad, 0, label);
-
-   if (prev) al_set_target_bitmap(prev);
-}
