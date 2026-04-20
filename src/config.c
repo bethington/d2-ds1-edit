@@ -3,7 +3,6 @@
 #include "structs.h"
 #include "error.h"
 #include "config.h"
-#include "core/d2install.h"
 
 // ==========================================================================
 // create a new ds1edit.ini
@@ -358,8 +357,6 @@ void ini_read(char *ininame)
       ds1edit_error(tmp);
    }
 
-   // Fill in any empty MPQ slots from the D2 install directory (explicit from
-   // INI or auto-detected via registry / common paths). Explicit per-MPQ paths
-   // already set by the user are preserved.
-   d2install_resolve_mpqs();
+   // MPQ slot resolution runs later in main() — after preferences are loaded
+   // so last_d2_install can supply a fallback before we hit the registry.
 }

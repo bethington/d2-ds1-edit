@@ -115,11 +115,43 @@ pack the project's loose files into a mod MPQ; that's Phase 7's scope, and the
 vendoring plus CMake integration fit cleanly there.
 
 ### Phase 2 — Project model
-- `project.json` schema: name, install_path, extra_mod_mpqs[], editor_version.
-- Global preference store: `%APPDATA%/d2-ds1-edit/preferences.json` with `last_install_path` etc.
-- Install auto-detect: probe `HKLM\SOFTWARE\Blizzard Entertainment\Diablo II\InstallPath`, plus Steam/GoG common paths.
-- File menu: New Project, Open Project, Recent Projects.
-- "New Project" dialog: project folder picker, install path field pre-filled with global default.
+
+Split into 2a (backend) and 2b (UI wiring) to keep commits focused.
+
+**Phase 2a — backend (shipped):**
+
+- [src/core/preferences.c](../../src/core/preferences.c) /
+  [preferences.h](../../src/core/preferences.h): per-user prefs stored at
+  `%APPDATA%\ds1edit\preferences.ini`. Holds `last_d2_install` and an
+  LRU list of recent project paths (cap = `PREFS_RECENT_MAX`). Explicit-path
+  variants (`prefs_load_from`, `prefs_save_to`) exposed for tests so the real
+  user appdata is never touched.
+- [src/core/project.c](../../src/core/project.c) /
+  [project.h](../../src/core/project.h): project model and persistence.
+  Project = a directory with a `project.ini` manifest. Manifest keys:
+  `name`, `editor_version`, `d2_install`, `extra_mod_mpq_N`.
+  `project_apply_to_config()` points `glb_config.mod_dir[0]` at the project
+  dir and fills `glb_config.d2_install` from the project if not already set.
+- **INI rather than JSON.** The design originally said `project.json`; C
+  parsing overhead for JSON (vendoring cJSON or jsmn) outweighed the
+  nested-schema benefit given our flat data. Allegro's `al_config` already
+  parses INI correctly, so both files use it.
+- Startup wiring in [main.c](../../src/main.c): `ini_read` → `prefs_load` →
+  seed `glb_config.d2_install` from prefs if empty → `d2install_resolve_mpqs`
+  → record resolved install back into prefs. Shutdown writes prefs via
+  `prefs_save()`.
+- Unit tests in [test/test_project.c](../../test/test_project.c) cover
+  preferences round-trip, recent-project LRU semantics, and project
+  create/load/save against a scratch directory. Real APPDATA isn't touched.
+
+**Phase 2b — UI wiring (next commit):**
+
+- File menu entries: New Project, Open Project, Close Project, Recent Projects.
+- New Project dialog: folder picker, name field, install-path field
+  pre-filled from `glb_prefs.last_d2_install`.
+- Open Project: folder picker that loads `project.ini`.
+- Recent Projects submenu populated from `glb_prefs.recent_projects[]`.
+- Calls `prefs_record_recent_project()` on successful open, then `prefs_save()`.
 
 ### Phase 3 — Table parsing + background indexer
 - Tab-separated text table reader (D2 `.txt` files are TSV with one header row).

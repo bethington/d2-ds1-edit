@@ -43,6 +43,9 @@ October 30 2011 :
 #include "misc.h"
 #include "config.h"
 #include "core/animdata.h"
+#include "core/d2install.h"
+#include "core/preferences.h"
+#include "core/project.h"
 #include "ui/interface.h"
 #include "render/preview.h"
 
@@ -561,6 +564,11 @@ void ds1edit_exit(void)
 
    printf("\nds1edit_exit()\n");
 
+   // Persist preferences (recent projects, last D2 install). Best-effort;
+   // failures are logged but not fatal.
+   if (prefs_save() == 0)
+      fprintf(stderr, "prefs_save: failed\n");
+
    /* Skip Allegro bitmap cleanup — al_destroy_bitmap is unsafe during shutdown
     * due to heap corruption. The OS reclaims all process memory on exit anyway.
     * We still close file handles and free non-bitmap allocations. */
@@ -891,6 +899,40 @@ int main(int argc, char * argv[])
 
    // init (config)
    ini_read(ininame);
+
+   // global preferences (remembered across sessions)
+   prefs_load();
+
+   // If the INI didn't specify a D2 install, fall back to the last one the
+   // editor used. Registry / common-path detection still runs as a further
+   // fallback inside d2install_resolve_mpqs().
+   if ((glb_config.d2_install == NULL || glb_config.d2_install[0] == 0) &&
+       glb_prefs.last_d2_install[0] != 0)
+   {
+      size_t len = strlen(glb_prefs.last_d2_install);
+      char *buf = (char *) malloc(len + 1);
+      if (buf != NULL)
+      {
+         memcpy(buf, glb_prefs.last_d2_install, len + 1);
+         glb_config.d2_install = buf;
+         fprintf(stdout,
+                 "d2install: seeded from preferences <%s>\n",
+                 glb_config.d2_install);
+      }
+   }
+
+   // Fill empty MPQ slots from the resolved install path (explicit INI
+   // entries always win).
+   d2install_resolve_mpqs();
+
+   // Record the install we landed on back into preferences for next session.
+   if (glb_config.d2_install != NULL && glb_config.d2_install[0] != 0)
+   {
+      strncpy(glb_prefs.last_d2_install, glb_config.d2_install,
+              sizeof(glb_prefs.last_d2_install) - 1);
+      glb_prefs.last_d2_install[sizeof(glb_prefs.last_d2_install) - 1] = 0;
+   }
+
    ds1edit_debug();
 
    // optional data_dir override from ini (default is "Data\")

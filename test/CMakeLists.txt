@@ -43,3 +43,27 @@ target_include_directories(test_dt1_decode PRIVATE
     ${CMAKE_SOURCE_DIR}/src
 )
 add_test(NAME dt1_decode COMMAND test_dt1_decode)
+
+# MPQ integration Phase 2a: preferences + project model
+add_executable(test_project
+    test_project.c
+    ../src/core/preferences.c
+    ../src/core/project.c
+)
+target_link_libraries(test_project PRIVATE unity ${ALLEGRO5_LIB})
+target_include_directories(test_project PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/mpq
+    ${ALLEGRO5_INCLUDE_DIR}
+)
+target_compile_definitions(test_project PRIVATE DS1EDIT_VERSION_STR="${PROJECT_VERSION}")
+add_test(NAME project COMMAND test_project)
+
+if(WIN32 AND DEFINED ALLEGRO5_BIN_DIR AND EXISTS "${ALLEGRO5_BIN_DIR}")
+    add_custom_command(TARGET test_project POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${ALLEGRO5_BIN_DIR}"
+            "$<TARGET_FILE_DIR:test_project>"
+        COMMENT "Copying Allegro DLLs for test_project"
+    )
+endif()
