@@ -44,6 +44,7 @@ October 30 2011 :
 #include "config.h"
 #include "core/animdata.h"
 #include "core/d2install.h"
+#include "core/mpq_index.h"
 #include "core/preferences.h"
 #include "core/project.h"
 #include "ui/interface.h"
@@ -569,6 +570,10 @@ void ds1edit_exit(void)
    if (prefs_save() == 0)
       fprintf(stderr, "prefs_save: failed\n");
 
+   // Release the preset index (just a flat malloc; tables themselves live
+   // in glb_ds1edit.*_buff and are freed elsewhere).
+   mpq_index_destroy();
+
    /* Skip Allegro bitmap cleanup — al_destroy_bitmap is unsafe during shutdown
     * due to heap corruption. The OS reclaims all process memory on exit anyway.
     * We still close file handles and free non-bitmap allocations. */
@@ -1086,6 +1091,15 @@ int main(int argc, char * argv[])
    fprintf(stderr, "reading Obj.txt...");
    read_obj_txt();
    fprintf(stderr, "done\n");
+
+   // build the preset index from LvlPrest + Levels + LvlTypes (eager load +
+   // pre-joined rows so the preset picker and DS1->preset resolution are
+   // both O(1) lookups instead of re-scanning tables per call).
+   fprintf(stderr, "building preset index...");
+   if (mpq_index_build() < 0)
+      fprintf(stderr, "failed\n");
+   else
+      fprintf(stderr, "done\n");
 
    if (glb_ds1edit.cmd_line.ds1_filename != NULL)
    {

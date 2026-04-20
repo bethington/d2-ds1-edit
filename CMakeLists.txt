@@ -50,6 +50,8 @@ set(SOURCES
     src/core/animdata.c
     src/core/dcc.c
     src/core/dc6.c
+    src/core/mpq_index.c
+    src/core/mpq_index_query.c
     src/core/palette.c
     src/core/preferences.c
     src/core/project.c

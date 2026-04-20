@@ -188,12 +188,49 @@ building a text-input dialog from scratch.
   install's MPQs until restart. Fine for the common case; revisit when
   the preset picker (Phase 5) needs it.
 
-### Phase 3 — Table parsing + background indexer
-- Tab-separated text table reader (D2 `.txt` files are TSV with one header row).
-- Parsers for `LvlPrest.txt`, `LvlTypes.txt`, `LvlDef.txt`, `Levels.txt`.
-- `IndexCache`: structs for each parsed row, ds1-path → (type_id, def_id) reverse index.
-- Background worker: spawned on project open, populates cache, posts a "ready" event to the UI.
-- UI indicator while indexing (spinner in status bar is enough).
+### Phase 3 — Preset index (shipped)
+
+**Scope revision after code audit.** The existing codebase already has a
+TSV reader (`txt_load` / `TXT_S` in [txtread.c](../../src/core/txtread.c))
+and `read_lvlprest_txt(ds1_idx, -1)` already does a lazy basename scan to
+find the matching LvlPrest row for an opened DS1. What was missing was
+eager loading and a queryable list of presets for the upcoming Phase 5
+picker.
+
+- [src/core/mpq_index.h](../../src/core/mpq_index.h) /
+  [mpq_index.c](../../src/core/mpq_index.c): builds `PRESET_ENTRY_S`
+  rows with pre-joined data. For each `LvlPrest.txt` row we pull
+  `Name, Def, LevelId, File1..File6`, then walk `Levels.txt` (via
+  `LevelId`) for `Act` + `LevelType`, then walk `LvlTypes.txt` (via
+  `LevelType`) for the type name. All three tables are cached in
+  `glb_ds1edit.*_buff` so any later DS1-open doesn't re-parse.
+- [src/core/mpq_index_query.c](../../src/core/mpq_index_query.c):
+  standalone TU holding just the pure reverse-lookup scan
+  (`mpq_index_find_by_ds1_name_in`). Kept separate so unit tests can
+  link it without needing stubs for `glb_ds1edit` /
+  `misc_get_txt_column_num` / `txt_load`.
+- Public API: `mpq_index_build()`, `mpq_index_destroy()`,
+  `mpq_index_is_ready()`, `mpq_index_preset_count()`,
+  `mpq_index_preset_at(idx)`, `mpq_index_find_by_ds1_name(base, *slot)`.
+- Wired into [main.c](../../src/main.c) after `objects.txt` / `obj.txt`
+  load at startup; destroyed in `ds1edit_exit()`.
+- Unit tests in [test/test_mpq_index.c](../../test/test_mpq_index.c)
+  cover exact/case-insensitive match, forward-slash paths, multi-slot
+  scan, misses, and `ds1_count` boundary respect. Integration-smoke
+  against a live D2 install reports **1151 presets** built in <1s.
+
+**Threading.** Kept foreground for now — the three-table load + join
+completes in well under a second on a real install. The public API is
+already structured to allow background execution later
+(`mpq_index_is_ready()`) without a consumer-facing signature change,
+if startup latency ever becomes an issue.
+
+**What this unblocks:**
+- **Phase 4** — auto-resolve `(type_id, def_id)` on DS1 open via
+  `mpq_index_find_by_ds1_name()` instead of the current scan-per-open in
+  `read_lvlprest_txt(ds1_idx, -1)`.
+- **Phase 5** — preset picker panel; UI just enumerates
+  `mpq_index_preset_at(i)` and filters on `name` / `type_name` / `act`.
 
 ### Phase 4 — Invisible MPQ-aware DS1 loading
 - On open DS1: query `IndexCache.findPresetForDs1(path)` → `(type_id, def_id)`.

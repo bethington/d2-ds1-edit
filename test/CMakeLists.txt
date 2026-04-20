@@ -44,6 +44,17 @@ target_include_directories(test_dt1_decode PRIVATE
 )
 add_test(NAME dt1_decode COMMAND test_dt1_decode)
 
+# MPQ integration Phase 3: preset index reverse lookup
+add_executable(test_mpq_index
+    test_mpq_index.c
+    ../src/core/mpq_index_query.c
+)
+target_link_libraries(test_mpq_index PRIVATE unity)
+target_include_directories(test_mpq_index PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
+add_test(NAME mpq_index COMMAND test_mpq_index)
+
 # MPQ integration Phase 2a: preferences + project model
 add_executable(test_project
     test_project.c
