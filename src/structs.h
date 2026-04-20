@@ -143,6 +143,7 @@ extern GAMMA_S glb_gamma_str[GC_MAX];
 typedef struct CONFIG_S
 {
    int      fullscreen;
+   char     * d2_install;   // optional D2 install dir; auto-detected if empty
    char     * mpq_file[MAX_MPQ_FILE];
    char     * mod_dir[MAX_MOD_DIR];
    SCREEN_S screen;

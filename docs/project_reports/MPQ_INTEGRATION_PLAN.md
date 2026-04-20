@@ -70,11 +70,49 @@ Ten decisions locked in during design:
 Each phase is a reviewable commit/PR's worth of work.
 
 ### Phase 1 — MPQ read backend
-- Vendor StormLib under `third_party/stormlib/`.
-- `MpqArchive` wrapper: open, exists, read-all-bytes, list.
-- `BlizzardChain`: opens the known MPQs in D2 load order from a given install dir, handling the "not all installs have all MPQs" case.
-- `OverlayResolver`: project folder first, then user extras (placeholder, empty list for now), then Blizzard chain.
-- Unit test against a reference install: open a known DS1 by path, verify bytes match what DrTester shows.
+
+**Scope revision after code audit.** The existing codebase already contains
+both an MPQ reader (`src/mpq/MpqView.c`, supports D2's compression methods) and
+a working chain-with-mod-dir-overlay at [src/misc.c:1150 `misc_load_mpq_file()`](../../src/misc.c#L1150).
+The loop walks `glb_config.mod_dir[]` first, then every open `glb_mpq_struct[i]`,
+first-hit wins — that's precisely the `OverlayResolver` the design doc
+described. What was missing was the ergonomics: users had to paste four
+absolute MPQ paths into Ds1edit.ini manually, and DrTester existed partly to
+help them figure out which paths they needed.
+
+Phase 1 therefore focuses on install-path ergonomics rather than rewriting the
+reader:
+
+- New module [src/core/d2install.c](../../src/core/d2install.c) /
+  [src/core/d2install.h](../../src/core/d2install.h).
+- `d2install_detect()` probes `HKLM\SOFTWARE\Blizzard Entertainment\Diablo II\InstallPath`
+  in both the native and `KEY_WOW64_32KEY` views, then falls back to a short
+  list of common install paths (`C:\Diablo II`, `C:\Program Files\Diablo II`,
+  `C:\Program Files (x86)\Diablo II`, `C:\Games\Diablo II`). Each candidate
+  must contain a recognisable D2 MPQ to be accepted.
+- `d2install_resolve_mpqs()` runs at the tail of `ini_read()`: for every empty
+  `glb_config.mpq_file[i]` slot, it tries `<install>\<slot_name>.mpq` and, if
+  the file exists, allocates and assigns the path. Explicit per-MPQ INI entries
+  always win — users who already had a custom config keep it unchanged.
+- New INI key `d2_install = <dir>`. When set, supplies the install path
+  directly. When empty, auto-detection runs.
+- CMake wires `src/core/d2install.c` into the build and adds `advapi32` to the
+  Windows link set (registry access).
+- `Ds1edit.ini.sample` and the `ini_create()` template were updated to make
+  `d2_install` the primary one-liner and downgrade the per-MPQ slots to
+  optional overrides.
+
+**Unit test deferred.** A DS1-round-trip test against a real install needs
+access to copyrighted MPQs that can't be checked in. Testing the path-joining
+and existence-check logic alone would be over-engineering. Real correctness
+validation happens manually against a configured install; a scripted
+integration test can come later if we set up a reference-MPQ fixture outside
+the repo.
+
+**StormLib deferred to Phase 7.** The existing reader handles all D2 MPQ reads
+we need today. StormLib enters the codebase when we need *write* support to
+pack the project's loose files into a mod MPQ; that's Phase 7's scope, and the
+vendoring plus CMake integration fit cleanly there.
 
 ### Phase 2 — Project model
 - `project.json` schema: name, install_path, extra_mod_mpqs[], editor_version.

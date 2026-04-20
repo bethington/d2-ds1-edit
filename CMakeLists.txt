@@ -39,6 +39,7 @@ set(SOURCES
     src/misc.c
     # core/
     src/core/area_browser.c
+    src/core/d2install.c
     src/core/ds1.c
     src/core/ds1_manager.c
     src/core/dt1.c
@@ -92,7 +93,7 @@ if(WIN32)
         ${ALLEGRO5_FONT_LIB}
         ${ALLEGRO5_PRIMITIVES_LIB}
         ${ALLEGRO5_MAIN_LIB}
-        user32 gdi32 ole32 winmm shlwapi
+        user32 gdi32 ole32 winmm shlwapi advapi32
     )
 
     # Whole-program optimization for Release builds

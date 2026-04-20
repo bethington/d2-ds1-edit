@@ -3,6 +3,7 @@
 #include "structs.h"
 #include "error.h"
 #include "config.h"
+#include "core/d2install.h"
 
 // ==========================================================================
 // create a new ds1edit.ini
@@ -19,21 +20,25 @@ void ini_create(char *ininame)
       ds1edit_error(tmp);
    }
    fputs(
-       "; Paths to the mpqs. When the editor need to read a file from a mpq\n"
-       "; it scan first in mod_dir. If not found, in patch_d2. If not found,\n"
-       "; in d2exp. If again not found, in d2data (just like the game)\n"
+       "; D2 install directory. When set, the editor resolves the standard\n"
+       "; Blizzard MPQs automatically. Leave blank to auto-detect from the\n"
+       "; registry / common install paths.\n"
        "; =================================================================\n"
-       "d2char   = c:\\program files\\diablo II\\d2char.mpq\n"
-       "d2data   = c:\\program files\\diablo II\\d2data.mpq\n"
-       "d2exp    = c:\\program files\\diablo II\\d2exp.mpq\n"
-       "patch_d2 = c:\\program files\\diablo II\\patch_d2.mpq\n"
+       "d2_install =\n"
+       "\n"
+       "; Explicit MPQ paths override d2_install / auto-detection per slot.\n"
+       "; File lookup scans mod_dir first, then patch_d2, d2exp, d2data,\n"
+       "; d2char (matching D2's own load order).\n"
+       "; =================================================================\n"
+       "d2char   =\n"
+       "d2data   =\n"
+       "d2exp    =\n"
+       "patch_d2 =\n"
        "mod_dir  =\n"
        "\n"
-       "; if you don't have a mpq, put a blank, like :\n"
-       "; d2exp =\n"
-       "\n"
-       "; mod_dir is an optional Mod Directory, like :\n"
-       "; mod_dir = c:\\program files\\diablo II\\mods\\my_mod\n"
+       "; Example explicit configuration:\n"
+       "; d2_install = C:\\Diablo2\n"
+       "; mod_dir    = C:\\Diablo2\\mods\\my_mod\n"
        "\n"
        "\n"
        "; data_dir overrides where the editor looks for its runtime data\n"
@@ -179,6 +184,7 @@ void ini_read(char *ininame)
       void *def;
    } datas[] =
        {
+           {"d2_install", T_MOD, &glb_config.d2_install, ""},
            {"d2char", T_MPQ, &glb_config.mpq_file[3], ""},
            {"d2data", T_MPQ, &glb_config.mpq_file[2], ""},
            {"d2exp", T_MPQ, &glb_config.mpq_file[1], ""},
@@ -351,4 +357,9 @@ void ini_read(char *ininame)
           ininame);
       ds1edit_error(tmp);
    }
+
+   // Fill in any empty MPQ slots from the D2 install directory (explicit from
+   // INI or auto-detected via registry / common paths). Explicit per-MPQ paths
+   // already set by the user are preserved.
+   d2install_resolve_mpqs();
 }
