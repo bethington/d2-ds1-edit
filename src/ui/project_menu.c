@@ -10,6 +10,7 @@
 #include "structs.h"
 #include "ui/compat.h"
 #include "ui/project_menu.h"
+#include "ui/win_folder_picker.h"
 
 #include "core/project.h"
 #include "core/preferences.h"
@@ -52,9 +53,18 @@ static void record_and_persist(const char *project_path)
 
 // Prompt for a folder and return its path in `out`. Returns 1 if the user
 // selected a folder, 0 on cancel. `initial` may be NULL.
+//
+// On Windows we use IFileOpenDialog directly (modern Win7+ picker with a
+// prominent "New folder" button in the toolbar), which is critical for the
+// New Project flow where users need to create a fresh folder. Allegro's
+// pick_folder path used SHBrowseForFolderW whose equivalent button is
+// small and easy to miss.
 static int pick_folder(const char *title, const char *initial,
                        char *out, int out_cap)
 {
+#ifdef WIN32
+   return win_pick_folder(title, initial, out, out_cap);
+#else
    ALLEGRO_FILECHOOSER *dlg;
    const char *picked;
    int rc;
@@ -81,6 +91,7 @@ static int pick_folder(const char *title, const char *initial,
 
    al_destroy_native_file_dialog(dlg);
    return 0;
+#endif
 }
 
 
@@ -94,9 +105,10 @@ static void action_new_project(void)
    const char *name;
    FILE *fp;
 
-   if (!pick_folder("New Project — pick or create a folder",
-                    glb_prefs.last_d2_install[0] ? glb_prefs.last_d2_install : NULL,
-                    path, sizeof(path)))
+   if (!pick_folder(
+         "New Project — click \"New folder\" to create one, then Select",
+         glb_prefs.last_d2_install[0] ? glb_prefs.last_d2_install : NULL,
+         path, sizeof(path)))
       return;
 
    // Refuse to overwrite an existing project.

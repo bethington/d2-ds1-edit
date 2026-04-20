@@ -71,6 +71,7 @@ set(SOURCES
     src/ui/props_panel.c
     src/ui/tile_picker.c
     src/ui/project_menu.c
+    src/ui/win_folder_picker.c
     # mpq/
     src/mpq/Dcl_tbl.c
     src/mpq/Explode.c
@@ -98,7 +99,7 @@ if(WIN32)
         ${ALLEGRO5_PRIMITIVES_LIB}
         ${ALLEGRO5_MAIN_LIB}
         ${ALLEGRO5_DIALOG_LIB}
-        user32 gdi32 ole32 winmm shlwapi advapi32 comctl32 comdlg32
+        user32 gdi32 ole32 winmm shlwapi advapi32 comctl32 comdlg32 shell32 uuid
     )
 
     # Whole-program optimization for Release builds
