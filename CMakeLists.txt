@@ -73,6 +73,7 @@ set(SOURCES
     src/ui/props_panel.c
     src/ui/tile_picker.c
     src/ui/project_menu.c
+    src/ui/preset_picker.c
     src/ui/win_folder_picker.c
     # mpq/
     src/mpq/Dcl_tbl.c

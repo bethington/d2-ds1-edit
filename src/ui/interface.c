@@ -18,6 +18,7 @@
 #include "ui/props_panel.h"
 #include "ui/tile_picker.h"
 #include "ui/project_menu.h"
+#include "ui/preset_picker.h"
 
 
 typedef struct
@@ -201,6 +202,9 @@ void interfac_user_handler(int start_ds1_idx)
 
       /* Project workflow: Ctrl+Shift+{N,O,W} */
       project_menu_handle_shortcuts();
+
+      /* Preset picker: Ctrl+Shift+P */
+      preset_picker_handle_shortcut();
 
       /* Sidebar toggle: [ (left bracket) key */
       if (key_pressed(KEY_LBRACKET))

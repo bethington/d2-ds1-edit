@@ -276,12 +276,44 @@ render.
 Phase 4 is strictly a resolution layer; the downstream loading machinery
 is unchanged.
 
-### Phase 5 — Preset picker panel
-- New dockable panel "Open by Preset."
-- Rows: preset name (from `LvlPrest.txt` `Name`), level type name (from `LvlTypes.txt`), DS1 path, act.
-- Filter box (substring match on name + path).
-- Double-click: opens the DS1 with correct params via Phase 4 path.
-- No preview thumbnail in this phase — defer to the full browser milestone.
+### Phase 5 — Preset picker (shipped)
+
+**UX pivot from design.** The original plan called for a dockable panel
+like the area browser. In practice, a modal fuzzy-finder (VS Code
+Ctrl+P style) was a much smaller surface to build in the existing
+immediate-mode UI, and a better fit for the "find a preset fast" task
+than a persistent side panel.
+
+- [src/ui/preset_picker.c](../../src/ui/preset_picker.c) /
+  [preset_picker.h](../../src/ui/preset_picker.h).
+- Shortcut **Ctrl+Shift+P** opens a modal finder that covers most of
+  the screen with a semi-transparent panel over the last-rendered DS1
+  view.
+- Three-column rows (name | type name | first ds1 file) with
+  substring-matching filter that searches across `name`, `type_name`,
+  and all `ds1_files[]` slots simultaneously.
+- Keyboard: type-to-filter, Up/Down to navigate, PageUp/PageDown +
+  Home/End, Enter to open, Esc to cancel, Backspace edits the filter.
+  Mouse: click to select, double-click (~350 ms) to open.
+- Status bar shows `<filtered> / <total>` plus the keymap help text.
+- On selection: delegates to
+  [`area_browser_open_by_file()`](../../src/core/area_browser.c) which
+  already handles project `mod_dir` overlay vs. `assets/tiles/` path
+  resolution, finds a free DS1 slot, and routes through Phase 4's
+  auto-resolve in `misc_open_1_ds1`.
+- Self-contained event loop -- drains `a5_event_queue` while the modal
+  is up; the main render loop is paused (animations / fps counters
+  freeze cleanly until dismissal).
+
+**Known limitation:** the picker draws once per iteration onto
+`glb_ds1edit.screen_buff`, which already contains the previously
+rendered DS1 view. Animated textures / props won't tick while the
+modal is up. That's acceptable for a modal finder and matches how
+`wmsg_main` dialogs behave today.
+
+**Wired into** [interface.c](../../src/ui/interface.c) main loop via
+`preset_picker_handle_shortcut()` alongside the existing
+`project_menu_handle_shortcuts()`.
 
 ### Phase 6 — Copy-on-save semantics
 - Save of a document whose path resolves outside the project folder: write to `project/<path>` instead of the origin.
