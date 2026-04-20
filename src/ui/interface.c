@@ -17,6 +17,7 @@
 #include "core/ds1_manager.h"
 #include "ui/props_panel.h"
 #include "ui/tile_picker.h"
+#include "ui/project_menu.h"
 
 
 typedef struct
@@ -197,6 +198,9 @@ void interfac_user_handler(int start_ds1_idx)
       );
 
       cur_mouse_z = a5_mouse_z;
+
+      /* Project workflow: Ctrl+Shift+{N,O,W} */
+      project_menu_handle_shortcuts();
 
       /* Sidebar toggle: [ (left bracket) key */
       if (key_pressed(KEY_LBRACKET))

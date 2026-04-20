@@ -278,6 +278,7 @@ extern ALLEGRO_KEYBOARD_STATE a5_kb_state;
 #define KEY_H         ALLEGRO_KEY_H
 #define KEY_I         ALLEGRO_KEY_I
 #define KEY_N         ALLEGRO_KEY_N
+#define KEY_O         ALLEGRO_KEY_O
 #define KEY_P         ALLEGRO_KEY_P
 #define KEY_Q         ALLEGRO_KEY_Q
 #define KEY_R         ALLEGRO_KEY_R

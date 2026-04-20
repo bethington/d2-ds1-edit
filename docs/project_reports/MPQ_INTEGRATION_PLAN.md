@@ -144,14 +144,49 @@ Split into 2a (backend) and 2b (UI wiring) to keep commits focused.
   preferences round-trip, recent-project LRU semantics, and project
   create/load/save against a scratch directory. Real APPDATA isn't touched.
 
-**Phase 2b — UI wiring (next commit):**
+**Phase 2b — UI wiring (shipped):**
 
-- File menu entries: New Project, Open Project, Close Project, Recent Projects.
-- New Project dialog: folder picker, name field, install-path field
-  pre-filled from `glb_prefs.last_d2_install`.
-- Open Project: folder picker that loads `project.ini`.
-- Recent Projects submenu populated from `glb_prefs.recent_projects[]`.
-- Calls `prefs_record_recent_project()` on successful open, then `prefs_save()`.
+The editor uses an immediate-mode custom UI with no native menus and no
+free-text input widgets, so the plan landed on keyboard shortcuts plus the
+OS's own file dialogs (Allegro 5's `allegro_dialog` addon) rather than
+building a text-input dialog from scratch.
+
+- [src/ui/project_menu.c](../../src/ui/project_menu.c) /
+  [project_menu.h](../../src/ui/project_menu.h):
+  - `project_menu_handle_shortcuts()` polled once per frame from the main
+    input loop in [interface.c](../../src/ui/interface.c).
+  - `project_menu_draw_indicator()` renders a "Project: \<name\>" label in
+    the top-left from [misc_draw_screen()](../../src/misc.c) when a project
+    is open.
+- Shortcuts:
+  - `Ctrl+Shift+N` — New Project. Opens a native folder picker; project
+    name derived from the folder's basename; `d2_install` seeded from
+    `glb_prefs.last_d2_install`. Refuses to overwrite an existing
+    `project.ini`.
+  - `Ctrl+Shift+O` — Open Project. Native folder picker; validates
+    `project.ini` exists; errors via native message box if not.
+  - `Ctrl+Shift+W` — Close Project. Native yes/no confirm.
+- On successful create/open: applies the project to `glb_config`
+  (`mod_dir[0]` = project dir), records the path into the recent-projects
+  LRU, mirrors `glb_project.d2_install` into `glb_prefs.last_d2_install`,
+  and persists prefs immediately via `prefs_save()`.
+- CMake: links `allegro_dialog` and ships `allegro_dialog-5.2.dll`
+  alongside the other Allegro DLLs; also links `comctl32`+`comdlg32` for
+  the underlying Win32 dialogs the addon calls into.
+
+**Not yet implemented (deferred follow-ups):**
+- Recent Projects picker UI — the LRU data is already persisted in prefs,
+  but no in-editor surface shows the list yet. Right now a user picks
+  recents by using the OS folder picker's own history.
+- Rename project / edit `extra_mod_mpqs` / reconfigure `d2_install` from
+  inside the editor — all supported by the data model, no UI yet.
+- Re-resolving the MPQ chain mid-session when `glb_config.d2_install`
+  changes via a project open. Currently MPQs opened at startup stay open
+  for the session; only the loose-file overlay (`mod_dir[0]`) swaps. This
+  is correct for overlay semantics but means a project that points at a
+  different D2 install than the one detected at startup won't see that
+  install's MPQs until restart. Fine for the common case; revisit when
+  the preset picker (Phase 5) needs it.
 
 ### Phase 3 — Table parsing + background indexer
 - Tab-separated text table reader (D2 `.txt` files are TSV with one header row).
