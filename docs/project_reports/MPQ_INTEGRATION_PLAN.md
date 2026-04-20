@@ -315,10 +315,55 @@ modal is up. That's acceptable for a modal finder and matches how
 `preset_picker_handle_shortcut()` alongside the existing
 `project_menu_handle_shortcuts()`.
 
-### Phase 6 — Copy-on-save semantics
-- Save of a document whose path resolves outside the project folder: write to `project/<path>` instead of the origin.
-- UI affordance: window-title suffix "(read from MPQ — save will copy to project)" until first save makes it project-owned.
-- Reload/refresh invalidates `OverlayResolver`'s caching of that path.
+### Phase 6 — Copy-on-save (shipped)
+
+When a project is open and the user saves a DS1 that was loaded from
+outside the project's folder (vanilla `assets/tiles/`, an extracted D2
+MPQ tree, another mod's directory, etc.), the write is redirected into
+`<project>\Global\Tiles\<suffix>` and the slot's `.name` is updated so
+subsequent saves are in-place.
+
+- [`project_redirect_ds1_save_path()`](../../src/core/project.c):
+  pure function (tested via `test_project.c`) that takes the origin
+  path and, if applicable, rewrites it into the project's
+  `Global\Tiles\` subtree. Finds the suffix by locating the last
+  `/tiles/` or `\tiles\` segment in the origin path (case-insensitive)
+  -- so `assets/tiles/`, `D:\d2\data\global\tiles\`, and
+  `<project>\Global\Tiles\` all yield the same in-game suffix.
+- [`project_ensure_parent_dirs()`](../../src/core/project.c):
+  recursive mkdir that creates the full directory chain before the
+  save attempts `fopen(..., "wb")`.
+- Injection in [`ds1_save()`](../../src/core/ds1.c) is **gated to real
+  saves** (`is_tmp_file == FALSE`). Rolling autosaves (`.tmp` files
+  between edit-mode switches) stay next to the origin -- a user who's
+  only browsed a vanilla DS1 doesn't silently get it copied into the
+  project before they've committed.
+- Rename-for-backup (`foo.ds1` -> `foo-000.ds1`) is guarded by
+  `a5_file_exists()` -- on the first redirected save the target
+  doesn't exist yet, so the backup step is skipped rather than
+  erroring out.
+
+**Seven new unit tests** in `test_project.c` cover: no-project passthrough,
+vanilla `assets/tiles/` redirect, `<mpq-extracted>/data/global/tiles/`
+redirect, already-in-project passthrough (case-insensitive), uppercase
+`TILES` matching, paths without a `tiles` segment, and case-insensitive
+project-prefix detection.
+
+**What this gives the user:**
+- Open a vanilla DS1 via the preset picker with a project open, edit
+  it, hit save -> the file appears in `<project>\Global\Tiles\...`,
+  cleanly diff-able, `git add`-able.
+- Second save goes in-place; a `-000.ds1` backup sibling appears.
+- Without a project open, behaviour is unchanged.
+
+**Not yet implemented (design doc mentioned these):**
+- Window-title / HUD affordance "(read from MPQ -- save will copy to
+  project)" while the origin is still external. Would be a small
+  addition to the bottom status row next to the existing `Proj:<name>`
+  label.
+- Reload / refresh invalidating any cached file data for the rewritten
+  path. Current code rereads on the next open, which is fine since
+  there isn't a path-keyed cache between DS1s.
 
 ### Phase 7 — Build Mod MPQ
 - Menu: File → Build Mod MPQ.

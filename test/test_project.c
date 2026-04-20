@@ -220,6 +220,117 @@ void test_project_apply_to_config(void)
 }
 
 
+/* ---- Phase 6: copy-on-save path redirection ---- */
+
+// Populate glb_project directly so the redirect tests don't depend on
+// project_load() filesystem side effects.
+static void open_fake_project(const char *path)
+{
+   memset(&glb_project, 0, sizeof(glb_project));
+   strncpy(glb_project.path, path, PROJECT_PATH_MAX - 1);
+   glb_project.is_open = 1;
+}
+
+void test_redirect_no_project_returns_zero(void)
+{
+   char dst[256];
+   int  redirected;
+
+   memset(&glb_project, 0, sizeof(glb_project));
+   redirected = project_redirect_ds1_save_path(
+      "assets/tiles/ACT1/CAVES/denent.ds1", dst, sizeof(dst));
+
+   TEST_ASSERT_EQUAL_INT(0, redirected);
+   TEST_ASSERT_EQUAL_STRING("assets/tiles/ACT1/CAVES/denent.ds1", dst);
+}
+
+void test_redirect_rewrites_into_project(void)
+{
+   char dst[256];
+   int  redirected;
+
+   open_fake_project("C:\\mods\\myproject");
+   redirected = project_redirect_ds1_save_path(
+      "assets/tiles/ACT1/CAVES/denent.ds1", dst, sizeof(dst));
+
+   TEST_ASSERT_EQUAL_INT(1, redirected);
+   TEST_ASSERT_EQUAL_STRING(
+      "C:\\mods\\myproject\\Global\\Tiles\\ACT1/CAVES/denent.ds1", dst);
+}
+
+void test_redirect_already_in_project_passes_through(void)
+{
+   char dst[256];
+   int  redirected;
+
+   open_fake_project("C:\\mods\\myproject");
+   redirected = project_redirect_ds1_save_path(
+      "C:\\mods\\myproject\\Global\\Tiles\\ACT1\\CAVES\\denent.ds1",
+      dst, sizeof(dst));
+
+   TEST_ASSERT_EQUAL_INT(0, redirected);
+   TEST_ASSERT_EQUAL_STRING(
+      "C:\\mods\\myproject\\Global\\Tiles\\ACT1\\CAVES\\denent.ds1", dst);
+}
+
+void test_redirect_handles_mpq_extracted_path(void)
+{
+   char dst[256];
+   int  redirected;
+
+   open_fake_project("C:\\mods\\myproject");
+   redirected = project_redirect_ds1_save_path(
+      "D:\\d2\\patch\\data\\global\\tiles\\ACT2\\TOWN\\lutn1.ds1",
+      dst, sizeof(dst));
+
+   TEST_ASSERT_EQUAL_INT(1, redirected);
+   TEST_ASSERT_EQUAL_STRING(
+      "C:\\mods\\myproject\\Global\\Tiles\\ACT2\\TOWN\\lutn1.ds1", dst);
+}
+
+void test_redirect_case_insensitive_tiles_match(void)
+{
+   char dst[256];
+   int  redirected;
+
+   open_fake_project("C:\\mods\\mp");
+   redirected = project_redirect_ds1_save_path(
+      "x/y/z/TILES/ACT3/FOO.DS1", dst, sizeof(dst));
+
+   TEST_ASSERT_EQUAL_INT(1, redirected);
+   TEST_ASSERT_EQUAL_STRING(
+      "C:\\mods\\mp\\Global\\Tiles\\ACT3/FOO.DS1", dst);
+}
+
+void test_redirect_no_tiles_segment_returns_zero(void)
+{
+   char dst[256];
+   int  redirected;
+
+   open_fake_project("C:\\mods\\mp");
+   redirected = project_redirect_ds1_save_path(
+      "C:\\randomplace\\file.ds1", dst, sizeof(dst));
+
+   TEST_ASSERT_EQUAL_INT(0, redirected);
+   TEST_ASSERT_EQUAL_STRING("C:\\randomplace\\file.ds1", dst);
+}
+
+void test_redirect_project_subpath_is_preserved(void)
+{
+   char dst[256];
+   int  redirected;
+
+   // Different casing on the project path prefix; path_starts_with is
+   // case-insensitive so this should still count as "already in project".
+   open_fake_project("C:\\mods\\MyProject");
+   redirected = project_redirect_ds1_save_path(
+      "c:\\MODS\\MYPROJECT\\Global\\Tiles\\ACT1\\CAVES\\denent.ds1",
+      dst, sizeof(dst));
+
+   TEST_ASSERT_EQUAL_INT(0, redirected);
+}
+
+
 /* ---- main ---- */
 
 int main(void)
@@ -239,6 +350,14 @@ int main(void)
    RUN_TEST(test_project_load_missing_returns_zero);
    RUN_TEST(test_project_save_persists_changes);
    RUN_TEST(test_project_apply_to_config);
+
+   RUN_TEST(test_redirect_no_project_returns_zero);
+   RUN_TEST(test_redirect_rewrites_into_project);
+   RUN_TEST(test_redirect_already_in_project_passes_through);
+   RUN_TEST(test_redirect_handles_mpq_extracted_path);
+   RUN_TEST(test_redirect_case_insensitive_tiles_match);
+   RUN_TEST(test_redirect_no_tiles_segment_returns_zero);
+   RUN_TEST(test_redirect_project_subpath_is_preserved);
 
    return UNITY_END();
 }

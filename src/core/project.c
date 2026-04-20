@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <ctype.h>
 
 #include "structs.h"
 #include "core/project.h"
@@ -216,4 +217,114 @@ void project_apply_to_config(void)
          glb_config.d2_install = buf;
       }
    }
+}
+
+// ---------------------------------------------------------------------------
+// Copy-on-save helpers
+// ---------------------------------------------------------------------------
+
+int project_ensure_parent_dirs(const char *path)
+{
+   char buf[PROJECT_PATH_MAX * 2];
+   size_t n, i;
+
+   if (path == NULL) return 0;
+   n = strlen(path);
+   if (n == 0 || n >= sizeof(buf)) return 0;
+   memcpy(buf, path, n + 1);
+
+   // Walk the path, mkdir'ing every separator we cross (except the drive
+   // root like "C:"). Final segment is left alone -- it's the filename.
+   for (i = 1; i < n; i++)
+   {
+      if (buf[i] == '/' || buf[i] == '\\')
+      {
+         char save = buf[i];
+         buf[i] = 0;
+         // Skip the drive-letter segment on Windows ("C:").
+         if (!(i == 2 && buf[1] == ':'))
+         {
+            if (!ensure_dir(buf))
+            {
+               // Log but keep trying deeper levels; some intermediates may
+               // already exist with different ACLs on the parent.
+               fprintf(stderr,
+                  "project_ensure_parent_dirs: mkdir %s failed (errno=%d)\n",
+                  buf, errno);
+            }
+         }
+         buf[i] = save;
+      }
+   }
+   return 1;
+}
+
+// Find the tail after the last "/tiles/" or "\tiles\" segment in `path`,
+// case-insensitive. Returns NULL if no such segment exists.
+static const char *find_tiles_suffix(const char *path)
+{
+   int len, i;
+   if (path == NULL) return NULL;
+   len = (int) strlen(path);
+   // need sep + "tiles" + sep + at-least-one-char = 8
+   if (len < 8) return NULL;
+
+   for (i = len - 8; i >= 0; i--)
+   {
+      char s0 = path[i];
+      char s6 = path[i + 6];
+      if ((s0 != '/' && s0 != '\\') || (s6 != '/' && s6 != '\\'))
+         continue;
+      if (tolower((unsigned char) path[i + 1]) == 't' &&
+          tolower((unsigned char) path[i + 2]) == 'i' &&
+          tolower((unsigned char) path[i + 3]) == 'l' &&
+          tolower((unsigned char) path[i + 4]) == 'e' &&
+          tolower((unsigned char) path[i + 5]) == 's')
+         return path + i + 7;
+   }
+   return NULL;
+}
+
+// Case-insensitive prefix match, accepting both slash styles as equivalent.
+static int path_starts_with(const char *path, const char *prefix)
+{
+   int i;
+   if (path == NULL || prefix == NULL) return 0;
+   for (i = 0; prefix[i] != 0; i++)
+   {
+      char a = path[i];
+      char b = prefix[i];
+      if (a == 0) return 0;
+      if (a == '/')  a = '\\';
+      if (b == '/')  b = '\\';
+      if (tolower((unsigned char) a) != tolower((unsigned char) b)) return 0;
+   }
+   return 1;
+}
+
+int project_redirect_ds1_save_path(const char *src, char *dst, int dst_cap)
+{
+   const char *suffix;
+   int n;
+
+   if (src == NULL || dst == NULL || dst_cap < 2) return 0;
+
+   // Default: no change.
+   strncpy(dst, src, dst_cap - 1);
+   dst[dst_cap - 1] = 0;
+
+   if (!glb_project.is_open)               return 0;
+   if (glb_project.path[0] == 0)           return 0;
+
+   // Already inside the project folder -> save in place.
+   if (path_starts_with(src, glb_project.path)) return 0;
+
+   // Only redirect if we can pull a meaningful in-game suffix out.
+   suffix = find_tiles_suffix(src);
+   if (suffix == NULL || suffix[0] == 0)   return 0;
+
+   n = snprintf(dst, dst_cap, "%s%sGlobal%sTiles%s%s",
+                glb_project.path, SEP, SEP, SEP, suffix);
+   if (n < 0 || n >= dst_cap)              return 0;
+   return 1;
 }

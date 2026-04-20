@@ -47,4 +47,18 @@ void project_close(void);
 // the project. Safe to call multiple times.
 void project_apply_to_config(void);
 
+// Recursively mkdir every intermediate directory of `path` (not including
+// the final basename). Returns 1 on success, 0 on any hard failure.
+int  project_ensure_parent_dirs(const char *path);
+
+// Copy-on-save: if a project is open and `src` lives outside it, rewrite
+// the path into the project's Global\Tiles\<suffix> tree. `suffix` is the
+// tail after the last "/tiles/" or "\tiles\" segment in `src`.
+// Writes the resolved target path into `dst`.
+//
+// Returns 1 if the path was actually redirected (i.e., a copy-on-save just
+// happened); 0 if it was passed through unchanged (no project, already
+// inside the project, or no recognisable tiles segment to rewrite from).
+int  project_redirect_ds1_save_path(const char *src, char *dst, int dst_cap);
+
 #endif
