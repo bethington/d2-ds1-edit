@@ -232,11 +232,49 @@ if startup latency ever becomes an issue.
 - **Phase 5** — preset picker panel; UI just enumerates
   `mpq_index_preset_at(i)` and filters on `name` / `type_name` / `act`.
 
-### Phase 4 — Invisible MPQ-aware DS1 loading
-- On open DS1: query `IndexCache.findPresetForDs1(path)` → `(type_id, def_id)`.
-- Auto-load the referenced `.dt1` files and palette via `OverlayResolver`.
-- DrTester-style parameter hunting is no longer needed — remove/mark-obsolete any docs that instruct users to use DrTester for this.
-- Fallback: if the path isn't in the index (user's own custom DS1), fall back to current behavior (manual params or defaults).
+### Phase 4 — Invisible auto-resolve (shipped)
+
+Routes the `(type, def)` gap through the Phase 3 index, eliminating the
+DrTester parameter-hunting step for any DS1 that's referenced by
+`LvlPrest.txt`.
+
+- [`misc_open_1_ds1()`](../../src/misc.c) is now the single injection
+  point. If either `type` or `def` come in as -1 (CLI default when the
+  user doesn't pass `-t`/`-d`, or INI row with blanks), it queries
+  `mpq_index_find_by_ds1_name(basename, NULL)` against the index built
+  at startup.
+- On hit: the missing value(s) are filled from the preset entry — `def`
+  from `LvlPrest.Def`, `type` from the joined `Levels.LevelType`. An
+  `auto-resolve:` line is logged to both stdout and stderr so the chain
+  is visible in `stderr.txt`.
+- On miss (DS1 not in `LvlPrest.txt` — a user's own custom DS1): falls
+  through unchanged to the existing `read_lvlprest_txt` /
+  `read_lvltypes_txt` pipeline, which errors loudly on a still-missing
+  value. No regression vs. pre-Phase-4 behaviour.
+- Explicit CLI-supplied values always win — the index is consulted only
+  for -1 slots.
+
+**Integration smoke** — running
+`ds1edit.exe assets\tiles\ACT1\tristram\tri_town4.ds1` with no
+positional args produces:
+
+```
+auto-resolve: tri_town4.ds1 -> preset "Act 1 - Tristram" (type=11 def=300 act=0)
+```
+
+— exactly the `11 300` that Tristram.bat used to hard-code. The
+equivalent `.bat` files in `bin/examples/` are now effectively
+redundant; users can drag a DS1 onto `ds1edit.exe` and get a correct
+render.
+
+**What's still delegated to the existing reader:**
+- `read_lvlprest_txt(ds1_idx, def)` still does the `Dt1Mask` side
+  effect (populating `glb_ds1[idx].dt1_mask[]`).
+- `read_lvltypes_txt(ds1_idx, type)` still does the DT1-load side
+  effect (opening each referenced tileset into `glb_ds1[idx].dt1_idx[]`).
+
+Phase 4 is strictly a resolution layer; the downstream loading machinery
+is unchanged.
 
 ### Phase 5 — Preset picker panel
 - New dockable panel "Open by Preset."

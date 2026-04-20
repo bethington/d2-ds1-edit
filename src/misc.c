@@ -4,6 +4,7 @@
 #include "core/ds1.h"
 #include "core/txtread.h"
 #include "core/dt1.h"
+#include "core/mpq_index.h"
 #include "mpq/mpqview.h"
 #include "core/area_browser.h"
 #include "ui/props_panel.h"
@@ -717,6 +718,13 @@ char * misc_search_name(char * tmp)
 
 // ==========================================================================
 // open 1 ds1, & all the dt1 it needs
+//
+// `type` and `def` may be -1 when the caller doesn't know them (CLI without
+// -t/-d, INI row missing the params, etc.). In that case we consult the
+// preset index for the DS1's basename and fill in whatever's missing. This
+// is the "no more DrTester hunting" path: running `ds1edit foo.ds1` with no
+// other args now resolves to the correct tileset + palette automatically,
+// provided foo.ds1 is referenced by LvlPrest.txt.
 void misc_open_1_ds1(int ds1_idx, char * name, int type, int def,
                      int new_width, int new_height)
 {
@@ -726,7 +734,32 @@ void misc_open_1_ds1(int ds1_idx, char * name, int type, int def,
    fprintf(stderr, "reading %s...", name);
    ds1_read(name, ds1_idx, new_width, new_height);
    fprintf(stderr, "done\n");
-      
+
+   // Auto-resolve missing LvlPrest.Def / LvlTypes.Id from the preset index.
+   // Explicit values passed by the caller always win.
+   if (type == -1 || def == -1)
+   {
+      const char *base = glb_ds1[ds1_idx].filename;
+      const PRESET_ENTRY_S *hit =
+         base ? mpq_index_find_by_ds1_name(base, NULL) : NULL;
+      if (hit != NULL)
+      {
+         if (def  == -1) def  = hit->def;
+         if (type == -1) type = hit->level_type;
+         fprintf(stdout,
+            "auto-resolve: %s -> preset \"%s\" (type=%d def=%d act=%d)\n",
+            base, hit->name, hit->level_type, hit->def, hit->act);
+         fprintf(stderr,
+            "auto-resolve: %s -> type=%d def=%d\n", base, type, def);
+      }
+      else
+      {
+         fprintf(stderr,
+            "auto-resolve: %s not in preset index, falling back\n",
+            base ? base : "(null)");
+      }
+   }
+
    // lvl*.txt (and loading dt1 from mpq)
    fprintf(stderr, "searching Dt1Mask...");
    read_lvlprest_txt(ds1_idx, def);
