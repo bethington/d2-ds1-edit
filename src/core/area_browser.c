@@ -4,9 +4,10 @@
 #include "structs.h"
 #include "error.h"
 #include "misc.h"
+#include "core/area_metadata.h"
 #include "core/ds1.h"
+#include "core/palette.h"
 #include "core/txtread.h"
-#include "core/animdata.h"
 #include "core/cof.h"
 #include "render/preview.h"
 #include "core/area_browser.h"
@@ -17,6 +18,59 @@
 
 
 /* ---- helpers ---- */
+
+static int area_browser_audit_lvltypes_rows(TXT_S * lvltypes, FILE * out)
+{
+   int lt_row;
+   int lt_id_col, lt_name_col, lt_act_col;
+   int mismatch_count = 0;
+
+   if (lvltypes == NULL)
+      return -1;
+
+   lt_id_col = misc_get_txt_column_num(RQ_LVLTYPE, "Id");
+   lt_name_col = misc_get_txt_column_num(RQ_LVLTYPE, "Name");
+   lt_act_col = misc_get_txt_column_num(RQ_LVLTYPE, "Act");
+
+   for (lt_row = 0; lt_row < lvltypes->line_num; lt_row++)
+   {
+      char * lt_name;
+      long * lt_id_ptr;
+      long * lt_act_ptr;
+      long lt_id;
+      long lt_act;
+      int name_act;
+
+      lt_id_ptr = (long *)(lvltypes->data + (lt_row * lvltypes->line_size)
+                  + lvltypes->col[lt_id_col].offset);
+      lt_id = *lt_id_ptr;
+      if (lt_id <= 0)
+         continue;
+
+      lt_name = lvltypes->data + (lt_row * lvltypes->line_size)
+                + lvltypes->col[lt_name_col].offset;
+      lt_act_ptr = (long *)(lvltypes->data + (lt_row * lvltypes->line_size)
+                  + lvltypes->col[lt_act_col].offset);
+      lt_act = *lt_act_ptr;
+      if (area_name_has_act_mismatch((int)lt_act, lt_name) == 0)
+         continue;
+
+      name_act = area_name_parse_act(lt_name);
+
+      mismatch_count++;
+      if (out != NULL)
+      {
+         fprintf(out,
+                 "LvlTypes mismatch: ID=%ld Name=\"%s\" name_act=%d txt_act=%ld\n",
+                 lt_id,
+                 lt_name,
+                 name_act,
+                 lt_act);
+      }
+   }
+
+   return mismatch_count;
+}
 
 /* Case-insensitive substring search. */
 static int stristr_match(const char * haystack, const char * needle)
@@ -32,32 +86,6 @@ static int stristr_match(const char * haystack, const char * needle)
          return 1;
    }
    return 0;
-}
-
-/* Parse act number from a name like "Act 3 - Jungle". Returns 1-5, or 0 if
- * the name doesn't match the "Act X - ..." pattern. */
-static int area_parse_act(const char * name)
-{
-   int act;
-   if (name == NULL || name[0] == '\0')
-      return 0;
-   if (strncmp(name, "Act ", 4) != 0)
-      return 0;
-   act = name[4] - '0';
-   if (act < 1 || act > 5)
-      return 0;
-   if (name[5] != ' ' || name[6] != '-' || name[7] != ' ')
-      return 0;
-   return act;
-}
-
-/* Strip "Act X - " prefix to get display name. Returns pointer into the
- * original string (no allocation). Returns the full name if no prefix. */
-static const char * area_strip_prefix(const char * name)
-{
-   if (area_parse_act(name) > 0)
-      return name + 8;
-   return name;
 }
 
 /* Add a DS1 entry to a group, growing the array if needed. */
@@ -90,10 +118,12 @@ void area_group_add_entry(AREA_GROUP_S * grp, int lvltype_id,
 /* Find or create a group for the given LvlType. */
 static AREA_GROUP_S * area_find_or_create_group(AREA_BROWSER_S * ab,
                                                  int lvltype_id,
-                                                 const char * name)
+                                                 const char * name,
+                                                 int txt_act)
 {
    int i;
    AREA_GROUP_S * g;
+   int name_act;
 
    /* search existing */
    for (i = 0; i < ab->group_count; i++)
@@ -116,9 +146,11 @@ static AREA_GROUP_S * area_find_or_create_group(AREA_BROWSER_S * ab,
    /* create new */
    g = &ab->groups[ab->group_count];
    memset(g, 0, sizeof(AREA_GROUP_S));
+   name_act = area_name_parse_act(name);
    g->lvltype_id = lvltype_id;
-   g->act = area_parse_act(name);
-   strncpy(g->name, area_strip_prefix(name), sizeof(g->name) - 1);
+   g->act = area_group_resolve_act(txt_act, name);
+   g->name_act = name_act;
+   strncpy(g->name, area_name_strip_prefix(name), sizeof(g->name) - 1);
    g->name[sizeof(g->name) - 1] = '\0';
    ab->group_count++;
    return g;
@@ -189,6 +221,7 @@ void area_browser_build(void)
    TXT_S * lvlprest = glb_ds1edit.lvlprest_buff;
    int lt_row, lp_row;
    int lt_id_col, lt_name_col;
+   int lt_act_col;
    int lp_name_col, lp_def_col;
    int lp_file_col[6];
    int f;
@@ -200,6 +233,7 @@ void area_browser_build(void)
    /* get column indices */
    lt_id_col   = misc_get_txt_column_num(RQ_LVLTYPE, "Id");
    lt_name_col = misc_get_txt_column_num(RQ_LVLTYPE, "Name");
+   lt_act_col  = misc_get_txt_column_num(RQ_LVLTYPE, "Act");
    lp_name_col = misc_get_txt_column_num(RQ_LVLPREST, "Name");
    lp_def_col  = misc_get_txt_column_num(RQ_LVLPREST, "Def");
    for (f = 0; f < 6; f++)
@@ -210,13 +244,18 @@ void area_browser_build(void)
 
    /* clear any previous data */
    area_browser_destroy();
+   ab->lvltypes_act_mismatch_count = area_browser_audit_lvltypes_rows(
+      lvltypes,
+      glb_ds1edit.cmd_line.debug_mode == TRUE ? stdout : NULL);
 
    /* iterate all LvlType rows to create groups */
    for (lt_row = 0; lt_row < lvltypes->line_num; lt_row++)
    {
       char * lt_name;
       long * lt_id_ptr;
+      long * lt_act_ptr;
       long lt_id;
+      long lt_act;
       int lt_name_len;
       AREA_GROUP_S * grp;
 
@@ -231,7 +270,11 @@ void area_browser_build(void)
       if (lt_name[0] == '\0')
          continue;
 
-      grp = area_find_or_create_group(ab, (int)lt_id, lt_name);
+      lt_act_ptr = (long *)(lvltypes->data + (lt_row * lvltypes->line_size)
+                  + lvltypes->col[lt_act_col].offset);
+      lt_act = *lt_act_ptr;
+
+      grp = area_find_or_create_group(ab, (int)lt_id, lt_name, (int)lt_act);
       if (grp == NULL)
          continue;
 
@@ -251,7 +294,7 @@ void area_browser_build(void)
          const char * area_part;
          char match_prefix[80];
          int match_len;
-         int act = area_parse_act(lt_name);
+         int act = area_name_parse_act(lt_name);
 
          if (act > 0)
          {
@@ -315,6 +358,13 @@ void area_browser_build(void)
       } /* end match_prefix block */
    }
 
+   if ((glb_ds1edit.cmd_line.debug_mode == TRUE) &&
+       (ab->lvltypes_act_mismatch_count > 0))
+   {
+      printf("area_browser: %d LvlTypes rows had name/Act mismatches; using the Act column as source of truth\n",
+         ab->lvltypes_act_mismatch_count);
+   }
+
    /* Retry pass: for groups with 0 entries, try shorter 3-char prefix.
     * This handles cases like "Monestary" where LvlPrest uses "Mon Front". */
    {
@@ -322,7 +372,7 @@ void area_browser_build(void)
       for (gi = 0; gi < ab->group_count; gi++)
       {
          AREA_GROUP_S * grp = &ab->groups[gi];
-         if (grp->entry_count > 0 || grp->act == 0)
+         if (grp->entry_count > 0 || grp->name_act == 0)
             continue;
 
          /* Try 3-char prefix */
@@ -333,7 +383,7 @@ void area_browser_build(void)
             int sk = slen > 3 ? 3 : slen;
             int sm;
 
-            sprintf(short_prefix, "Act %d - ", grp->act);
+            sprintf(short_prefix, "Act %d - ", grp->name_act);
             strncat(short_prefix, ap, sk);
             sm = strlen(short_prefix);
 
@@ -426,6 +476,20 @@ void area_browser_build(void)
       printf("\n");
       fflush(stdout);
    }
+}
+
+int area_browser_audit_lvltypes(FILE * out)
+{
+   TXT_S * lvltypes = glb_ds1edit.lvltypes_buff;
+
+   if (lvltypes == NULL)
+   {
+      if (read_lvltypes_txt(0, 0) < -1)
+         return -1;
+      lvltypes = glb_ds1edit.lvltypes_buff;
+   }
+
+   return area_browser_audit_lvltypes_rows(lvltypes, out);
 }
 
 /* Print all available areas to stdout. */
@@ -654,33 +718,18 @@ int area_browser_open_by_file(const char * ds1_path)
    return -1;
 }
 
-/* Switch to a new area: clear existing DS1s, load new ones, run post-load.
- * Returns the first ds1_idx of the loaded area, or -1 on error. */
-int area_browser_switch_area(int group_idx)
+static void area_browser_unload_current(void)
 {
-   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
-   int i, opened;
+   int i;
 
-   if (group_idx < 0 || group_idx >= ab->group_count)
-      return -1;
-   if (ab->groups[group_idx].entry_count == 0)
-      return -1;
-
-   printf("Switching to area: ");
-   fflush(stdout);
-
-   /* Free all currently loaded DS1 files (and their DT1 references) */
    for (i = 0; i < DS1_MAX; i++)
    {
       if (glb_ds1[i].name[0] != '\0')
          ds1_free(i);
    }
 
-   /* Clear all DS1 slots */
    memset(glb_ds1, 0, sizeof(DS1_S) * DS1_MAX);
 
-   /* Destroy COF animation data but keep the obj_desc table —
-    * it's loaded from obj.txt and doesn't change between areas. */
    {
       int od;
       for (od = 0; od < glb_ds1edit.obj_desc_num; od++)
@@ -692,37 +741,84 @@ int area_browser_switch_area(int group_idx)
          }
       }
    }
+}
 
-   /* Load the new area */
-   opened = area_browser_open_group(group_idx);
-   if (opened <= 0)
-   {
-      glb_ds1edit.has_loaded_ds1 = FALSE;
+static int area_browser_open_entry_into_slot(int group_idx, int entry_idx, int ds1_idx)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   AREA_GROUP_S * g;
+   AREA_DS1_ENTRY_S * e;
+   char ds1_path[512];
+
+   if (group_idx < 0 || group_idx >= ab->group_count)
       return -1;
+
+   g = &ab->groups[group_idx];
+   if (entry_idx < 0 || entry_idx >= g->entry_count)
+      return -1;
+   if (ds1_idx < 0 || ds1_idx >= DS1_MAX)
+      return -1;
+
+   e = &g->entries[entry_idx];
+   if (g->is_backup)
+   {
+      strncpy(ds1_path, e->ds1_path, sizeof(ds1_path) - 1);
+      ds1_path[sizeof(ds1_path) - 1] = '\0';
+
+      printf("  [%d] (backup) %s\n", entry_idx, ds1_path);
+      fflush(stdout);
+
+      ds1_read(ds1_path, ds1_idx, 0, 0);
+      misc_make_block_table(ds1_idx);
+      ds1_make_prop_2_block(ds1_idx);
+      return 0;
    }
+
+   {
+      int found_mod = 0;
+      if (glb_config.mod_dir[0] != NULL)
+      {
+         char mod_path[512];
+         FILE * test;
+         sprintf(mod_path, "%s\\Global\\Tiles\\%s", glb_config.mod_dir[0], e->ds1_path);
+         test = fopen(mod_path, "rb");
+         if (test != NULL)
+         {
+            fclose(test);
+            strncpy(ds1_path, mod_path, sizeof(ds1_path) - 1);
+            ds1_path[sizeof(ds1_path) - 1] = '\0';
+            found_mod = 1;
+         }
+      }
+      if (!found_mod)
+         sprintf(ds1_path, "assets/tiles/%s", e->ds1_path);
+   }
+
+   printf("  [%d] lvltype=%d def=%d %s\n", entry_idx, e->lvltype_id, e->lvlprest_def, ds1_path);
+   fflush(stdout);
+
+   misc_open_1_ds1(ds1_idx, ds1_path, e->lvltype_id, e->lvlprest_def, 0, 0);
+   return 0;
+}
+
+static void area_browser_finish_load(int group_idx, int active_ds1_idx, int opened)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
 
    if (!ab->groups[group_idx].is_backup)
    {
-      /* Post-load: animdata, animations, colormaps (skip for backup — no DT1s) */
       animdata_load();
       anim_update_gfx(FALSE);
       misc_make_cmaps();
 
-      /* Promote bitmaps to VIDEO */
       al_set_new_bitmap_flags(ALLEGRO_VIDEO_BITMAP);
       ds1edit_recreate_render_targets();
-      /* Set correct palette for new area BEFORE rebuilding DT1 bitmaps.
-       * Use txt_act (from LvlTypes.txt) — the DS1 .act field defaults
-       * to 1 for old format files (version < 8). */
       {
-         int pal_idx = glb_ds1[0].txt_act > 0 ? glb_ds1[0].txt_act - 1
-                                                : glb_ds1[0].act - 1;
-         if (pal_idx < 0) pal_idx = 0;
-         if (pal_idx > 4) pal_idx = 4;
+         int pal_idx = palette_resolve_index(glb_ds1[active_ds1_idx].txt_act,
+                                             glb_ds1[active_ds1_idx].act);
          a5_current_palette = &glb_ds1edit.vga_pal[pal_idx];
       }
       dt1_rebuild_bitmaps_from_cache(a5_current_palette);
-      /* Promote animation bitmaps */
       {
          int oi, li, fi;
          for (oi = 0; oi < glb_ds1edit.obj_desc_num; oi++)
@@ -752,20 +848,45 @@ int area_browser_switch_area(int group_idx)
       }
    }
 
-   /* Reset viewport */
-   glb_ds1edit.win_preview.x0 = glb_ds1[0].own_wpreview.x0;
-   glb_ds1edit.win_preview.y0 = glb_ds1[0].own_wpreview.y0;
+   glb_ds1edit.win_preview.x0 = glb_ds1[active_ds1_idx].own_wpreview.x0;
+   glb_ds1edit.win_preview.y0 = glb_ds1[active_ds1_idx].own_wpreview.y0;
    glb_ds1edit.win_preview.w  = glb_config.screen.width;
    glb_ds1edit.win_preview.h  = glb_config.screen.height;
 
-   wpreview_init_palette_state(0);
+   wpreview_init_palette_state(active_ds1_idx);
    glb_ds1edit.has_loaded_ds1 = TRUE;
-   glb_ds1edit.ds1_group_idx = 0;
+   glb_ds1edit.ds1_group_idx = active_ds1_idx;
    glb_ds1edit.area_browser.loaded_group = group_idx;
+   glb_ds1edit.show_2nd_row = (opened > 1) ? TRUE : FALSE;
    props_panel_calc_shared_counts();
+}
 
-   if (opened > 1)
-      glb_ds1edit.show_2nd_row = TRUE;
+/* Switch to a new area: clear existing DS1s, load new ones, run post-load.
+ * Returns the first ds1_idx of the loaded area, or -1 on error. */
+int area_browser_switch_area(int group_idx)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   int opened;
+
+   if (group_idx < 0 || group_idx >= ab->group_count)
+      return -1;
+   if (ab->groups[group_idx].entry_count == 0)
+      return -1;
+
+   printf("Switching to area: ");
+   fflush(stdout);
+
+   area_browser_unload_current();
+
+   /* Load the new area */
+   opened = area_browser_open_group(group_idx);
+   if (opened <= 0)
+   {
+      glb_ds1edit.has_loaded_ds1 = FALSE;
+      return -1;
+   }
+
+   area_browser_finish_load(group_idx, 0, opened);
 
    printf("done (%d maps loaded)\n", opened);
    fflush(stdout);
@@ -773,8 +894,7 @@ int area_browser_switch_area(int group_idx)
 }
 
 /* Switch to a single DS1 file from an expanded group entry.
- * If the group is already loaded, just switch ds1_idx (instant).
- * If a different group is loaded, load the full new group first. */
+ * This path is intentionally lazy: it loads only the requested DS1. */
 int area_browser_switch_single(int group_idx, int entry_idx)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
@@ -784,24 +904,17 @@ int area_browser_switch_single(int group_idx, int entry_idx)
    if (entry_idx < 0 || entry_idx >= ab->groups[group_idx].entry_count)
       return -1;
 
-   /* If a different group is loaded (or none), load the full group first */
-   if (ab->loaded_group != group_idx)
+   printf("Switching to DS1 entry %d in group %d\n", entry_idx, group_idx);
+   fflush(stdout);
+
+   area_browser_unload_current();
+   if (area_browser_open_entry_into_slot(group_idx, entry_idx, 0) != 0)
    {
-      if (area_browser_switch_area(group_idx) < 0)
-         return -1;
+      glb_ds1edit.has_loaded_ds1 = FALSE;
+      return -1;
    }
 
-   /* Now all DS1s for this group are loaded — just switch the active index.
-    * entry_idx maps to ds1_idx since open_group loads them in order. */
-   if (entry_idx < DS1_MAX && glb_ds1[entry_idx].name[0] != '\0')
-   {
-      glb_ds1edit.win_preview.x0 = glb_ds1[entry_idx].own_wpreview.x0;
-      glb_ds1edit.win_preview.y0 = glb_ds1[entry_idx].own_wpreview.y0;
-      glb_ds1edit.win_preview.w  = glb_config.screen.width;
-      glb_ds1edit.win_preview.h  = glb_config.screen.height;
-      return entry_idx;
-   }
-
+   area_browser_finish_load(group_idx, 0, 1);
    return 0;
 }
 
@@ -820,7 +933,7 @@ int area_browser_nav_up(void)
    {
       /* Move up within expanded entries */
       ab->selected_entry = ei - 1;
-      return ei - 1;  /* ds1_idx = entry index within loaded group */
+      return area_browser_switch_single(gi, ab->selected_entry);
    }
    else if (ei == 0)
    {
@@ -837,7 +950,7 @@ int area_browser_nav_up(void)
          if (ab->groups[gi - 1].is_expanded && ab->groups[gi - 1].entry_count > 0)
          {
             ab->selected_entry = ab->groups[gi - 1].entry_count - 1;
-            return ab->selected_entry;
+            return area_browser_switch_single(ab->selected_group, ab->selected_entry);
          }
          ab->selected_entry = -1;
       }
@@ -861,7 +974,7 @@ int area_browser_nav_down(void)
       {
          /* Move into expanded entries */
          ab->selected_entry = 0;
-         return 0;
+         return area_browser_switch_single(gi, 0);
       }
       else
       {
@@ -880,7 +993,7 @@ int area_browser_nav_down(void)
       if (ei < ab->groups[gi].entry_count - 1)
       {
          ab->selected_entry = ei + 1;
-         return ei + 1;
+         return area_browser_switch_single(gi, ab->selected_entry);
       }
       else
       {
@@ -909,7 +1022,7 @@ int area_browser_nav_left(void)
    return -1;
 }
 
-/* Expand current group and preload DS1s. Returns first ds1_idx or -1. */
+/* Expand current group and load its first DS1 lazily. Returns ds1_idx or -1. */
 int area_browser_nav_right(void)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
@@ -923,19 +1036,13 @@ int area_browser_nav_right(void)
    if (!ab->groups[gi].is_expanded)
    {
       ab->groups[gi].is_expanded = TRUE;
-      /* Preload if not already loaded */
-      if (ab->loaded_group != gi)
-      {
-         if (area_browser_switch_area(gi) >= 0)
-            return 0;
-      }
    }
 
    /* If already expanded, move into entries */
    if (ab->selected_entry == -1 && ab->groups[gi].entry_count > 0)
    {
       ab->selected_entry = 0;
-      return 0;
+      return area_browser_switch_single(gi, 0);
    }
    return -1;
 }
@@ -976,7 +1083,7 @@ int area_browser_nav_home(void)
       return -1;
 
    ab->selected_entry = 0;
-   return 0;
+   return area_browser_switch_single(gi, 0);
 }
 
 /* Jump to last DS1 in current expanded group. */
@@ -991,7 +1098,7 @@ int area_browser_nav_end(void)
       return -1;
 
    ab->selected_entry = ab->groups[gi].entry_count - 1;
-   return ab->selected_entry;
+   return area_browser_switch_single(gi, ab->selected_entry);
 }
 
 /* Free all area browser dynamic memory. */
@@ -1102,10 +1209,11 @@ void area_browser_scan_backups(void)
                   /* Create if not found */
                   if (bgrp == NULL)
                   {
-                     bgrp = area_find_or_create_group(ab, -1 - act, backup_name);
+                     bgrp = area_find_or_create_group(ab, -1 - act, backup_name, act);
                      if (bgrp != NULL)
                      {
                         bgrp->act = act;
+                        bgrp->name_act = 0;
                         bgrp->is_backup = TRUE;
                      }
                   }
@@ -1193,11 +1301,19 @@ int area_browser_open_by_name(const char * area_name)
       full_name[sizeof(full_name) - 1] = '\0';
 
       if (stricmp(full_name, area_name) == 0)
+      {
+         ab->selected_group = i;
+         ab->selected_entry = -1;
          return area_browser_open_group(i);
+      }
 
       /* also try matching just the short name */
       if (stricmp(g->name, area_name) == 0)
+      {
+         ab->selected_group = i;
+         ab->selected_entry = -1;
          return area_browser_open_group(i);
+      }
    }
 
    /* No group matched — try individual level name from Levels.txt.
@@ -1225,6 +1341,8 @@ int area_browser_open_by_name(const char * area_name)
                {
                   if (ab->groups[i].lvltype_id == (int)lvltype)
                   {
+                     ab->selected_group = i;
+                     ab->selected_entry = -1;
                      printf("Level '%s' uses LvlType %ld (group: %s)\n",
                             area_name, lvltype,
                             ab->groups[i].act > 0 ? ab->groups[i].name : ab->groups[i].name);
@@ -1268,54 +1386,11 @@ int area_browser_open_group(int group_idx)
 
    for (i = 0; i < g->entry_count; i++)
    {
-      AREA_DS1_ENTRY_S * e = &g->entries[i];
-      char ds1_path[256];
-
       if (ds1_idx >= DS1_MAX)
          break;
 
-      if (g->is_backup)
-      {
-         /* Backup DS1 paths are already relative from CWD (backup/...) */
-         strncpy(ds1_path, e->ds1_path, sizeof(ds1_path) - 1);
-         ds1_path[sizeof(ds1_path) - 1] = '\0';
-
-         printf("  [%d] (backup) %s\n", i, ds1_path);
-         fflush(stdout);
-
-         /* Load DS1 structure only — skip LvlPrest/LvlTypes (no DT1 tiles) */
-         ds1_read(ds1_path, ds1_idx, 0, 0);
-         misc_make_block_table(ds1_idx);
-         ds1_make_prop_2_block(ds1_idx);
-      }
-      else
-      {
-         /* Build the full path — check mod_dir first, fall back to assets/tiles/ */
-         {
-            int found_mod = 0;
-            if (glb_config.mod_dir[0] != NULL)
-            {
-               char mod_path[512];
-               FILE * test;
-               sprintf(mod_path, "%s\\Global\\Tiles\\%s", glb_config.mod_dir[0], e->ds1_path);
-               test = fopen(mod_path, "rb");
-               if (test != NULL)
-               {
-                  fclose(test);
-                  strncpy(ds1_path, mod_path, sizeof(ds1_path) - 1);
-                  ds1_path[sizeof(ds1_path) - 1] = '\0';
-                  found_mod = 1;
-               }
-            }
-            if (!found_mod)
-               sprintf(ds1_path, "assets/tiles/%s", e->ds1_path);
-         }
-
-         printf("  [%d] lvltype=%d def=%d %s\n", i, e->lvltype_id, e->lvlprest_def, ds1_path);
-         fflush(stdout);
-
-         misc_open_1_ds1(ds1_idx, ds1_path, e->lvltype_id, e->lvlprest_def, 0, 0);
-      }
+      if (area_browser_open_entry_into_slot(group_idx, i, ds1_idx) != 0)
+         break;
       ds1_idx++;
       opened++;
    }

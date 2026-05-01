@@ -35,9 +35,17 @@ void ini_create(char *ininame)
        "patch_d2 =\n"
        "mod_dir  =\n"
        "\n"
+      "; Optional remote PNG upscaling service. When enabled and a base URL\n"
+      "; is configured, export flows can offer remote 2x/4x upscaling.\n"
+      "; =================================================================\n"
+      "upscale_enabled     = NO\n"
+      "upscale_service_url =\n"
+      "\n"
        "; Example explicit configuration:\n"
        "; d2_install = C:\\Diablo2\n"
        "; mod_dir    = C:\\Diablo2\\mods\\my_mod\n"
+      "; upscale_enabled     = YES\n"
+      "; upscale_service_url = http://10.0.10.30:8080\n"
        "\n"
        "\n"
        "; data_dir overrides where the editor looks for its runtime data\n"
@@ -184,6 +192,8 @@ void ini_read(char *ininame)
    } datas[] =
        {
            {"d2_install", T_MOD, &glb_config.d2_install, ""},
+           {"upscale_enabled", T_YES, &glb_config.upscale_enabled, "NO"},
+           {"upscale_service_url", T_STR, &glb_config.upscale_service_url, ""},
            {"d2char", T_MPQ, &glb_config.mpq_file[3], ""},
            {"d2data", T_MPQ, &glb_config.mpq_file[2], ""},
            {"d2exp", T_MPQ, &glb_config.mpq_file[1], ""},
@@ -251,8 +261,19 @@ void ini_read(char *ininame)
       {
       // string
       case T_STR:
-         if (strlen(str))
-            datas[i].data_ptr = (char *)str;
+         len = strlen(str);
+         if (len)
+         {
+            buf = (char *)malloc(sizeof(char) * (len + 1));
+            if (buf == NULL)
+               ds1edit_error("read_ini(), malloc() error on string value");
+            else
+            {
+               strcpy(buf, str);
+               tmpptr = datas[i].data_ptr;
+               *tmpptr = buf;
+            }
+         }
          break;
 
       // number

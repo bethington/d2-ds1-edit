@@ -7,6 +7,31 @@ add_executable(test_placeholder test_placeholder.c)
 target_link_libraries(test_placeholder PRIVATE unity)
 add_test(NAME placeholder COMMAND test_placeholder)
 
+# Export helpers: screenshot naming regression checks
+add_executable(test_export_common test_export_common.c ../src/core/export_common.c)
+target_link_libraries(test_export_common PRIVATE unity)
+target_include_directories(test_export_common PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
+add_test(NAME export_common COMMAND test_export_common)
+
+add_executable(test_asset_export_smoke
+    test_asset_export_smoke.c
+    test_asset_export_stubs.c
+    ../src/core/asset_export.c
+)
+target_link_libraries(test_asset_export_smoke PRIVATE unity ${ALLEGRO5_LIB} ${ALLEGRO5_IMAGE_LIB})
+target_include_directories(test_asset_export_smoke PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/mpq
+    ${ALLEGRO5_INCLUDE_DIR}
+)
+target_compile_definitions(test_asset_export_smoke PRIVATE
+    TEST_BUILD_DIR="$<TARGET_FILE_DIR:test_asset_export_smoke>"
+    DS1EDIT_BIN_EXE="${CMAKE_SOURCE_DIR}/bin/ds1edit.exe"
+)
+add_test(NAME asset_export_smoke COMMAND test_asset_export_smoke)
+
 # Phase 1: Palette abstraction layer tests
 add_executable(test_palette test_palette.c ../src/core/palette.c)
 target_link_libraries(test_palette PRIVATE unity)
@@ -15,6 +40,13 @@ target_include_directories(test_palette PRIVATE
     ${CMAKE_SOURCE_DIR}/src/mpq
 )
 add_test(NAME palette COMMAND test_palette)
+
+add_executable(test_area_metadata test_area_metadata.c ../src/core/area_metadata.c)
+target_link_libraries(test_area_metadata PRIVATE unity)
+target_include_directories(test_area_metadata PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
+add_test(NAME area_metadata COMMAND test_area_metadata)
 
 # Phase 1: RGBA cache tests (needs Allegro 5 for cache_tile_to_a5_bitmap)
 add_executable(test_rgba_cache test_rgba_cache.c ../src/core/rgba_cache.c)
@@ -33,6 +65,15 @@ if(WIN32 AND DEFINED ALLEGRO5_BIN_DIR AND EXISTS "${ALLEGRO5_BIN_DIR}")
             "${ALLEGRO5_BIN_DIR}"
             "$<TARGET_FILE_DIR:test_rgba_cache>"
         COMMENT "Copying Allegro DLLs to test output directory"
+    )
+endif()
+
+if(WIN32 AND DEFINED ALLEGRO5_BIN_DIR AND EXISTS "${ALLEGRO5_BIN_DIR}")
+    add_custom_command(TARGET test_asset_export_smoke POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${ALLEGRO5_BIN_DIR}"
+            "$<TARGET_FILE_DIR:test_asset_export_smoke>"
+        COMMENT "Copying Allegro DLLs for test_asset_export_smoke"
     )
 endif()
 

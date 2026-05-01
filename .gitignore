@@ -58,6 +58,14 @@ Thumbs.db
 # Local developer configuration
 .mcp.json
 CMakeUserPresets.json
+ds1edit.ini
+.env
+*.env
+!.env.example
+
+# Export/upscale smoke test artifacts
+all_dc6_log.txt
+*smoke*/
 
 # Generated version file
 data/version

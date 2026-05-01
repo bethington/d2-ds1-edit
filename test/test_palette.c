@@ -11,7 +11,6 @@
 void setUp(void) {}
 void tearDown(void) {}
 
-
 /* ---- palette_d2_to_rgba tests ---- */
 
 void test_null_palette_produces_grayscale(void)
@@ -41,7 +40,6 @@ void test_null_palette_produces_grayscale(void)
     TEST_ASSERT_EQUAL_UINT8(255, pal.colors[255].a);
 }
 
-
 void test_d2_palette_basic_conversion(void)
 {
     /* Build a small D2 palette: 256 entries * 4 bytes = 1024 bytes */
@@ -52,20 +50,34 @@ void test_d2_palette_basic_conversion(void)
     memset(d2_pal, 0, sizeof(d2_pal));
 
     /* Set index 0 to black */
-    d2_pal[0] = 0; d2_pal[1] = 0; d2_pal[2] = 0; d2_pal[3] = 0;
+    d2_pal[0] = 0;
+    d2_pal[1] = 0;
+    d2_pal[2] = 0;
+    d2_pal[3] = 0;
 
     /* Set index 1 to red (255,0,0) */
-    d2_pal[4] = 255; d2_pal[5] = 0; d2_pal[6] = 0; d2_pal[7] = 0;
+    d2_pal[4] = 255;
+    d2_pal[5] = 0;
+    d2_pal[6] = 0;
+    d2_pal[7] = 0;
 
     /* Set index 2 to green (0,255,0) */
-    d2_pal[8] = 0; d2_pal[9] = 255; d2_pal[10] = 0; d2_pal[11] = 0;
+    d2_pal[8] = 0;
+    d2_pal[9] = 255;
+    d2_pal[10] = 0;
+    d2_pal[11] = 0;
 
     /* Set index 3 to blue (0,0,255) */
-    d2_pal[12] = 0; d2_pal[13] = 0; d2_pal[14] = 255; d2_pal[15] = 0;
+    d2_pal[12] = 0;
+    d2_pal[13] = 0;
+    d2_pal[14] = 255;
+    d2_pal[15] = 0;
 
     /* Set index 255 to white */
-    d2_pal[255 * 4] = 255; d2_pal[255 * 4 + 1] = 255;
-    d2_pal[255 * 4 + 2] = 255; d2_pal[255 * 4 + 3] = 0;
+    d2_pal[255 * 4] = 255;
+    d2_pal[255 * 4 + 1] = 255;
+    d2_pal[255 * 4 + 2] = 255;
+    d2_pal[255 * 4 + 3] = 0;
 
     palette_d2_to_rgba(d2_pal, 1024, NULL, &pal);
 
@@ -101,7 +113,6 @@ void test_d2_palette_basic_conversion(void)
     }
 }
 
-
 void test_gamma_correction_applied(void)
 {
     uint8_t d2_pal[1024];
@@ -116,7 +127,10 @@ void test_gamma_correction_applied(void)
         gamma_table[i] = (uint8_t)(i / 2);
 
     /* Set index 1 to (200, 100, 50) */
-    d2_pal[4] = 200; d2_pal[5] = 100; d2_pal[6] = 50; d2_pal[7] = 0;
+    d2_pal[4] = 200;
+    d2_pal[5] = 100;
+    d2_pal[6] = 50;
+    d2_pal[7] = 0;
 
     palette_d2_to_rgba(d2_pal, 1024, gamma_table, &pal);
 
@@ -125,7 +139,6 @@ void test_gamma_correction_applied(void)
     TEST_ASSERT_EQUAL_UINT8(50, pal.colors[1].g);
     TEST_ASSERT_EQUAL_UINT8(25, pal.colors[1].b);
 }
-
 
 void test_identity_gamma_no_change(void)
 {
@@ -141,7 +154,10 @@ void test_identity_gamma_no_change(void)
         gamma_table[i] = (uint8_t)i;
 
     /* Set index 10 to (42, 84, 168) */
-    d2_pal[40] = 42; d2_pal[41] = 84; d2_pal[42] = 168; d2_pal[43] = 0;
+    d2_pal[40] = 42;
+    d2_pal[41] = 84;
+    d2_pal[42] = 168;
+    d2_pal[43] = 0;
 
     palette_d2_to_rgba(d2_pal, 1024, gamma_table, &pal);
 
@@ -149,7 +165,6 @@ void test_identity_gamma_no_change(void)
     TEST_ASSERT_EQUAL_UINT8(84, pal.colors[10].g);
     TEST_ASSERT_EQUAL_UINT8(168, pal.colors[10].b);
 }
-
 
 /* ---- palette_find_closest tests ---- */
 
@@ -159,17 +174,19 @@ void test_find_closest_exact_match(void)
     memset(&pal, 0, sizeof(pal));
 
     /* Index 1: pure red */
-    pal.colors[1].r = 255; pal.colors[1].a = 255;
+    pal.colors[1].r = 255;
+    pal.colors[1].a = 255;
     /* Index 2: pure green */
-    pal.colors[2].g = 255; pal.colors[2].a = 255;
+    pal.colors[2].g = 255;
+    pal.colors[2].a = 255;
     /* Index 3: pure blue */
-    pal.colors[3].b = 255; pal.colors[3].a = 255;
+    pal.colors[3].b = 255;
+    pal.colors[3].a = 255;
 
     TEST_ASSERT_EQUAL_UINT8(1, palette_find_closest(&pal, 255, 0, 0));
     TEST_ASSERT_EQUAL_UINT8(2, palette_find_closest(&pal, 0, 255, 0));
     TEST_ASSERT_EQUAL_UINT8(3, palette_find_closest(&pal, 0, 0, 255));
 }
-
 
 void test_find_closest_approximate(void)
 {
@@ -177,9 +194,11 @@ void test_find_closest_approximate(void)
     memset(&pal, 0, sizeof(pal));
 
     /* Index 1: (100,0,0) */
-    pal.colors[1].r = 100; pal.colors[1].a = 255;
+    pal.colors[1].r = 100;
+    pal.colors[1].a = 255;
     /* Index 2: (200,0,0) */
-    pal.colors[2].r = 200; pal.colors[2].a = 255;
+    pal.colors[2].r = 200;
+    pal.colors[2].a = 255;
 
     /* (190,0,0) should match index 2 (closer to 200) */
     TEST_ASSERT_EQUAL_UINT8(2, palette_find_closest(&pal, 190, 0, 0));
@@ -188,6 +207,24 @@ void test_find_closest_approximate(void)
     TEST_ASSERT_EQUAL_UINT8(1, palette_find_closest(&pal, 110, 0, 0));
 }
 
+void test_resolve_act_prefers_lvltypes_over_ds1(void)
+{
+    TEST_ASSERT_EQUAL_INT(2, palette_resolve_act(2, 1));
+    TEST_ASSERT_EQUAL_INT(4, palette_resolve_act(4, 2));
+}
+
+void test_resolve_act_falls_back_to_ds1_when_lvltypes_missing(void)
+{
+    TEST_ASSERT_EQUAL_INT(3, palette_resolve_act(0, 3));
+    TEST_ASSERT_EQUAL_INT(5, palette_resolve_act(-1, 5));
+}
+
+void test_resolve_index_clamps_invalid_values_to_act1(void)
+{
+    TEST_ASSERT_EQUAL_INT(0, palette_resolve_index(0, 0));
+    TEST_ASSERT_EQUAL_INT(0, palette_resolve_index(9, -4));
+    TEST_ASSERT_EQUAL_INT(4, palette_resolve_index(5, 1));
+}
 
 /* ---- colormap tests ---- */
 
@@ -214,7 +251,6 @@ void test_shadow_colormap_basic(void)
     TEST_ASSERT_EQUAL_UINT8(cmap.data[0][42], cmap.data[5][42]);
 }
 
-
 void test_shadow_colormap_null_palette(void)
 {
     INDEX_COLORMAP cmap;
@@ -227,7 +263,6 @@ void test_shadow_colormap_null_palette(void)
     TEST_ASSERT_EQUAL_UINT8(0, cmap.data[128][128]);
     TEST_ASSERT_EQUAL_UINT8(0, cmap.data[255][255]);
 }
-
 
 void test_select_colormap_shadow_entry(void)
 {
@@ -255,7 +290,6 @@ void test_select_colormap_shadow_entry(void)
     TEST_ASSERT_EQUAL_UINT8(255, cmap.data[168][128]);
 }
 
-
 void test_trans_colormap_symmetry(void)
 {
     /*
@@ -269,9 +303,12 @@ void test_trans_colormap_symmetry(void)
     memset(&pal, 0, sizeof(pal));
 
     /* Set up some distinct colors */
-    pal.colors[1].r = 255; pal.colors[1].a = 255;
-    pal.colors[2].g = 255; pal.colors[2].a = 255;
-    pal.colors[3].b = 255; pal.colors[3].a = 255;
+    pal.colors[1].r = 255;
+    pal.colors[1].a = 255;
+    pal.colors[2].g = 255;
+    pal.colors[2].a = 255;
+    pal.colors[3].b = 255;
+    pal.colors[3].a = 255;
     for (i = 4; i < 256; i++)
         pal.colors[i].a = 255;
 
@@ -282,7 +319,6 @@ void test_trans_colormap_symmetry(void)
     TEST_ASSERT_EQUAL_UINT8(cmap.data[1][3], cmap.data[3][1]);
     TEST_ASSERT_EQUAL_UINT8(cmap.data[2][3], cmap.data[3][2]);
 }
-
 
 /* ---- main ---- */
 
@@ -299,6 +335,9 @@ int main(void)
     /* Find closest */
     RUN_TEST(test_find_closest_exact_match);
     RUN_TEST(test_find_closest_approximate);
+    RUN_TEST(test_resolve_act_prefers_lvltypes_over_ds1);
+    RUN_TEST(test_resolve_act_falls_back_to_ds1_when_lvltypes_missing);
+    RUN_TEST(test_resolve_index_clamps_invalid_values_to_act1);
 
     /* Colormaps */
     RUN_TEST(test_shadow_colormap_basic);

@@ -40,9 +40,12 @@ set(SOURCES
     src/misc.c
     # core/
     src/core/area_browser.c
+    src/core/area_metadata.c
     src/core/d2install.c
     src/core/ds1.c
     src/core/ds1_manager.c
+    src/core/asset_export.c
+    src/core/upscale.c
     src/core/dt1.c
     src/core/dt1_draw.c
     src/core/dt1_decode.c
@@ -50,6 +53,7 @@ set(SOURCES
     src/core/animdata.c
     src/core/dcc.c
     src/core/dc6.c
+    src/core/export_common.c
     src/core/mpq_index.c
     src/core/mpq_index_query.c
     src/core/palette.c
@@ -73,6 +77,8 @@ set(SOURCES
     src/ui/props_panel.c
     src/ui/tile_picker.c
     src/ui/project_menu.c
+    src/ui/export_type_picker.c
+    src/ui/upscale_mode_picker.c
     src/ui/preset_picker.c
     src/ui/win_folder_picker.c
     # mpq/

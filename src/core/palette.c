@@ -1,7 +1,6 @@
 #include <string.h>
 #include "core/palette.h"
 
-
 /* ========================================================================== */
 void palette_d2_to_rgba(const uint8_t *d2_pal, long d2_pal_size,
                         const uint8_t *gamma_table,
@@ -44,7 +43,6 @@ void palette_d2_to_rgba(const uint8_t *d2_pal, long d2_pal_size,
     }
 }
 
-
 /* ========================================================================== */
 uint8_t palette_find_closest(const RGBA_PALETTE *pal, uint8_t r, uint8_t g, uint8_t b)
 {
@@ -68,6 +66,23 @@ uint8_t palette_find_closest(const RGBA_PALETTE *pal, uint8_t r, uint8_t g, uint
     return (uint8_t)best_idx;
 }
 
+/* ========================================================================== */
+int palette_resolve_act(int lvltypes_act, int ds1_act)
+{
+    if ((lvltypes_act >= 1) && (lvltypes_act <= PAL_ACT_MAX))
+        return lvltypes_act;
+
+    if ((ds1_act >= 1) && (ds1_act <= PAL_ACT_MAX))
+        return ds1_act;
+
+    return 1;
+}
+
+/* ========================================================================== */
+int palette_resolve_index(int lvltypes_act, int ds1_act)
+{
+    return palette_resolve_act(lvltypes_act, ds1_act) - 1;
+}
 
 /* ========================================================================== */
 /*
@@ -82,7 +97,7 @@ uint8_t palette_find_closest(const RGBA_PALETTE *pal, uint8_t r, uint8_t g, uint
  * we need to find the closest palette match for the blended result.
  */
 #define COL_SHADOW_IDX 168
-#define COL_MOUSE_IDX  255
+#define COL_MOUSE_IDX 255
 
 void palette_build_select_colormap(const RGBA_PALETTE *pal, INDEX_COLORMAP *out)
 {
@@ -127,7 +142,6 @@ void palette_build_select_colormap(const RGBA_PALETTE *pal, INDEX_COLORMAP *out)
     }
 }
 
-
 /* ========================================================================== */
 /*
  * TRANS colormap: 50% blend biased toward (128,128,128) gray.
@@ -154,7 +168,6 @@ void palette_build_trans_colormap(const RGBA_PALETTE *pal, INDEX_COLORMAP *out)
         }
     }
 }
-
 
 /* ========================================================================== */
 /*

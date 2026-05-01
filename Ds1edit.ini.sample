@@ -21,10 +21,18 @@ d2exp    =
 patch_d2 =
 mod_dir  =
 
+; Optional remote PNG upscaling service. When enabled and a base URL is set,
+; export actions can offer None / 2x / 4x modes using the configured service.
+; ===========================================================================
+upscale_enabled     = NO
+upscale_service_url =
+
 ; Examples of explicit configuration:
 ; d2_install = C:\Diablo2
 ; d2exp      = D:\custom\d2exp.mpq
 ; mod_dir    = C:\Diablo2\mods\my_mod
+; upscale_enabled     = YES
+; upscale_service_url = http://10.0.10.30:8084
 
 ; data_dir overrides where the editor looks for its runtime data
 ; (palettes, gamma table, obj.txt, ds1edit.dt1, undo temp files).

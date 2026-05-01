@@ -1,6 +1,8 @@
 #ifndef _AREA_BROWSER_H_
 #define _AREA_BROWSER_H_
 
+#include <stdio.h>
+
 int  area_browser_init          (void);
 void area_browser_build         (void);
 void area_browser_destroy       (void);
@@ -30,5 +32,6 @@ int  area_browser_nav_end       (void);
 int  area_browser_switch_single (int group_idx, int entry_idx);
 void area_browser_list_files    (const char * filter);
 int  area_browser_open_by_file  (const char * ds1_path);
+int  area_browser_audit_lvltypes(FILE * out);
 
 #endif

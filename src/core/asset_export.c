@@ -1,0 +1,1194 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+#ifdef WIN32
+#include <windows.h>
+#endif
+
+#include "structs.h"
+#include "misc.h"
+#include "mpq/MpqView.h"
+#include "core/area_browser.h"
+#include "core/project.h"
+#include "core/dt1.h"
+#include "core/dcc.h"
+#include "core/dc6.h"
+#include "core/asset_export.h"
+
+#ifdef WIN32
+#define PATH_SEP '\\'
+#else
+#define PATH_SEP '/'
+#endif
+
+#define DT1_HEADER_BYTES 276
+#define DT1_BLOCK_HEADER_BYTES 96
+
+static void normalize_asset_stem(const char *asset_path, char *out, int out_cap)
+{
+   int i, last_dot = -1;
+
+   if (out == NULL || out_cap <= 0)
+      return;
+   out[0] = 0;
+   if (asset_path == NULL)
+      return;
+
+   for (i = 0; asset_path[i] != 0 && i < (out_cap - 1); i++)
+   {
+      char ch = asset_path[i];
+      if (ch == '/' || ch == '\\')
+         ch = PATH_SEP;
+      out[i] = ch;
+      if (ch == '.')
+         last_dot = i;
+   }
+   out[i] = 0;
+
+   if (last_dot > 0)
+      out[last_dot] = 0;
+}
+
+static int make_output_path(char *out, int out_cap,
+                            const char *output_dir,
+                            const char *asset_path,
+                            const char *leaf_name)
+{
+   char stem[512];
+   char stem_parent[512];
+   const char *base;
+   char base_png[128];
+   char *last_sep;
+
+   if (out == NULL || out_cap <= 0 || output_dir == NULL || leaf_name == NULL)
+      return 0;
+
+   normalize_asset_stem(asset_path, stem, sizeof(stem));
+   if (stem[0] == 0)
+      return 0;
+
+   strcpy(stem_parent, stem);
+   last_sep = strrchr(stem_parent, PATH_SEP);
+   if (last_sep != NULL)
+   {
+      base = last_sep + 1;
+      *last_sep = 0;
+   }
+   else
+   {
+      base = stem_parent;
+      stem_parent[0] = 0;
+   }
+
+   snprintf(base_png, sizeof(base_png), "%s.png", base);
+   if (stricmp(leaf_name, base_png) == 0)
+   {
+      if (stem_parent[0] != 0)
+      {
+         snprintf(out, out_cap, "%s%c%s%c%s",
+            output_dir, PATH_SEP, stem_parent, PATH_SEP, leaf_name);
+      }
+      else
+      {
+         snprintf(out, out_cap, "%s%c%s",
+            output_dir, PATH_SEP, leaf_name);
+      }
+      return 1;
+   }
+
+   snprintf(out, out_cap, "%s%c%s%c%s",
+      output_dir, PATH_SEP, stem, PATH_SEP, leaf_name);
+   return 1;
+}
+
+static void make_asset_basename_png(const char *asset_path, char *out, int out_cap)
+{
+   char stem[512];
+   const char *base;
+
+   if (out == NULL || out_cap <= 0)
+      return;
+   out[0] = 0;
+
+   normalize_asset_stem(asset_path, stem, sizeof(stem));
+   if (stem[0] == 0)
+      return;
+
+   base = strrchr(stem, PATH_SEP);
+   if (base != NULL)
+      base++;
+   else
+      base = stem;
+
+   snprintf(out, out_cap, "%s.png", base);
+}
+
+static int save_bitmap_png(const char *path, ALLEGRO_BITMAP *bmp)
+{
+   if (path == NULL || bmp == NULL)
+      return 0;
+
+   if (!project_ensure_parent_dirs(path))
+      return 0;
+
+   return al_save_bitmap(path, bmp) ? 1 : 0;
+}
+
+static void make_anim_leaf(const char *asset_path, char *out, int out_cap, int directions,
+                           int frames_per_direction, int direction_idx,
+                           int frame_idx)
+{
+   if (out == NULL || out_cap <= 0)
+      return;
+
+   if (directions > 1)
+   {
+      if (frames_per_direction > 1)
+      {
+         snprintf(out, out_cap, "dir_%02i%cframe_%03i.png",
+            direction_idx, PATH_SEP, frame_idx);
+      }
+      else
+      {
+         snprintf(out, out_cap, "dir_%02i.png", direction_idx);
+      }
+   }
+   else if (frames_per_direction > 1)
+   {
+      snprintf(out, out_cap, "frame_%03i.png", frame_idx);
+   }
+   else
+   {
+      make_asset_basename_png(asset_path, out, out_cap);
+   }
+}
+
+typedef struct EXPORT_PATH_LIST_S
+{
+   char **items;
+   int count;
+   int capacity;
+} EXPORT_PATH_LIST_S;
+
+typedef struct DT1_DISCOVERY_CACHE_ENTRY_S
+{
+   char *asset_path;
+   int is_valid;
+} DT1_DISCOVERY_CACHE_ENTRY_S;
+
+typedef struct DT1_DISCOVERY_CACHE_S
+{
+   DT1_DISCOVERY_CACHE_ENTRY_S *items;
+   int count;
+   int capacity;
+} DT1_DISCOVERY_CACHE_S;
+
+static DT1_DISCOVERY_CACHE_S g_dt1_discovery_cache;
+
+static void normalize_slashes_copy(const char *src, char *dst, int dst_cap)
+{
+   int i;
+
+   if (dst == NULL || dst_cap <= 0)
+      return;
+   dst[0] = 0;
+   if (src == NULL)
+      return;
+
+   for (i = 0; src[i] != 0 && i < (dst_cap - 1); i++)
+   {
+      char ch = src[i];
+      if (ch == '/')
+         ch = '\\';
+      dst[i] = ch;
+   }
+   dst[i] = 0;
+}
+
+static void dt1_discovery_cache_reset(void);
+static int dt1_discovery_cache_lookup(const char *asset_path, int *is_valid_out);
+static void dt1_discovery_cache_store(const char *asset_path, int is_valid);
+
+static void trim_trailing_slash(char *path)
+{
+   int len;
+
+   if (path == NULL)
+      return;
+   len = (int) strlen(path);
+   while (len > 0 && (path[len - 1] == '\\' || path[len - 1] == '/'))
+   {
+      path[len - 1] = 0;
+      len--;
+   }
+}
+
+int asset_export_guess_palette_act(const char *asset_path)
+{
+   char path_norm[512];
+   const char *act_root;
+
+   if (asset_path == NULL || asset_path[0] == 0)
+      return 0;
+
+   normalize_slashes_copy(asset_path, path_norm, sizeof(path_norm));
+   act_root = path_norm;
+   if (strnicmp(act_root, "Data\\Global\\Tiles\\", 18) == 0)
+      act_root += 18;
+
+   if (strnicmp(act_root, "Act1\\", 5) == 0)
+      return 1;
+   if (strnicmp(act_root, "Act2\\", 5) == 0)
+      return 2;
+   if (strnicmp(act_root, "Act3\\", 5) == 0)
+      return 3;
+   if (strnicmp(act_root, "Act4\\", 5) == 0)
+      return 4;
+   if (strnicmp(act_root, "Expansion\\", 10) == 0)
+      return 5;
+
+   return 0;
+}
+
+static RGBA_PALETTE *asset_export_resolve_palette(const char *asset_path)
+{
+   int pal_idx;
+   int guessed_act;
+
+   if (glb_ds1edit.cmd_line.force_pal_num >= 1 &&
+       glb_ds1edit.cmd_line.force_pal_num <= PAL_ACT_MAX)
+   {
+      pal_idx = glb_ds1edit.cmd_line.force_pal_num - 1;
+      return &glb_ds1edit.vga_pal[pal_idx];
+   }
+
+   guessed_act = asset_export_guess_palette_act(asset_path);
+   if (guessed_act >= 1 && guessed_act <= PAL_ACT_MAX)
+   {
+      pal_idx = guessed_act - 1;
+      return &glb_ds1edit.vga_pal[pal_idx];
+   }
+
+   if (a5_current_palette != NULL)
+      return a5_current_palette;
+
+   return &glb_ds1edit.vga_pal[0];
+}
+
+static int dt1_asset_path_is_discoverable(const char *asset_path)
+{
+   char path_norm[512];
+
+   if (asset_path == NULL)
+      return 0;
+
+   normalize_slashes_copy(asset_path, path_norm, sizeof(path_norm));
+   return strnicmp(path_norm, "Data\\Global\\Tiles\\", 18) == 0;
+}
+
+int asset_export_dt1_header_looks_valid(const void *buffer, long len)
+{
+   const UBYTE *bytes = (const UBYTE *) buffer;
+   long x1, x2, block_num, bh_start;
+   long header_bytes;
+
+   if (bytes == NULL || len < DT1_HEADER_BYTES)
+      return 0;
+
+   x1 = * (const long *) bytes;
+   x2 = * (const long *) (bytes + 4);
+   block_num = * (const long *) (bytes + 268);
+   bh_start = * (const long *) (bytes + 272);
+
+   if (x1 != 7 || x2 != 6)
+      return 0;
+   if (block_num < 0 || bh_start < 0)
+      return 0;
+   if (bh_start > len)
+      return 0;
+
+   header_bytes = len - bh_start;
+   if (block_num > (header_bytes / DT1_BLOCK_HEADER_BYTES))
+      return 0;
+
+   return 1;
+}
+
+static int dt1_payload_looks_valid_for_export(const char *asset_path)
+{
+   char *buffer;
+   long len;
+   int valid;
+
+   if (dt1_discovery_cache_lookup(asset_path, &valid))
+      return valid;
+
+   if (!dt1_asset_path_is_discoverable(asset_path))
+      return 0;
+
+   if (misc_load_mpq_file((char *) asset_path, &buffer, &len, FALSE) == -1)
+   {
+      dt1_discovery_cache_store(asset_path, 0);
+      return 0;
+   }
+
+   valid = asset_export_dt1_header_looks_valid(buffer, len);
+   free(buffer);
+   dt1_discovery_cache_store(asset_path, valid);
+   return valid;
+}
+
+static int has_supported_asset_extension(const char *asset_path)
+{
+   const char *ext;
+
+   if (asset_path == NULL)
+      return 0;
+
+   ext = a5_get_extension(asset_path);
+   if (ext == NULL)
+      return 0;
+
+   return (stricmp(ext, "dt1") == 0) ||
+          (stricmp(ext, "dcc") == 0) ||
+          (stricmp(ext, "dc6") == 0);
+}
+
+static int asset_path_matches_type(const char *asset_path, const char *type_filter)
+{
+   const char *ext;
+
+   if (!has_supported_asset_extension(asset_path))
+      return 0;
+   if (type_filter == NULL || type_filter[0] == 0 || stricmp(type_filter, "all") == 0)
+      return 1;
+
+   ext = a5_get_extension(asset_path);
+   if (ext != NULL && stricmp(ext, "dt1") == 0 && !dt1_asset_path_is_discoverable(asset_path))
+      return 0;
+
+   return (ext != NULL) && (stricmp(ext, type_filter) == 0);
+}
+
+static int asset_path_matches_discovery_filter(const char *asset_path,
+                                               const char *type_filter)
+{
+   const char *ext;
+
+   if (!asset_path_matches_type(asset_path, type_filter))
+      return 0;
+
+   ext = a5_get_extension(asset_path);
+   if (ext != NULL && stricmp(ext, "dt1") == 0)
+      return dt1_payload_looks_valid_for_export(asset_path);
+
+   return 1;
+}
+
+static int asset_path_matches_prefix(const char *asset_path, const char *asset_prefix)
+{
+   char path_norm[512];
+   char prefix_norm[512];
+   int prefix_len;
+
+   if (asset_path == NULL || asset_prefix == NULL || asset_prefix[0] == 0)
+      return 0;
+
+   normalize_slashes_copy(asset_path, path_norm, sizeof(path_norm));
+   normalize_slashes_copy(asset_prefix, prefix_norm, sizeof(prefix_norm));
+   trim_trailing_slash(prefix_norm);
+
+   prefix_len = (int) strlen(prefix_norm);
+   if (prefix_len == 0)
+      return 0;
+   if (strnicmp(path_norm, prefix_norm, prefix_len) != 0)
+      return 0;
+   if (path_norm[prefix_len] == 0)
+      return 1;
+
+   return path_norm[prefix_len] == '\\';
+}
+
+int asset_export_filter_matches_prefix(const char *asset_path, const char *asset_prefix)
+{
+   return asset_path_matches_prefix(asset_path, asset_prefix);
+}
+
+int asset_export_filter_matches_type(const char *asset_path, const char *type_filter)
+{
+   return asset_path_matches_type(asset_path, type_filter);
+}
+
+static int export_path_list_contains(const EXPORT_PATH_LIST_S *list, const char *asset_path)
+{
+   int i;
+
+   if (list == NULL || asset_path == NULL)
+      return 0;
+
+   for (i = 0; i < list->count; i++)
+   {
+      if (stricmp(list->items[i], asset_path) == 0)
+         return 1;
+   }
+
+   return 0;
+}
+
+static int export_path_list_add(EXPORT_PATH_LIST_S *list, const char *asset_path)
+{
+   char **new_items;
+   char *copy;
+   int new_capacity;
+
+   if (list == NULL || asset_path == NULL || asset_path[0] == 0)
+      return 0;
+   if (export_path_list_contains(list, asset_path))
+      return 1;
+
+   if (list->count >= list->capacity)
+   {
+      new_capacity = (list->capacity == 0) ? 64 : (list->capacity * 2);
+      new_items = (char **) realloc(list->items, sizeof(char *) * new_capacity);
+      if (new_items == NULL)
+         return 0;
+      list->items = new_items;
+      list->capacity = new_capacity;
+   }
+
+   copy = (char *) malloc(strlen(asset_path) + 1);
+   if (copy == NULL)
+      return 0;
+   strcpy(copy, asset_path);
+   list->items[list->count++] = copy;
+   return 1;
+}
+
+static void export_path_list_destroy(EXPORT_PATH_LIST_S *list)
+{
+   int i;
+
+   if (list == NULL)
+      return;
+
+   for (i = 0; i < list->count; i++)
+      free(list->items[i]);
+   free(list->items);
+   list->items = NULL;
+   list->count = 0;
+   list->capacity = 0;
+}
+
+static void dt1_discovery_cache_reset(void)
+{
+   int i;
+
+   for (i = 0; i < g_dt1_discovery_cache.count; i++)
+      free(g_dt1_discovery_cache.items[i].asset_path);
+   free(g_dt1_discovery_cache.items);
+   memset(&g_dt1_discovery_cache, 0, sizeof(g_dt1_discovery_cache));
+}
+
+static int dt1_discovery_cache_lookup(const char *asset_path, int *is_valid_out)
+{
+   int i;
+
+   if (asset_path == NULL)
+      return 0;
+
+   for (i = 0; i < g_dt1_discovery_cache.count; i++)
+   {
+      if (stricmp(g_dt1_discovery_cache.items[i].asset_path, asset_path) == 0)
+      {
+         if (is_valid_out != NULL)
+            *is_valid_out = g_dt1_discovery_cache.items[i].is_valid;
+         return 1;
+      }
+   }
+
+   return 0;
+}
+
+static void dt1_discovery_cache_store(const char *asset_path, int is_valid)
+{
+   DT1_DISCOVERY_CACHE_ENTRY_S *new_items;
+   char *copy;
+   int new_capacity;
+
+   if (asset_path == NULL)
+      return;
+   if (dt1_discovery_cache_lookup(asset_path, NULL))
+      return;
+
+   if (g_dt1_discovery_cache.count >= g_dt1_discovery_cache.capacity)
+   {
+      new_capacity = (g_dt1_discovery_cache.capacity == 0)
+         ? 32
+         : (g_dt1_discovery_cache.capacity * 2);
+      new_items = (DT1_DISCOVERY_CACHE_ENTRY_S *) realloc(
+         g_dt1_discovery_cache.items,
+         sizeof(DT1_DISCOVERY_CACHE_ENTRY_S) * new_capacity);
+      if (new_items == NULL)
+         return;
+      g_dt1_discovery_cache.items = new_items;
+      g_dt1_discovery_cache.capacity = new_capacity;
+   }
+
+   copy = (char *) malloc(strlen(asset_path) + 1);
+   if (copy == NULL)
+      return;
+   strcpy(copy, asset_path);
+
+   g_dt1_discovery_cache.items[g_dt1_discovery_cache.count].asset_path = copy;
+   g_dt1_discovery_cache.items[g_dt1_discovery_cache.count].is_valid = is_valid;
+   g_dt1_discovery_cache.count++;
+}
+
+#ifdef WIN32
+static void collect_overlay_assets_recursive(const char *root_dir,
+                                             const char *current_dir,
+                                             const char *type_filter,
+                                             EXPORT_PATH_LIST_S *out_paths)
+{
+   WIN32_FIND_DATAA fd;
+   HANDLE hFind;
+   char search_path[1024];
+
+   snprintf(search_path, sizeof(search_path), "%s\\*", current_dir);
+   hFind = FindFirstFileA(search_path, &fd);
+   if (hFind == INVALID_HANDLE_VALUE)
+      return;
+
+   do
+   {
+      char disk_path[1024];
+
+      if (strcmp(fd.cFileName, ".") == 0 || strcmp(fd.cFileName, "..") == 0)
+         continue;
+
+      snprintf(disk_path, sizeof(disk_path), "%s\\%s", current_dir, fd.cFileName);
+      if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+      {
+         collect_overlay_assets_recursive(root_dir, disk_path, type_filter, out_paths);
+      }
+      else
+      {
+         char virtual_path[1024];
+         const char *relative = disk_path + strlen(root_dir);
+
+         if (*relative == '\\')
+            relative++;
+         snprintf(virtual_path, sizeof(virtual_path), "Data\\%s", relative);
+         if (asset_path_matches_discovery_filter(virtual_path, type_filter))
+            export_path_list_add(out_paths, virtual_path);
+      }
+   } while (FindNextFileA(hFind, &fd));
+
+   FindClose(hFind);
+}
+#endif
+
+static void collect_overlay_assets_for_prefix(const char *asset_prefix,
+                                              const char *type_filter,
+                                              EXPORT_PATH_LIST_S *out_paths)
+{
+#ifdef WIN32
+   char prefix_norm[512];
+   char disk_prefix[1024];
+   const char *relative_prefix;
+   DWORD attrs;
+
+   if (glb_config.mod_dir[0] == NULL || asset_prefix == NULL || out_paths == NULL)
+      return;
+
+   normalize_slashes_copy(asset_prefix, prefix_norm, sizeof(prefix_norm));
+   trim_trailing_slash(prefix_norm);
+
+   relative_prefix = prefix_norm;
+   if (stricmp(relative_prefix, "Data") == 0)
+      relative_prefix += 4;
+   else if (strnicmp(relative_prefix, "Data\\", 5) == 0)
+      relative_prefix += 5;
+
+   if (relative_prefix[0] == 0)
+      snprintf(disk_prefix, sizeof(disk_prefix), "%s", glb_config.mod_dir[0]);
+   else
+      snprintf(disk_prefix, sizeof(disk_prefix), "%s\\%s", glb_config.mod_dir[0], relative_prefix);
+
+   attrs = GetFileAttributesA(disk_prefix);
+   if (attrs == INVALID_FILE_ATTRIBUTES)
+      return;
+
+   if ((attrs & FILE_ATTRIBUTE_DIRECTORY) != 0)
+      collect_overlay_assets_recursive(glb_config.mod_dir[0], disk_prefix, type_filter, out_paths);
+   else
+   {
+      if (asset_path_matches_discovery_filter(prefix_norm, type_filter))
+         export_path_list_add(out_paths, prefix_norm);
+   }
+#else
+   (void) asset_prefix;
+   (void) type_filter;
+   (void) out_paths;
+#endif
+}
+
+static void trim_listfile_line(char *line)
+{
+   char *start;
+   int len;
+
+   if (line == NULL)
+      return;
+
+   start = line;
+   while (*start == ' ' || *start == '\t')
+      start++;
+   if (start != line)
+      memmove(line, start, strlen(start) + 1);
+
+   len = (int) strlen(line);
+   while (len > 0)
+   {
+      char ch = line[len - 1];
+      if (ch != '\r' && ch != '\n' && ch != ' ' && ch != '\t')
+         break;
+      line[len - 1] = 0;
+      len--;
+   }
+}
+
+static void collect_internal_listfile_assets(GLB_MPQ_S *mpq,
+                                             const char *asset_prefix,
+                                             const char *type_filter,
+                                             EXPORT_PATH_LIST_S *out_paths)
+{
+   GLB_MPQ_S *saved_mpq;
+   void *buffer = NULL;
+   long buf_len = 0;
+   int entry;
+   long i;
+   char line[MPQTYPES_MAX_PATH * 2];
+   int line_len = 0;
+
+   if (mpq == NULL || out_paths == NULL)
+      return;
+
+   saved_mpq = glb_mpq;
+   glb_mpq = mpq;
+   entry = mpq_batch_load_in_mem("(listfile)", &buffer, &buf_len, FALSE);
+   glb_mpq = saved_mpq;
+   if (entry == -1 || buffer == NULL || buf_len <= 0)
+   {
+      if (buffer != NULL)
+         free(buffer);
+      return;
+   }
+
+   for (i = 0; i < buf_len; i++)
+   {
+      char ch = ((const char *) buffer)[i];
+
+      if (ch == '\n' || ch == 0)
+      {
+         line[line_len] = 0;
+         trim_listfile_line(line);
+          if (line[0] != 0 &&
+             asset_path_matches_prefix(line, asset_prefix) &&
+             asset_path_matches_discovery_filter(line, type_filter))
+         {
+            export_path_list_add(out_paths, line);
+         }
+         line_len = 0;
+         continue;
+      }
+
+      if (line_len < ((int) sizeof(line) - 1))
+         line[line_len++] = ch;
+   }
+
+   if (line_len > 0)
+   {
+      line[line_len] = 0;
+      trim_listfile_line(line);
+        if (line[0] != 0 &&
+           asset_path_matches_prefix(line, asset_prefix) &&
+           asset_path_matches_discovery_filter(line, type_filter))
+      {
+         export_path_list_add(out_paths, line);
+      }
+   }
+
+   free(buffer);
+}
+
+static void collect_known_mpq_assets_for_prefix(const char *asset_prefix,
+                                                const char *type_filter,
+                                                EXPORT_PATH_LIST_S *out_paths)
+{
+   int mpq_idx;
+
+   if (asset_prefix == NULL || out_paths == NULL)
+      return;
+
+   for (mpq_idx = 0; mpq_idx < MAX_MPQ_FILE; mpq_idx++)
+   {
+      GLB_MPQ_S *mpq = &glb_mpq_struct[mpq_idx];
+      DWORD entry;
+
+      if (mpq->is_open == FALSE)
+         continue;
+
+      collect_internal_listfile_assets(mpq, asset_prefix, type_filter, out_paths);
+
+      if (mpq->filename_table == NULL || mpq->identify_table == NULL)
+         continue;
+
+      for (entry = 0; entry < mpq->count_files; entry++)
+      {
+         const char *asset_path;
+
+         if ((mpq->identify_table[entry] & 0x1) == 0)
+            continue;
+
+         asset_path = mpq->filename_table + (MPQTYPES_MAX_PATH * entry);
+         if (!asset_path_matches_prefix(asset_path, asset_prefix))
+            continue;
+         if (!asset_path_matches_discovery_filter(asset_path, type_filter))
+            continue;
+         export_path_list_add(out_paths, asset_path);
+      }
+   }
+}
+
+static int path_list_contains(char paths[][256], int count, const char *path)
+{
+   int i;
+
+   for (i = 0; i < count; i++)
+   {
+      if (stricmp(paths[i], path) == 0)
+         return 1;
+   }
+
+   return 0;
+}
+
+static int load_export_tables(void)
+{
+   if (glb_ds1edit.lvltypes_buff != NULL && glb_ds1edit.lvlprest_buff != NULL)
+      return 1;
+
+   return area_browser_init() == 0;
+}
+
+static int find_lvlprest_mask(int lvlprest_def, long *mask_out)
+{
+   TXT_S *txt;
+   int row;
+   int def_col;
+   int mask_col;
+
+   if (mask_out == NULL || !load_export_tables())
+      return 0;
+
+   txt = glb_ds1edit.lvlprest_buff;
+   if (txt == NULL)
+      return 0;
+
+   def_col = misc_get_txt_column_num(RQ_LVLPREST, "Def");
+   mask_col = misc_get_txt_column_num(RQ_LVLPREST, "Dt1Mask");
+   if (def_col < 0 || mask_col < 0)
+      return 0;
+
+   for (row = 0; row < txt->line_num; row++)
+   {
+      long *def_ptr = (long *) (txt->data + (row * txt->line_size) +
+         txt->col[def_col].offset);
+      if (*def_ptr == lvlprest_def)
+      {
+         long *mask_ptr = (long *) (txt->data + (row * txt->line_size) +
+            txt->col[mask_col].offset);
+         *mask_out = *mask_ptr;
+         return 1;
+      }
+   }
+
+   return 0;
+}
+
+static int collect_dt1_paths_for_entry(int lvltype_id, int lvlprest_def,
+                                       char paths[][256], int max_paths,
+                                       int *path_count)
+{
+   TXT_S *txt;
+   int row;
+   int id_col;
+   int file1_col;
+   int col_idx;
+   int slot;
+   long dt1_mask = 0x7FFFFFFF;
+
+   if (paths == NULL || path_count == NULL || max_paths <= 0)
+      return 0;
+   if (!load_export_tables())
+      return 0;
+
+   txt = glb_ds1edit.lvltypes_buff;
+   if (txt == NULL)
+      return 0;
+
+   if (lvlprest_def >= 0)
+      find_lvlprest_mask(lvlprest_def, &dt1_mask);
+
+   id_col = misc_get_txt_column_num(RQ_LVLTYPE, "Id");
+   file1_col = misc_get_txt_column_num(RQ_LVLTYPE, "File 1");
+   if (id_col < 0 || file1_col < 0)
+      return 0;
+
+   for (row = 0; row < txt->line_num; row++)
+   {
+      long *id_ptr = (long *) (txt->data + (row * txt->line_size) +
+         txt->col[id_col].offset);
+      if (*id_ptr != lvltype_id)
+         continue;
+
+      for (slot = 0; slot < 32; slot++)
+      {
+         char relative_path[256];
+         char full_path[256];
+
+         if ((dt1_mask & (1L << slot)) == 0)
+            continue;
+
+         col_idx = file1_col + slot;
+         if (col_idx >= txt->col_num)
+            break;
+         if (txt->col[col_idx].type != CT_STR)
+            continue;
+
+         strcpy(relative_path,
+            txt->data + (row * txt->line_size) + txt->col[col_idx].offset);
+         txt_convert_slash(relative_path);
+         if (relative_path[0] == 0 ||
+             (relative_path[0] == '0' && relative_path[1] == 0))
+            continue;
+
+         snprintf(full_path, sizeof(full_path), "%s%s",
+            glb_tiles_path, relative_path);
+         if (path_list_contains(paths, *path_count, full_path))
+            continue;
+         if (*path_count >= max_paths)
+            return 1;
+
+         strncpy(paths[*path_count], full_path, 255);
+         paths[*path_count][255] = 0;
+         (*path_count)++;
+      }
+
+      return 1;
+   }
+
+   return 0;
+}
+
+static int export_dt1_png(const char *asset_path, const char *output_dir)
+{
+   int idx, block, exported = 0;
+   char out_path[1024];
+   char leaf[64];
+   ALLEGRO_BITMAP *bmp;
+   RGBA_PALETTE *export_palette;
+
+   idx = dt1_add((char *) asset_path);
+   if (idx < 0)
+      return 0;
+
+   export_palette = asset_export_resolve_palette(asset_path);
+   if (export_palette != NULL)
+   {
+      a5_current_palette = export_palette;
+      dt1_rebuild_bitmaps_from_cache(export_palette);
+   }
+
+   for (block = 0; block < glb_dt1[idx].block_num; block++)
+   {
+      if (glb_dt1[idx].block_zoom[ZM_11] == NULL)
+         continue;
+
+      bmp = glb_dt1[idx].block_zoom[ZM_11][block];
+      if (bmp == NULL)
+         continue;
+
+      snprintf(leaf, sizeof(leaf), "tile_%04i.png", block);
+      if (!make_output_path(out_path, sizeof(out_path), output_dir, asset_path, leaf))
+         continue;
+
+      if (save_bitmap_png(out_path, bmp))
+         exported++;
+   }
+
+   dt1_del(idx);
+   return exported;
+}
+
+int asset_export_dcc_buffer_png(const char *asset_path, const void *buffer,
+                                long len, const char *output_dir)
+{
+   long bitfield = 0;
+   DCC_S *dcc;
+   int d, f, exported = 0;
+   char out_path[1024];
+   char leaf[64];
+
+   if (asset_path == NULL || buffer == NULL || output_dir == NULL || len <= 0)
+      return 0;
+
+   dcc = dcc_mem_load((void *) buffer, (int) len);
+   if (dcc == NULL)
+      return 0;
+
+   if (dcc_file_header(dcc) != 0)
+   {
+      dcc_destroy(dcc);
+      return 0;
+   }
+
+   for (d = 0; d < dcc->header.directions; d++)
+      bitfield |= (1L << d);
+
+   if (dcc_decode(dcc, bitfield) != 0)
+   {
+      dcc_destroy(dcc);
+      return 0;
+   }
+
+   for (d = 0; d < dcc->header.directions; d++)
+   {
+      for (f = 0; f < dcc->header.frames_per_dir; f++)
+      {
+         if (dcc->frame[d][f].bmp == NULL)
+            continue;
+
+         make_anim_leaf(asset_path, leaf, sizeof(leaf), dcc->header.directions,
+            dcc->header.frames_per_dir, d, f);
+         if (!make_output_path(out_path, sizeof(out_path), output_dir, asset_path, leaf))
+            continue;
+
+         if (save_bitmap_png(out_path, dcc->frame[d][f].bmp))
+            exported++;
+      }
+   }
+
+   dcc_destroy(dcc);
+   return exported;
+}
+
+static int export_dcc_png(const char *asset_path, const char *output_dir)
+{
+   char *buff;
+   long len;
+   int exported;
+
+   if (misc_load_mpq_file((char *) asset_path, &buff, &len, FALSE) == -1)
+      return 0;
+
+   exported = asset_export_dcc_buffer_png(asset_path, buff, len, output_dir);
+   free(buff);
+   return exported;
+}
+
+int asset_export_dc6_buffer_png(const char *asset_path, const void *buffer,
+                                long len, const char *output_dir)
+{
+   long *lptr, *dc6_fptr;
+   long offset;
+   long dc6_ver, dc6_unk1, dc6_unk2, dc6_dir, dc6_fpd;
+   long f_w, f_h, f_offx, f_offy, f_x1, f_x2, f_y1, f_y2, f_len;
+   UBYTE *f_data;
+   int d, f, exported = 0, w, h, x1, y1, x2, y2;
+   ALLEGRO_BITMAP *bmp;
+   char out_path[1024];
+   char leaf[64];
+
+   if (asset_path == NULL || buffer == NULL || output_dir == NULL || len <= 0)
+      return 0;
+
+   lptr     = (long *) buffer;
+   dc6_ver  = lptr[0];
+   dc6_unk1 = lptr[1];
+   dc6_unk2 = lptr[2];
+   dc6_dir  = lptr[4];
+   dc6_fpd  = lptr[5];
+   dc6_fptr = &lptr[6];
+   if ((dc6_ver != 6) || (dc6_unk1 != 1) || (dc6_unk2 != 0))
+      return 0;
+
+   for (d = 0; d < dc6_dir; d++)
+   {
+      x1 = y1 = 0x7FFFFFFF;
+      x2 = y2 = 0x80000000;
+      for (f = 0; f < dc6_fpd; f++)
+      {
+         offset = dc6_fptr[d * dc6_fpd + f];
+         if (offset >= len)
+            continue;
+
+         lptr = (long *) (((UBYTE *) buffer) + offset);
+         f_w    = lptr[1];
+         f_h    = lptr[2];
+         f_offx = lptr[3];
+         f_offy = lptr[4];
+         f_x1 = f_offx;
+         f_x2 = f_x1 + f_w - 1;
+         f_y2 = f_offy;
+         f_y1 = f_y2 - f_h + 1;
+
+         if (f_x1 < x1) x1 = (int) f_x1;
+         if (f_x2 > x2) x2 = (int) f_x2;
+         if (f_y1 < y1) y1 = (int) f_y1;
+         if (f_y2 > y2) y2 = (int) f_y2;
+      }
+
+      w = x2 - x1 + 1;
+      h = y2 - y1 + 1;
+      if (w <= 0 || h <= 0)
+         continue;
+
+      for (f = 0; f < dc6_fpd; f++)
+      {
+         offset = dc6_fptr[d * dc6_fpd + f];
+         if (offset >= len)
+            continue;
+
+         lptr = (long *) (((UBYTE *) buffer) + offset);
+         f_offx = lptr[3];
+         f_offy = lptr[4];
+         f_len  = lptr[7];
+         f_data = (UBYTE *) (&lptr[8]);
+
+         bmp = al_create_bitmap(w, h);
+         if (bmp == NULL)
+            continue;
+
+         a5_clear(bmp);
+         dc6_decomp_norm(
+            f_data,
+            bmp,
+            f_len,
+            (int) (f_offx - x1),
+            h - 1 + (int) (f_offy - y2)
+         );
+
+         make_anim_leaf(asset_path, leaf, sizeof(leaf), (int) dc6_dir,
+            (int) dc6_fpd, d, f);
+         if (make_output_path(out_path, sizeof(out_path), output_dir, asset_path, leaf) &&
+             save_bitmap_png(out_path, bmp))
+            exported++;
+
+         al_destroy_bitmap(bmp);
+      }
+   }
+
+   return exported;
+}
+
+static int export_dc6_png(const char *asset_path, const char *output_dir)
+{
+   char *buff;
+   long len;
+   int exported;
+
+   if (misc_load_mpq_file((char *) asset_path, &buff, &len, FALSE) == -1)
+      return 0;
+
+   exported = asset_export_dc6_buffer_png(asset_path, buff, len, output_dir);
+   free(buff);
+   return exported;
+}
+
+int asset_export_area_group_png(const AREA_GROUP_S *group, const char *output_dir)
+{
+   char paths[256][256];
+   int path_count = 0;
+   int entry_idx;
+   int asset_idx;
+   int exported_total = 0;
+
+   if (group == NULL || output_dir == NULL || group->lvltype_id < 0)
+      return 0;
+
+   for (entry_idx = 0; entry_idx < group->entry_count; entry_idx++)
+   {
+      collect_dt1_paths_for_entry(
+         group->entries[entry_idx].lvltype_id,
+         group->entries[entry_idx].lvlprest_def,
+         paths,
+         256,
+         &path_count
+      );
+   }
+
+   if (path_count == 0)
+      collect_dt1_paths_for_entry(group->lvltype_id, -1, paths, 256, &path_count);
+
+   for (asset_idx = 0; asset_idx < path_count; asset_idx++)
+      exported_total += asset_export_png(paths[asset_idx], output_dir);
+
+   return exported_total;
+}
+
+int asset_export_prefix_png(const char *asset_prefix, const char *type_filter,
+                            const char *output_dir)
+{
+   EXPORT_PATH_LIST_S paths;
+   int i;
+   int exported_total = 0;
+
+   memset(&paths, 0, sizeof(paths));
+   dt1_discovery_cache_reset();
+   if (asset_prefix == NULL || output_dir == NULL)
+      return 0;
+   if (type_filter != NULL && type_filter[0] != 0 && stricmp(type_filter, "all") != 0 &&
+       stricmp(type_filter, "dt1") != 0 && stricmp(type_filter, "dc6") != 0 &&
+       stricmp(type_filter, "dcc") != 0)
+      return 0;
+
+   collect_overlay_assets_for_prefix(asset_prefix, type_filter, &paths);
+   collect_known_mpq_assets_for_prefix(asset_prefix, type_filter, &paths);
+
+   for (i = 0; i < paths.count; i++)
+      exported_total += asset_export_png(paths.items[i], output_dir);
+
+   export_path_list_destroy(&paths);
+   dt1_discovery_cache_reset();
+   return exported_total;
+}
+
+int asset_export_all_png(const char *type_filter, const char *output_dir)
+{
+   return asset_export_prefix_png("Data", type_filter, output_dir);
+}
+
+int asset_export_png(const char *asset_path, const char *output_dir)
+{
+   const char *ext;
+
+   if (asset_path == NULL || output_dir == NULL)
+      return 0;
+
+   ext = a5_get_extension(asset_path);
+   if (ext == NULL)
+      return 0;
+
+   if (stricmp(ext, "dt1") == 0)
+      return export_dt1_png(asset_path, output_dir);
+   if (stricmp(ext, "dcc") == 0)
+      return export_dcc_png(asset_path, output_dir);
+   if (stricmp(ext, "dc6") == 0)
+      return export_dc6_png(asset_path, output_dir);
+
+   fprintf(stderr, "asset_export_png: unsupported asset type <%s>\n", asset_path);
+   return 0;
+}

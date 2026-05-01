@@ -19,7 +19,8 @@
 #include "ui/tile_picker.h"
 #include "ui/project_menu.h"
 #include "ui/preset_picker.h"
-
+#include "core/export_common.h"
+#include "core/palette.h"
 
 typedef struct
 {
@@ -51,7 +52,7 @@ static double perf_now_ms(void)
    return al_get_time() * 1000.0;
 }
 
-static void perf_accumulate(double * total, double * max, double dt_ms)
+static void perf_accumulate(double *total, double *max, double dt_ms)
 {
    (*total) += dt_ms;
    if (dt_ms > *max)
@@ -69,123 +70,123 @@ static void perf_print_summary(void)
 
    fprintf(stderr, "\n[perf] last %d frames\n", glb_perf_stats.frames);
    fprintf(stderr, "[perf] frame:       avg %7.2f ms  max %7.2f ms  (%.2f FPS)\n",
-      glb_perf_stats.frame_ms_total * inv,
-      glb_perf_stats.frame_ms_max,
-      (glb_perf_stats.frame_ms_total > 0.0) ?
-         (1000.0 * glb_perf_stats.frames / glb_perf_stats.frame_ms_total) : 0.0);
+           glb_perf_stats.frame_ms_total * inv,
+           glb_perf_stats.frame_ms_max,
+           (glb_perf_stats.frame_ms_total > 0.0) ? (1000.0 * glb_perf_stats.frames / glb_perf_stats.frame_ms_total) : 0.0);
    fprintf(stderr, "[perf] events:      avg %7.2f ms  max %7.2f ms\n",
-      glb_perf_stats.event_ms_total * inv, glb_perf_stats.event_ms_max);
+           glb_perf_stats.event_ms_total * inv, glb_perf_stats.event_ms_max);
    fprintf(stderr, "[perf] input:       avg %7.2f ms  max %7.2f ms\n",
-      glb_perf_stats.input_ms_total * inv, glb_perf_stats.input_ms_max);
+           glb_perf_stats.input_ms_total * inv, glb_perf_stats.input_ms_max);
    fprintf(stderr, "[perf] mouse->tile: avg %7.2f ms  max %7.2f ms\n",
-      glb_perf_stats.mouse_to_tile_ms_total * inv, glb_perf_stats.mouse_to_tile_ms_max);
+           glb_perf_stats.mouse_to_tile_ms_total * inv, glb_perf_stats.mouse_to_tile_ms_max);
    fprintf(stderr, "[perf] editobj:     avg %7.2f ms  max %7.2f ms\n",
-      glb_perf_stats.editobj_ms_total * inv, glb_perf_stats.editobj_ms_max);
+           glb_perf_stats.editobj_ms_total * inv, glb_perf_stats.editobj_ms_max);
    fprintf(stderr, "[perf] anim:        avg %7.2f ms  max %7.2f ms\n",
-      glb_perf_stats.anim_ms_total * inv, glb_perf_stats.anim_ms_max);
+           glb_perf_stats.anim_ms_total * inv, glb_perf_stats.anim_ms_max);
    fprintf(stderr, "[perf] render:      avg %7.2f ms  max %7.2f ms\n",
-      glb_perf_stats.render_ms_total * inv, glb_perf_stats.render_ms_max);
+           glb_perf_stats.render_ms_total * inv, glb_perf_stats.render_ms_max);
    fprintf(stderr, "[perf] ui/other:    avg %7.2f ms  max %7.2f ms\n",
-      glb_perf_stats.ui_ms_total * inv, glb_perf_stats.ui_ms_max);
+           glb_perf_stats.ui_ms_total * inv, glb_perf_stats.ui_ms_max);
    fflush(stderr);
 
    memset(&glb_perf_stats, 0, sizeof(glb_perf_stats));
 }
 
-
 // ==========================================================================
 // MAIN loop
 void interfac_user_handler(int start_ds1_idx)
 {
-   int  ds1_idx, done, cx, cy, n, i, dx, dy, old_ds1_idx=0;
-   int  old_mouse_x = a5_mouse_x, old_mouse_y=a5_mouse_y, old_mouse_b=0;
-   int  cur_mouse_z = 0, old_mouse_z = 0;
-   int  old_cell_x = -1, old_cell_y = -1;
-   int  old_identical_x = -1, old_identical_y = -1;
-   int  ticks_elapsed, ret;
-   int  can_swich_mode, key_func_code[7] = {KEY_F1, KEY_F2,
-                            KEY_F5, KEY_F6, KEY_F7, KEY_F8, KEY_F11};
-   TMP_SEL_S   tmp_sel;
+   int ds1_idx, done, cx, cy, n, i, dx, dy, old_ds1_idx = 0;
+   int old_mouse_x = a5_mouse_x, old_mouse_y = a5_mouse_y, old_mouse_b = 0;
+   int cur_mouse_z = 0, old_mouse_z = 0;
+   int old_cell_x = -1, old_cell_y = -1;
+   int old_identical_x = -1, old_identical_y = -1;
+   int ticks_elapsed, ret;
+   int can_swich_mode, key_func_code[7] = {KEY_F1, KEY_F2,
+                                           KEY_F5, KEY_F6, KEY_F7, KEY_F8, KEY_F11};
+   TMP_SEL_S tmp_sel;
    PASTE_POS_S paste_pos;
-   char        tmp[150];
-   MODE_E      old_mode = 0;
-   IT_ENUM     itype = IT_NULL;
-   int         group_changed, old_group, found;
-   ALLEGRO_BITMAP * old_screen_buff = NULL;
-   double      frame_start_ms, section_start_ms;
- 
+   char tmp[150];
+   MODE_E old_mode = 0;
+   IT_ENUM itype = IT_NULL;
+   int group_changed, old_group, found;
+   ALLEGRO_BITMAP *old_screen_buff = NULL;
+   double frame_start_ms, section_start_ms;
 
    // init
-   tmp_sel.x1            = tmp_sel.x2     = tmp_sel.y1 = tmp_sel.y2 = 0;
-   tmp_sel.old_x2        = tmp_sel.old_y2 = 0;
-   tmp_sel.type          = TMP_NULL;
-   tmp_sel.start         = FALSE;
+   tmp_sel.x1 = tmp_sel.x2 = tmp_sel.y1 = tmp_sel.y2 = 0;
+   tmp_sel.old_x2 = tmp_sel.old_y2 = 0;
+   tmp_sel.type = TMP_NULL;
+   tmp_sel.start = FALSE;
    paste_pos.old_ds1_idx = 0;
-   paste_pos.old_x       = 0;
-   paste_pos.old_y       = 0;
+   paste_pos.old_x = 0;
+   paste_pos.old_y = 0;
    paste_pos.src_ds1_idx = 0;
-   paste_pos.start_x     = 0;
-   paste_pos.start_y     = 0;
-   paste_pos.start       = FALSE;
-   paste_pos.is_cut      = FALSE;
-   paste_pos.cut_saved   = FALSE;
-   ds1_idx               = start_ds1_idx;
-   done                  = FALSE;
-   
+   paste_pos.start_x = 0;
+   paste_pos.start_y = 0;
+   paste_pos.start = FALSE;
+   paste_pos.is_cut = FALSE;
+   paste_pos.cut_saved = FALSE;
+   ds1_idx = start_ds1_idx;
+   done = FALSE;
 
    // main loop
-   while (! done)
+   while (!done)
    {
       frame_start_ms = perf_now_ms();
 
       // drain Allegro 5 event queue
       section_start_ms = perf_now_ms();
       {
-          ALLEGRO_EVENT event;
-          while (al_get_next_event(a5_event_queue, &event)) {
-              if (event.type == ALLEGRO_EVENT_TIMER) {
-                  if (event.timer.source == a5_tick_timer)
-                      glb_ds1edit.ticks_elapsed++;
-                  else if (event.timer.source == a5_fps_timer) {
-                      glb_ds1edit.old_fps = glb_ds1edit.fps;
-                      glb_ds1edit.fps = 0;
-                  }
-              }
-              else if (event.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
-                  done = TRUE;
-              }
-              else if (event.type == ALLEGRO_EVENT_KEY_CHAR) {
-                  /* Ctrl+Enter = Apply, Ctrl+Z = Discard */
-                  if (glb_ds1edit.props_panel_visible &&
-                      (event.keyboard.modifiers & ALLEGRO_KEYMOD_CTRL))
+         ALLEGRO_EVENT event;
+         while (al_get_next_event(a5_event_queue, &event))
+         {
+            if (event.type == ALLEGRO_EVENT_TIMER)
+            {
+               if (event.timer.source == a5_tick_timer)
+                  glb_ds1edit.ticks_elapsed++;
+               else if (event.timer.source == a5_fps_timer)
+               {
+                  glb_ds1edit.old_fps = glb_ds1edit.fps;
+                  glb_ds1edit.fps = 0;
+               }
+            }
+            else if (event.type == ALLEGRO_EVENT_DISPLAY_CLOSE)
+            {
+               done = TRUE;
+            }
+            else if (event.type == ALLEGRO_EVENT_KEY_CHAR)
+            {
+               /* Ctrl+Enter = Apply, Ctrl+Z = Discard */
+               if (glb_ds1edit.props_panel_visible &&
+                   (event.keyboard.modifiers & ALLEGRO_KEYMOD_CTRL))
+               {
+                  if (event.keyboard.keycode == ALLEGRO_KEY_ENTER ||
+                      event.keyboard.keycode == ALLEGRO_KEY_PAD_ENTER)
                   {
-                      if (event.keyboard.keycode == ALLEGRO_KEY_ENTER ||
-                          event.keyboard.keycode == ALLEGRO_KEY_PAD_ENTER)
-                      {
-                          if (glb_ds1edit.props_panel.pending_count > 0)
-                              props_panel_apply();
-                      }
-                      else if (event.keyboard.keycode == ALLEGRO_KEY_Z)
-                      {
-                          glb_ds1edit.props_panel.pending_count = 0;
-                          glb_ds1edit.props_panel.editing = FALSE;
-                      }
+                     if (glb_ds1edit.props_panel.pending_count > 0)
+                        props_panel_apply();
                   }
-                  else if (glb_ds1edit.props_panel.editing ||
-                           glb_ds1edit.props_panel.has_focus)
+                  else if (event.keyboard.keycode == ALLEGRO_KEY_Z)
                   {
-                      props_panel_handle_keychar(
-                          event.keyboard.unichar,
-                          event.keyboard.keycode);
+                     glb_ds1edit.props_panel.pending_count = 0;
+                     glb_ds1edit.props_panel.editing = FALSE;
                   }
-              }
-          }
+               }
+               else if (glb_ds1edit.props_panel.editing ||
+                        glb_ds1edit.props_panel.has_focus)
+               {
+                  props_panel_handle_keychar(
+                      event.keyboard.unichar,
+                      event.keyboard.keycode);
+               }
+            }
+         }
       }
       perf_accumulate(
-         &glb_perf_stats.event_ms_total,
-         &glb_perf_stats.event_ms_max,
-         perf_now_ms() - section_start_ms
-      );
+          &glb_perf_stats.event_ms_total,
+          &glb_perf_stats.event_ms_max,
+          perf_now_ms() - section_start_ms);
 
       // poll input state
       section_start_ms = perf_now_ms();
@@ -193,10 +194,9 @@ void interfac_user_handler(int start_ds1_idx)
       al_get_mouse_state(&a5_ms_state);
 
       perf_accumulate(
-         &glb_perf_stats.input_ms_total,
-         &glb_perf_stats.input_ms_max,
-         perf_now_ms() - section_start_ms
-      );
+          &glb_perf_stats.input_ms_total,
+          &glb_perf_stats.input_ms_max,
+          perf_now_ms() - section_start_ms);
 
       cur_mouse_z = a5_mouse_z;
 
@@ -211,7 +211,10 @@ void interfac_user_handler(int start_ds1_idx)
       {
          glb_ds1edit.sidebar_visible = !glb_ds1edit.sidebar_visible;
          while (key_pressed(KEY_LBRACKET))
-         { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+         {
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
+         }
       }
 
       /* Properties panel: ] (right bracket) opens+focuses.
@@ -229,7 +232,7 @@ void interfac_user_handler(int start_ds1_idx)
                glb_ds1edit.props_panel.has_focus = TRUE;
             }
             glb_ds1edit.props_panel.active_tab =
-               (glb_ds1edit.props_panel.active_tab + 1) % PP_TAB_MAX;
+                (glb_ds1edit.props_panel.active_tab + 1) % PP_TAB_MAX;
          }
          else if (!glb_ds1edit.props_panel_visible)
          {
@@ -249,7 +252,10 @@ void interfac_user_handler(int start_ds1_idx)
             glb_ds1edit.props_panel.has_focus = FALSE;
          }
          while (key_pressed(KEY_RBRACKET))
-         { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+         {
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
+         }
       }
 
       /* Sidebar: handle click on collapsed tab to expand */
@@ -258,7 +264,10 @@ void interfac_user_handler(int start_ds1_idx)
       {
          glb_ds1edit.sidebar_visible = TRUE;
          while (a5_mouse_b)
-         { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
+         {
+            al_rest(0.01);
+            al_get_mouse_state(&a5_ms_state);
+         }
       }
 
       /* Properties panel: handle click on collapsed tab to expand */
@@ -269,7 +278,10 @@ void interfac_user_handler(int start_ds1_idx)
          {
             glb_ds1edit.props_panel_visible = TRUE;
             while (a5_mouse_b)
-            { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
+            {
+               al_rest(0.01);
+               al_get_mouse_state(&a5_ms_state);
+            }
          }
       }
 
@@ -288,10 +300,9 @@ void interfac_user_handler(int start_ds1_idx)
          if (a5_mouse_b & 1)
          {
             int click_result = area_browser_sidebar_click(
-               a5_mouse_x, a5_mouse_y,
-               glb_ds1edit.sidebar_width,
-               al_get_display_height(a5_display)
-            );
+                a5_mouse_x, a5_mouse_y,
+                glb_ds1edit.sidebar_width,
+                al_get_display_height(a5_display));
 
             if (click_result == -2)
             {
@@ -300,11 +311,11 @@ void interfac_user_handler(int start_ds1_idx)
             }
             else if (click_result == -3)
             {
-               /* Individual DS1 entry clicked — switch to it (instant if preloaded) */
+               /* Individual DS1 entry clicked — load just that DS1 */
                {
                   int new_idx = area_browser_switch_single(
-                     glb_ds1edit.area_browser.selected_group,
-                     glb_ds1edit.area_browser.selected_entry);
+                      glb_ds1edit.area_browser.selected_group,
+                      glb_ds1edit.area_browser.selected_entry);
                   if (new_idx >= 0)
                   {
                      ds1_idx = new_idx;
@@ -314,12 +325,12 @@ void interfac_user_handler(int start_ds1_idx)
             }
             else if (click_result >= 0)
             {
-               /* Group clicked — expand/collapse + preload all DS1s */
+               /* Group clicked — expand/collapse and lazily load the first entry */
                if (glb_ds1edit.area_browser.groups[click_result].is_expanded &&
-                   glb_ds1edit.area_browser.loaded_group != click_result)
+                   glb_ds1edit.area_browser.groups[click_result].entry_count > 0)
                {
-                  /* Just expanded — preload all DS1s for this group */
-                  if (area_browser_switch_area(click_result) >= 0)
+                  glb_ds1edit.area_browser.selected_entry = 0;
+                  if (area_browser_switch_single(click_result, 0) >= 0)
                   {
                      ds1_idx = 0;
                      tile_picker_on_ds1_change(0);
@@ -328,19 +339,25 @@ void interfac_user_handler(int start_ds1_idx)
             }
 
             while (a5_mouse_b & 1)
-            { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
+            {
+               al_rest(0.01);
+               al_get_mouse_state(&a5_ms_state);
+            }
          }
 
          /* Right-click in sidebar — context menu for backup entries */
          if (a5_mouse_b & 2)
          {
-            AREA_BROWSER_S * rc_ab = &glb_ds1edit.area_browser;
+            AREA_BROWSER_S *rc_ab = &glb_ds1edit.area_browser;
             int rc_gi = rc_ab->selected_group;
             int rc_ei = rc_ab->selected_entry;
 
             /* Wait for button release */
             while (a5_mouse_b & 2)
-            { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
+            {
+               al_rest(0.01);
+               al_get_mouse_state(&a5_ms_state);
+            }
 
             /* Show context menu if right-clicked on a backup entry */
             if (rc_gi >= 0 && rc_gi < rc_ab->group_count &&
@@ -356,14 +373,16 @@ void interfac_user_handler(int start_ds1_idx)
                int menu_done = 0;
                int disp_w = al_get_display_width(a5_display);
                int disp_h = al_get_display_height(a5_display);
-               ALLEGRO_COLOR mc_bg     = al_map_rgba(40, 36, 30, 240);
-               ALLEGRO_COLOR mc_hover  = al_map_rgba(60, 80, 120, 220);
-               ALLEGRO_COLOR mc_text   = al_map_rgb(220, 220, 220);
+               ALLEGRO_COLOR mc_bg = al_map_rgba(40, 36, 30, 240);
+               ALLEGRO_COLOR mc_hover = al_map_rgba(60, 80, 120, 220);
+               ALLEGRO_COLOR mc_text = al_map_rgb(220, 220, 220);
                ALLEGRO_COLOR mc_border = al_map_rgb(80, 70, 50);
 
                /* Clamp to display bounds */
-               if (menu_x + menu_w > disp_w) menu_x = disp_w - menu_w;
-               if (menu_y + menu_h > disp_h) menu_y = disp_h - menu_h;
+               if (menu_x + menu_w > disp_w)
+                  menu_x = disp_w - menu_w;
+               if (menu_y + menu_h > disp_h)
+                  menu_y = disp_h - menu_h;
 
                while (!menu_done)
                {
@@ -379,32 +398,32 @@ void interfac_user_handler(int start_ds1_idx)
                   if (mx >= menu_x && mx < menu_x + menu_w)
                   {
                      if (my >= menu_y && my < menu_y + 14)
-                        menu_sel = 0;  /* Restore */
+                        menu_sel = 0; /* Restore */
                      else if (my >= menu_y + 14 && my < menu_y + 28)
-                        menu_sel = 1;  /* Delete permanently */
+                        menu_sel = 1; /* Delete permanently */
                   }
 
                   /* Draw the popup over current frame */
                   al_set_target_backbuffer(a5_display);
                   al_draw_filled_rectangle((float)menu_x, (float)menu_y,
-                     (float)(menu_x + menu_w), (float)(menu_y + menu_h), mc_bg);
+                                           (float)(menu_x + menu_w), (float)(menu_y + menu_h), mc_bg);
                   al_draw_rectangle((float)menu_x + 0.5f, (float)menu_y + 0.5f,
-                     (float)(menu_x + menu_w) - 0.5f, (float)(menu_y + menu_h) - 0.5f,
-                     mc_border, 1.0f);
+                                    (float)(menu_x + menu_w) - 0.5f, (float)(menu_y + menu_h) - 0.5f,
+                                    mc_border, 1.0f);
 
                   /* Item 0: Restore */
                   if (menu_sel == 0)
                      al_draw_filled_rectangle((float)menu_x, (float)menu_y,
-                        (float)(menu_x + menu_w), (float)(menu_y + 14), mc_hover);
+                                              (float)(menu_x + menu_w), (float)(menu_y + 14), mc_hover);
                   al_draw_textf(a5_font, mc_text, (float)(menu_x + 6), (float)(menu_y + 3), 0,
-                     "Restore");
+                                "Restore");
 
                   /* Item 1: Delete permanently */
                   if (menu_sel == 1)
                      al_draw_filled_rectangle((float)menu_x, (float)(menu_y + 14),
-                        (float)(menu_x + menu_w), (float)(menu_y + 28), mc_hover);
+                                              (float)(menu_x + menu_w), (float)(menu_y + 28), mc_hover);
                   al_draw_textf(a5_font, mc_text, (float)(menu_x + 6), (float)(menu_y + 17), 0,
-                     "Delete permanently");
+                                "Delete permanently");
 
                   al_flip_display();
                   al_rest(0.02);
@@ -429,7 +448,10 @@ void interfac_user_handler(int start_ds1_idx)
                      menu_done = 1;
                      /* Wait for release */
                      while (al_mouse_button_down(&a5_ms_state, 1))
-                     { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
+                     {
+                        al_rest(0.01);
+                        al_get_mouse_state(&a5_ms_state);
+                     }
                   }
                   /* Right-click or Escape cancels */
                   if (al_mouse_button_down(&a5_ms_state, 2) ||
@@ -437,7 +459,10 @@ void interfac_user_handler(int start_ds1_idx)
                   {
                      menu_done = 1;
                      while (al_mouse_button_down(&a5_ms_state, 2))
-                     { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
+                     {
+                        al_rest(0.01);
+                        al_get_mouse_state(&a5_ms_state);
+                     }
                   }
                }
             }
@@ -445,7 +470,7 @@ void interfac_user_handler(int start_ds1_idx)
 
          /* Update hover selection */
          {
-            AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+            AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
             int sy, si, s_last_act = -1, s_draw_row = 0;
             int s_top = glb_ds1edit.show_2nd_row ? 20 : 9;
             int found = 0;
@@ -519,10 +544,9 @@ void interfac_user_handler(int start_ds1_idx)
             if (a5_mouse_b & 1)
             {
                int pp_result = props_panel_click(
-                  a5_mouse_x, a5_mouse_y,
-                  glb_ds1edit.props_panel_width,
-                  al_get_display_height(a5_display)
-               );
+                   a5_mouse_x, a5_mouse_y,
+                   glb_ds1edit.props_panel_width,
+                   al_get_display_height(a5_display));
 
                if (pp_result == -2)
                   glb_ds1edit.props_panel_visible = FALSE;
@@ -530,14 +554,20 @@ void interfac_user_handler(int start_ds1_idx)
                   glb_ds1edit.props_panel.has_focus = TRUE;
 
                while (a5_mouse_b & 1)
-               { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
+               {
+                  al_rest(0.01);
+                  al_get_mouse_state(&a5_ms_state);
+               }
             }
 
             /* Consume right-click in panel */
             if (a5_mouse_b & 2)
             {
                while (a5_mouse_b & 2)
-               { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
+               {
+                  al_rest(0.01);
+                  al_get_mouse_state(&a5_ms_state);
+               }
             }
          }
       }
@@ -569,7 +599,7 @@ void interfac_user_handler(int start_ds1_idx)
       cur_mouse_z = a5_mouse_z;
 
       // keep the current mouse coordinates for the entire loop process
-      
+
       // which tile (or sub-tile) is RIGHT NOW under the mouse ?
       section_start_ms = perf_now_ms();
       if (glb_ds1edit.has_loaded_ds1 && glb_ds1[ds1_idx].tile_w > 0)
@@ -599,28 +629,25 @@ void interfac_user_handler(int start_ds1_idx)
             cy = glb_ds1[ds1_idx].height * 5 - 1;
       }
       perf_accumulate(
-         &glb_perf_stats.mouse_to_tile_ms_total,
-         &glb_perf_stats.mouse_to_tile_ms_max,
-         perf_now_ms() - section_start_ms
-      );
-            
+          &glb_perf_stats.mouse_to_tile_ms_total,
+          &glb_perf_stats.mouse_to_tile_ms_max,
+          perf_now_ms() - section_start_ms);
+
       if (glb_ds1edit.mode == MOD_O)
       {
          section_start_ms = perf_now_ms();
          editobj_handler(
-            ds1_idx, cx,
-            cy,
-            old_mouse_x,
-            old_mouse_y,
-            old_mouse_b
-         );
+             ds1_idx, cx,
+             cy,
+             old_mouse_x,
+             old_mouse_y,
+             old_mouse_b);
          perf_accumulate(
-            &glb_perf_stats.editobj_ms_total,
-            &glb_perf_stats.editobj_ms_max,
-            perf_now_ms() - section_start_ms
-         );
+             &glb_perf_stats.editobj_ms_total,
+             &glb_perf_stats.editobj_ms_max,
+             perf_now_ms() - section_start_ms);
       }
-      
+
       if ((cx != old_cell_x) || (cy != old_cell_y))
       {
          old_cell_x = cx;
@@ -632,7 +659,7 @@ void interfac_user_handler(int start_ds1_idx)
       // check if need to redraw the screen because of floor animation
       section_start_ms = perf_now_ms();
       ticks_elapsed = glb_ds1edit.ticks_elapsed;
-      if ( ticks_elapsed && (glb_ds1[ds1_idx].animations_layer_mask == 1))
+      if (ticks_elapsed && (glb_ds1[ds1_idx].animations_layer_mask == 1))
       {
          // animated floor rate = 10 fps
          // therefore it's at 2/5 of 25 fps
@@ -642,10 +669,9 @@ void interfac_user_handler(int start_ds1_idx)
       else
          glb_ds1edit.ticks_elapsed = 0;
       perf_accumulate(
-         &glb_perf_stats.anim_ms_total,
-         &glb_perf_stats.anim_ms_max,
-         perf_now_ms() - section_start_ms
-      );
+          &glb_perf_stats.anim_ms_total,
+          &glb_perf_stats.anim_ms_max,
+          perf_now_ms() - section_start_ms);
 
       // redraw the whole screen
       section_start_ms = perf_now_ms();
@@ -655,10 +681,9 @@ void interfac_user_handler(int start_ds1_idx)
          misc_draw_screen(a5_mouse_x, a5_mouse_y);
       glb_ds1edit.fps++;
       perf_accumulate(
-         &glb_perf_stats.render_ms_total,
-         &glb_perf_stats.render_ms_max,
-         perf_now_ms() - section_start_ms
-      );
+          &glb_perf_stats.render_ms_total,
+          &glb_perf_stats.render_ms_max,
+          perf_now_ms() - section_start_ms);
 
       // scroll UP / DOWN / LEFT / RIGHT
       section_start_ms = perf_now_ms();
@@ -702,7 +727,7 @@ void interfac_user_handler(int start_ds1_idx)
             {
                glb_ds1edit.win_preview.x0 -= glb_ds1[ds1_idx].cur_scroll.mouse.x;
             }
-            if (old_mouse_x == glb_config.screen.width  - 1)
+            if (old_mouse_x == glb_config.screen.width - 1)
             {
                glb_ds1edit.win_preview.x0 += glb_ds1[ds1_idx].cur_scroll.mouse.x;
             }
@@ -741,35 +766,41 @@ void interfac_user_handler(int start_ds1_idx)
          {
             glb_ds1edit.win_preview.x0 += glb_ds1[ds1_idx].cur_scroll.keyb.x;
          }
-         else if (old_mouse_x == glb_config.screen.width  - 1)
+         else if (old_mouse_x == glb_config.screen.width - 1)
          {
             glb_ds1edit.win_preview.x0 += glb_ds1[ds1_idx].cur_scroll.mouse.x;
          }
       }
 
       // zoom — keyboard (+/- keys): zoom around screen center
-      if ( (key_pressed(KEY_MINUS_PAD) || key_pressed(KEY_MINUS)) &&
-           glb_ds1[ds1_idx].cur_zoom < ZM_116)
+      if ((key_pressed(KEY_MINUS_PAD) || key_pressed(KEY_MINUS)) &&
+          glb_ds1[ds1_idx].cur_zoom < ZM_116)
       {
-         while(key_pressed(KEY_MINUS_PAD) || key_pressed(KEY_MINUS))
-         { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+         while (key_pressed(KEY_MINUS_PAD) || key_pressed(KEY_MINUS))
+         {
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
+         }
          glb_ds1[ds1_idx].own_wpreview.x0 = glb_ds1edit.win_preview.x0;
          glb_ds1[ds1_idx].own_wpreview.y0 = glb_ds1edit.win_preview.y0;
-         glb_ds1[ds1_idx].own_wpreview.w  = glb_ds1edit.win_preview.w;
-         glb_ds1[ds1_idx].own_wpreview.h  = glb_ds1edit.win_preview.h;
+         glb_ds1[ds1_idx].own_wpreview.w = glb_ds1edit.win_preview.w;
+         glb_ds1[ds1_idx].own_wpreview.h = glb_ds1edit.win_preview.h;
          change_zoom(ds1_idx, glb_ds1[ds1_idx].cur_zoom + 1);
          glb_ds1edit.win_preview.x0 = glb_ds1[ds1_idx].own_wpreview.x0;
          glb_ds1edit.win_preview.y0 = glb_ds1[ds1_idx].own_wpreview.y0;
       }
-      if ( (key_pressed(KEY_PLUS_PAD) || key_pressed(KEY_EQUALS)) &&
-           glb_ds1[ds1_idx].cur_zoom > ZM_21)
+      if ((key_pressed(KEY_PLUS_PAD) || key_pressed(KEY_EQUALS)) &&
+          glb_ds1[ds1_idx].cur_zoom > ZM_21)
       {
-         while(key_pressed(KEY_PLUS_PAD) || key_pressed(KEY_EQUALS))
-         { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+         while (key_pressed(KEY_PLUS_PAD) || key_pressed(KEY_EQUALS))
+         {
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
+         }
          glb_ds1[ds1_idx].own_wpreview.x0 = glb_ds1edit.win_preview.x0;
          glb_ds1[ds1_idx].own_wpreview.y0 = glb_ds1edit.win_preview.y0;
-         glb_ds1[ds1_idx].own_wpreview.w  = glb_ds1edit.win_preview.w;
-         glb_ds1[ds1_idx].own_wpreview.h  = glb_ds1edit.win_preview.h;
+         glb_ds1[ds1_idx].own_wpreview.w = glb_ds1edit.win_preview.w;
+         glb_ds1[ds1_idx].own_wpreview.h = glb_ds1edit.win_preview.h;
          change_zoom(ds1_idx, glb_ds1[ds1_idx].cur_zoom - 1);
          glb_ds1edit.win_preview.x0 = glb_ds1[ds1_idx].own_wpreview.x0;
          glb_ds1edit.win_preview.y0 = glb_ds1[ds1_idx].own_wpreview.y0;
@@ -795,8 +826,8 @@ void interfac_user_handler(int start_ds1_idx)
             /* Save and zoom */
             glb_ds1[ds1_idx].own_wpreview.x0 = glb_ds1edit.win_preview.x0;
             glb_ds1[ds1_idx].own_wpreview.y0 = glb_ds1edit.win_preview.y0;
-            glb_ds1[ds1_idx].own_wpreview.w  = glb_ds1edit.win_preview.w;
-            glb_ds1[ds1_idx].own_wpreview.h  = glb_ds1edit.win_preview.h;
+            glb_ds1[ds1_idx].own_wpreview.w = glb_ds1edit.win_preview.w;
+            glb_ds1[ds1_idx].own_wpreview.h = glb_ds1edit.win_preview.h;
             change_zoom(ds1_idx, new_zoom);
 
             /* After zoom, the world coordinates are rescaled.
@@ -804,17 +835,15 @@ void interfac_user_handler(int start_ds1_idx)
              * new_world = new_viewport_origin + cursor_screen_pos
              * We want: new_viewport_x0 + mouse_x = world_x * new_scale / old_scale */
             {
-               int old_mul = (zoom_dir == 1) ?
-                  (new_zoom == ZM_11 ? 1 : (new_zoom == ZM_21 ? 2 : 1)) :
-                  (glb_ds1[ds1_idx].cur_zoom == ZM_21 ? 2 : 1);
+               int old_mul = (zoom_dir == 1) ? (new_zoom == ZM_11 ? 1 : (new_zoom == ZM_21 ? 2 : 1)) : (glb_ds1[ds1_idx].cur_zoom == ZM_21 ? 2 : 1);
 
                /* Simpler: just set viewport so cursor world position is preserved */
                float scale_ratio;
-               int old_tw = (zoom_dir == 1) ?
-                  glb_ds1[ds1_idx].tile_w * 2 : /* was bigger before zoom out */
-                  glb_ds1[ds1_idx].tile_w / 2;  /* was smaller before zoom in */
+               int old_tw = (zoom_dir == 1) ? glb_ds1[ds1_idx].tile_w * 2 : /* was bigger before zoom out */
+                                glb_ds1[ds1_idx].tile_w / 2;                /* was smaller before zoom in */
 
-               if (old_tw == 0) old_tw = 1;
+               if (old_tw == 0)
+                  old_tw = 1;
                scale_ratio = (float)glb_ds1[ds1_idx].tile_w / (float)old_tw;
 
                glb_ds1edit.win_preview.x0 = (int)(world_x * scale_ratio) - a5_mouse_x;
@@ -836,16 +865,16 @@ void interfac_user_handler(int start_ds1_idx)
                // Center to mouse in TILE mode
                cx++;
                dx = (cy * -glb_ds1[ds1_idx].tile_w / 2) + (cx * glb_ds1[ds1_idx].tile_w / 2);
-               dy = (cy *  glb_ds1[ds1_idx].tile_h / 2) + (cx * glb_ds1[ds1_idx].tile_h / 2);
+               dy = (cy * glb_ds1[ds1_idx].tile_h / 2) + (cx * glb_ds1[ds1_idx].tile_h / 2);
                cx--;
                glb_ds1[ds1_idx].own_wpreview.x0 = glb_ds1edit.win_preview.x0 =
-                  dx - glb_ds1edit.win_preview.w / 2;
+                   dx - glb_ds1edit.win_preview.w / 2;
                glb_ds1[ds1_idx].own_wpreview.y0 = glb_ds1edit.win_preview.y0 =
-                  dy - glb_ds1edit.win_preview.h / 2;
-               glb_ds1[ds1_idx].own_wpreview.w  = glb_ds1edit.win_preview.w;
-               glb_ds1[ds1_idx].own_wpreview.h  = glb_ds1edit.win_preview.h;
-               glb_ds1edit.win_preview.x0   = glb_ds1[ds1_idx].own_wpreview.x0;
-               glb_ds1edit.win_preview.y0   = glb_ds1[ds1_idx].own_wpreview.y0;
+                   dy - glb_ds1edit.win_preview.h / 2;
+               glb_ds1[ds1_idx].own_wpreview.w = glb_ds1edit.win_preview.w;
+               glb_ds1[ds1_idx].own_wpreview.h = glb_ds1edit.win_preview.h;
+               glb_ds1edit.win_preview.x0 = glb_ds1[ds1_idx].own_wpreview.x0;
+               glb_ds1edit.win_preview.y0 = glb_ds1[ds1_idx].own_wpreview.y0;
                al_set_mouse_xy(a5_display, glb_ds1edit.win_preview.w / 2, glb_ds1edit.win_preview.h / 2);
             }
             else
@@ -855,18 +884,18 @@ void interfac_user_handler(int start_ds1_idx)
                cy /= 5;
                cx++;
                dx = (cy * -glb_ds1[ds1_idx].tile_w / 2) + (cx * glb_ds1[ds1_idx].tile_w / 2);
-               dy = (cy *  glb_ds1[ds1_idx].tile_h / 2) + (cx * glb_ds1[ds1_idx].tile_h / 2);
+               dy = (cy * glb_ds1[ds1_idx].tile_h / 2) + (cx * glb_ds1[ds1_idx].tile_h / 2);
                cx--;
                cx *= 5;
                cy *= 5;
                glb_ds1[ds1_idx].own_wpreview.x0 = glb_ds1edit.win_preview.x0 =
-                  dx - glb_ds1edit.win_preview.w / 2;
+                   dx - glb_ds1edit.win_preview.w / 2;
                glb_ds1[ds1_idx].own_wpreview.y0 = glb_ds1edit.win_preview.y0 =
-                  dy - glb_ds1edit.win_preview.h / 2;
-               glb_ds1[ds1_idx].own_wpreview.w  = glb_ds1edit.win_preview.w;
-               glb_ds1[ds1_idx].own_wpreview.h  = glb_ds1edit.win_preview.h;
-               glb_ds1edit.win_preview.x0   = glb_ds1[ds1_idx].own_wpreview.x0;
-               glb_ds1edit.win_preview.y0   = glb_ds1[ds1_idx].own_wpreview.y0;
+                   dy - glb_ds1edit.win_preview.h / 2;
+               glb_ds1[ds1_idx].own_wpreview.w = glb_ds1edit.win_preview.w;
+               glb_ds1[ds1_idx].own_wpreview.h = glb_ds1edit.win_preview.h;
+               glb_ds1edit.win_preview.x0 = glb_ds1[ds1_idx].own_wpreview.x0;
+               glb_ds1edit.win_preview.y0 = glb_ds1[ds1_idx].own_wpreview.y0;
                al_set_mouse_xy(a5_display, glb_ds1edit.win_preview.w / 2, glb_ds1edit.win_preview.h / 2);
             }
          }
@@ -879,7 +908,10 @@ void interfac_user_handler(int start_ds1_idx)
          if (nav_idx >= 0 && glb_ds1edit.has_loaded_ds1)
             ds1_idx = nav_idx;
          while (key_pressed(KEY_UP))
-         { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+         {
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
+         }
       }
       if (key_pressed(KEY_DOWN))
       {
@@ -887,13 +919,19 @@ void interfac_user_handler(int start_ds1_idx)
          if (nav_idx >= 0 && glb_ds1edit.has_loaded_ds1)
             ds1_idx = nav_idx;
          while (key_pressed(KEY_DOWN))
-         { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+         {
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
+         }
       }
       if (key_pressed(KEY_LEFT))
       {
          area_browser_nav_left();
          while (key_pressed(KEY_LEFT))
-         { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+         {
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
+         }
       }
       if (key_pressed(KEY_RIGHT))
       {
@@ -901,19 +939,28 @@ void interfac_user_handler(int start_ds1_idx)
          if (nav_idx >= 0 && glb_ds1edit.has_loaded_ds1)
             ds1_idx = nav_idx;
          while (key_pressed(KEY_RIGHT))
-         { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+         {
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
+         }
       }
       if (key_pressed(KEY_PGUP) && !(key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)))
       {
          area_browser_nav_pgup();
          while (key_pressed(KEY_PGUP))
-         { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+         {
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
+         }
       }
       if (key_pressed(KEY_PGDN) && !(key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)))
       {
          area_browser_nav_pgdn();
          while (key_pressed(KEY_PGDN))
-         { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+         {
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
+         }
       }
       if (key_pressed(KEY_HOME) && !(key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT)))
       {
@@ -921,7 +968,10 @@ void interfac_user_handler(int start_ds1_idx)
          if (nav_idx >= 0 && glb_ds1edit.has_loaded_ds1)
             ds1_idx = nav_idx;
          while (key_pressed(KEY_HOME))
-         { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+         {
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
+         }
       }
       if (key_pressed(KEY_END))
       {
@@ -929,7 +979,10 @@ void interfac_user_handler(int start_ds1_idx)
          if (nav_idx >= 0 && glb_ds1edit.has_loaded_ds1)
             ds1_idx = nav_idx;
          while (key_pressed(KEY_END))
-         { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+         {
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
+         }
       }
 
       // Delete key — backup and remove current DS1 file
@@ -938,7 +991,10 @@ void interfac_user_handler(int start_ds1_idx)
           glb_ds1edit.area_browser.selected_entry >= 0)
       {
          while (key_pressed(KEY_DEL))
-         { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+         {
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
+         }
 
          {
             int gi = glb_ds1edit.area_browser.selected_group;
@@ -960,10 +1016,13 @@ void interfac_user_handler(int start_ds1_idx)
           glb_ds1edit.area_browser.selected_group >= 0)
       {
          int gi = glb_ds1edit.area_browser.selected_group;
-         AREA_GROUP_S * ins_g = &glb_ds1edit.area_browser.groups[gi];
+         AREA_GROUP_S *ins_g = &glb_ds1edit.area_browser.groups[gi];
 
          while (key_pressed(KEY_INSERT))
-         { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+         {
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
+         }
 
          if (ins_g->entry_count > 0)
          {
@@ -1005,25 +1064,25 @@ void interfac_user_handler(int start_ds1_idx)
       if (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT))
       {
          // if shift pressed, just 1 layer will be active
-         for (n=0; n<7; n++)
+         for (n = 0; n < 7; n++)
          {
             if (key_pressed(key_func_code[n]))
             {
-               for (i=0; i<FLOOR_MAX_LAYER; i++)
+               for (i = 0; i < FLOOR_MAX_LAYER; i++)
                   glb_ds1[ds1_idx].floor_layer_mask[i] = 0;
 
                if (key_pressed(KEY_F11))
                {
-                  for (i=0; i<SHADOW_MAX_LAYER; i++)
+                  for (i = 0; i < SHADOW_MAX_LAYER; i++)
                      glb_ds1[ds1_idx].shadow_layer_mask[i] = 3;
                }
                else
                {
-                  for (i=0; i<SHADOW_MAX_LAYER; i++)
+                  for (i = 0; i < SHADOW_MAX_LAYER; i++)
                      glb_ds1[ds1_idx].shadow_layer_mask[i] = 0;
                }
 
-               for (i=0; i<WALL_MAX_LAYER; i++)
+               for (i = 0; i < WALL_MAX_LAYER; i++)
                   glb_ds1[ds1_idx].wall_layer_mask[i] = 0;
 
                break;
@@ -1033,17 +1092,17 @@ void interfac_user_handler(int start_ds1_idx)
       if (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
       {
          // if control pressed, just 1 layer will be inactive
-         for (n=0; n<7; n++)
+         for (n = 0; n < 7; n++)
          {
             if (key_pressed(key_func_code[n]))
             {
-               for (i=0; i<FLOOR_MAX_LAYER; i++)
+               for (i = 0; i < FLOOR_MAX_LAYER; i++)
                   glb_ds1[ds1_idx].floor_layer_mask[i] = 1;
 
-               for (i=0; i<SHADOW_MAX_LAYER; i++)
+               for (i = 0; i < SHADOW_MAX_LAYER; i++)
                   glb_ds1[ds1_idx].shadow_layer_mask[i] = 3;
 
-               for (i=0; i<WALL_MAX_LAYER; i++)
+               for (i = 0; i < WALL_MAX_LAYER; i++)
                   glb_ds1[ds1_idx].wall_layer_mask[i] = 1;
 
                break;
@@ -1052,49 +1111,55 @@ void interfac_user_handler(int start_ds1_idx)
       }
       if (key_pressed(KEY_F1))
       {
-         while(key_pressed(KEY_F1))
+         while (key_pressed(KEY_F1))
          {
-            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
          }
          glb_ds1[ds1_idx].floor_layer_mask[0] = 1 - glb_ds1[ds1_idx].floor_layer_mask[0];
       }
       if (key_pressed(KEY_F2))
       {
-         while(key_pressed(KEY_F2))
+         while (key_pressed(KEY_F2))
          {
-            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
          }
          glb_ds1[ds1_idx].floor_layer_mask[1] = 1 - glb_ds1[ds1_idx].floor_layer_mask[1];
       }
       if (key_pressed(KEY_F5))
       {
-         while(key_pressed(KEY_F5))
+         while (key_pressed(KEY_F5))
          {
-            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
          }
          glb_ds1[ds1_idx].wall_layer_mask[0] = 1 - glb_ds1[ds1_idx].wall_layer_mask[0];
       }
       if (key_pressed(KEY_F6))
       {
-         while(key_pressed(KEY_F6))
+         while (key_pressed(KEY_F6))
          {
-            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
          }
          glb_ds1[ds1_idx].wall_layer_mask[1] = 1 - glb_ds1[ds1_idx].wall_layer_mask[1];
       }
       if (key_pressed(KEY_F7))
       {
-         while(key_pressed(KEY_F7))
+         while (key_pressed(KEY_F7))
          {
-            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
          }
          glb_ds1[ds1_idx].wall_layer_mask[2] = 1 - glb_ds1[ds1_idx].wall_layer_mask[2];
       }
       if (key_pressed(KEY_F8))
       {
-         while(key_pressed(KEY_F8))
+         while (key_pressed(KEY_F8))
          {
-            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
          }
          glb_ds1[ds1_idx].wall_layer_mask[3] = 1 - glb_ds1[ds1_idx].wall_layer_mask[3];
       }
@@ -1102,31 +1167,34 @@ void interfac_user_handler(int start_ds1_idx)
       // special tiles layer
       if (key_pressed(KEY_F9))
       {
-         while(key_pressed(KEY_F9))
+         while (key_pressed(KEY_F9))
          {
-            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
          }
          glb_ds1[ds1_idx].special_layer_mask = 1 - glb_ds1[ds1_idx].special_layer_mask;
       }
-      
+
       // animation layer
       if (key_pressed(KEY_F3))
       {
-         while(key_pressed(KEY_F3))
+         while (key_pressed(KEY_F3))
          {
-            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
          }
          glb_ds1[ds1_idx].animations_layer_mask++;
          if (glb_ds1[ds1_idx].animations_layer_mask == 3)
             glb_ds1[ds1_idx].animations_layer_mask = 0;
       }
-      
+
       // objects layer
       if (key_pressed(KEY_F4) && (glb_ds1edit.mode != MOD_O))
       {
-         while(key_pressed(KEY_F4))
+         while (key_pressed(KEY_F4))
          {
-            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
          }
          glb_ds1[ds1_idx].objects_layer_mask++;
          if (glb_ds1[ds1_idx].objects_layer_mask >= OL_MAX)
@@ -1136,9 +1204,10 @@ void interfac_user_handler(int start_ds1_idx)
       // paths layer
       if (key_pressed(KEY_F10) && (glb_ds1edit.mode != MOD_P))
       {
-         while(key_pressed(KEY_F10))
+         while (key_pressed(KEY_F10))
          {
-            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
          }
          glb_ds1[ds1_idx].paths_layer_mask = 1 - glb_ds1[ds1_idx].paths_layer_mask;
       }
@@ -1146,9 +1215,10 @@ void interfac_user_handler(int start_ds1_idx)
       // shadow mode
       if (key_pressed(KEY_F11))
       {
-         while(key_pressed(KEY_F11))
+         while (key_pressed(KEY_F11))
          {
-            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
          }
          if (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT))
          {
@@ -1167,9 +1237,10 @@ void interfac_user_handler(int start_ds1_idx)
       // walkable infos
       if (key_pressed(KEY_SPACE))
       {
-         while(key_pressed(KEY_SPACE))
+         while (key_pressed(KEY_SPACE))
          {
-            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
          }
          glb_ds1[ds1_idx].walkable_layer_mask++;
          if (glb_ds1[ds1_idx].walkable_layer_mask >= 3)
@@ -1177,12 +1248,13 @@ void interfac_user_handler(int start_ds1_idx)
       }
       if (key_pressed(KEY_T))
       {
-         while(key_pressed(KEY_T))
+         while (key_pressed(KEY_T))
          {
-            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
          }
          glb_ds1[ds1_idx].subtile_help_display =
-            1 - glb_ds1[ds1_idx].subtile_help_display;
+             1 - glb_ds1[ds1_idx].subtile_help_display;
       }
 
       // gamma correction
@@ -1195,7 +1267,8 @@ void interfac_user_handler(int start_ds1_idx)
                rest(80);
                glb_ds1edit.cur_gamma--;
                misc_update_pal_with_gamma();
-               a5_current_palette = &glb_ds1edit.vga_pal[glb_ds1[ds1_idx].act - 1];
+               a5_current_palette = &glb_ds1edit.vga_pal[palette_resolve_index(glb_ds1[ds1_idx].txt_act,
+                                                                               glb_ds1[ds1_idx].act)];
             }
          }
          else
@@ -1205,7 +1278,8 @@ void interfac_user_handler(int start_ds1_idx)
                rest(80);
                glb_ds1edit.cur_gamma++;
                misc_update_pal_with_gamma();
-               a5_current_palette = &glb_ds1edit.vga_pal[glb_ds1[ds1_idx].act - 1];
+               a5_current_palette = &glb_ds1edit.vga_pal[palette_resolve_index(glb_ds1[ds1_idx].txt_act,
+                                                                               glb_ds1[ds1_idx].act)];
             }
          }
       }
@@ -1216,12 +1290,13 @@ void interfac_user_handler(int start_ds1_idx)
          // Shift+Home: center map view
          while (key_pressed(KEY_HOME))
          {
-            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
          }
-         cx = glb_ds1[ds1_idx].width/2 + 1;
-         cy = glb_ds1[ds1_idx].height/2;
+         cx = glb_ds1[ds1_idx].width / 2 + 1;
+         cy = glb_ds1[ds1_idx].height / 2;
          dx = (cy * -glb_ds1[ds1_idx].tile_w / 2) + (cx * glb_ds1[ds1_idx].tile_w / 2);
-         dy = (cy *  glb_ds1[ds1_idx].tile_h / 2) + (cx * glb_ds1[ds1_idx].tile_h / 2);
+         dy = (cy * glb_ds1[ds1_idx].tile_h / 2) + (cx * glb_ds1[ds1_idx].tile_h / 2);
          glb_ds1[ds1_idx].own_wpreview.x0 = glb_ds1edit.win_preview.x0 = dx - glb_ds1edit.win_preview.w / 2;
          glb_ds1[ds1_idx].own_wpreview.y0 = glb_ds1edit.win_preview.y0 = dy - glb_ds1edit.win_preview.h / 2;
       }
@@ -1231,13 +1306,14 @@ void interfac_user_handler(int start_ds1_idx)
       {
          while (key_pressed(KEY_BACKSPACE))
          {
-            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
          }
-         for (i=0; i<FLOOR_MAX_LAYER; i++)
-            glb_ds1[ds1_idx].floor_layer_mask[i]  = 1;
-         for (i=0; i<WALL_MAX_LAYER; i++)
-            glb_ds1[ds1_idx].wall_layer_mask[i]   = 1;
-         for (i=0; i<SHADOW_MAX_LAYER; i++)
+         for (i = 0; i < FLOOR_MAX_LAYER; i++)
+            glb_ds1[ds1_idx].floor_layer_mask[i] = 1;
+         for (i = 0; i < WALL_MAX_LAYER; i++)
+            glb_ds1[ds1_idx].wall_layer_mask[i] = 1;
+         for (i = 0; i < SHADOW_MAX_LAYER; i++)
             glb_ds1[ds1_idx].shadow_layer_mask[i] = 3;
       }
 
@@ -1251,11 +1327,11 @@ void interfac_user_handler(int start_ds1_idx)
             if (wpreview_draw_tiles_big_screenshot(ds1_idx) == 0)
             {
                // big screenshot is ready
-               sprintf(tmp, "screenshot-%05i.bmp", glb_ds1edit.screenshot_num);
+               export_make_screenshot_name(tmp, sizeof(tmp), glb_ds1edit.screenshot_num);
                while (a5_file_exists(tmp))
                {
                   glb_ds1edit.screenshot_num++;
-                  sprintf(tmp, "screenshot-%05i.bmp", glb_ds1edit.screenshot_num);
+                  export_make_screenshot_name(tmp, sizeof(tmp), glb_ds1edit.screenshot_num);
                }
 
                // handle palette
@@ -1275,27 +1351,27 @@ void interfac_user_handler(int start_ds1_idx)
             }
             while ((key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT)))
             {
-               al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+               al_rest(0.01);
+               al_get_keyboard_state(&a5_kb_state);
             }
             glb_ds1edit.screen_buff = old_screen_buff;
          }
          else
          {
             // normal screenshot (visible screen only)
-            sprintf(tmp, "screenshot-%05i.png", glb_ds1edit.screenshot_num);
+            export_make_screenshot_name(tmp, sizeof(tmp), glb_ds1edit.screenshot_num);
             while (a5_file_exists(tmp))
             {
                glb_ds1edit.screenshot_num++;
-               sprintf(tmp, "screenshot-%05i.png", glb_ds1edit.screenshot_num);
+               export_make_screenshot_name(tmp, sizeof(tmp), glb_ds1edit.screenshot_num);
             }
 
             // draw the mouse cursor onto the buffer
             a5_draw_sprite(
-               glb_ds1edit.screen_buff,
-               glb_ds1edit.mouse_cursor[glb_ds1edit.mode],
-               old_mouse_x - 1,
-               old_mouse_y - 1
-            );
+                glb_ds1edit.screen_buff,
+                glb_ds1edit.mouse_cursor[glb_ds1edit.mode],
+                old_mouse_x - 1,
+                old_mouse_y - 1);
 
             // handle palette
             if (glb_ds1edit.cmd_line.force_pal_num == -1)
@@ -1311,13 +1387,14 @@ void interfac_user_handler(int start_ds1_idx)
          }
          while (key_pressed(KEY_P))
          {
-            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
          }
 
          // the buffer was saved
          glb_ds1edit.screenshot_num++;
       }
-      
+
       // S
       if (key_pressed(KEY_S) && (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)))
       {
@@ -1325,32 +1402,33 @@ void interfac_user_handler(int start_ds1_idx)
          ds1_save(ds1_idx, FALSE);
          while (key_pressed(KEY_S))
          {
-            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
          }
          ret = msg_save_main();
          switch (ret)
          {
-            case -1 :
-               // error
-               done = TRUE;
-               break;
+         case -1:
+            // error
+            done = TRUE;
+            break;
 
-            case 0 :
-               // ok
-               break;
+         case 0:
+            // ok
+            break;
          }
       }
-      if (key_pressed(KEY_S) && (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT))
-          && glb_ds1edit.mode == MOD_T)
+      if (key_pressed(KEY_S) && (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT)) && glb_ds1edit.mode == MOD_T)
       {
          // Shift+S : show all previously hidden tiles
          while (key_pressed(KEY_S))
          {
-            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
          }
          edittile_unhide_all(ds1_idx);
       }
-      
+
       // 'C' : either Copy or Center
       if (key_pressed(KEY_C))
       {
@@ -1362,32 +1440,31 @@ void interfac_user_handler(int start_ds1_idx)
                // CTRL + C : copy selected layers (copy / paste)
                if (paste_pos.start == FALSE)
                {
-                  for (i=0; i<DS1_MAX; i++)
+                  for (i = 0; i < DS1_MAX; i++)
                   {
-                    if (strlen(glb_ds1[i].name))
+                     if (strlen(glb_ds1[i].name))
                         edittile_paste_prepare(i);
                   }
                   paste_pos.src_ds1_idx = ds1_idx;
                   paste_pos.old_ds1_idx = ds1_idx;
-                  paste_pos.start       = TRUE;
-                  paste_pos.is_cut      = FALSE; // just a 'COPY'
-                  paste_pos.cut_saved   = FALSE;
-                  paste_pos.old_x       = cx;
-                  paste_pos.old_y       = cy;
+                  paste_pos.start = TRUE;
+                  paste_pos.is_cut = FALSE; // just a 'COPY'
+                  paste_pos.cut_saved = FALSE;
+                  paste_pos.old_x = cx;
+                  paste_pos.old_y = cy;
                   edittile_middle_select(
-                     ds1_idx,
-                     & paste_pos.start_x,
-                     & paste_pos.start_y
-                  );
+                      ds1_idx,
+                      &paste_pos.start_x,
+                      &paste_pos.start_y);
                   edittile_paste_preview(ds1_idx,
-                     cx - paste_pos.start_x,
-                     cy - paste_pos.start_y,
-                     & paste_pos
-                  );
+                                         cx - paste_pos.start_x,
+                                         cy - paste_pos.start_y,
+                                         &paste_pos);
 
                   while (key_pressed(KEY_C))
                   {
-                     al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+                     al_rest(0.01);
+                     al_get_keyboard_state(&a5_kb_state);
                   }
                }
             }
@@ -1396,52 +1473,54 @@ void interfac_user_handler(int start_ds1_idx)
                // Center to mouse in TILE mode
                while (key_pressed(KEY_C))
                {
-                  al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+                  al_rest(0.01);
+                  al_get_keyboard_state(&a5_kb_state);
                }
                cx++;
                dx = (cy * -glb_ds1[ds1_idx].tile_w / 2) + (cx * glb_ds1[ds1_idx].tile_w / 2);
-               dy = (cy *  glb_ds1[ds1_idx].tile_h / 2) + (cx * glb_ds1[ds1_idx].tile_h / 2);
+               dy = (cy * glb_ds1[ds1_idx].tile_h / 2) + (cx * glb_ds1[ds1_idx].tile_h / 2);
                cx--;
                glb_ds1[ds1_idx].own_wpreview.x0 = glb_ds1edit.win_preview.x0 =
-                  dx - glb_ds1edit.win_preview.w / 2;
+                   dx - glb_ds1edit.win_preview.w / 2;
                glb_ds1[ds1_idx].own_wpreview.y0 = glb_ds1edit.win_preview.y0 =
-                  dy - glb_ds1edit.win_preview.h / 2;
-               glb_ds1[ds1_idx].own_wpreview.w  = glb_ds1edit.win_preview.w;
-               glb_ds1[ds1_idx].own_wpreview.h  = glb_ds1edit.win_preview.h;
+                   dy - glb_ds1edit.win_preview.h / 2;
+               glb_ds1[ds1_idx].own_wpreview.w = glb_ds1edit.win_preview.w;
+               glb_ds1[ds1_idx].own_wpreview.h = glb_ds1edit.win_preview.h;
                if (glb_config.center_zoom != -1)
                   change_zoom(ds1_idx, glb_config.center_zoom);
-               glb_ds1edit.win_preview.x0   = glb_ds1[ds1_idx].own_wpreview.x0;
-               glb_ds1edit.win_preview.y0   = glb_ds1[ds1_idx].own_wpreview.y0;
+               glb_ds1edit.win_preview.x0 = glb_ds1[ds1_idx].own_wpreview.x0;
+               glb_ds1edit.win_preview.y0 = glb_ds1[ds1_idx].own_wpreview.y0;
                al_set_mouse_xy(a5_display, glb_ds1edit.win_preview.w / 2, glb_ds1edit.win_preview.h / 2);
             }
          }
          else
          {
-            if ( ! key_pressed(KEY_LCONTROL) && ! key_pressed(KEY_RCONTROL))
+            if (!key_pressed(KEY_LCONTROL) && !key_pressed(KEY_RCONTROL))
             {
                // Center to mouse in OBJECT / PATH mode
                while (key_pressed(KEY_C))
                {
-                  al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+                  al_rest(0.01);
+                  al_get_keyboard_state(&a5_kb_state);
                }
                cx /= 5;
                cy /= 5;
                cx++;
                dx = (cy * -glb_ds1[ds1_idx].tile_w / 2) + (cx * glb_ds1[ds1_idx].tile_w / 2);
-               dy = (cy *  glb_ds1[ds1_idx].tile_h / 2) + (cx * glb_ds1[ds1_idx].tile_h / 2);
+               dy = (cy * glb_ds1[ds1_idx].tile_h / 2) + (cx * glb_ds1[ds1_idx].tile_h / 2);
                cx--;
                cx *= 5;
                cy *= 5;
                glb_ds1[ds1_idx].own_wpreview.x0 = glb_ds1edit.win_preview.x0 =
-                  dx - glb_ds1edit.win_preview.w / 2;
+                   dx - glb_ds1edit.win_preview.w / 2;
                glb_ds1[ds1_idx].own_wpreview.y0 = glb_ds1edit.win_preview.y0 =
-                  dy - glb_ds1edit.win_preview.h / 2;
-               glb_ds1[ds1_idx].own_wpreview.w  = glb_ds1edit.win_preview.w;
-               glb_ds1[ds1_idx].own_wpreview.h  = glb_ds1edit.win_preview.h;
+                   dy - glb_ds1edit.win_preview.h / 2;
+               glb_ds1[ds1_idx].own_wpreview.w = glb_ds1edit.win_preview.w;
+               glb_ds1[ds1_idx].own_wpreview.h = glb_ds1edit.win_preview.h;
                if (glb_config.center_zoom != -1)
                   change_zoom(ds1_idx, glb_config.center_zoom);
-               glb_ds1edit.win_preview.x0   = glb_ds1[ds1_idx].own_wpreview.x0;
-               glb_ds1edit.win_preview.y0   = glb_ds1[ds1_idx].own_wpreview.y0;
+               glb_ds1edit.win_preview.x0 = glb_ds1[ds1_idx].own_wpreview.x0;
+               glb_ds1edit.win_preview.y0 = glb_ds1[ds1_idx].own_wpreview.y0;
                al_set_mouse_xy(a5_display, glb_ds1edit.win_preview.w / 2, glb_ds1edit.win_preview.h / 2);
             }
          }
@@ -1455,31 +1534,30 @@ void interfac_user_handler(int start_ds1_idx)
             // TILE mode
             if (paste_pos.start == FALSE)
             {
-               for (i=0; i<DS1_MAX; i++)
+               for (i = 0; i < DS1_MAX; i++)
                {
-                 if (strlen(glb_ds1[i].name))
+                  if (strlen(glb_ds1[i].name))
                      edittile_paste_prepare(i);
                }
                paste_pos.src_ds1_idx = ds1_idx;
                paste_pos.old_ds1_idx = ds1_idx;
-               paste_pos.start       = TRUE;
-               paste_pos.is_cut      = TRUE; // copy with 'CUT'
-               paste_pos.cut_saved   = FALSE;
-               paste_pos.old_x       = cx;
-               paste_pos.old_y       = cy;
+               paste_pos.start = TRUE;
+               paste_pos.is_cut = TRUE; // copy with 'CUT'
+               paste_pos.cut_saved = FALSE;
+               paste_pos.old_x = cx;
+               paste_pos.old_y = cy;
                edittile_middle_select(
-                  ds1_idx,
-                  & paste_pos.start_x,
-                  & paste_pos.start_y
-               );
+                   ds1_idx,
+                   &paste_pos.start_x,
+                   &paste_pos.start_y);
                edittile_paste_preview(ds1_idx,
-                  cx - paste_pos.start_x,
-                  cy - paste_pos.start_y,
-                  & paste_pos
-               );
+                                      cx - paste_pos.start_x,
+                                      cy - paste_pos.start_y,
+                                      &paste_pos);
                while (key_pressed(KEY_X))
                {
-                  al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+                  al_rest(0.01);
+                  al_get_keyboard_state(&a5_kb_state);
                }
             }
          }
@@ -1495,7 +1573,8 @@ void interfac_user_handler(int start_ds1_idx)
                edittile_delete_selected_tiles(ds1_idx);
                while (key_pressed(KEY_DEL) || key_pressed(KEY_DEL_PAD))
                {
-                  al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+                  al_rest(0.01);
+                  al_get_keyboard_state(&a5_kb_state);
                }
             }
          }
@@ -1511,7 +1590,8 @@ void interfac_user_handler(int start_ds1_idx)
                undo_apply_tile_buffer(ds1_idx);
                while (key_pressed(KEY_U))
                {
-                  al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+                  al_rest(0.01);
+                  al_get_keyboard_state(&a5_kb_state);
                }
             }
          }
@@ -1521,22 +1601,23 @@ void interfac_user_handler(int start_ds1_idx)
       if (key_pressed(KEY_G))
       {
          if (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT))
-            glb_ds1edit.display_tile_grid --;
+            glb_ds1edit.display_tile_grid--;
          else
-            glb_ds1edit.display_tile_grid ++;
+            glb_ds1edit.display_tile_grid++;
          if (glb_ds1edit.display_tile_grid < TG_OFF)
             glb_ds1edit.display_tile_grid = TG_MAX - 1;
          if (glb_ds1edit.display_tile_grid >= TG_MAX)
             glb_ds1edit.display_tile_grid = TG_OFF;
-         while(key_pressed(KEY_G))
+         while (key_pressed(KEY_G))
          {
-            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
          }
       }
 
       // changing current ds1
       group_changed = FALSE;
-      old_group     = glb_ds1edit.ds1_group_idx;
+      old_group = glb_ds1edit.ds1_group_idx;
       if (can_swich_mode)
       {
          if (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
@@ -1545,7 +1626,8 @@ void interfac_user_handler(int start_ds1_idx)
             {
                while (key_pressed(KEY_1) || key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
                {
-                  al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+                  al_rest(0.01);
+                  al_get_keyboard_state(&a5_kb_state);
                }
                glb_ds1edit.ds1_group_idx = 0;
                group_changed = TRUE;
@@ -1554,7 +1636,8 @@ void interfac_user_handler(int start_ds1_idx)
             {
                while (key_pressed(KEY_2) || key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
                {
-                  al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+                  al_rest(0.01);
+                  al_get_keyboard_state(&a5_kb_state);
                }
                glb_ds1edit.ds1_group_idx = 1;
                group_changed = TRUE;
@@ -1563,7 +1646,8 @@ void interfac_user_handler(int start_ds1_idx)
             {
                while (key_pressed(KEY_3) || key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
                {
-                  al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+                  al_rest(0.01);
+                  al_get_keyboard_state(&a5_kb_state);
                }
                glb_ds1edit.ds1_group_idx = 2;
                group_changed = TRUE;
@@ -1572,7 +1656,8 @@ void interfac_user_handler(int start_ds1_idx)
             {
                while (key_pressed(KEY_4) || key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
                {
-                  al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+                  al_rest(0.01);
+                  al_get_keyboard_state(&a5_kb_state);
                }
                glb_ds1edit.ds1_group_idx = 3;
                group_changed = TRUE;
@@ -1581,7 +1666,8 @@ void interfac_user_handler(int start_ds1_idx)
             {
                while (key_pressed(KEY_5) || key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
                {
-                  al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+                  al_rest(0.01);
+                  al_get_keyboard_state(&a5_kb_state);
                }
                glb_ds1edit.ds1_group_idx = 4;
                group_changed = TRUE;
@@ -1590,7 +1676,8 @@ void interfac_user_handler(int start_ds1_idx)
             {
                while (key_pressed(KEY_6) || key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
                {
-                  al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+                  al_rest(0.01);
+                  al_get_keyboard_state(&a5_kb_state);
                }
                glb_ds1edit.ds1_group_idx = 5;
                group_changed = TRUE;
@@ -1599,7 +1686,8 @@ void interfac_user_handler(int start_ds1_idx)
             {
                while (key_pressed(KEY_7) || key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
                {
-                  al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+                  al_rest(0.01);
+                  al_get_keyboard_state(&a5_kb_state);
                }
                glb_ds1edit.ds1_group_idx = 6;
                group_changed = TRUE;
@@ -1608,7 +1696,8 @@ void interfac_user_handler(int start_ds1_idx)
             {
                while (key_pressed(KEY_8) || key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
                {
-                  al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+                  al_rest(0.01);
+                  al_get_keyboard_state(&a5_kb_state);
                }
                glb_ds1edit.ds1_group_idx = 7;
                group_changed = TRUE;
@@ -1617,7 +1706,8 @@ void interfac_user_handler(int start_ds1_idx)
             {
                while (key_pressed(KEY_9) || key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
                {
-                  al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+                  al_rest(0.01);
+                  al_get_keyboard_state(&a5_kb_state);
                }
                glb_ds1edit.ds1_group_idx = 8;
                group_changed = TRUE;
@@ -1626,7 +1716,8 @@ void interfac_user_handler(int start_ds1_idx)
             {
                while (key_pressed(KEY_0) || key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
                {
-                  al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+                  al_rest(0.01);
+                  al_get_keyboard_state(&a5_kb_state);
                }
                glb_ds1edit.ds1_group_idx = 9;
                group_changed = TRUE;
@@ -1637,7 +1728,7 @@ void interfac_user_handler(int start_ds1_idx)
          {
             // try to swap to 1st ds1 of this group set
             found = FALSE;
-            for (i=0; i < 10; i++)
+            for (i = 0; i < 10; i++)
             {
                if (strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + i].name))
                {
@@ -1663,7 +1754,8 @@ void interfac_user_handler(int start_ds1_idx)
             ds1_idx = glb_ds1edit.ds1_group_idx * 10;
             while (key_pressed(KEY_1))
             {
-               al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+               al_rest(0.01);
+               al_get_keyboard_state(&a5_kb_state);
             }
          }
          if (key_pressed(KEY_2) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 1].name))
@@ -1672,7 +1764,8 @@ void interfac_user_handler(int start_ds1_idx)
             ds1_idx = glb_ds1edit.ds1_group_idx * 10 + 1;
             while (key_pressed(KEY_2))
             {
-               al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+               al_rest(0.01);
+               al_get_keyboard_state(&a5_kb_state);
             }
          }
          if (key_pressed(KEY_3) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 2].name))
@@ -1681,7 +1774,8 @@ void interfac_user_handler(int start_ds1_idx)
             ds1_idx = glb_ds1edit.ds1_group_idx * 10 + 2;
             while (key_pressed(KEY_3))
             {
-               al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+               al_rest(0.01);
+               al_get_keyboard_state(&a5_kb_state);
             }
          }
          if (key_pressed(KEY_4) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 3].name))
@@ -1690,7 +1784,8 @@ void interfac_user_handler(int start_ds1_idx)
             ds1_idx = glb_ds1edit.ds1_group_idx * 10 + 3;
             while (key_pressed(KEY_4))
             {
-               al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+               al_rest(0.01);
+               al_get_keyboard_state(&a5_kb_state);
             }
          }
          if (key_pressed(KEY_5) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 4].name))
@@ -1699,7 +1794,8 @@ void interfac_user_handler(int start_ds1_idx)
             ds1_idx = glb_ds1edit.ds1_group_idx * 10 + 4;
             while (key_pressed(KEY_5))
             {
-               al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+               al_rest(0.01);
+               al_get_keyboard_state(&a5_kb_state);
             }
          }
          if (key_pressed(KEY_6) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 5].name))
@@ -1708,7 +1804,8 @@ void interfac_user_handler(int start_ds1_idx)
             ds1_idx = glb_ds1edit.ds1_group_idx * 10 + 5;
             while (key_pressed(KEY_6))
             {
-               al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+               al_rest(0.01);
+               al_get_keyboard_state(&a5_kb_state);
             }
          }
          if (key_pressed(KEY_7) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 6].name))
@@ -1717,7 +1814,8 @@ void interfac_user_handler(int start_ds1_idx)
             ds1_idx = glb_ds1edit.ds1_group_idx * 10 + 6;
             while (key_pressed(KEY_7))
             {
-               al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+               al_rest(0.01);
+               al_get_keyboard_state(&a5_kb_state);
             }
          }
          if (key_pressed(KEY_8) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 7].name))
@@ -1726,7 +1824,8 @@ void interfac_user_handler(int start_ds1_idx)
             ds1_idx = glb_ds1edit.ds1_group_idx * 10 + 7;
             while (key_pressed(KEY_8))
             {
-               al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+               al_rest(0.01);
+               al_get_keyboard_state(&a5_kb_state);
             }
          }
          if (key_pressed(KEY_9) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 8].name))
@@ -1735,7 +1834,8 @@ void interfac_user_handler(int start_ds1_idx)
             ds1_idx = glb_ds1edit.ds1_group_idx * 10 + 8;
             while (key_pressed(KEY_9))
             {
-               al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+               al_rest(0.01);
+               al_get_keyboard_state(&a5_kb_state);
             }
          }
          if (key_pressed(KEY_0) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 9].name))
@@ -1744,7 +1844,8 @@ void interfac_user_handler(int start_ds1_idx)
             ds1_idx = glb_ds1edit.ds1_group_idx * 10 + 9;
             while (key_pressed(KEY_0))
             {
-               al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+               al_rest(0.01);
+               al_get_keyboard_state(&a5_kb_state);
             }
          }
       }
@@ -1754,14 +1855,14 @@ void interfac_user_handler(int start_ds1_idx)
          // save current win preview state for the old ds1
          glb_ds1[old_ds1_idx].own_wpreview.x0 = glb_ds1edit.win_preview.x0;
          glb_ds1[old_ds1_idx].own_wpreview.y0 = glb_ds1edit.win_preview.y0;
-         glb_ds1[old_ds1_idx].own_wpreview.w  = glb_ds1edit.win_preview.w;
-         glb_ds1[old_ds1_idx].own_wpreview.h  = glb_ds1edit.win_preview.h;
+         glb_ds1[old_ds1_idx].own_wpreview.w = glb_ds1edit.win_preview.w;
+         glb_ds1[old_ds1_idx].own_wpreview.h = glb_ds1edit.win_preview.h;
 
          // put back old win preview state for the new ds1
          glb_ds1edit.win_preview.x0 = glb_ds1[ds1_idx].own_wpreview.x0;
          glb_ds1edit.win_preview.y0 = glb_ds1[ds1_idx].own_wpreview.y0;
-         glb_ds1edit.win_preview.w  = glb_ds1[ds1_idx].own_wpreview.w;
-         glb_ds1edit.win_preview.h  = glb_ds1[ds1_idx].own_wpreview.h;
+         glb_ds1edit.win_preview.w = glb_ds1[ds1_idx].own_wpreview.w;
+         glb_ds1edit.win_preview.h = glb_ds1[ds1_idx].own_wpreview.h;
 
          // ending swap
          old_ds1_idx = ds1_idx;
@@ -1772,20 +1873,22 @@ void interfac_user_handler(int start_ds1_idx)
       {
          while (key_pressed(KEY_TILDE))
          {
-            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
          }
          if (glb_ds1edit.show_2nd_row == FALSE)
             glb_ds1edit.show_2nd_row = TRUE;
          else
             glb_ds1edit.show_2nd_row = FALSE;
       }
-      
+
       // TAB : change edit mode
       if (key_pressed(KEY_TAB))
       {
          while (key_pressed(KEY_TAB))
          {
-            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
          }
          if (glb_ds1edit.mode == MOD_L)
             glb_ds1edit.mode = old_mode;
@@ -1807,7 +1910,7 @@ void interfac_user_handler(int start_ds1_idx)
          if (glb_ds1edit.mode == MOD_T && glb_ds1edit.props_panel_visible)
             glb_ds1edit.props_panel.active_tab = PP_TAB_TILES;
          // show_mouse(NULL);
-//         misc_set_mouse_cursor(glb_ds1edit.mouse_cursor[glb_ds1edit.mode]);
+         //         misc_set_mouse_cursor(glb_ds1edit.mouse_cursor[glb_ds1edit.mode]);
          // show_mouse(screen);
          old_cell_x = -1;
          old_cell_y = -1;
@@ -1818,7 +1921,8 @@ void interfac_user_handler(int start_ds1_idx)
       {
          while (key_pressed(KEY_N))
          {
-            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
          }
          if (glb_ds1edit.mode == MOD_L)
          {
@@ -1844,9 +1948,10 @@ void interfac_user_handler(int start_ds1_idx)
       {
          while (key_pressed(KEY_R))
          {
-            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
          }
-            
+
          // refresh animdata.d2
          animdata_load();
 
@@ -1854,7 +1959,7 @@ void interfac_user_handler(int start_ds1_idx)
          anim_exit();
 
          // destroy memory obj.txt and objects.txt
-         glb_ds1edit.obj_buff     = txt_destroy(glb_ds1edit.obj_buff);
+         glb_ds1edit.obj_buff = txt_destroy(glb_ds1edit.obj_buff);
          glb_ds1edit.objects_buff = txt_destroy(glb_ds1edit.obj_buff);
 
          // read the current obj.txt and objects.txt
@@ -1867,7 +1972,7 @@ void interfac_user_handler(int start_ds1_idx)
          // reset the ticks counter
          glb_ds1edit.ticks_elapsed = 0;
       }
-      
+
       /* Tile picker brush: paint active brush on left-click in MOD_T.
        * Paints on click edge and on drag into new tiles. */
       {
@@ -1878,8 +1983,8 @@ void interfac_user_handler(int start_ds1_idx)
          {
             int pp_disp_w = al_get_display_width(a5_display);
             int panel_left = glb_ds1edit.props_panel_visible
-                             ? pp_disp_w - glb_ds1edit.props_panel_width
-                             : pp_disp_w;
+                                 ? pp_disp_w - glb_ds1edit.props_panel_width
+                                 : pp_disp_w;
             if (a5_mouse_x < panel_left)
             {
                if (cx != tp_last_paint_x || cy != tp_last_paint_y)
@@ -1912,14 +2017,14 @@ void interfac_user_handler(int start_ds1_idx)
                paste_pos.start = FALSE;
                while (a5_mouse_b & 1) // NOT old_mouse_b else infinite loop
                {
-                  al_rest(0.01); al_get_mouse_state(&a5_ms_state);
+                  al_rest(0.01);
+                  al_get_mouse_state(&a5_ms_state);
                }
             }
             else if (tmp_sel.start == FALSE)
             {
-               if ( (key_pressed(KEY_I)) &&
-                    (cx != old_identical_x) && (cy != old_identical_y)
-                  )
+               if ((key_pressed(KEY_I)) &&
+                   (cx != old_identical_x) && (cy != old_identical_y))
                {
                   // for all the tiles Identical to the visible ones
 
@@ -1942,17 +2047,17 @@ void interfac_user_handler(int start_ds1_idx)
                   old_identical_x = cx;
                   old_identical_y = cy;
                }
-               else if ( ! key_pressed(KEY_I))
+               else if (!key_pressed(KEY_I))
                {
                   // starting a temp selection
                   old_identical_x = -1;
                   old_identical_y = -1;
-                  
+
                   tmp_sel.start = TRUE;
                   tmp_sel.x1 = tmp_sel.x2 = tmp_sel.old_x2 = cx;
                   tmp_sel.y1 = tmp_sel.y2 = tmp_sel.old_y2 = cy;
                   edittile_delete_all_tmpsel(ds1_idx);
-                  edittile_set_tmpsel(ds1_idx, & tmp_sel);
+                  edittile_set_tmpsel(ds1_idx, &tmp_sel);
                }
             }
             else
@@ -1963,7 +2068,7 @@ void interfac_user_handler(int start_ds1_idx)
                   tmp_sel.x2 = tmp_sel.old_x2 = cx;
                   tmp_sel.y2 = tmp_sel.old_y2 = cy;
                   edittile_delete_all_tmpsel(ds1_idx);
-                  edittile_set_tmpsel(ds1_idx, & tmp_sel);
+                  edittile_set_tmpsel(ds1_idx, &tmp_sel);
                }
             }
          }
@@ -1986,56 +2091,54 @@ void interfac_user_handler(int start_ds1_idx)
                   tmp_sel.type = TMP_NEW;
                switch (tmp_sel.type)
                {
-                  case TMP_NEW :
-                     edittile_delete_all_tmpsel(ds1_idx);
-                     edittile_change_to_new_permanent_sel(ds1_idx, & tmp_sel);
-                     tmp_sel.start = FALSE;
-                     tmp_sel.type = TMP_NULL;
-                     tmp_sel.x1 = tmp_sel.x2 = tmp_sel.y1 = tmp_sel.y2 = 0;
-                     tmp_sel.old_x2 = tmp_sel.old_y2 = 0;
-                     break;
+               case TMP_NEW:
+                  edittile_delete_all_tmpsel(ds1_idx);
+                  edittile_change_to_new_permanent_sel(ds1_idx, &tmp_sel);
+                  tmp_sel.start = FALSE;
+                  tmp_sel.type = TMP_NULL;
+                  tmp_sel.x1 = tmp_sel.x2 = tmp_sel.y1 = tmp_sel.y2 = 0;
+                  tmp_sel.old_x2 = tmp_sel.old_y2 = 0;
+                  break;
 
-                  case TMP_ADD :
-                     edittile_delete_all_tmpsel(ds1_idx);
-                     edittile_change_to_add_permanent_sel(ds1_idx, & tmp_sel);
-                     tmp_sel.start = FALSE;
-                     tmp_sel.type = TMP_NULL;
-                     tmp_sel.x1 = tmp_sel.x2 = tmp_sel.y1 = tmp_sel.y2 = 0;
-                     tmp_sel.old_x2 = tmp_sel.old_y2 = 0;
-                     break;
+               case TMP_ADD:
+                  edittile_delete_all_tmpsel(ds1_idx);
+                  edittile_change_to_add_permanent_sel(ds1_idx, &tmp_sel);
+                  tmp_sel.start = FALSE;
+                  tmp_sel.type = TMP_NULL;
+                  tmp_sel.x1 = tmp_sel.x2 = tmp_sel.y1 = tmp_sel.y2 = 0;
+                  tmp_sel.old_x2 = tmp_sel.old_y2 = 0;
+                  break;
 
-                  case TMP_HIDE :
-                     edittile_delete_all_tmpsel(ds1_idx);
-                     edittile_change_to_hide_sel(ds1_idx, & tmp_sel);
-                     tmp_sel.start = FALSE;
-                     tmp_sel.type = TMP_NULL;
-                     tmp_sel.x1 = tmp_sel.x2 = tmp_sel.y1 = tmp_sel.y2 = 0;
-                     tmp_sel.old_x2 = tmp_sel.old_y2 = 0;
-                     break;
+               case TMP_HIDE:
+                  edittile_delete_all_tmpsel(ds1_idx);
+                  edittile_change_to_hide_sel(ds1_idx, &tmp_sel);
+                  tmp_sel.start = FALSE;
+                  tmp_sel.type = TMP_NULL;
+                  tmp_sel.x1 = tmp_sel.x2 = tmp_sel.y1 = tmp_sel.y2 = 0;
+                  tmp_sel.old_x2 = tmp_sel.old_y2 = 0;
+                  break;
 
-                  case TMP_DEL :
-                     edittile_delete_all_tmpsel(ds1_idx);
-                     edittile_change_to_del_sel(ds1_idx, & tmp_sel);
-                     tmp_sel.start = FALSE;
-                     tmp_sel.type = TMP_NULL;
-                     tmp_sel.x1 = tmp_sel.x2 = tmp_sel.y1 = tmp_sel.y2 = 0;
-                     tmp_sel.old_x2 = tmp_sel.old_y2 = 0;
-                     break;
+               case TMP_DEL:
+                  edittile_delete_all_tmpsel(ds1_idx);
+                  edittile_change_to_del_sel(ds1_idx, &tmp_sel);
+                  tmp_sel.start = FALSE;
+                  tmp_sel.type = TMP_NULL;
+                  tmp_sel.x1 = tmp_sel.x2 = tmp_sel.y1 = tmp_sel.y2 = 0;
+                  tmp_sel.old_x2 = tmp_sel.old_y2 = 0;
+                  break;
                }
             }
             else if (paste_pos.start == TRUE)
             {
                if ((paste_pos.old_x != cx) ||
                    (paste_pos.old_y != cy) ||
-                   (paste_pos.old_ds1_idx != ds1_idx)
-                  )
+                   (paste_pos.old_ds1_idx != ds1_idx))
                {
                   edittile_paste_undo(paste_pos.old_ds1_idx);
                   edittile_paste_preview(ds1_idx,
-                     cx - paste_pos.start_x,
-                     cy - paste_pos.start_y,
-                     & paste_pos
-                  );
+                                         cx - paste_pos.start_x,
+                                         cy - paste_pos.start_y,
+                                         &paste_pos);
                   paste_pos.old_x = cx;
                   paste_pos.old_y = cy;
                   paste_pos.old_ds1_idx = ds1_idx;
@@ -2043,20 +2146,23 @@ void interfac_user_handler(int start_ds1_idx)
             }
          }
       }
-      
+
       // right mouse button
       if (old_mouse_b & 2)
       {
          if (glb_ds1edit.mode == MOD_T)
          {
-            int rc_ctrl  = key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL);
-            int rc_shift = key_pressed(KEY_LSHIFT)   || key_pressed(KEY_RSHIFT);
+            int rc_ctrl = key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL);
+            int rc_shift = key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT);
 
             if (rc_ctrl && rc_shift)
             {
                /* Ctrl+Shift+right-click: advanced bits window (legacy) */
                while (a5_mouse_b & 2)
-               { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
+               {
+                  al_rest(0.01);
+                  al_get_mouse_state(&a5_ms_state);
+               }
                wbits_main(ds1_idx, cx, cy);
                al_set_mouse_xy(a5_display, old_mouse_x, old_mouse_y);
             }
@@ -2064,7 +2170,10 @@ void interfac_user_handler(int start_ds1_idx)
             {
                /* Shift+right-click: full wedit_test (legacy) */
                while (a5_mouse_b & 2)
-               { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
+               {
+                  al_rest(0.01);
+                  al_get_mouse_state(&a5_ms_state);
+               }
                wedit_test(ds1_idx, cx, cy);
                al_set_mouse_xy(a5_display, old_mouse_x, old_mouse_y);
             }
@@ -2073,7 +2182,7 @@ void interfac_user_handler(int start_ds1_idx)
                /* Plain right-click press-and-hold: radial popup.
                 * popup_run runs its own modal loop while button held. */
                tile_picker_popup_run(ds1_idx, cx, cy,
-                                      a5_mouse_x, a5_mouse_y);
+                                     a5_mouse_x, a5_mouse_y);
                al_set_mouse_xy(a5_display, old_mouse_x, old_mouse_y);
             }
          }
@@ -2084,50 +2193,49 @@ void interfac_user_handler(int start_ds1_idx)
       {
          while (key_pressed(KEY_ESC))
          {
-            al_rest(0.01); al_get_keyboard_state(&a5_kb_state);
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
          }
          ret = msg_quit_main();
          switch (ret)
          {
-            case -1 :
-               // error
-               ds1_save(ds1_idx, TRUE); // save a .TMP map
-               done = TRUE;
-               break;
+         case -1:
+            // error
+            ds1_save(ds1_idx, TRUE); // save a .TMP map
+            done = TRUE;
+            break;
 
-            case 0 :
-               // save ALL & quit
-               for (i=0; i < DS1_MAX; i++)
-               {
-                  if (strlen(glb_ds1[ds1_idx].name))
-                     ds1_save(i, FALSE);
-               }
-               done = TRUE;
-               break;
+         case 0:
+            // save ALL & quit
+            for (i = 0; i < DS1_MAX; i++)
+            {
+               if (strlen(glb_ds1[ds1_idx].name))
+                  ds1_save(i, FALSE);
+            }
+            done = TRUE;
+            break;
 
-            case 1 :
-               // quit
-               ds1_save(ds1_idx, TRUE); // save a .TMP map
-               done = TRUE;
-               break;
+         case 1:
+            // quit
+            ds1_save(ds1_idx, TRUE); // save a .TMP map
+            done = TRUE;
+            break;
 
-            case 2  :
-            default :
-               // cancel
-               break;
+         case 2:
+         default:
+            // cancel
+            break;
          }
       }
 
       perf_accumulate(
-         &glb_perf_stats.ui_ms_total,
-         &glb_perf_stats.ui_ms_max,
-         perf_now_ms() - section_start_ms
-      );
+          &glb_perf_stats.ui_ms_total,
+          &glb_perf_stats.ui_ms_max,
+          perf_now_ms() - section_start_ms);
       perf_accumulate(
-         &glb_perf_stats.frame_ms_total,
-         &glb_perf_stats.frame_ms_max,
-         perf_now_ms() - frame_start_ms
-      );
+          &glb_perf_stats.frame_ms_total,
+          &glb_perf_stats.frame_ms_max,
+          perf_now_ms() - frame_start_ms);
       glb_perf_stats.frames++;
       if (glb_perf_stats.frames >= 30)
          perf_print_summary();

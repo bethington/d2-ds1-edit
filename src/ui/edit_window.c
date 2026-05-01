@@ -3,28 +3,28 @@
 #include "error.h"
 #include "editor/undo.h"
 #include "misc.h"
+#include "core/palette.h"
 #include "ui/edit_window.h"
-
+#include "core/export_common.h"
 
 // ==========================================================================
 // draw shadow layer
 void wedit_draw_s(int ds1_idx, int x, int y)
 {
-   WIN_ELEMENT_S * w_elm = & glb_ds1edit.win_edit.w_preview;
-   ALLEGRO_BITMAP * sub;
-   BLOCK_TABLE_S * bt_ptr;
-   ALLEGRO_BITMAP * tmp_bmp;
-   CELL_S_S      * s_ptr;
-   int           n, t, bt_idx, dt1_idx, block_idx, y1;
-   int           ux1, ux2, ux3, ux4, uy1, uy2, uy3;
+   WIN_ELEMENT_S *w_elm = &glb_ds1edit.win_edit.w_preview;
+   ALLEGRO_BITMAP *sub;
+   BLOCK_TABLE_S *bt_ptr;
+   ALLEGRO_BITMAP *tmp_bmp;
+   CELL_S_S *s_ptr;
+   int n, t, bt_idx, dt1_idx, block_idx, y1;
+   int ux1, ux2, ux3, ux4, uy1, uy2, uy3;
 
-   
-   t     = (y * glb_ds1[ds1_idx].shadow_line) + (x * glb_ds1[ds1_idx].shadow_num);
+   t = (y * glb_ds1[ds1_idx].shadow_line) + (x * glb_ds1[ds1_idx].shadow_num);
    s_ptr = glb_ds1[ds1_idx].shadow_buff + t;
-   sub   = al_create_sub_bitmap(glb_ds1edit.screen_buff,
-              w_elm->i_x0, w_elm->i_y0, al_get_bitmap_width(w_elm->inside), al_get_bitmap_height(w_elm->inside));
+   sub = al_create_sub_bitmap(glb_ds1edit.screen_buff,
+                              w_elm->i_x0, w_elm->i_y0, al_get_bitmap_width(w_elm->inside), al_get_bitmap_height(w_elm->inside));
 
-   for (n=0; n<glb_ds1[ds1_idx].shadow_num; n++)
+   for (n = 0; n < glb_ds1[ds1_idx].shadow_num; n++)
    {
       bt_idx = s_ptr[n].bt_idx; // index in block table
       if (bt_idx == -1)
@@ -43,20 +43,18 @@ void wedit_draw_s(int ds1_idx, int x, int y)
          a5_line(sub, ux3, uy3, ux4, uy2, 168);
          a5_line(sub, ux1, uy2, ux2, uy3, 168);
 
-         a5_textprintf(sub, font, ux1+8, uy2-2, 0,
-            "%u %u %u %u",
-            s_ptr[n].prop1,
-            s_ptr[n].prop2,
-            s_ptr[n].prop3,
-            s_ptr[n].prop4
-         );
-         a5_textprintf(sub, font, ux1+7, uy2-3, 255,
-            "%u %u %u %u",
-            s_ptr[n].prop1,
-            s_ptr[n].prop2,
-            s_ptr[n].prop3,
-            s_ptr[n].prop4
-         );
+         a5_textprintf(sub, font, ux1 + 8, uy2 - 2, 0,
+                       "%u %u %u %u",
+                       s_ptr[n].prop1,
+                       s_ptr[n].prop2,
+                       s_ptr[n].prop3,
+                       s_ptr[n].prop4);
+         a5_textprintf(sub, font, ux1 + 7, uy2 - 3, 255,
+                       "%u %u %u %u",
+                       s_ptr[n].prop1,
+                       s_ptr[n].prop2,
+                       s_ptr[n].prop3,
+                       s_ptr[n].prop4);
       }
       if (bt_idx <= 0)
          continue;
@@ -64,10 +62,10 @@ void wedit_draw_s(int ds1_idx, int x, int y)
       bt_ptr = glb_ds1[ds1_idx].block_table + bt_idx; // pointer in block table
       if (bt_ptr->type != BT_SHADOW)
          continue; // only shadows
-      
-      dt1_idx   = bt_ptr->dt1_idx;
+
+      dt1_idx = bt_ptr->dt1_idx;
       block_idx = bt_ptr->block_idx;
-      tmp_bmp   = * (glb_dt1[dt1_idx].block_zoom[ZM_11] + block_idx);
+      tmp_bmp = *(glb_dt1[dt1_idx].block_zoom[ZM_11] + block_idx);
 
       if (tmp_bmp == NULL)
          continue;
@@ -76,55 +74,53 @@ void wedit_draw_s(int ds1_idx, int x, int y)
       y1 += 80; // shadows, like walls are lower than floors
                 // (and than roofs) by 80 pixels
 
-      switch(glb_ds1[ds1_idx].shadow_layer_mask[0])
+      switch (glb_ds1[ds1_idx].shadow_layer_mask[0])
       {
-         case 1 :
-            a5_draw_sprite(sub, tmp_bmp, 0, y1);
-            break;
-            
-         case 2 :
-            /* TODO: A5 color mapping for selection highlight */
-            a5_draw_sprite(sub, tmp_bmp, 0, y1);
-            break;
+      case 1:
+         a5_draw_sprite(sub, tmp_bmp, 0, y1);
+         break;
 
-         case 3 :
-            /* TODO: A5 color mapping for transparency */
-            a5_draw_trans_sprite(sub, tmp_bmp, 0, y1);
-            break;
+      case 2:
+         /* TODO: A5 color mapping for selection highlight */
+         a5_draw_sprite(sub, tmp_bmp, 0, y1);
+         break;
+
+      case 3:
+         /* TODO: A5 color mapping for transparency */
+         a5_draw_trans_sprite(sub, tmp_bmp, 0, y1);
+         break;
       }
    }
    al_destroy_bitmap(sub);
 }
 
-
 // ==========================================================================
 // draw floor layers
 void wedit_draw_f(int ds1_idx, int x, int y)
 {
-   WIN_ELEMENT_S * w_elm = & glb_ds1edit.win_edit.w_preview;
-   ALLEGRO_BITMAP * sub;
-   BLOCK_TABLE_S * bt_ptr;
-   ALLEGRO_BITMAP * tmp_bmp;
-   CELL_F_S      * f_ptr;
-   int           n, t, bt_idx, dt1_idx, block_idx, y1;
-   ORDER_DATA_S  order_data[4];
-   int           ux1, ux2, ux3, ux4, uy1, uy2, uy3;
+   WIN_ELEMENT_S *w_elm = &glb_ds1edit.win_edit.w_preview;
+   ALLEGRO_BITMAP *sub;
+   BLOCK_TABLE_S *bt_ptr;
+   ALLEGRO_BITMAP *tmp_bmp;
+   CELL_F_S *f_ptr;
+   int n, t, bt_idx, dt1_idx, block_idx, y1;
+   ORDER_DATA_S order_data[4];
+   int ux1, ux2, ux3, ux4, uy1, uy2, uy3;
 
-   
-   t     = (y * glb_ds1[ds1_idx].floor_line) + (x * glb_ds1[ds1_idx].floor_num);
+   t = (y * glb_ds1[ds1_idx].floor_line) + (x * glb_ds1[ds1_idx].floor_num);
    f_ptr = glb_ds1[ds1_idx].floor_buff + t;
-   sub   = al_create_sub_bitmap(glb_ds1edit.screen_buff,
-              w_elm->i_x0, w_elm->i_y0, al_get_bitmap_width(w_elm->inside), al_get_bitmap_height(w_elm->inside));
+   sub = al_create_sub_bitmap(glb_ds1edit.screen_buff,
+                              w_elm->i_x0, w_elm->i_y0, al_get_bitmap_width(w_elm->inside), al_get_bitmap_height(w_elm->inside));
 
-   for (n=0; n<glb_ds1[ds1_idx].floor_num; n++)
+   for (n = 0; n < glb_ds1[ds1_idx].floor_num; n++)
    {
-      order_data[n].idx    = n;
+      order_data[n].idx = n;
       order_data[n].height = f_ptr[n].prop1;
    }
    qsort(order_data, glb_ds1[ds1_idx].floor_num, sizeof(ORDER_DATA_S),
-      qsort_helper_order_data);
+         qsort_helper_order_data);
 
-   for (n=0; n<glb_ds1[ds1_idx].floor_num; n++)
+   for (n = 0; n < glb_ds1[ds1_idx].floor_num; n++)
    {
       bt_idx = f_ptr[order_data[n].idx].bt_idx; // index in block table
       if (bt_idx == -1)
@@ -143,31 +139,29 @@ void wedit_draw_f(int ds1_idx, int x, int y)
          a5_line(sub, ux3, uy3, ux4, uy2, 168);
          a5_line(sub, ux1, uy2, ux2, uy3, 168);
 
-         a5_textprintf(sub, font, ux1+8, uy2-2, 0,
-            "%u %u %u %u",
-            f_ptr[order_data[n].idx].prop1,
-            f_ptr[order_data[n].idx].prop2,
-            f_ptr[order_data[n].idx].prop3,
-            f_ptr[order_data[n].idx].prop4
-         );
-         a5_textprintf(sub, font, ux1+7, uy2-3, 255,
-            "%u %u %u %u",
-            f_ptr[order_data[n].idx].prop1,
-            f_ptr[order_data[n].idx].prop2,
-            f_ptr[order_data[n].idx].prop3,
-            f_ptr[order_data[n].idx].prop4
-         );
+         a5_textprintf(sub, font, ux1 + 8, uy2 - 2, 0,
+                       "%u %u %u %u",
+                       f_ptr[order_data[n].idx].prop1,
+                       f_ptr[order_data[n].idx].prop2,
+                       f_ptr[order_data[n].idx].prop3,
+                       f_ptr[order_data[n].idx].prop4);
+         a5_textprintf(sub, font, ux1 + 7, uy2 - 3, 255,
+                       "%u %u %u %u",
+                       f_ptr[order_data[n].idx].prop1,
+                       f_ptr[order_data[n].idx].prop2,
+                       f_ptr[order_data[n].idx].prop3,
+                       f_ptr[order_data[n].idx].prop4);
       }
       if (bt_idx <= 0)
          continue;
 
       bt_ptr = glb_ds1[ds1_idx].block_table + bt_idx; // pointer in block table
-      if ( (bt_ptr->type != BT_STATIC) && (bt_ptr->type != BT_ANIMATED) )
+      if ((bt_ptr->type != BT_STATIC) && (bt_ptr->type != BT_ANIMATED))
          continue; // only floors
 
-      dt1_idx   = bt_ptr->dt1_idx;
+      dt1_idx = bt_ptr->dt1_idx;
       block_idx = bt_ptr->block_idx;
-      tmp_bmp   = * (glb_dt1[dt1_idx].block_zoom[ZM_11] + block_idx);
+      tmp_bmp = *(glb_dt1[dt1_idx].block_zoom[ZM_11] + block_idx);
 
       if (tmp_bmp == NULL)
          continue;
@@ -178,38 +172,36 @@ void wedit_draw_f(int ds1_idx, int x, int y)
    al_destroy_bitmap(sub);
 }
 
-
 // ==========================================================================
 // draw wall layers
 void wedit_draw_w(int ds1_idx, int x, int y, int upper)
 {
-   WIN_ELEMENT_S * w_elm = & glb_ds1edit.win_edit.w_preview;
-   ALLEGRO_BITMAP * sub;
-   BLOCK_TABLE_S * bt_ptr;
-   ALLEGRO_BITMAP * tmp_bmp;
-   CELL_W_S      * w_ptr;
-   int           n, t, bt_idx, dt1_idx, block_idx, m, s, y1;
-   int           done, found, o;
-   ORDER_DATA_S  order_data[4];
-   int           ux1, ux2, ux3, ux4, uy1, uy2, uy3;
-   
-   
-   t     = (y * glb_ds1[ds1_idx].wall_line) + (x * glb_ds1[ds1_idx].wall_num);
+   WIN_ELEMENT_S *w_elm = &glb_ds1edit.win_edit.w_preview;
+   ALLEGRO_BITMAP *sub;
+   BLOCK_TABLE_S *bt_ptr;
+   ALLEGRO_BITMAP *tmp_bmp;
+   CELL_W_S *w_ptr;
+   int n, t, bt_idx, dt1_idx, block_idx, m, s, y1;
+   int done, found, o;
+   ORDER_DATA_S order_data[4];
+   int ux1, ux2, ux3, ux4, uy1, uy2, uy3;
+
+   t = (y * glb_ds1[ds1_idx].wall_line) + (x * glb_ds1[ds1_idx].wall_num);
    w_ptr = glb_ds1[ds1_idx].wall_buff + t;
-   sub   = al_create_sub_bitmap(glb_ds1edit.screen_buff,
-              w_elm->i_x0, w_elm->i_y0, al_get_bitmap_width(w_elm->inside), al_get_bitmap_height(w_elm->inside));
-   
-   for (n=0; n<glb_ds1[ds1_idx].wall_num; n++)
+   sub = al_create_sub_bitmap(glb_ds1edit.screen_buff,
+                              w_elm->i_x0, w_elm->i_y0, al_get_bitmap_width(w_elm->inside), al_get_bitmap_height(w_elm->inside));
+
+   for (n = 0; n < glb_ds1[ds1_idx].wall_num; n++)
    {
-      order_data[n].idx    = n;
+      order_data[n].idx = n;
       order_data[n].height = w_ptr[n].prop1;
       if (w_ptr[n].orientation == 10)
          order_data[n].height = 255;
    }
    qsort(order_data, glb_ds1[ds1_idx].wall_num, sizeof(ORDER_DATA_S),
-      qsort_helper_order_data);
+         qsort_helper_order_data);
 
-   for (n=0; n<glb_ds1[ds1_idx].wall_num; n++)
+   for (n = 0; n < glb_ds1[ds1_idx].wall_num; n++)
    {
       o = w_ptr[order_data[n].idx].orientation;
       if ((upper == TRUE) && (o >= 15))
@@ -220,16 +212,16 @@ void wedit_draw_w(int ds1_idx, int x, int y, int upper)
       if ((o == 10) || (o == 11))
       {
          if (glb_ds1[ds1_idx].special_layer_mask)
-            continue;  /* draw later as special tiles */
+            continue; /* draw later as special tiles */
          else
-            continue;  /* hidden — F9 toggled off */
+            continue; /* hidden — F9 toggled off */
       }
-      
+
       bt_idx = w_ptr[order_data[n].idx].bt_idx; // index in block table
 
       if (bt_idx == 0)
          continue; // no tiles here
-      
+
       if (w_ptr[order_data[n].idx].prop4 & 0x80) // binary : 1000-0000
       {
          // hidden
@@ -252,39 +244,37 @@ void wedit_draw_w(int ds1_idx, int x, int y, int upper)
          a5_line(sub, ux3, uy1, ux4, uy2, 168);
          a5_line(sub, ux3, uy3, ux4, uy2, 168);
          a5_line(sub, ux1, uy2, ux2, uy3, 168);
-         
-         a5_textprintf(sub, font, ux1+8, uy2-2, 0,
-            "(%u) %u %u %u %u",
-            w_ptr[order_data[n].idx].orientation,
-            w_ptr[order_data[n].idx].prop1,
-            w_ptr[order_data[n].idx].prop2,
-            w_ptr[order_data[n].idx].prop3,
-            w_ptr[order_data[n].idx].prop4
-         );
-         a5_textprintf(sub, font, ux1+7, uy2-3, 255,
-            "(%u) %u %u %u %u",
-            w_ptr[order_data[n].idx].orientation,
-            w_ptr[order_data[n].idx].prop1,
-            w_ptr[order_data[n].idx].prop2,
-            w_ptr[order_data[n].idx].prop3,
-            w_ptr[order_data[n].idx].prop4
-         );
+
+         a5_textprintf(sub, font, ux1 + 8, uy2 - 2, 0,
+                       "(%u) %u %u %u %u",
+                       w_ptr[order_data[n].idx].orientation,
+                       w_ptr[order_data[n].idx].prop1,
+                       w_ptr[order_data[n].idx].prop2,
+                       w_ptr[order_data[n].idx].prop3,
+                       w_ptr[order_data[n].idx].prop4);
+         a5_textprintf(sub, font, ux1 + 7, uy2 - 3, 255,
+                       "(%u) %u %u %u %u",
+                       w_ptr[order_data[n].idx].orientation,
+                       w_ptr[order_data[n].idx].prop1,
+                       w_ptr[order_data[n].idx].prop2,
+                       w_ptr[order_data[n].idx].prop3,
+                       w_ptr[order_data[n].idx].prop4);
          continue;
       }
 
       bt_ptr = glb_ds1[ds1_idx].block_table + bt_idx; // pointer in block table
-      if ( (bt_ptr->type != BT_WALL_UP)   &&
-           (bt_ptr->type != BT_WALL_DOWN) &&
-           (bt_ptr->type != BT_SPECIAL))
+      if ((bt_ptr->type != BT_WALL_UP) &&
+          (bt_ptr->type != BT_WALL_DOWN) &&
+          (bt_ptr->type != BT_SPECIAL))
       {
          // only walls or special tiles, but no roof
          continue;
       }
-      
-      dt1_idx   = bt_ptr->dt1_idx;
+
+      dt1_idx = bt_ptr->dt1_idx;
       block_idx = bt_ptr->block_idx;
 
-      tmp_bmp = * (glb_dt1[dt1_idx].block_zoom[ZM_11] + block_idx);
+      tmp_bmp = *(glb_dt1[dt1_idx].block_zoom[ZM_11] + block_idx);
 
       if (tmp_bmp == NULL)
          continue;
@@ -292,15 +282,15 @@ void wedit_draw_w(int ds1_idx, int x, int y, int upper)
       y1 = al_get_bitmap_height(sub) - 160 - bt_ptr->zero_line;
       y1 += 80; // walls are lower than floors (and than roofs) by 80 pixels
       a5_draw_sprite(sub, tmp_bmp, 0, y1);
-      
+
       if (bt_ptr->orientation == 3) // upper-left corner
       {
          // search the o=4 m=m s=s
          m = bt_ptr->main_index;
          s = bt_ptr->sub_index;
-         done  = FALSE;
+         done = FALSE;
          found = FALSE;
-         while( ! done)
+         while (!done)
          {
             if (bt_idx >= glb_ds1[ds1_idx].bt_num)
                done = TRUE;
@@ -319,9 +309,9 @@ void wedit_draw_w(int ds1_idx, int x, int y, int upper)
          }
          if (found == TRUE)
          {
-            dt1_idx   = bt_ptr->dt1_idx;
+            dt1_idx = bt_ptr->dt1_idx;
             block_idx = bt_ptr->block_idx;
-            tmp_bmp   = * (glb_dt1[dt1_idx].block_zoom[ZM_11] + block_idx);
+            tmp_bmp = *(glb_dt1[dt1_idx].block_zoom[ZM_11] + block_idx);
 
             if (tmp_bmp == NULL)
                continue;
@@ -339,32 +329,32 @@ void wedit_draw_w(int ds1_idx, int x, int y, int upper)
 // draw roof layers
 void wedit_draw_r(int ds1_idx, int x, int y)
 {
-   WIN_ELEMENT_S * w_elm = & glb_ds1edit.win_edit.w_preview;
-   ALLEGRO_BITMAP * sub;
-   BLOCK_TABLE_S * bt_ptr;
-   ALLEGRO_BITMAP * tmp_bmp;
-   CELL_W_S      * r_ptr;
-   int           n, t, bt_idx, dt1_idx, block_idx, y1;
-   ORDER_DATA_S  order_data[4];
-   
-   t     = (y * glb_ds1[ds1_idx].wall_line) + (x * glb_ds1[ds1_idx].wall_num);
+   WIN_ELEMENT_S *w_elm = &glb_ds1edit.win_edit.w_preview;
+   ALLEGRO_BITMAP *sub;
+   BLOCK_TABLE_S *bt_ptr;
+   ALLEGRO_BITMAP *tmp_bmp;
+   CELL_W_S *r_ptr;
+   int n, t, bt_idx, dt1_idx, block_idx, y1;
+   ORDER_DATA_S order_data[4];
+
+   t = (y * glb_ds1[ds1_idx].wall_line) + (x * glb_ds1[ds1_idx].wall_num);
    r_ptr = glb_ds1[ds1_idx].wall_buff + t;
-   sub   = al_create_sub_bitmap(glb_ds1edit.screen_buff,
-              w_elm->i_x0, w_elm->i_y0, al_get_bitmap_width(w_elm->inside), al_get_bitmap_height(w_elm->inside));
-   
-   for (n=0; n<glb_ds1[ds1_idx].wall_num; n++)
+   sub = al_create_sub_bitmap(glb_ds1edit.screen_buff,
+                              w_elm->i_x0, w_elm->i_y0, al_get_bitmap_width(w_elm->inside), al_get_bitmap_height(w_elm->inside));
+
+   for (n = 0; n < glb_ds1[ds1_idx].wall_num; n++)
    {
-      order_data[n].idx    = n;
+      order_data[n].idx = n;
       order_data[n].height = r_ptr[n].prop1;
    }
    qsort(order_data, glb_ds1[ds1_idx].wall_num, sizeof(ORDER_DATA_S),
-      qsort_helper_order_data);
-   
-   for (n=0; n<glb_ds1[ds1_idx].wall_num; n++)
+         qsort_helper_order_data);
+
+   for (n = 0; n < glb_ds1[ds1_idx].wall_num; n++)
    {
       if (r_ptr[order_data[n].idx].prop4 & 0x80) // binary : 1000-0000
-         continue; // don't draw this tile
-      
+         continue;                               // don't draw this tile
+
       bt_idx = r_ptr[order_data[n].idx].bt_idx; // index in block table
       if (bt_idx <= 0)
          continue;
@@ -373,9 +363,9 @@ void wedit_draw_r(int ds1_idx, int x, int y)
       if (bt_ptr->type != BT_ROOF)
          continue; // only roof
 
-      dt1_idx   = bt_ptr->dt1_idx;
+      dt1_idx = bt_ptr->dt1_idx;
       block_idx = bt_ptr->block_idx;
-      tmp_bmp   = * (glb_dt1[dt1_idx].block_zoom[ZM_11] + block_idx);
+      tmp_bmp = *(glb_dt1[dt1_idx].block_zoom[ZM_11] + block_idx);
 
       if (tmp_bmp == NULL)
          continue;
@@ -387,37 +377,35 @@ void wedit_draw_r(int ds1_idx, int x, int y)
    al_destroy_bitmap(sub);
 }
 
-
 // ==========================================================================
 // draw special tiles
 void wedit_draw_sp(int ds1_idx, int x, int y)
 {
-   WIN_ELEMENT_S * w_elm = & glb_ds1edit.win_edit.w_preview;
-   ALLEGRO_BITMAP * sub;
-   BLOCK_TABLE_S * bt_ptr;
-   ALLEGRO_BITMAP * tmp_bmp;
-   CELL_W_S      * w_ptr;
-   int           n, t, bt_idx, dt1_idx, block_idx, y1, o;
-   ORDER_DATA_S  order_data[4];
-   int           ux1, ux2, ux3, ux4, uy1, uy2, uy3;
-   
-   
-   t     = (y * glb_ds1[ds1_idx].wall_line) + (x * glb_ds1[ds1_idx].wall_num);
+   WIN_ELEMENT_S *w_elm = &glb_ds1edit.win_edit.w_preview;
+   ALLEGRO_BITMAP *sub;
+   BLOCK_TABLE_S *bt_ptr;
+   ALLEGRO_BITMAP *tmp_bmp;
+   CELL_W_S *w_ptr;
+   int n, t, bt_idx, dt1_idx, block_idx, y1, o;
+   ORDER_DATA_S order_data[4];
+   int ux1, ux2, ux3, ux4, uy1, uy2, uy3;
+
+   t = (y * glb_ds1[ds1_idx].wall_line) + (x * glb_ds1[ds1_idx].wall_num);
    w_ptr = glb_ds1[ds1_idx].wall_buff + t;
-   sub   = al_create_sub_bitmap(glb_ds1edit.screen_buff,
-              w_elm->i_x0, w_elm->i_y0, al_get_bitmap_width(w_elm->inside), al_get_bitmap_height(w_elm->inside));
-   
-   for (n=0; n<glb_ds1[ds1_idx].wall_num; n++)
+   sub = al_create_sub_bitmap(glb_ds1edit.screen_buff,
+                              w_elm->i_x0, w_elm->i_y0, al_get_bitmap_width(w_elm->inside), al_get_bitmap_height(w_elm->inside));
+
+   for (n = 0; n < glb_ds1[ds1_idx].wall_num; n++)
    {
-      order_data[n].idx    = n;
+      order_data[n].idx = n;
       order_data[n].height = w_ptr[n].prop1;
       if (w_ptr[n].orientation == 10)
          order_data[n].height = 255;
    }
    qsort(order_data, glb_ds1[ds1_idx].wall_num, sizeof(ORDER_DATA_S),
-      qsort_helper_order_data);
+         qsort_helper_order_data);
 
-   for (n=0; n<glb_ds1[ds1_idx].wall_num; n++)
+   for (n = 0; n < glb_ds1[ds1_idx].wall_num; n++)
    {
       bt_idx = w_ptr[order_data[n].idx].bt_idx; // index in block table
 
@@ -451,36 +439,34 @@ void wedit_draw_sp(int ds1_idx, int x, int y)
             a5_line(glb_ds1edit.screen_buff, ux3, uy1, ux4, uy2, 168);
             a5_line(glb_ds1edit.screen_buff, ux3, uy3, ux4, uy2, 168);
             a5_line(glb_ds1edit.screen_buff, ux1, uy2, ux2, uy3, 168);
-         
-            a5_textprintf(glb_ds1edit.screen_buff, font, ux1+8, uy2-2, 0,
-               "(%u) %u %u %u %u",
-               w_ptr[order_data[n].idx].orientation,
-               w_ptr[order_data[n].idx].prop1,
-               w_ptr[order_data[n].idx].prop2,
-               w_ptr[order_data[n].idx].prop3,
-               w_ptr[order_data[n].idx].prop4
-            );
-            a5_textprintf(glb_ds1edit.screen_buff, font, ux1+7, uy2-3, 255,
-               "(%u) %u %u %u %u",
-               w_ptr[order_data[n].idx].orientation,
-               w_ptr[order_data[n].idx].prop1,
-               w_ptr[order_data[n].idx].prop2,
-               w_ptr[order_data[n].idx].prop3,
-               w_ptr[order_data[n].idx].prop4
-            );
+
+            a5_textprintf(glb_ds1edit.screen_buff, font, ux1 + 8, uy2 - 2, 0,
+                          "(%u) %u %u %u %u",
+                          w_ptr[order_data[n].idx].orientation,
+                          w_ptr[order_data[n].idx].prop1,
+                          w_ptr[order_data[n].idx].prop2,
+                          w_ptr[order_data[n].idx].prop3,
+                          w_ptr[order_data[n].idx].prop4);
+            a5_textprintf(glb_ds1edit.screen_buff, font, ux1 + 7, uy2 - 3, 255,
+                          "(%u) %u %u %u %u",
+                          w_ptr[order_data[n].idx].orientation,
+                          w_ptr[order_data[n].idx].prop1,
+                          w_ptr[order_data[n].idx].prop2,
+                          w_ptr[order_data[n].idx].prop3,
+                          w_ptr[order_data[n].idx].prop4);
             continue;
          }
       }
-      
+
       // draw only special tiles
       bt_ptr = glb_ds1[ds1_idx].block_table + bt_idx; // pointer in block table
       if (bt_ptr->type != BT_SPECIAL)
          continue; // only special tiles
 
-      dt1_idx   = bt_ptr->dt1_idx;
+      dt1_idx = bt_ptr->dt1_idx;
       block_idx = bt_ptr->block_idx;
 
-      tmp_bmp = * (glb_dt1[dt1_idx].block_zoom[ZM_11] + block_idx);
+      tmp_bmp = *(glb_dt1[dt1_idx].block_zoom[ZM_11] + block_idx);
 
       if (tmp_bmp == NULL)
          continue;
@@ -492,18 +478,17 @@ void wedit_draw_sp(int ds1_idx, int x, int y)
    al_destroy_bitmap(sub);
 }
 
-
 // ==========================================================================
 // make a button gfx at run-time, an activated button
 void wedit_make_2nd_buttons(void)
 {
-   BUTTON_S * b;
-   ALLEGRO_BITMAP * tmp;
-   int      i;
+   BUTTON_S *b;
+   ALLEGRO_BITMAP *tmp;
+   int i;
 
-   for (i = BU_NULL+1; i<BU_MAX; i++)
+   for (i = BU_NULL + 1; i < BU_MAX; i++)
    {
-      b = & glb_ds1edit.win_edit.button[i];
+      b = &glb_ds1edit.win_edit.button[i];
       tmp = al_create_bitmap(b->w, b->h);
       if (tmp == NULL)
          ds1edit_error("not enough mem for 1 button");
@@ -513,49 +498,45 @@ void wedit_make_2nd_buttons(void)
    }
 }
 
-
 // ==========================================================================
 // read all pcx and prepare some windows
 void wedit_read_pcx(void)
 {
-   WIN_ELEMENT_S * w_elm;
-   ALLEGRO_BITMAP * tmp_bmp;
-   ALLEGRO_BITMAP * pcx[9];
-   BUTTON_S      * b;
+   WIN_ELEMENT_S *w_elm;
+   ALLEGRO_BITMAP *tmp_bmp;
+   ALLEGRO_BITMAP *pcx[9];
+   BUTTON_S *b;
    static struct
    {
-      char      file[30];
+      char file[30];
       BUT_TYP_E b_num;
       BLK_TYP_E t_num;
-      int       x0;
-      int       y0;
+      int x0;
+      int y0;
    } data[] = {
-        {"but_ok",      BU_OK,        BT_NULL,        8,  8},
-        {"but_cancel",  BU_CANCEL,    BT_NULL,       83,  8},
-        {"but_floor1",  BU_FLOOR1,    BT_NULL,      186, 38},
-        {"but_floor2",  BU_FLOOR2,    BT_NULL,      257, 38},
-        {"but_shadow",  BU_SHADOW,    BT_NULL,      470, 38},
-        {"but_wall1",   BU_WALL1,     BT_NULL,      186,  8},
-        {"but_wall2",   BU_WALL2,     BT_NULL,      257,  8},
-        {"but_wall3",   BU_WALL3,     BT_NULL,      328,  8},
-        {"but_wall4",   BU_WALL4,     BT_NULL,      399,  8},
-        {"view_rand",   BU_VIEW_RAND, BT_NULL,      470,  8},
-        {"tab_static",  BU_NULL,      BT_STATIC,     -1, -1},
-        {"tab_anim",    BU_NULL,      BT_ANIMATED,   -1, -1},
-        {"tab_upper",   BU_NULL,      BT_WALL_UP,    -1, -1},
-        {"tab_lower",   BU_NULL,      BT_WALL_DOWN,  -1, -1},
-        {"tab_roofs",   BU_NULL,      BT_ROOF,       -1, -1},
-        {"tab_special", BU_NULL,      BT_SPECIAL,    -1, -1},
-        {"tab_shadow",  BU_NULL,      BT_SHADOW,     -1, -1},
-        {"", BU_NULL, BT_NULL, -1, -1} // do not remove
-     };
+       {"but_ok", BU_OK, BT_NULL, 8, 8},
+       {"but_cancel", BU_CANCEL, BT_NULL, 83, 8},
+       {"but_floor1", BU_FLOOR1, BT_NULL, 186, 38},
+       {"but_floor2", BU_FLOOR2, BT_NULL, 257, 38},
+       {"but_shadow", BU_SHADOW, BT_NULL, 470, 38},
+       {"but_wall1", BU_WALL1, BT_NULL, 186, 8},
+       {"but_wall2", BU_WALL2, BT_NULL, 257, 8},
+       {"but_wall3", BU_WALL3, BT_NULL, 328, 8},
+       {"but_wall4", BU_WALL4, BT_NULL, 399, 8},
+       {"view_rand", BU_VIEW_RAND, BT_NULL, 470, 8},
+       {"tab_static", BU_NULL, BT_STATIC, -1, -1},
+       {"tab_anim", BU_NULL, BT_ANIMATED, -1, -1},
+       {"tab_upper", BU_NULL, BT_WALL_UP, -1, -1},
+       {"tab_lower", BU_NULL, BT_WALL_DOWN, -1, -1},
+       {"tab_roofs", BU_NULL, BT_ROOF, -1, -1},
+       {"tab_special", BU_NULL, BT_SPECIAL, -1, -1},
+       {"tab_shadow", BU_NULL, BT_SHADOW, -1, -1},
+       {"", BU_NULL, BT_NULL, -1, -1} // do not remove
+   };
    char filename[80];
    char pcx_name[9][20] = {
-           {"up-left"},   {"up"},   {"up-right"},
-           {"left"},      {"fill"}, {"right"},
-           {"down-left"}, {"down"}, {"down-right"}
-        };
-   int  i=0, n1, n2, x0, y0, w, h, my_border, x, y;
+       {"up-left"}, {"up"}, {"up-right"}, {"left"}, {"fill"}, {"right"}, {"down-left"}, {"down"}, {"down-right"}};
+   int i = 0, n1, n2, x0, y0, w, h, my_border, x, y;
 
    fprintf(stderr, "loading pcx");
    fflush(stderr);
@@ -568,13 +549,17 @@ void wedit_read_pcx(void)
       if (n1 != BU_NULL)
       {
          // button off
-         b = & glb_ds1edit.win_edit.button[n1];
+         b = &glb_ds1edit.win_edit.button[n1];
          sprintf(filename, "pcx/%s.png", data[i].file);
          b->bmp[0] = al_load_bitmap(filename);
-         if (b->bmp[0] == NULL) {
+         if (b->bmp[0] == NULL)
+         {
             fprintf(stderr, "\nWARNING: can't load %s\n", filename);
-            b->w = 0; b->h = 0;
-         } else {
+            b->w = 0;
+            b->h = 0;
+         }
+         else
+         {
             b->w = al_get_bitmap_width(b->bmp[0]);
             b->h = al_get_bitmap_height(b->bmp[0]);
          }
@@ -584,18 +569,22 @@ void wedit_read_pcx(void)
       if (n2 != BT_NULL)
       {
          // tab off
-         b = & glb_ds1edit.win_edit.tab[n2];
+         b = &glb_ds1edit.win_edit.tab[n2];
          sprintf(filename, "pcx/%s_off.png", data[i].file);
          b->bmp[0] = al_load_bitmap(filename);
-         if (b->bmp[0] == NULL) {
+         if (b->bmp[0] == NULL)
+         {
             fprintf(stderr, "\nWARNING: can't load %s\n", filename);
-            b->w = 0; b->h = 0;
-         } else {
+            b->w = 0;
+            b->h = 0;
+         }
+         else
+         {
             b->w = al_get_bitmap_width(b->bmp[0]);
             b->h = al_get_bitmap_height(b->bmp[0]);
          }
 
-          // tab on
+         // tab on
          sprintf(filename, "pcx/%s.png", data[i].file);
          b->bmp[1] = al_load_bitmap(filename);
       }
@@ -603,7 +592,7 @@ void wedit_read_pcx(void)
    }
 
    // make preview window
-   for (i=0; i<9; i++)
+   for (i = 0; i < 9; i++)
    {
       fprintf(stderr, ".");
       fflush(stderr);
@@ -622,44 +611,43 @@ void wedit_read_pcx(void)
 
    a5_clear(tmp_bmp);
 
-   for (x=0; x<w; x += al_get_bitmap_width(pcx[1]))
+   for (x = 0; x < w; x += al_get_bitmap_width(pcx[1]))
       a5_blit(pcx[1], tmp_bmp, 0, 0, x, 0, al_get_bitmap_width(pcx[1]), al_get_bitmap_height(pcx[1]));
-      
-   for (x=0; x<w; x += al_get_bitmap_width(pcx[7]))
+
+   for (x = 0; x < w; x += al_get_bitmap_width(pcx[7]))
       a5_blit(pcx[7], tmp_bmp, 0, 0, x, h - al_get_bitmap_height(pcx[7]), al_get_bitmap_width(pcx[7]), al_get_bitmap_height(pcx[7]));
-      
-   for (y=0; y<h; y += al_get_bitmap_height(pcx[3]))
+
+   for (y = 0; y < h; y += al_get_bitmap_height(pcx[3]))
       a5_blit(pcx[3], tmp_bmp, 0, 0, 0, y, al_get_bitmap_width(pcx[3]), al_get_bitmap_height(pcx[3]));
-      
-   for (y=0; y<h; y += al_get_bitmap_height(pcx[5]))
-      a5_blit(pcx[5], tmp_bmp, 0, 0, w-al_get_bitmap_width(pcx[5]), y, al_get_bitmap_width(pcx[5]), al_get_bitmap_height(pcx[5]));
 
-   a5_blit(pcx[0], tmp_bmp, 0, 0, 0,                     0, al_get_bitmap_width(pcx[0]), al_get_bitmap_height(pcx[0]));
-   a5_blit(pcx[2], tmp_bmp, 0, 0, w-al_get_bitmap_width(pcx[2]),           0, al_get_bitmap_width(pcx[2]), al_get_bitmap_height(pcx[2]));
-   a5_blit(pcx[6], tmp_bmp, 0, 0, 0,           h-al_get_bitmap_height(pcx[6]), al_get_bitmap_width(pcx[6]), al_get_bitmap_height(pcx[6]));
-   a5_blit(pcx[8], tmp_bmp, 0, 0, w-al_get_bitmap_width(pcx[8]), h-al_get_bitmap_height(pcx[8]), al_get_bitmap_width(pcx[8]), al_get_bitmap_height(pcx[8]));
+   for (y = 0; y < h; y += al_get_bitmap_height(pcx[5]))
+      a5_blit(pcx[5], tmp_bmp, 0, 0, w - al_get_bitmap_width(pcx[5]), y, al_get_bitmap_width(pcx[5]), al_get_bitmap_height(pcx[5]));
 
-   w_elm = & glb_ds1edit.win_edit.w_preview;
+   a5_blit(pcx[0], tmp_bmp, 0, 0, 0, 0, al_get_bitmap_width(pcx[0]), al_get_bitmap_height(pcx[0]));
+   a5_blit(pcx[2], tmp_bmp, 0, 0, w - al_get_bitmap_width(pcx[2]), 0, al_get_bitmap_width(pcx[2]), al_get_bitmap_height(pcx[2]));
+   a5_blit(pcx[6], tmp_bmp, 0, 0, 0, h - al_get_bitmap_height(pcx[6]), al_get_bitmap_width(pcx[6]), al_get_bitmap_height(pcx[6]));
+   a5_blit(pcx[8], tmp_bmp, 0, 0, w - al_get_bitmap_width(pcx[8]), h - al_get_bitmap_height(pcx[8]), al_get_bitmap_width(pcx[8]), al_get_bitmap_height(pcx[8]));
+
+   w_elm = &glb_ds1edit.win_edit.w_preview;
    w_elm->border = tmp_bmp;
    w_elm->b_x0 = x0;
    w_elm->b_y0 = y0;
 
-   for (y=0; y<h; y += al_get_bitmap_height(pcx[4]))
-      for (x=0; x<w; x += al_get_bitmap_width(pcx[4]))
+   for (y = 0; y < h; y += al_get_bitmap_height(pcx[4]))
+      for (x = 0; x < w; x += al_get_bitmap_width(pcx[4]))
          a5_blit(pcx[4], tmp_bmp, 0, 0, x, y, al_get_bitmap_width(pcx[4]), al_get_bitmap_height(pcx[4]));
 
    w_elm->inside = al_create_bitmap(w - al_get_bitmap_width(pcx[3]) * 2, h - al_get_bitmap_height(pcx[1]) * 2);
    a5_blit(tmp_bmp, w_elm->inside, al_get_bitmap_width(pcx[3]), al_get_bitmap_height(pcx[1]), 0, 0, w - al_get_bitmap_width(pcx[3]) * 2, h - al_get_bitmap_height(pcx[1]) * 2);
    w_elm->i_x0 = w_elm->b_x0 + al_get_bitmap_width(pcx[3]);
    w_elm->i_y0 = w_elm->b_y0 + al_get_bitmap_height(pcx[1]);
-   
-   for (i=0; i<9; i++)
+
+   for (i = 0; i < 9; i++)
       al_destroy_bitmap(pcx[i]);
    al_destroy_bitmap(tmp_bmp);
-   
 
    // make tiles window
-   for (i=0; i<9; i++)
+   for (i = 0; i < 9; i++)
    {
       fprintf(stderr, ".");
       fflush(stderr);
@@ -668,43 +656,43 @@ void wedit_read_pcx(void)
    }
    x0 = w_elm->b_x0 + al_get_bitmap_width(w_elm->border) + my_border;
    y0 = 119;
-   w = glb_config.screen.width  - x0 - my_border;
+   w = glb_config.screen.width - x0 - my_border;
    h = glb_config.screen.height - y0 - my_border;
    tmp_bmp = al_create_bitmap(w, h);
    a5_clear(tmp_bmp);
 
-   for (x=0; x<w; x += al_get_bitmap_width(pcx[1]))
+   for (x = 0; x < w; x += al_get_bitmap_width(pcx[1]))
       a5_blit(pcx[1], tmp_bmp, 0, 0, x, 0, al_get_bitmap_width(pcx[1]), al_get_bitmap_height(pcx[1]));
-      
-   for (x=0; x<w; x += al_get_bitmap_width(pcx[7]))
+
+   for (x = 0; x < w; x += al_get_bitmap_width(pcx[7]))
       a5_blit(pcx[7], tmp_bmp, 0, 0, x, h - al_get_bitmap_height(pcx[7]), al_get_bitmap_width(pcx[7]), al_get_bitmap_height(pcx[7]));
-      
-   for (y=0; y<h; y += al_get_bitmap_height(pcx[3]))
+
+   for (y = 0; y < h; y += al_get_bitmap_height(pcx[3]))
       a5_blit(pcx[3], tmp_bmp, 0, 0, 0, y, al_get_bitmap_width(pcx[3]), al_get_bitmap_height(pcx[3]));
-      
-   for (y=0; y<h; y += al_get_bitmap_height(pcx[5]))
-      a5_blit(pcx[5], tmp_bmp, 0, 0, w-al_get_bitmap_width(pcx[5]), y, al_get_bitmap_width(pcx[5]), al_get_bitmap_height(pcx[5]));
 
-   a5_blit(pcx[0], tmp_bmp, 0, 0, 0,                     0, al_get_bitmap_width(pcx[0]), al_get_bitmap_height(pcx[0]));
-   a5_blit(pcx[2], tmp_bmp, 0, 0, w-al_get_bitmap_width(pcx[2]),           0, al_get_bitmap_width(pcx[2]), al_get_bitmap_height(pcx[2]));
-   a5_blit(pcx[6], tmp_bmp, 0, 0, 0,           h-al_get_bitmap_height(pcx[6]), al_get_bitmap_width(pcx[6]), al_get_bitmap_height(pcx[6]));
-   a5_blit(pcx[8], tmp_bmp, 0, 0, w-al_get_bitmap_width(pcx[8]), h-al_get_bitmap_height(pcx[8]), al_get_bitmap_width(pcx[8]), al_get_bitmap_height(pcx[8]));
+   for (y = 0; y < h; y += al_get_bitmap_height(pcx[5]))
+      a5_blit(pcx[5], tmp_bmp, 0, 0, w - al_get_bitmap_width(pcx[5]), y, al_get_bitmap_width(pcx[5]), al_get_bitmap_height(pcx[5]));
 
-   w_elm = & glb_ds1edit.win_edit.w_tiles;
+   a5_blit(pcx[0], tmp_bmp, 0, 0, 0, 0, al_get_bitmap_width(pcx[0]), al_get_bitmap_height(pcx[0]));
+   a5_blit(pcx[2], tmp_bmp, 0, 0, w - al_get_bitmap_width(pcx[2]), 0, al_get_bitmap_width(pcx[2]), al_get_bitmap_height(pcx[2]));
+   a5_blit(pcx[6], tmp_bmp, 0, 0, 0, h - al_get_bitmap_height(pcx[6]), al_get_bitmap_width(pcx[6]), al_get_bitmap_height(pcx[6]));
+   a5_blit(pcx[8], tmp_bmp, 0, 0, w - al_get_bitmap_width(pcx[8]), h - al_get_bitmap_height(pcx[8]), al_get_bitmap_width(pcx[8]), al_get_bitmap_height(pcx[8]));
+
+   w_elm = &glb_ds1edit.win_edit.w_tiles;
    w_elm->border = tmp_bmp;
    w_elm->b_x0 = x0;
    w_elm->b_y0 = y0;
 
-   for (y=0; y<h; y += al_get_bitmap_height(pcx[4]))
-      for (x=0; x<w; x += al_get_bitmap_width(pcx[4]))
+   for (y = 0; y < h; y += al_get_bitmap_height(pcx[4]))
+      for (x = 0; x < w; x += al_get_bitmap_width(pcx[4]))
          a5_blit(pcx[4], tmp_bmp, 0, 0, x, y, al_get_bitmap_width(pcx[4]), al_get_bitmap_height(pcx[4]));
 
    w_elm->inside = al_create_bitmap(w - al_get_bitmap_width(pcx[3]) * 2, h - al_get_bitmap_height(pcx[1]) * 2);
    a5_blit(tmp_bmp, w_elm->inside, al_get_bitmap_width(pcx[3]), al_get_bitmap_height(pcx[1]), 0, 0, w - al_get_bitmap_width(pcx[3]) * 2, h - al_get_bitmap_height(pcx[1]) * 2);
    w_elm->i_x0 = w_elm->b_x0 + al_get_bitmap_width(pcx[3]);
    w_elm->i_y0 = w_elm->b_y0 + al_get_bitmap_height(pcx[1]);
-   
-   for (i=0; i<9; i++)
+
+   for (i = 0; i < 9; i++)
       al_destroy_bitmap(pcx[i]);
    al_destroy_bitmap(tmp_bmp);
 
@@ -712,20 +700,19 @@ void wedit_read_pcx(void)
    fflush(stderr);
 }
 
-
 // ==========================================================================
 // end of 'tile edit window', free its mem
 void wedit_free(void)
 {
-   WIN_ELEMENT_S * w_elm;
-   BUTTON_S      * b, * t;
-   int           i, n;
+   WIN_ELEMENT_S *w_elm;
+   BUTTON_S *b, *t;
+   int i, n;
 
    // buttons
-   for (i = BU_NULL+1; i<BU_MAX; i++)
+   for (i = BU_NULL + 1; i < BU_MAX; i++)
    {
-      b = & glb_ds1edit.win_edit.button[i];
-      for (n=0; n<2; n++)
+      b = &glb_ds1edit.win_edit.button[i];
+      for (n = 0; n < 2; n++)
       {
          if (b->bmp[n] != NULL)
          {
@@ -736,10 +723,10 @@ void wedit_free(void)
    }
 
    // tabs
-   for (i = BT_NULL+1; i<BT_MAX; i++)
+   for (i = BT_NULL + 1; i < BT_MAX; i++)
    {
-      t = & glb_ds1edit.win_edit.tab[i];
-      for (n=0; n<2; n++)
+      t = &glb_ds1edit.win_edit.tab[i];
+      for (n = 0; n < 2; n++)
       {
          if (t->bmp[n] != NULL)
          {
@@ -750,13 +737,13 @@ void wedit_free(void)
    }
 
    // preview & tiles windows
-   for (i=0; i<2; i++)
+   for (i = 0; i < 2; i++)
    {
       // choose one
       if (i == 0)
-         w_elm = & glb_ds1edit.win_edit.w_preview;
+         w_elm = &glb_ds1edit.win_edit.w_preview;
       else if (i == 1)
-         w_elm = & glb_ds1edit.win_edit.w_tiles;
+         w_elm = &glb_ds1edit.win_edit.w_tiles;
       else
          w_elm = NULL;
 
@@ -769,20 +756,19 @@ void wedit_free(void)
       if (w_elm->inside != NULL)
       {
          al_destroy_bitmap(w_elm->inside);
-        w_elm->inside = NULL;
+         w_elm->inside = NULL;
       }
    }
 }
-
 
 // ==========================================================================
 // draw a button in the screen buffer
 void wedit_draw_button(BUT_TYP_E b_num)
 {
-   BUTTON_S * b = & glb_ds1edit.win_edit.button[b_num];
+   BUTTON_S *b = &glb_ds1edit.win_edit.button[b_num];
    int x1, y1, x2, y2;
-   
-   if ( ! b->active)
+
+   if (!b->active)
       return;
    x1 = b->x0;
    x2 = x1 + b->w - 1;
@@ -792,15 +778,14 @@ void wedit_draw_button(BUT_TYP_E b_num)
    a5_draw_sprite(glb_ds1edit.screen_buff, b->bmp[b->state], b->x0, b->y0);
 }
 
-
 // ==========================================================================
 // draw a tab in the screen buffer
 void wedit_draw_tab(BLK_TYP_E t_num)
 {
-   BUTTON_S * t = & glb_ds1edit.win_edit.tab[t_num];
+   BUTTON_S *t = &glb_ds1edit.win_edit.tab[t_num];
    int x1, y1, x2, y2;
 
-   if ( ! t->active)
+   if (!t->active)
       return;
    x1 = t->x0;
    x2 = x1 + t->w - 1;
@@ -810,15 +795,14 @@ void wedit_draw_tab(BLK_TYP_E t_num)
    a5_draw_sprite(glb_ds1edit.screen_buff, t->bmp[t->state], t->x0, t->y0);
 }
 
-
 // ==========================================================================
 // does a tab have at least 1 tile of its type ?
 int wedit_tab_have(int ds1_idx, BLK_TYP_E t)
 {
-   BLOCK_TABLE_S * bt_ptr = glb_ds1[ds1_idx].block_table;
-   int           i;
+   BLOCK_TABLE_S *bt_ptr = glb_ds1[ds1_idx].block_table;
+   int i;
 
-   for (i=0; i<glb_ds1[ds1_idx].bt_num; i++)
+   for (i = 0; i < glb_ds1[ds1_idx].bt_num; i++)
    {
       if (bt_ptr->type == t)
          return TRUE;
@@ -828,20 +812,19 @@ int wedit_tab_have(int ds1_idx, BLK_TYP_E t)
    return FALSE;
 }
 
-
 // ==========================================================================
 // free the tiles tables for each tab
 void wedit_tiles_free(void)
 {
-   WIN_EDIT_S  * w = & glb_ds1edit.win_edit;
-   MAIN_LINE_S * m_ptr;
-   int         t, m;
+   WIN_EDIT_S *w = &glb_ds1edit.win_edit;
+   MAIN_LINE_S *m_ptr;
+   int t, m;
 
-   for (t=BT_NULL+1; t<BT_MAX; t++)
+   for (t = BT_NULL + 1; t < BT_MAX; t++)
    {
       if (w->main_line_tab[t] != NULL)
       {
-         for (m=0; m < w->main_line_num[t]; m++)
+         for (m = 0; m < w->main_line_num[t]; m++)
          {
             m_ptr = w->main_line_tab[t] + m;
             if (m_ptr->sub_elm != NULL)
@@ -856,24 +839,23 @@ void wedit_tiles_free(void)
    }
 }
 
-
 // ==========================================================================
 // make the tiles tables for each tab
 void wedit_tiles_make(int ds1_idx)
 {
-   ALLEGRO_BITMAP * tmp_bmp;
-   BLOCK_TABLE_S * bt_ptr = glb_ds1[ds1_idx].block_table;
-   WIN_EDIT_S    * w = & glb_ds1edit.win_edit;
-   MAIN_LINE_S   * m_ptr;
-   SUB_ELM_S     * s_ptr;
-   int           numb, size, i, b, line, t, n, done, col, y, max_height, x;
-   int           old_o, old_m, old_s, o, m, s, dx, bx, y0;
-   char          ube;
-   char          * is_keep, tmp[150];
+   ALLEGRO_BITMAP *tmp_bmp;
+   BLOCK_TABLE_S *bt_ptr = glb_ds1[ds1_idx].block_table;
+   WIN_EDIT_S *w = &glb_ds1edit.win_edit;
+   MAIN_LINE_S *m_ptr;
+   SUB_ELM_S *s_ptr;
+   int numb, size, i, b, line, t, n, done, col, y, max_height, x;
+   int old_o, old_m, old_s, o, m, s, dx, bx, y0;
+   char ube;
+   char *is_keep, tmp[150];
 
    numb = glb_ds1[ds1_idx].bt_num;
    size = numb * sizeof(char);
-   is_keep = (char *) malloc(size);
+   is_keep = (char *)malloc(size);
    if (is_keep == NULL)
    {
       sprintf(tmp, "(is_keep) : not enough mem (%i bytes)", size);
@@ -883,26 +865,26 @@ void wedit_tiles_make(int ds1_idx)
    // for each type
    for (t = BT_NULL + 1; t < BT_MAX; t++)
    {
-      for (i=0; i<numb; i++)
-         * (is_keep + i) = FALSE;
-         
+      for (i = 0; i < numb; i++)
+         *(is_keep + i) = FALSE;
+
       line = 0;
       old_o = old_m = -1;
-      for (b=1; b < numb; b++)
+      for (b = 1; b < numb; b++)
       {
          if (bt_ptr[b].type == t)
          {
-            o   = bt_ptr[b].orientation;
-            m   = bt_ptr[b].main_index;
-            dx  = bt_ptr[b].dt1_idx;
-            bx  = bt_ptr[b].block_idx;
+            o = bt_ptr[b].orientation;
+            m = bt_ptr[b].main_index;
+            dx = bt_ptr[b].dt1_idx;
+            bx = bt_ptr[b].block_idx;
             ube = bt_ptr[b].used_by_editor;
-            tmp_bmp = * (glb_dt1[dx].block_zoom[ZM_11] + bx);
+            tmp_bmp = *(glb_dt1[dx].block_zoom[ZM_11] + bx);
             if ((tmp_bmp != NULL) && ube)
             {
-               if ( (old_o != o) || (old_m != m) )
+               if ((old_o != o) || (old_m != m))
                {
-                  * (is_keep + b) = TRUE;
+                  *(is_keep + b) = TRUE;
                   line++;
                   old_o = o;
                   old_m = m;
@@ -914,53 +896,54 @@ void wedit_tiles_make(int ds1_idx)
       w->main_line_tab[t] = NULL;
       if (line == 0)
          continue;
-         
+
       // malloc of w->main_line_tab[t]
       size = line * sizeof(MAIN_LINE_S);
-      w->main_line_tab[t] = (MAIN_LINE_S *) malloc(size);
+      w->main_line_tab[t] = (MAIN_LINE_S *)malloc(size);
       if (w->main_line_tab[t] == NULL)
       {
          sprintf(tmp, "(main_line_tab) : not enough mem (%i bytes), "
-                      "type %i, line %i", size, t, line);
+                      "type %i, line %i",
+                 size, t, line);
          ds1edit_error(tmp);
       }
-      for (i=0; i<line; i++)
+      for (i = 0; i < line; i++)
       {
-         w->main_line_tab[t][i].sub_elm    = NULL;
+         w->main_line_tab[t][i].sub_elm = NULL;
          w->main_line_tab[t][i].bt_idx_num = 0;
          w->main_line_tab[t][i].max_height = 0;
       }
       w->main_line_num[t] = line;
 
-      b=1;
-      y0=0;
+      b = 1;
+      y0 = 0;
 
       // for each line
-      for (n=0; n<line; n++)
+      for (n = 0; n < line; n++)
       {
-         while ( * (is_keep + b) != TRUE)
+         while (*(is_keep + b) != TRUE)
             b++;
          old_o = bt_ptr[b].orientation;
          old_m = bt_ptr[b].main_index;
          old_s = bt_ptr[b].sub_index;
-         col   = 1;
-         y     = b;
-         done  = FALSE;
+         col = 1;
+         y = b;
+         done = FALSE;
 
          // # of different sub (but only 1st tile of the same set of random)
          do
          {
             y++;
-            o   = bt_ptr[y].orientation;
-            m   = bt_ptr[y].main_index;
-            s   = bt_ptr[y].sub_index;
+            o = bt_ptr[y].orientation;
+            m = bt_ptr[y].main_index;
+            s = bt_ptr[y].sub_index;
             if ((old_o == o) && (old_m == m))
             {
                // ok, same line
-               dx  = bt_ptr[y].dt1_idx;
-               bx  = bt_ptr[y].block_idx;
+               dx = bt_ptr[y].dt1_idx;
+               bx = bt_ptr[y].block_idx;
                ube = bt_ptr[y].used_by_editor;
-               tmp_bmp = * (glb_dt1[dx].block_zoom[ZM_11] + bx);
+               tmp_bmp = *(glb_dt1[dx].block_zoom[ZM_11] + bx);
                if ((tmp_bmp != NULL) && ube)
                {
                   if (old_s != s)
@@ -976,28 +959,29 @@ void wedit_tiles_make(int ds1_idx)
             }
             else
                done = TRUE;
-         } while ( ! done);
+         } while (!done);
 
          // col have the number of columns for this line
 
          // malloc of m_ptr->bt_idx_tab + n
          m_ptr = w->main_line_tab[t] + n;
          size = col * sizeof(SUB_ELM_S);
-         m_ptr->sub_elm = (SUB_ELM_S *) malloc(size);
+         m_ptr->sub_elm = (SUB_ELM_S *)malloc(size);
          if (m_ptr->sub_elm == NULL)
          {
             sprintf(tmp, "(sub_line) : not enough mem (%i bytes), "
-                         "type %i, line %i, col %i", size, t, n, col);
+                         "type %i, line %i, col %i",
+                    size, t, n, col);
             ds1edit_error(tmp);
          }
-         for (i=0; i<col; i++)
+         for (i = 0; i < col; i++)
          {
             m_ptr->sub_elm[i].bt_idx_tab = 0;
-            m_ptr->sub_elm[i].x1         = 0;
-            m_ptr->sub_elm[i].y1         = 0;
-            m_ptr->sub_elm[i].x2         = 0;
-            m_ptr->sub_elm[i].y2         = 0;
-            m_ptr->sub_elm[i].is_draw    = FALSE;
+            m_ptr->sub_elm[i].x1 = 0;
+            m_ptr->sub_elm[i].y1 = 0;
+            m_ptr->sub_elm[i].x2 = 0;
+            m_ptr->sub_elm[i].y2 = 0;
+            m_ptr->sub_elm[i].is_draw = FALSE;
          }
          m_ptr->bt_idx_num = col;
 
@@ -1007,10 +991,10 @@ void wedit_tiles_make(int ds1_idx)
          old_o = bt_ptr[b].orientation;
          old_m = bt_ptr[b].main_index;
          old_s = -1;
-         y     = b - 1;
-         x     = 0;
-         done  = FALSE;
-         
+         y = b - 1;
+         x = 0;
+         done = FALSE;
+
          // for each col of this line
          do
          {
@@ -1021,10 +1005,10 @@ void wedit_tiles_make(int ds1_idx)
             if ((old_o == o) && (old_m == m))
             {
                // ok, same line
-               dx  = bt_ptr[y].dt1_idx;
-               bx  = bt_ptr[y].block_idx;
+               dx = bt_ptr[y].dt1_idx;
+               bx = bt_ptr[y].block_idx;
                ube = bt_ptr[y].used_by_editor;
-               tmp_bmp = * (glb_dt1[dx].block_zoom[ZM_11] + bx);
+               tmp_bmp = *(glb_dt1[dx].block_zoom[ZM_11] + bx);
                if ((tmp_bmp != NULL) && ube)
                {
                   if (old_s != s)
@@ -1047,16 +1031,16 @@ void wedit_tiles_make(int ds1_idx)
             }
             else
                done = TRUE;
-         } while ( ! done);
+         } while (!done);
 
          // each col, second time (we know the max height this time)
          old_o = bt_ptr[b].orientation;
          old_m = bt_ptr[b].main_index;
          old_s = -1;
-         y     = b - 1;
-         x     = 0;
-         done  = FALSE;
-         
+         y = b - 1;
+         x = 0;
+         done = FALSE;
+
          // for each col of this line
          do
          {
@@ -1067,10 +1051,10 @@ void wedit_tiles_make(int ds1_idx)
             if ((old_o == o) && (old_m == m))
             {
                // ok, same line
-               dx  = bt_ptr[y].dt1_idx;
-               bx  = bt_ptr[y].block_idx;
+               dx = bt_ptr[y].dt1_idx;
+               bx = bt_ptr[y].block_idx;
                ube = bt_ptr[y].used_by_editor;
-               tmp_bmp = * (glb_dt1[dx].block_zoom[ZM_11] + bx);
+               tmp_bmp = *(glb_dt1[dx].block_zoom[ZM_11] + bx);
                if ((tmp_bmp != NULL) && ube)
                {
                   if (old_s != s)
@@ -1092,7 +1076,7 @@ void wedit_tiles_make(int ds1_idx)
             }
             else
                done = TRUE;
-         } while ( ! done);
+         } while (!done);
 
          // fill max_height of this line
          m_ptr->max_height = max_height;
@@ -1105,19 +1089,18 @@ void wedit_tiles_make(int ds1_idx)
    free(is_keep);
 }
 
-
 // ==========================================================================
 // return the block table index of the cell (x, y) of 1 layer of the ds1
 int wedit_search_tile(int ds1_idx, int x, int y, BUT_TYP_E but)
 {
-   CELL_F_S * f_ptr;
-   CELL_S_S * s_ptr;
-   CELL_W_S * w_ptr;
-   int      t, n;
-   
+   CELL_F_S *f_ptr;
+   CELL_S_S *s_ptr;
+   CELL_W_S *w_ptr;
+   int t, n;
+
    if ((but == BU_FLOOR1) || (but == BU_FLOOR2))
    {
-      t     = (y * glb_ds1[ds1_idx].floor_line) + (x * glb_ds1[ds1_idx].floor_num);
+      t = (y * glb_ds1[ds1_idx].floor_line) + (x * glb_ds1[ds1_idx].floor_num);
       f_ptr = glb_ds1[ds1_idx].floor_buff + t;
 
       if ((but == BU_FLOOR1) && (glb_ds1[ds1_idx].floor_num >= 1))
@@ -1126,26 +1109,26 @@ int wedit_search_tile(int ds1_idx, int x, int y, BUT_TYP_E but)
          n = 1;
       else
          return -1;
-         
+
       return f_ptr[n].bt_idx; // index in block table
    }
    else if (but == BU_SHADOW)
    {
-      t     = (y * glb_ds1[ds1_idx].shadow_line) + (x * glb_ds1[ds1_idx].shadow_num);
+      t = (y * glb_ds1[ds1_idx].shadow_line) + (x * glb_ds1[ds1_idx].shadow_num);
       s_ptr = glb_ds1[ds1_idx].shadow_buff + t;
 
       if ((but == BU_SHADOW) && (glb_ds1[ds1_idx].shadow_num >= 1))
          n = 0;
       else
          return -1;
-         
+
       return s_ptr[n].bt_idx; // index in block table
    }
    else if ((but == BU_WALL1) || (but == BU_WALL2) ||
             (but == BU_WALL3) || (but == BU_WALL4))
    {
-      t      = (y * glb_ds1[ds1_idx].wall_line) + (x * glb_ds1[ds1_idx].wall_num);
-      w_ptr  = glb_ds1[ds1_idx].wall_buff + t;
+      t = (y * glb_ds1[ds1_idx].wall_line) + (x * glb_ds1[ds1_idx].wall_num);
+      w_ptr = glb_ds1[ds1_idx].wall_buff + t;
       if ((but == BU_WALL1) && (glb_ds1[ds1_idx].wall_num >= 1))
          n = 0;
       else if ((but == BU_WALL2) && (glb_ds1[ds1_idx].wall_num >= 2))
@@ -1156,12 +1139,11 @@ int wedit_search_tile(int ds1_idx, int x, int y, BUT_TYP_E but)
          n = 3;
       else
          return -1;
-         
+
       return w_ptr[n].bt_idx; // index in block table
    }
    return -1;
 }
-
 
 // ==========================================================================
 /*
@@ -1220,23 +1202,22 @@ printf("\nTYPE = %3i\n", t);
 void wedit_tab_tiles(int ds1_idx, BLK_TYP_E t, int x0, int y0, int bt_sel,
                      int m_idx, int s_idx)
 {
-   WIN_EDIT_S    * w  = & glb_ds1edit.win_edit;
-   WIN_ELEMENT_S * wt = & w->w_tiles;
-   MAIN_LINE_S   * m_ptr;
-   SUB_ELM_S     * s_ptr;
-   BLOCK_TABLE_S * bt_ptr = glb_ds1[ds1_idx].block_table;
-   ALLEGRO_BITMAP * tmp_bmp;
-   int           m, i, bt, dx, bx, x1, y1, x2, y2, c, len, dt1_idx;
-   char          * dt1name;
+   WIN_EDIT_S *w = &glb_ds1edit.win_edit;
+   WIN_ELEMENT_S *wt = &w->w_tiles;
+   MAIN_LINE_S *m_ptr;
+   SUB_ELM_S *s_ptr;
+   BLOCK_TABLE_S *bt_ptr = glb_ds1[ds1_idx].block_table;
+   ALLEGRO_BITMAP *tmp_bmp;
+   int m, i, bt, dx, bx, x1, y1, x2, y2, c, len, dt1_idx;
+   char *dt1name;
 
-
-// wedit_debug_tab_tiles(ds1_idx, t, x0, y0, bt_sel);
+   // wedit_debug_tab_tiles(ds1_idx, t, x0, y0, bt_sel);
 
    // clear the background
    a5_blit(wt->inside, w->tmp_edit, 0, 0, 0, 0, al_get_bitmap_width(wt->inside), al_get_bitmap_height(wt->inside));
 
    // draw the tiles
-   for (m=0; m < w->main_line_num[t]; m++)
+   for (m = 0; m < w->main_line_num[t]; m++)
    {
       m_ptr = w->main_line_tab[t] + m;
 
@@ -1252,13 +1233,13 @@ void wedit_tab_tiles(int ds1_idx, BLK_TYP_E t, int x0, int y0, int bt_sel,
             dt1name = glb_dt1[dt1_idx].name;
             len = strlen(dt1name) + 2;
             x1 -= 8 * len;
-            a5_textprintf(w->tmp_edit, font, x1+1, y1+1,   0, "%s", dt1name);
-            a5_textprintf(w->tmp_edit, font, x1,   y1,   255, "%s", dt1name);
+            a5_textprintf(w->tmp_edit, font, x1 + 1, y1 + 1, 0, "%s", dt1name);
+            a5_textprintf(w->tmp_edit, font, x1, y1, 255, "%s", dt1name);
          }
       }
-      
+
       // for each col of this line
-      for (i=0; i < m_ptr->bt_idx_num; i++)
+      for (i = 0; i < m_ptr->bt_idx_num; i++)
       {
          s_ptr = m_ptr->sub_elm + i;
          x1 = s_ptr->x1 - x0;
@@ -1268,7 +1249,7 @@ void wedit_tab_tiles(int ds1_idx, BLK_TYP_E t, int x0, int y0, int bt_sel,
             bt = s_ptr->bt_idx_tab;
             dx = bt_ptr[bt].dt1_idx;
             bx = bt_ptr[bt].block_idx;
-            tmp_bmp = * (glb_dt1[dx].block_zoom[ZM_11] + bx);
+            tmp_bmp = *(glb_dt1[dx].block_zoom[ZM_11] + bx);
             if (tmp_bmp != NULL)
             {
                y1 = s_ptr->y1 - y0;
@@ -1281,7 +1262,7 @@ void wedit_tab_tiles(int ds1_idx, BLK_TYP_E t, int x0, int y0, int bt_sel,
                else
                {
                   s_ptr->is_draw = TRUE;
-                  a5_rect(w->tmp_edit, x1-1, y1-1, x2+1, y1+m_ptr->max_height+1+10, 255);
+                  a5_rect(w->tmp_edit, x1 - 1, y1 - 1, x2 + 1, y1 + m_ptr->max_height + 1 + 10, 255);
                   c = 22;
                   if (bt_sel == bt)
                      c = 119;
@@ -1289,29 +1270,29 @@ void wedit_tab_tiles(int ds1_idx, BLK_TYP_E t, int x0, int y0, int bt_sel,
                      c = 255;
                   if (t == BT_WALL_DOWN)
                   {
-                     a5_rectfill(w->tmp_edit, x1, y1, x2, y2+9, c);
+                     a5_rectfill(w->tmp_edit, x1, y1, x2, y2 + 9, c);
                      a5_draw_sprite(w->tmp_edit, tmp_bmp, x1, y1);
                   }
                   else
                   {
                      a5_rectfill(w->tmp_edit,
-                        x1, y1 + m_ptr->max_height - al_get_bitmap_height(tmp_bmp),
-                        x2, y1 + m_ptr->max_height + 10, c);
+                                 x1, y1 + m_ptr->max_height - al_get_bitmap_height(tmp_bmp),
+                                 x2, y1 + m_ptr->max_height + 10, c);
                      a5_draw_sprite(w->tmp_edit, tmp_bmp, x1,
-                        y1 + m_ptr->max_height - al_get_bitmap_height(tmp_bmp));
+                                    y1 + m_ptr->max_height - al_get_bitmap_height(tmp_bmp));
                   }
                   if (t == BT_WALL_DOWN)
                   {
-                     a5_textprintf(w->tmp_edit, font, x1 +   2, y1 + 2,  96, "%2i", bt_ptr[bt].main_index);
-                     a5_textprintf(w->tmp_edit, font, x1 +  26, y1 + 2,  96, "%2i", bt_ptr[bt].orientation);
-                     a5_textprintf(w->tmp_edit, font, x1 +  82, y1 + 2, 158, "%2i", bt_ptr[bt].sub_index);
+                     a5_textprintf(w->tmp_edit, font, x1 + 2, y1 + 2, 96, "%2i", bt_ptr[bt].main_index);
+                     a5_textprintf(w->tmp_edit, font, x1 + 26, y1 + 2, 96, "%2i", bt_ptr[bt].orientation);
+                     a5_textprintf(w->tmp_edit, font, x1 + 82, y1 + 2, 158, "%2i", bt_ptr[bt].sub_index);
                      a5_textprintf(w->tmp_edit, font, x1 + 138, y1 + 2, 134, "%2i", bt_ptr[bt].rarity);
                   }
                   else
                   {
-                     a5_textprintf(w->tmp_edit, font, x1 +   2, y1 + m_ptr->max_height + 2,  96, "%2i", bt_ptr[bt].main_index);
-                     a5_textprintf(w->tmp_edit, font, x1 +  26, y1 + m_ptr->max_height + 2,  96, "%2i", bt_ptr[bt].orientation);
-                     a5_textprintf(w->tmp_edit, font, x1 +  82, y1 + m_ptr->max_height + 2, 158, "%2i", bt_ptr[bt].sub_index);
+                     a5_textprintf(w->tmp_edit, font, x1 + 2, y1 + m_ptr->max_height + 2, 96, "%2i", bt_ptr[bt].main_index);
+                     a5_textprintf(w->tmp_edit, font, x1 + 26, y1 + m_ptr->max_height + 2, 96, "%2i", bt_ptr[bt].orientation);
+                     a5_textprintf(w->tmp_edit, font, x1 + 82, y1 + m_ptr->max_height + 2, 158, "%2i", bt_ptr[bt].sub_index);
                      a5_textprintf(w->tmp_edit, font, x1 + 138, y1 + m_ptr->max_height + 2, 134, "%2i", bt_ptr[bt].rarity);
                   }
                }
@@ -1326,38 +1307,37 @@ void wedit_tab_tiles(int ds1_idx, BLK_TYP_E t, int x0, int y0, int bt_sel,
    }
 }
 
-
 // ==========================================================================
 // scroll the tiles window of 1 tab to see the current tile
-void wedit_jump(int ds1_idx, int bt_idx, int * xn, int * yn)
+void wedit_jump(int ds1_idx, int bt_idx, int *xn, int *yn)
 {
-   WIN_EDIT_S    * w      = & glb_ds1edit.win_edit;
-   WIN_ELEMENT_S * wt     = & w->w_tiles;
-   MAIN_LINE_S   * m_ptr;
-   SUB_ELM_S     * s_ptr;
-   BLOCK_TABLE_S * bt_ptr = glb_ds1[ds1_idx].block_table;
-   int           m, s;
-   BLK_TYP_E     t;
+   WIN_EDIT_S *w = &glb_ds1edit.win_edit;
+   WIN_ELEMENT_S *wt = &w->w_tiles;
+   MAIN_LINE_S *m_ptr;
+   SUB_ELM_S *s_ptr;
+   BLOCK_TABLE_S *bt_ptr = glb_ds1[ds1_idx].block_table;
+   int m, s;
+   BLK_TYP_E t;
 
-   * xn = 0;
-   * yn = 0;
+   *xn = 0;
+   *yn = 0;
    if (bt_idx <= 0)
       return;
-      
+
    t = bt_ptr[bt_idx].type;
-   for (m=0; m < w->main_line_num[t]; m++)
+   for (m = 0; m < w->main_line_num[t]; m++)
    {
       m_ptr = w->main_line_tab[t] + m;
-      for (s=0; s<m_ptr->bt_idx_num; s++)
+      for (s = 0; s < m_ptr->bt_idx_num; s++)
       {
          s_ptr = m_ptr->sub_elm + s;
          if (s_ptr->bt_idx_tab == bt_idx)
          {
-            * xn = s_ptr->x1 - glb_config.scroll.edit.x;
+            *xn = s_ptr->x1 - glb_config.scroll.edit.x;
             if (t == BT_WALL_DOWN)
-               * yn = s_ptr->y1 - glb_config.scroll.edit.y;
+               *yn = s_ptr->y1 - glb_config.scroll.edit.y;
             else
-               * yn = s_ptr->y2 + glb_config.scroll.edit.y - al_get_bitmap_height(wt->inside);
+               *yn = s_ptr->y2 + glb_config.scroll.edit.y - al_get_bitmap_height(wt->inside);
             return;
          }
       }
@@ -1365,16 +1345,15 @@ void wedit_jump(int ds1_idx, int bt_idx, int * xn, int * yn)
    return;
 }
 
-
 // ==========================================================================
 // what tile of 1 tab is under the mouse ?
-void wedit_mouse_tile(int mx, int my, int x0, int y0, int t, int * m_idx, int * s_idx)
+void wedit_mouse_tile(int mx, int my, int x0, int y0, int t, int *m_idx, int *s_idx)
 {
-   WIN_EDIT_S    * w  = & glb_ds1edit.win_edit;
-   WIN_ELEMENT_S * wt = & w->w_tiles;
-   MAIN_LINE_S   * m_ptr;
-   SUB_ELM_S     * s_ptr;
-   int           m, i, x, y;
+   WIN_EDIT_S *w = &glb_ds1edit.win_edit;
+   WIN_ELEMENT_S *wt = &w->w_tiles;
+   MAIN_LINE_S *m_ptr;
+   SUB_ELM_S *s_ptr;
+   int m, i, x, y;
 
    // mouse inside the tile window ?
    x = mx - wt->i_x0;
@@ -1384,10 +1363,10 @@ void wedit_mouse_tile(int mx, int my, int x0, int y0, int t, int * m_idx, int * 
       // yes, so search the tile which is under the mouse
       x += x0;
       y += y0;
-      for (m=0; m < w->main_line_num[t]; m++)
+      for (m = 0; m < w->main_line_num[t]; m++)
       {
          m_ptr = w->main_line_tab[t] + m;
-         for (i=0; i < m_ptr->bt_idx_num; i++)
+         for (i = 0; i < m_ptr->bt_idx_num; i++)
          {
             s_ptr = m_ptr->sub_elm + i;
             if (s_ptr->is_draw)
@@ -1395,8 +1374,8 @@ void wedit_mouse_tile(int mx, int my, int x0, int y0, int t, int * m_idx, int * 
                if ((x >= s_ptr->x1) && (x <= s_ptr->x2) &&
                    (y >= s_ptr->y1) && (y <= s_ptr->y2))
                {
-                  * m_idx = m;
-                  * s_idx = i;
+                  *m_idx = m;
+                  *s_idx = i;
                   return;
                }
             }
@@ -1404,48 +1383,68 @@ void wedit_mouse_tile(int mx, int my, int x0, int y0, int t, int * m_idx, int * 
       }
    }
    // outside, or no pointing any tile
-   * m_idx = * s_idx = -1;
+   *m_idx = *s_idx = -1;
 }
-
 
 // ==========================================================================
 // tile chosen in the list, update the ds1 with it
 void wedit_update_tile(int ds1_idx, int x, int y, BUT_TYP_E button,
                        BLK_TYP_E type, int m_idx, int s_idx)
 {
-   BLOCK_TABLE_S * bt_ptr = glb_ds1[ds1_idx].block_table;
-   WIN_EDIT_S    * e_ptr  = & glb_ds1edit.win_edit;
-   MAIN_LINE_S   * m_ptr;
-   SUB_ELM_S     * s_ptr;
-   CELL_W_S      * w_ptr;
-   CELL_F_S      * f_ptr;
-   CELL_S_S      * sh_ptr;
-   int           f = -1, s = -1, w = -1, t, bt;
-   
+   BLOCK_TABLE_S *bt_ptr = glb_ds1[ds1_idx].block_table;
+   WIN_EDIT_S *e_ptr = &glb_ds1edit.win_edit;
+   MAIN_LINE_S *m_ptr;
+   SUB_ELM_S *s_ptr;
+   CELL_W_S *w_ptr;
+   CELL_F_S *f_ptr;
+   CELL_S_S *sh_ptr;
+   int f = -1, s = -1, w = -1, t, bt;
+
    switch (button)
    {
-      case BU_FLOOR1 : if (glb_ds1[ds1_idx].floor_num  >= 1) f = 0; break;
-      case BU_FLOOR2 : if (glb_ds1[ds1_idx].floor_num  >= 2) f = 1; break;
-      case BU_SHADOW : if (glb_ds1[ds1_idx].shadow_num >= 1) s = 0; break;
-      case BU_WALL1  : if (glb_ds1[ds1_idx].wall_num   >= 1) w = 0; break;
-      case BU_WALL2  : if (glb_ds1[ds1_idx].wall_num   >= 2) w = 1; break;
-      case BU_WALL3  : if (glb_ds1[ds1_idx].wall_num   >= 3) w = 2; break;
-      case BU_WALL4  : if (glb_ds1[ds1_idx].wall_num   >= 4) w = 3; break;
+   case BU_FLOOR1:
+      if (glb_ds1[ds1_idx].floor_num >= 1)
+         f = 0;
+      break;
+   case BU_FLOOR2:
+      if (glb_ds1[ds1_idx].floor_num >= 2)
+         f = 1;
+      break;
+   case BU_SHADOW:
+      if (glb_ds1[ds1_idx].shadow_num >= 1)
+         s = 0;
+      break;
+   case BU_WALL1:
+      if (glb_ds1[ds1_idx].wall_num >= 1)
+         w = 0;
+      break;
+   case BU_WALL2:
+      if (glb_ds1[ds1_idx].wall_num >= 2)
+         w = 1;
+      break;
+   case BU_WALL3:
+      if (glb_ds1[ds1_idx].wall_num >= 3)
+         w = 2;
+      break;
+   case BU_WALL4:
+      if (glb_ds1[ds1_idx].wall_num >= 4)
+         w = 3;
+      break;
    }
    if ((f == -1) && (w == -1) && (s == -1))
       return;
    m_ptr = e_ptr->main_line_tab[type] + m_idx;
    s_ptr = m_ptr->sub_elm + s_idx;
-   bt    = s_ptr->bt_idx_tab;
+   bt = s_ptr->bt_idx_tab;
    if (f != -1)
    {
       t = (y * glb_ds1[ds1_idx].floor_line) + (x * glb_ds1[ds1_idx].floor_num);
       f_ptr = glb_ds1[ds1_idx].floor_buff + t + f;
       if (f_ptr->prop1 == 0)
          f_ptr->prop1 = 194; // normal floor priority
-      f_ptr->prop2  = bt_ptr[bt].sub_index;
-      f_ptr->prop3  = (bt_ptr[bt].main_index & 0x0F) << 4;
-      f_ptr->prop4  = (bt_ptr[bt].main_index & 0x30) >> 4;
+      f_ptr->prop2 = bt_ptr[bt].sub_index;
+      f_ptr->prop3 = (bt_ptr[bt].main_index & 0x0F) << 4;
+      f_ptr->prop4 = (bt_ptr[bt].main_index & 0x30) >> 4;
       f_ptr->bt_idx = bt;
    }
    else if (s != -1)
@@ -1454,9 +1453,9 @@ void wedit_update_tile(int ds1_idx, int x, int y, BUT_TYP_E button,
       sh_ptr = glb_ds1[ds1_idx].shadow_buff + t + s;
       if (sh_ptr->prop1 == 0)
          sh_ptr->prop1 = 128; // normal shadow prop1
-      sh_ptr->prop2  = bt_ptr[bt].sub_index;
-      sh_ptr->prop3  = (bt_ptr[bt].main_index & 0x0F) << 4;
-      sh_ptr->prop4  = ((bt_ptr[bt].main_index & 0x30) >> 4) | 0x08;
+      sh_ptr->prop2 = bt_ptr[bt].sub_index;
+      sh_ptr->prop3 = (bt_ptr[bt].main_index & 0x0F) << 4;
+      sh_ptr->prop4 = ((bt_ptr[bt].main_index & 0x30) >> 4) | 0x08;
       sh_ptr->bt_idx = bt;
    }
    else if (w != -1)
@@ -1466,193 +1465,186 @@ void wedit_update_tile(int ds1_idx, int x, int y, BUT_TYP_E button,
       w_ptr->orientation = bt_ptr[bt].orientation;
       if (w_ptr->prop1 == 0)
          w_ptr->prop1 = 129; // normal wall priority
-      w_ptr->prop2  = bt_ptr[bt].sub_index;
-      w_ptr->prop3  = (bt_ptr[bt].main_index & 0x0F) << 4;
-      w_ptr->prop4  = (bt_ptr[bt].main_index & 0x30) >> 4;
+      w_ptr->prop2 = bt_ptr[bt].sub_index;
+      w_ptr->prop3 = (bt_ptr[bt].main_index & 0x0F) << 4;
+      w_ptr->prop4 = (bt_ptr[bt].main_index & 0x30) >> 4;
       w_ptr->bt_idx = bt;
    }
 }
 
-
 // ==========================================================================
 // entering the tile window : save the tile infos (preparing cancel button)
 void wedit_save_tile(int ds1_idx, int x, int y,
-                     CELL_F_S * dst_f_ptr, CELL_W_S * dst_w_ptr,
-                     CELL_S_S * dst_s_ptr)
+                     CELL_F_S *dst_f_ptr, CELL_W_S *dst_w_ptr,
+                     CELL_S_S *dst_s_ptr)
 {
-   CELL_W_S * w_ptr;
-   CELL_F_S * f_ptr;
-   CELL_S_S * s_ptr;
-   int      i, t;
+   CELL_W_S *w_ptr;
+   CELL_F_S *f_ptr;
+   CELL_S_S *s_ptr;
+   int i, t;
 
-   
    // save floors
    t = (y * glb_ds1[ds1_idx].floor_line) + (x * glb_ds1[ds1_idx].floor_num);
-   for (i=0; i<glb_ds1[ds1_idx].floor_num; i++)
+   for (i = 0; i < glb_ds1[ds1_idx].floor_num; i++)
    {
       f_ptr = glb_ds1[ds1_idx].floor_buff + t + i;
-      dst_f_ptr[i].prop1  = f_ptr->prop1;
-      dst_f_ptr[i].prop2  = f_ptr->prop2;
-      dst_f_ptr[i].prop3  = f_ptr->prop3;
-      dst_f_ptr[i].prop4  = f_ptr->prop4;
+      dst_f_ptr[i].prop1 = f_ptr->prop1;
+      dst_f_ptr[i].prop2 = f_ptr->prop2;
+      dst_f_ptr[i].prop3 = f_ptr->prop3;
+      dst_f_ptr[i].prop4 = f_ptr->prop4;
       dst_f_ptr[i].bt_idx = f_ptr->bt_idx;
-      dst_f_ptr[i].flags  = f_ptr->flags;
+      dst_f_ptr[i].flags = f_ptr->flags;
    }
 
    // save shadows
    t = (y * glb_ds1[ds1_idx].shadow_line) + (x * glb_ds1[ds1_idx].shadow_num);
-   for (i=0; i<glb_ds1[ds1_idx].shadow_num; i++)
+   for (i = 0; i < glb_ds1[ds1_idx].shadow_num; i++)
    {
       s_ptr = glb_ds1[ds1_idx].shadow_buff + t + i;
-      dst_s_ptr[i].prop1  = s_ptr->prop1;
-      dst_s_ptr[i].prop2  = s_ptr->prop2;
-      dst_s_ptr[i].prop3  = s_ptr->prop3;
-      dst_s_ptr[i].prop4  = s_ptr->prop4;
+      dst_s_ptr[i].prop1 = s_ptr->prop1;
+      dst_s_ptr[i].prop2 = s_ptr->prop2;
+      dst_s_ptr[i].prop3 = s_ptr->prop3;
+      dst_s_ptr[i].prop4 = s_ptr->prop4;
       dst_s_ptr[i].bt_idx = s_ptr->bt_idx;
-      dst_s_ptr[i].flags  = s_ptr->flags;
+      dst_s_ptr[i].flags = s_ptr->flags;
    }
 
    // save walls
    t = (y * glb_ds1[ds1_idx].wall_line) + (x * glb_ds1[ds1_idx].wall_num);
-   for (i=0; i<glb_ds1[ds1_idx].wall_num; i++)
+   for (i = 0; i < glb_ds1[ds1_idx].wall_num; i++)
    {
       w_ptr = glb_ds1[ds1_idx].wall_buff + t + i;
-      dst_w_ptr[i].prop1       = w_ptr->prop1;
-      dst_w_ptr[i].prop2       = w_ptr->prop2;
-      dst_w_ptr[i].prop3       = w_ptr->prop3;
-      dst_w_ptr[i].prop4       = w_ptr->prop4;
+      dst_w_ptr[i].prop1 = w_ptr->prop1;
+      dst_w_ptr[i].prop2 = w_ptr->prop2;
+      dst_w_ptr[i].prop3 = w_ptr->prop3;
+      dst_w_ptr[i].prop4 = w_ptr->prop4;
       dst_w_ptr[i].orientation = w_ptr->orientation;
-      dst_w_ptr[i].bt_idx      = w_ptr->bt_idx;
-      dst_w_ptr[i].flags       = w_ptr->flags;
+      dst_w_ptr[i].bt_idx = w_ptr->bt_idx;
+      dst_w_ptr[i].flags = w_ptr->flags;
    }
 }
-
 
 // ==========================================================================
 // cancel button : put back the precedently save tile infos
 void wedit_cancel_tile(int ds1_idx, int x, int y,
-                       CELL_F_S * src_f_ptr, CELL_W_S * src_w_ptr,
-                       CELL_S_S * src_s_ptr)
+                       CELL_F_S *src_f_ptr, CELL_W_S *src_w_ptr,
+                       CELL_S_S *src_s_ptr)
 {
-   CELL_W_S * w_ptr;
-   CELL_F_S * f_ptr;
-   CELL_S_S * s_ptr;
-   int      i, t;
+   CELL_W_S *w_ptr;
+   CELL_F_S *f_ptr;
+   CELL_S_S *s_ptr;
+   int i, t;
 
-   
    // put previous floors
    t = (y * glb_ds1[ds1_idx].floor_line) + (x * glb_ds1[ds1_idx].floor_num);
-   for (i=0; i<glb_ds1[ds1_idx].floor_num; i++)
+   for (i = 0; i < glb_ds1[ds1_idx].floor_num; i++)
    {
       f_ptr = glb_ds1[ds1_idx].floor_buff + t;
-      f_ptr[i].prop1  = src_f_ptr[i].prop1;
-      f_ptr[i].prop2  = src_f_ptr[i].prop2;
-      f_ptr[i].prop3  = src_f_ptr[i].prop3;
-      f_ptr[i].prop4  = src_f_ptr[i].prop4;
+      f_ptr[i].prop1 = src_f_ptr[i].prop1;
+      f_ptr[i].prop2 = src_f_ptr[i].prop2;
+      f_ptr[i].prop3 = src_f_ptr[i].prop3;
+      f_ptr[i].prop4 = src_f_ptr[i].prop4;
       f_ptr[i].bt_idx = src_f_ptr[i].bt_idx;
-      f_ptr[i].flags  = src_f_ptr[i].flags;
+      f_ptr[i].flags = src_f_ptr[i].flags;
    }
 
    // put previous shadows
    t = (y * glb_ds1[ds1_idx].shadow_line) + (x * glb_ds1[ds1_idx].shadow_num);
-   for (i=0; i<glb_ds1[ds1_idx].shadow_num; i++)
+   for (i = 0; i < glb_ds1[ds1_idx].shadow_num; i++)
    {
       s_ptr = glb_ds1[ds1_idx].shadow_buff + t;
-      s_ptr[i].prop1  = src_s_ptr[i].prop1;
-      s_ptr[i].prop2  = src_s_ptr[i].prop2;
-      s_ptr[i].prop3  = src_s_ptr[i].prop3;
-      s_ptr[i].prop4  = src_s_ptr[i].prop4;
+      s_ptr[i].prop1 = src_s_ptr[i].prop1;
+      s_ptr[i].prop2 = src_s_ptr[i].prop2;
+      s_ptr[i].prop3 = src_s_ptr[i].prop3;
+      s_ptr[i].prop4 = src_s_ptr[i].prop4;
       s_ptr[i].bt_idx = src_s_ptr[i].bt_idx;
-      s_ptr[i].flags  = src_s_ptr[i].flags;
+      s_ptr[i].flags = src_s_ptr[i].flags;
    }
 
    // put previous walls
    t = (y * glb_ds1[ds1_idx].wall_line) + (x * glb_ds1[ds1_idx].wall_num);
-   for (i=0; i<glb_ds1[ds1_idx].wall_num; i++)
+   for (i = 0; i < glb_ds1[ds1_idx].wall_num; i++)
    {
       w_ptr = glb_ds1[ds1_idx].wall_buff + t;
-      w_ptr[i].prop1       = src_w_ptr[i].prop1;
-      w_ptr[i].prop2       = src_w_ptr[i].prop2;
-      w_ptr[i].prop3       = src_w_ptr[i].prop3;
-      w_ptr[i].prop4       = src_w_ptr[i].prop4;
+      w_ptr[i].prop1 = src_w_ptr[i].prop1;
+      w_ptr[i].prop2 = src_w_ptr[i].prop2;
+      w_ptr[i].prop3 = src_w_ptr[i].prop3;
+      w_ptr[i].prop4 = src_w_ptr[i].prop4;
       w_ptr[i].orientation = src_w_ptr[i].orientation;
-      w_ptr[i].bt_idx      = src_w_ptr[i].bt_idx;
-      w_ptr[i].flags       = src_w_ptr[i].flags;
+      w_ptr[i].bt_idx = src_w_ptr[i].bt_idx;
+      w_ptr[i].flags = src_w_ptr[i].flags;
    }
 }
-
 
 // ==========================================================================
 // ok button, put the old datas in undo buffer
 void wedit_keep_tile(int ds1_idx, int x, int y,
-                     CELL_F_S * src_f_ptr, CELL_W_S * src_w_ptr,
-                     CELL_S_S * src_s_ptr)
+                     CELL_F_S *src_f_ptr, CELL_W_S *src_w_ptr,
+                     CELL_S_S *src_s_ptr)
 {
-   UNDO_S * u = & glb_ds1[ds1_idx].undo;
-   int    n;
-   
+   UNDO_S *u = &glb_ds1[ds1_idx].undo;
+   int n;
+
    undo_new_tile_buffer(ds1_idx);
 
-   for (n=0; n<glb_ds1[ds1_idx].floor_num; n++)
+   for (n = 0; n < glb_ds1[ds1_idx].floor_num; n++)
       u->dat_flg.f[n] = DF_P1 | DF_P2 | DF_P3 | DF_P4;
 
-   for (n=0; n<glb_ds1[ds1_idx].shadow_num; n++)
+   for (n = 0; n < glb_ds1[ds1_idx].shadow_num; n++)
       u->dat_flg.s[n] = DF_P1 | DF_P2 | DF_P3 | DF_P4;
 
-   for (n=0; n<glb_ds1[ds1_idx].wall_num; n++)
+   for (n = 0; n < glb_ds1[ds1_idx].wall_num; n++)
       u->dat_flg.w[n] = DF_P1 | DF_P2 | DF_P3 | DF_P4 | DF_OR;
 
    undo_add_this_tile_to_buffer(ds1_idx, x, y, src_f_ptr, src_w_ptr, src_s_ptr);
    undo_close_tile_buffer(ds1_idx);
 }
 
-
 // ==========================================================================
 // MAIN loop of the 'tile edit window'
 //    (certainly too big)
 void wedit_test(int ds1_idx, int tx, int ty)
 {
-   WIN_ELEMENT_S * w_elm;
-   WIN_EDIT_S    * w = & glb_ds1edit.win_edit;
-   DS1_S         * d = & glb_ds1[ds1_idx];
-   BUTTON_S      * b;
-   BLOCK_TABLE_S * bt_ptr = glb_ds1[ds1_idx].block_table;
-   int           i, n, done=FALSE, mx, my, mb;
-   int           focus=0, focus_can_change=TRUE, bt_sel;
-   int           my_border = 1, xn=0, yn=0, old_xn=0, old_yn=0;
-   BUT_TYP_E     current_button = BU_NULL;
-   BLK_TYP_E     current_type = BT_NULL;
-   int           m_idx, s_idx;
-   CELL_W_S      save_wall   [WALL_MAX_LAYER];
-   CELL_F_S      save_floor  [FLOOR_MAX_LAYER];
-   CELL_S_S      save_shadow [SHADOW_MAX_LAYER];
-   char          tmp[80];
-   
+   WIN_ELEMENT_S *w_elm;
+   WIN_EDIT_S *w = &glb_ds1edit.win_edit;
+   DS1_S *d = &glb_ds1[ds1_idx];
+   BUTTON_S *b;
+   BLOCK_TABLE_S *bt_ptr = glb_ds1[ds1_idx].block_table;
+   int i, n, done = FALSE, mx, my, mb;
+   int focus = 0, focus_can_change = TRUE, bt_sel;
+   int my_border = 1, xn = 0, yn = 0, old_xn = 0, old_yn = 0;
+   BUT_TYP_E current_button = BU_NULL;
+   BLK_TYP_E current_type = BT_NULL;
+   int m_idx, s_idx;
+   CELL_W_S save_wall[WALL_MAX_LAYER];
+   CELL_F_S save_floor[FLOOR_MAX_LAYER];
+   CELL_S_S save_shadow[SHADOW_MAX_LAYER];
+   char tmp[80];
 
    wedit_save_tile(ds1_idx, tx, ty, save_floor, save_wall, save_shadow);
    wedit_tiles_make(ds1_idx);
    al_set_mouse_xy(a5_display, 200, 70);
-   
-   w->button[BU_WALL1].active  = 0 < d->wall_num ? TRUE : FALSE;
-   w->button[BU_WALL2].active  = 1 < d->wall_num ? TRUE : FALSE;
-   w->button[BU_WALL3].active  = 2 < d->wall_num ? TRUE : FALSE;
-   w->button[BU_WALL4].active  = 3 < d->wall_num ? TRUE : FALSE;
-   
+
+   w->button[BU_WALL1].active = 0 < d->wall_num ? TRUE : FALSE;
+   w->button[BU_WALL2].active = 1 < d->wall_num ? TRUE : FALSE;
+   w->button[BU_WALL3].active = 2 < d->wall_num ? TRUE : FALSE;
+   w->button[BU_WALL4].active = 3 < d->wall_num ? TRUE : FALSE;
+
    w->button[BU_FLOOR1].active = 0 < d->floor_num ? TRUE : FALSE;
    w->button[BU_FLOOR2].active = 1 < d->floor_num ? TRUE : FALSE;
 
-   w->button[BU_OK].active     = TRUE;
+   w->button[BU_OK].active = TRUE;
    w->button[BU_CANCEL].active = TRUE;
 
    w->button[BU_VIEW_RAND].active = FALSE;
-//   w->button[BU_VIEW_RAND].active = TRUE;
-   
-   for (i=BU_NULL + 1; i<BU_MAX; i++)
+   //   w->button[BU_VIEW_RAND].active = TRUE;
+
+   for (i = BU_NULL + 1; i < BU_MAX; i++)
    {
       if (w->button[i].active)
       {
-         w->button[i].mouse_over  = FALSE;
-         w->button[i].state       = BS_OFF;
+         w->button[i].mouse_over = FALSE;
+         w->button[i].state = BS_OFF;
       }
    }
 
@@ -1663,64 +1655,64 @@ void wedit_test(int ds1_idx, int tx, int ty)
 
    // bt_idx of the current button (current layer)
    bt_sel = wedit_search_tile(ds1_idx, tx, ty, current_button);
-   wedit_jump(ds1_idx, bt_sel, & xn, & yn);
+   wedit_jump(ds1_idx, bt_sel, &xn, &yn);
 
-   w_elm = & glb_ds1edit.win_edit.w_tiles;
+   w_elm = &glb_ds1edit.win_edit.w_tiles;
 
-   b = & w->tab[BT_STATIC];
-   b->x0             = w_elm->i_x0;
-   b->y0             = 88;
-   b->active         = FALSE;
-   b->state          = BS_OFF;
+   b = &w->tab[BT_STATIC];
+   b->x0 = w_elm->i_x0;
+   b->y0 = 88;
+   b->active = FALSE;
+   b->state = BS_OFF;
    b->tab_have_tiles = wedit_tab_have(ds1_idx, BT_STATIC);
 
-   b = & w->tab[BT_ANIMATED];
-   b->x0             = w->tab[BT_STATIC].x0 + w->tab[BT_STATIC].w + my_border;
-   b->y0             = 88;
-   b->active         = FALSE;
-   b->state          = BS_OFF;
+   b = &w->tab[BT_ANIMATED];
+   b->x0 = w->tab[BT_STATIC].x0 + w->tab[BT_STATIC].w + my_border;
+   b->y0 = 88;
+   b->active = FALSE;
+   b->state = BS_OFF;
    b->tab_have_tiles = wedit_tab_have(ds1_idx, BT_ANIMATED);
-   
-   b = & w->tab[BT_SHADOW];
-   b->x0             = w_elm->i_x0;
-   b->y0             = 88;
-   b->active         = FALSE;
-   b->state          = BS_OFF;
+
+   b = &w->tab[BT_SHADOW];
+   b->x0 = w_elm->i_x0;
+   b->y0 = 88;
+   b->active = FALSE;
+   b->state = BS_OFF;
    b->tab_have_tiles = wedit_tab_have(ds1_idx, BT_SHADOW);
    if (b->tab_have_tiles)
       w->button[BU_SHADOW].active = TRUE;
    else
       w->button[BU_SHADOW].active = FALSE;
 
-   b = & w->tab[BT_WALL_UP];
-   b->x0             = w_elm->i_x0;
-   b->y0             = 88;
-   b->state          = BS_OFF;
+   b = &w->tab[BT_WALL_UP];
+   b->x0 = w_elm->i_x0;
+   b->y0 = 88;
+   b->state = BS_OFF;
    b->tab_have_tiles = b->active = wedit_tab_have(ds1_idx, BT_WALL_UP);
 
-   b = & w->tab[BT_WALL_DOWN];
-   b->x0             = w->tab[BT_WALL_UP].x0 + w->tab[BT_WALL_UP].w + my_border;
-   b->y0             = 88;
-   b->state          = BS_OFF;
+   b = &w->tab[BT_WALL_DOWN];
+   b->x0 = w->tab[BT_WALL_UP].x0 + w->tab[BT_WALL_UP].w + my_border;
+   b->y0 = 88;
+   b->state = BS_OFF;
    b->tab_have_tiles = b->active = wedit_tab_have(ds1_idx, BT_WALL_DOWN);
 
-   b = & w->tab[BT_ROOF];
-   b->x0             = w->tab[BT_WALL_DOWN].x0 + w->tab[BT_WALL_DOWN].w + my_border;
-   b->y0             = 88;
-   b->state          = BS_OFF;
+   b = &w->tab[BT_ROOF];
+   b->x0 = w->tab[BT_WALL_DOWN].x0 + w->tab[BT_WALL_DOWN].w + my_border;
+   b->y0 = 88;
+   b->state = BS_OFF;
    b->tab_have_tiles = b->active = wedit_tab_have(ds1_idx, BT_ROOF);
 
-   b = & w->tab[BT_SPECIAL];
-   b->x0             = w->tab[BT_ROOF].x0 + w->tab[BT_ROOF].w + my_border;
-   b->y0             = 88;
-   b->state          = BS_OFF;
+   b = &w->tab[BT_SPECIAL];
+   b->x0 = w->tab[BT_ROOF].x0 + w->tab[BT_ROOF].w + my_border;
+   b->y0 = 88;
+   b->state = BS_OFF;
    b->tab_have_tiles = b->active = wedit_tab_have(ds1_idx, BT_SPECIAL);
 
-/* set_color_depth removed */
+   /* set_color_depth removed */
 
    w->tmp_edit = al_create_bitmap(al_get_bitmap_width(w->w_tiles.inside), al_get_bitmap_height(w->w_tiles.inside));
 
-/* set_color_depth removed */
+   /* set_color_depth removed */
 
    if (bt_sel >= 1)
    {
@@ -1742,19 +1734,19 @@ void wedit_test(int ds1_idx, int tx, int ty)
       else if (w->tab[BT_ROOF].active)
       {
          w->tab[BT_ROOF].state = BS_ON;
-        current_type = BT_ROOF;
+         current_type = BT_ROOF;
       }
       else if (w->tab[BT_SPECIAL].active)
       {
          w->tab[BT_SPECIAL].state = BS_ON;
-        current_type = BT_SPECIAL;
+         current_type = BT_SPECIAL;
       }
    }
 
    wedit_tab_tiles(ds1_idx, current_type, xn, yn, bt_sel, -1, -1);
 
    // main loop
-   while ( ! done)
+   while (!done)
    {
       mx = a5_mouse_x;
       my = a5_mouse_y;
@@ -1763,51 +1755,56 @@ void wedit_test(int ds1_idx, int tx, int ty)
       // always redraw whole screen
 
       a5_clear_to_color(glb_ds1edit.screen_buff, 27);
-      for (i = BU_NULL+1; i<BU_MAX; i++)
+      for (i = BU_NULL + 1; i < BU_MAX; i++)
          wedit_draw_button(i);
 
       if (current_button != BU_NULL)
       {
-         b = & glb_ds1edit.win_edit.button[current_button];
+         b = &glb_ds1edit.win_edit.button[current_button];
          a5_rect(glb_ds1edit.screen_buff,
-            b->x0-2, b->y0-2, b->x0+b->w+1, b->y0+b->h+1, 133); // medium green
+                 b->x0 - 2, b->y0 - 2, b->x0 + b->w + 1, b->y0 + b->h + 1, 133); // medium green
       }
 
-      w_elm = & glb_ds1edit.win_edit.w_preview;
+      w_elm = &glb_ds1edit.win_edit.w_preview;
       a5_draw_sprite(glb_ds1edit.screen_buff, w_elm->border, w_elm->b_x0, w_elm->b_y0);
       a5_blit(w_elm->inside, glb_ds1edit.screen_buff, 0, 0, w_elm->i_x0, w_elm->i_y0, al_get_bitmap_width(w_elm->inside), al_get_bitmap_height(w_elm->inside));
 
-      w_elm = & glb_ds1edit.win_edit.w_tiles;
+      w_elm = &glb_ds1edit.win_edit.w_tiles;
       a5_draw_sprite(glb_ds1edit.screen_buff, w_elm->border, w_elm->b_x0, w_elm->b_y0);
 
-      wedit_draw_w (ds1_idx, tx, ty, FALSE); // lower walls
-      wedit_draw_f (ds1_idx, tx, ty);        // floors
-      wedit_draw_s (ds1_idx, tx, ty);        // shadows
-      wedit_draw_w (ds1_idx, tx, ty, TRUE);  // upper walls
-      wedit_draw_r (ds1_idx, tx, ty);        // roofs
-      wedit_draw_sp(ds1_idx, tx, ty);        // special tiles
+      wedit_draw_w(ds1_idx, tx, ty, FALSE); // lower walls
+      wedit_draw_f(ds1_idx, tx, ty);        // floors
+      wedit_draw_s(ds1_idx, tx, ty);        // shadows
+      wedit_draw_w(ds1_idx, tx, ty, TRUE);  // upper walls
+      wedit_draw_r(ds1_idx, tx, ty);        // roofs
+      wedit_draw_sp(ds1_idx, tx, ty);       // special tiles
 
-      for (i=BT_NULL + 1; i<BT_MAX; i++)
+      for (i = BT_NULL + 1; i < BT_MAX; i++)
       {
-         b = & w->tab[i];
+         b = &w->tab[i];
          if (b->active)
             wedit_draw_tab(i);
       }
 
       a5_blit(w->tmp_edit, glb_ds1edit.screen_buff, 0, 0,
-            w_elm->i_x0, w_elm->i_y0, al_get_bitmap_width(w->tmp_edit), al_get_bitmap_height(w->tmp_edit));
+              w_elm->i_x0, w_elm->i_y0, al_get_bitmap_width(w->tmp_edit), al_get_bitmap_height(w->tmp_edit));
 
       misc_draw_screen(mx, my);
 
       // which tile is under the mouse ?
-      wedit_mouse_tile(mx, my, xn, yn, current_type, & m_idx, & s_idx);
+      wedit_mouse_tile(mx, my, xn, yn, current_type, &m_idx, &s_idx);
 
       // scroll
-      if (key_pressed(KEY_UP)    || my == 0)                        yn -= glb_config.scroll.edit.y;
-      if (key_pressed(KEY_DOWN)  || my == glb_config.screen.height - 1) yn += glb_config.scroll.edit.y;
-      if (key_pressed(KEY_LEFT)  || mx == 0)                        xn -= glb_config.scroll.edit.x;
-      if (key_pressed(KEY_RIGHT) || mx == glb_config.screen.width - 1)  xn += glb_config.scroll.edit.x;
-      if (key_pressed(KEY_HOME))  xn = 0;
+      if (key_pressed(KEY_UP) || my == 0)
+         yn -= glb_config.scroll.edit.y;
+      if (key_pressed(KEY_DOWN) || my == glb_config.screen.height - 1)
+         yn += glb_config.scroll.edit.y;
+      if (key_pressed(KEY_LEFT) || mx == 0)
+         xn -= glb_config.scroll.edit.x;
+      if (key_pressed(KEY_RIGHT) || mx == glb_config.screen.width - 1)
+         xn += glb_config.scroll.edit.x;
+      if (key_pressed(KEY_HOME))
+         xn = 0;
       if (key_pressed(KEY_PGUP))
       {
          if (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
@@ -1828,14 +1825,22 @@ void wedit_test(int ds1_idx, int tx, int ty)
       // special tiles layer
       if (key_pressed(KEY_F9))
       {
-         while(key_pressed(KEY_F9)) { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+         while (key_pressed(KEY_F9))
+         {
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
+         }
          glb_ds1[ds1_idx].special_layer_mask = 1 - glb_ds1[ds1_idx].special_layer_mask;
       }
-      
+
       // shadow mode
       if (key_pressed(KEY_F11))
       {
-         while(key_pressed(KEY_F11)) { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+         while (key_pressed(KEY_F11))
+         {
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
+         }
          if (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT))
          {
             glb_ds1[ds1_idx].shadow_layer_mask[0]--;
@@ -1860,7 +1865,8 @@ void wedit_test(int ds1_idx, int tx, int ty)
                rest(80);
                glb_ds1edit.cur_gamma--;
                misc_update_pal_with_gamma();
-               a5_current_palette = &glb_ds1edit.vga_pal[glb_ds1[ds1_idx].act - 1];
+               a5_current_palette = &glb_ds1edit.vga_pal[palette_resolve_index(glb_ds1[ds1_idx].txt_act,
+                                                                               glb_ds1[ds1_idx].act)];
             }
          }
          else
@@ -1870,7 +1876,8 @@ void wedit_test(int ds1_idx, int tx, int ty)
                rest(80);
                glb_ds1edit.cur_gamma++;
                misc_update_pal_with_gamma();
-               a5_current_palette = &glb_ds1edit.vga_pal[glb_ds1[ds1_idx].act - 1];
+               a5_current_palette = &glb_ds1edit.vga_pal[palette_resolve_index(glb_ds1[ds1_idx].txt_act,
+                                                                               glb_ds1[ds1_idx].act)];
             }
          }
       }
@@ -1878,41 +1885,44 @@ void wedit_test(int ds1_idx, int tx, int ty)
       // screenshot
       if (key_pressed(KEY_P))
       {
-         sprintf(tmp, "screenshot-%05i.png", glb_ds1edit.screenshot_num);
+         export_make_screenshot_name(tmp, sizeof(tmp), glb_ds1edit.screenshot_num);
          while (a5_file_exists(tmp))
          {
             glb_ds1edit.screenshot_num++;
-            sprintf(tmp, "screenshot-%05i.png", glb_ds1edit.screenshot_num);
+            export_make_screenshot_name(tmp, sizeof(tmp), glb_ds1edit.screenshot_num);
          }
 
          // draw the mouse cursor onto the buffer
          a5_draw_sprite(
-            glb_ds1edit.screen_buff,
-            glb_ds1edit.mouse_cursor[glb_ds1edit.mode],
-            a5_mouse_x - 1,
-            a5_mouse_y - 1
-         );
+             glb_ds1edit.screen_buff,
+             glb_ds1edit.mouse_cursor[glb_ds1edit.mode],
+             a5_mouse_x - 1,
+             a5_mouse_y - 1);
 
          // save the buffer
          al_save_bitmap(tmp, glb_ds1edit.screen_buff);
-         misc_pcx_put_d2_palette(tmp, glb_ds1[ds1_idx].act-1);
+         misc_pcx_put_d2_palette(tmp, glb_ds1[ds1_idx].act - 1);
          glb_ds1edit.screenshot_num++;
-         while (key_pressed(KEY_P)) { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+         while (key_pressed(KEY_P))
+         {
+            al_rest(0.01);
+            al_get_keyboard_state(&a5_kb_state);
+         }
       }
 
       // focus for buttons
       if (focus_can_change)
          focus = 0;
 
-      for (i=BU_NULL + 1; i<BU_MAX; i++)
+      for (i = BU_NULL + 1; i < BU_MAX; i++)
       {
-         b = & w->button[i];
+         b = &w->button[i];
          if (b->active)
          {
             if ((mx >= b->x0) &&
                 (my >= b->y0) &&
-                (mx <  b->x0 + b->w) &&
-                (my <  b->y0 + b->h))
+                (mx < b->x0 + b->w) &&
+                (my < b->y0 + b->h))
             {
                // mouse is over
                b->mouse_over = TRUE;
@@ -1924,7 +1934,7 @@ void wedit_test(int ds1_idx, int tx, int ty)
                      // change state if needed
                      if (b->state == BS_OFF)
                      {
-                        b->state       = BS_ON;
+                        b->state = BS_ON;
                      }
                      if (focus_can_change)
                      {
@@ -1958,15 +1968,15 @@ void wedit_test(int ds1_idx, int tx, int ty)
       }
 
       // focus for tabs
-      for (i=BT_NULL + 1; i<BT_MAX; i++)
+      for (i = BT_NULL + 1; i < BT_MAX; i++)
       {
-         b = & w->tab[i];
+         b = &w->tab[i];
          if (b->active)
          {
             if ((mx >= b->x0) &&
                 (my >= b->y0) &&
-                (mx <  b->x0 + b->w) &&
-                (my <  b->y0 + b->h))
+                (mx < b->x0 + b->w) &&
+                (my < b->y0 + b->h))
             {
                // mouse is over
                b->mouse_over = TRUE;
@@ -1976,13 +1986,13 @@ void wedit_test(int ds1_idx, int tx, int ty)
                   if (focus_can_change)
                   {
                      // all tabs are off
-                     for (n=BT_NULL + 1; n<BT_MAX; n++)
+                     for (n = BT_NULL + 1; n < BT_MAX; n++)
                      {
                         if (w->tab[n].active)
                            w->tab[n].state = BS_OFF;
                      }
                      // this tab is on
-                     b->state     = BS_ON;
+                     b->state = BS_ON;
                      current_type = i;
                      xn = yn = 0;
                   }
@@ -1992,11 +2002,11 @@ void wedit_test(int ds1_idx, int tx, int ty)
                b->mouse_over = FALSE;
          }
       }
-      
+
       // anti-bug
       if ((focus == 0) && (mb))
          focus_can_change = FALSE;
-         
+
       // when no mouse button
       if (mb == 0)
       {
@@ -2005,7 +2015,11 @@ void wedit_test(int ds1_idx, int tx, int ty)
             // keep changes
             done = TRUE;
             wedit_keep_tile(ds1_idx, tx, ty, save_floor, save_wall, save_shadow);
-            while (key_pressed(KEY_ENTER) || key_pressed(KEY_ENTER_PAD)) { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
+            while (key_pressed(KEY_ENTER) || key_pressed(KEY_ENTER_PAD))
+            {
+               al_rest(0.01);
+               al_get_keyboard_state(&a5_kb_state);
+            }
             focus_can_change = TRUE;
          }
 
@@ -2015,122 +2029,122 @@ void wedit_test(int ds1_idx, int tx, int ty)
             if (w->button[focus].mouse_over == TRUE)
             {
                // action
-               switch(focus)
+               switch (focus)
                {
-                  case BU_OK :
-                     // keep changes
-                     done = TRUE;
-                     wedit_keep_tile(ds1_idx, tx, ty, save_floor, save_wall, save_shadow);
-                     break;
+               case BU_OK:
+                  // keep changes
+                  done = TRUE;
+                  wedit_keep_tile(ds1_idx, tx, ty, save_floor, save_wall, save_shadow);
+                  break;
 
-                  case BU_CANCEL :
-                     // restore original state
-                     wedit_cancel_tile(ds1_idx, tx, ty, save_floor, save_wall, save_shadow);
-                     done = TRUE;
-                     break;
+               case BU_CANCEL:
+                  // restore original state
+                  wedit_cancel_tile(ds1_idx, tx, ty, save_floor, save_wall, save_shadow);
+                  done = TRUE;
+                  break;
 
-                  case BU_FLOOR1 :
-                  case BU_FLOOR2 :
-                     for (n=BT_NULL + 1; n<BT_MAX; n++)
+               case BU_FLOOR1:
+               case BU_FLOOR2:
+                  for (n = BT_NULL + 1; n < BT_MAX; n++)
+                  {
+                     w->tab[n].active = FALSE;
+                     w->tab[n].state = BS_OFF;
+                  }
+                  w->tab[BT_STATIC].active = w->tab[BT_STATIC].tab_have_tiles;
+                  w->tab[BT_ANIMATED].active = w->tab[BT_ANIMATED].tab_have_tiles;
+                  current_button = focus;
+                  bt_sel = wedit_search_tile(ds1_idx, tx, ty, current_button);
+                  wedit_jump(ds1_idx, bt_sel, &xn, &yn);
+                  if (bt_sel >= 1)
+                  {
+                     current_type = bt_ptr[bt_sel].type;
+                     w->tab[current_type].state = BS_ON;
+                  }
+                  else
+                  {
+                     if (w->tab[BT_STATIC].active)
                      {
-                        w->tab[n].active = FALSE;
-                        w->tab[n].state  = BS_OFF;
+                        w->tab[BT_STATIC].state = BS_ON;
+                        current_type = BT_STATIC;
                      }
-                     w->tab[BT_STATIC].active   = w->tab[BT_STATIC].tab_have_tiles;
-                     w->tab[BT_ANIMATED].active = w->tab[BT_ANIMATED].tab_have_tiles;
-                     current_button = focus;
-                     bt_sel = wedit_search_tile(ds1_idx, tx, ty, current_button);
-                     wedit_jump(ds1_idx, bt_sel, & xn, & yn);
-                     if (bt_sel >= 1)
+                     else if (w->tab[BT_ANIMATED].active)
                      {
-                        current_type = bt_ptr[bt_sel].type;
-                        w->tab[current_type].state = BS_ON;
+                        w->tab[BT_ANIMATED].state = BS_ON;
+                        current_type = BT_ANIMATED;
                      }
-                     else
-                     {
-                        if (w->tab[BT_STATIC].active)
-                        {
-                           w->tab[BT_STATIC].state = BS_ON;
-                           current_type = BT_STATIC;
-                        }
-                        else if (w->tab[BT_ANIMATED].active)
-                        {
-                           w->tab[BT_ANIMATED].state = BS_ON;
-                           current_type = BT_ANIMATED;
-                        }
-                     }
-                     break;
+                  }
+                  break;
 
-                  case BU_SHADOW :
-                     for (n=BT_NULL + 1; n<BT_MAX; n++)
+               case BU_SHADOW:
+                  for (n = BT_NULL + 1; n < BT_MAX; n++)
+                  {
+                     w->tab[n].active = FALSE;
+                     w->tab[n].state = BS_OFF;
+                  }
+                  w->tab[BT_SHADOW].active = w->tab[BT_SHADOW].tab_have_tiles;
+                  current_button = focus;
+                  bt_sel = wedit_search_tile(ds1_idx, tx, ty, current_button);
+                  wedit_jump(ds1_idx, bt_sel, &xn, &yn);
+                  if (bt_sel >= 1)
+                  {
+                     current_type = bt_ptr[bt_sel].type;
+                     w->tab[current_type].state = BS_ON;
+                  }
+                  else
+                  {
+                     if (w->tab[BT_SHADOW].active)
                      {
-                        w->tab[n].active = FALSE;
-                        w->tab[n].state  = BS_OFF;
+                        w->tab[BT_SHADOW].state = BS_ON;
+                        current_type = BT_SHADOW;
                      }
-                     w->tab[BT_SHADOW].active = w->tab[BT_SHADOW].tab_have_tiles;
-                     current_button = focus;
-                     bt_sel = wedit_search_tile(ds1_idx, tx, ty, current_button);
-                     wedit_jump(ds1_idx, bt_sel, & xn, & yn);
-                     if (bt_sel >= 1)
-                     {
-                        current_type = bt_ptr[bt_sel].type;
-                        w->tab[current_type].state = BS_ON;
-                     }
-                     else
-                     {
-                        if (w->tab[BT_SHADOW].active)
-                        {
-                           w->tab[BT_SHADOW].state = BS_ON;
-                           current_type = BT_SHADOW;
-                        }
-                     }
-                     break;
+                  }
+                  break;
 
-                  case BU_WALL1 :
-                  case BU_WALL2 :
-                  case BU_WALL3 :
-                  case BU_WALL4 :
-                     for (n=BT_NULL + 1; n<BT_MAX; n++)
+               case BU_WALL1:
+               case BU_WALL2:
+               case BU_WALL3:
+               case BU_WALL4:
+                  for (n = BT_NULL + 1; n < BT_MAX; n++)
+                  {
+                     w->tab[n].active = FALSE;
+                     w->tab[n].state = BS_OFF;
+                  }
+                  w->tab[BT_WALL_UP].active = w->tab[BT_WALL_UP].tab_have_tiles;
+                  w->tab[BT_WALL_DOWN].active = w->tab[BT_WALL_DOWN].tab_have_tiles;
+                  w->tab[BT_ROOF].active = w->tab[BT_ROOF].tab_have_tiles;
+                  w->tab[BT_SPECIAL].active = w->tab[BT_SPECIAL].tab_have_tiles;
+                  current_button = focus;
+                  bt_sel = wedit_search_tile(ds1_idx, tx, ty, current_button);
+                  wedit_jump(ds1_idx, bt_sel, &xn, &yn);
+                  if (bt_sel >= 1)
+                  {
+                     current_type = bt_ptr[bt_sel].type;
+                     w->tab[current_type].state = BS_ON;
+                  }
+                  else
+                  {
+                     if (w->tab[BT_WALL_UP].active)
                      {
-                        w->tab[n].active = FALSE;
-                        w->tab[n].state  = BS_OFF;
+                        w->tab[BT_WALL_UP].state = BS_ON;
+                        current_type = BT_WALL_UP;
                      }
-                     w->tab[BT_WALL_UP].active   = w->tab[BT_WALL_UP].tab_have_tiles;
-                     w->tab[BT_WALL_DOWN].active = w->tab[BT_WALL_DOWN].tab_have_tiles;
-                     w->tab[BT_ROOF].active      = w->tab[BT_ROOF].tab_have_tiles;
-                     w->tab[BT_SPECIAL].active   = w->tab[BT_SPECIAL].tab_have_tiles;
-                     current_button = focus;
-                     bt_sel = wedit_search_tile(ds1_idx, tx, ty, current_button);
-                     wedit_jump(ds1_idx, bt_sel, & xn, & yn);
-                     if (bt_sel >= 1)
+                     else if (w->tab[BT_WALL_DOWN].active)
                      {
-                        current_type = bt_ptr[bt_sel].type;
-                        w->tab[current_type].state = BS_ON;
+                        w->tab[BT_WALL_DOWN].state = BS_ON;
+                        current_type = BT_WALL_DOWN;
                      }
-                     else
+                     else if (w->tab[BT_ROOF].active)
                      {
-                        if (w->tab[BT_WALL_UP].active)
-                        {
-                           w->tab[BT_WALL_UP].state = BS_ON;
-                           current_type = BT_WALL_UP;
-                        }
-                        else if (w->tab[BT_WALL_DOWN].active)
-                        {
-                           w->tab[BT_WALL_DOWN].state = BS_ON;
-                           current_type = BT_WALL_DOWN;
-                        }
-                        else if (w->tab[BT_ROOF].active)
-                        {
-                           w->tab[BT_ROOF].state = BS_ON;
-                           current_type = BT_ROOF;
-                        }
-                        else if (w->tab[BT_SPECIAL].active)
-                        {
-                           w->tab[BT_SPECIAL].state = BS_ON;
-                           current_type = BT_SPECIAL;
-                        }
+                        w->tab[BT_ROOF].state = BS_ON;
+                        current_type = BT_ROOF;
                      }
-                     break;
+                     else if (w->tab[BT_SPECIAL].active)
+                     {
+                        w->tab[BT_SPECIAL].state = BS_ON;
+                        current_type = BT_SPECIAL;
+                     }
+                  }
+                  break;
                }
             }
             focus_can_change = TRUE;

@@ -10,17 +10,20 @@
 #define PAL_ACT_MAX 5
 
 /* RGBA color (8-bit per channel, full range 0-255) */
-typedef struct {
+typedef struct
+{
     uint8_t r, g, b, a;
 } RGBA_COLOR;
 
 /* 256-color RGBA palette */
-typedef struct {
+typedef struct
+{
     RGBA_COLOR colors[PAL_COLORS];
 } RGBA_PALETTE;
 
 /* 256x256 index-to-index lookup table for palette blending operations */
-typedef struct {
+typedef struct
+{
     uint8_t data[PAL_COLORS][PAL_COLORS];
 } INDEX_COLORMAP;
 
@@ -86,5 +89,8 @@ void palette_build_shadow_colormap(const uint8_t *d2_pal, long d2_pal_size,
  * Returns: best matching palette index (0-255)
  */
 uint8_t palette_find_closest(const RGBA_PALETTE *pal, uint8_t r, uint8_t g, uint8_t b);
+
+int palette_resolve_act(int lvltypes_act, int ds1_act);
+int palette_resolve_index(int lvltypes_act, int ds1_act);
 
 #endif

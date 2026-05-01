@@ -6,7 +6,7 @@ The DS1 Editor has been successfully refactored to output PNG format instead of 
 ## Changes Made
 
 ### 1. Updated Source Code
-- **File Extensions**: Changed all screenshot filename generation from `.pcx` to `.png`
+- **File Extensions**: Standardized all screenshot filename generation on `.png`
   - `wEdit.c`: Line 1876 - Normal screenshots now use `.png` extension
   - `interfac.c`: Lines 559, 590 - Full map screenshots now use `.png` extension
   
@@ -64,8 +64,8 @@ int save_png_a4_compat(const char *filename, BITMAP *bmp, PALETTE *pal) {
 ### File Output Changes
 | Component | Old Format | New Format | Notes |
 |-----------|------------|------------|-------|
-| Normal Screenshots | `screenshot-00001.pcx` | `screenshot-00001.png` | Press P key |
-| Full Map Exports | `screenshot-00001.bmp` | `screenshot-00001.png` | Press Shift+P |
+| Normal Screenshots | Legacy screenshot naming | `screenshot-00001.png` | Press P key |
+| Full Map Exports | Legacy full-map naming | `screenshot-00001.png` | Press Shift+P |
 | Layer Captures | `layer_f1_only.pcx` | `layer_f1_only.png` | F1-F10 + P |
 | Palette Tests | `act1_palette.pcx` | `act1_palette.png` | -force_pal + P |
 

@@ -173,6 +173,14 @@ int mpq_batch_load_in_mem(char * filename, void ** buffer, long * buf_len,
    num_entry = test_tell_entry(filename);
    if (num_entry != -1)
    {
+		if ((DWORD) num_entry < glb_mpq->count_files)
+		{
+			char *slot = glb_mpq->filename_table + ((DWORD) num_entry * MPQTYPES_MAX_PATH);
+			strncpy(slot, filename, MPQTYPES_MAX_PATH - 1);
+			slot[MPQTYPES_MAX_PATH - 1] = 0;
+			glb_mpq->identify_table[num_entry] |= 0x1;
+		}
+
       size_unpack = * (glb_mpq->block_table + (num_entry * 4) + 2);
       if(num_entry < 0 || num_entry > (int) glb_mpq->count_files - 1)
       {

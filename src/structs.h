@@ -144,6 +144,8 @@ typedef struct CONFIG_S
 {
    int      fullscreen;
    char     * d2_install;   // optional D2 install dir; auto-detected if empty
+   int      upscale_enabled;
+   char     * upscale_service_url;
    char     * mpq_file[MAX_MPQ_FILE];
    char     * mod_dir[MAX_MOD_DIR];
    SCREEN_S screen;
@@ -466,10 +468,24 @@ typedef struct CMD_LINE_S
    int    list_areas;
    int    list_areas_ext;
    int    list_files;
+   int    audit_lvltypes;
    char * list_files_filter; // optional substring filter for --list-files
 
    // --file : load a single DS1 by path
    char * file_path;
+
+   // --export-asset <file.dt1|file.dcc|file.dc6> <output-dir>
+   char * export_asset_path;
+   char * export_asset_output_dir;
+
+   // --export-area-assets <area-name> <output-dir>
+   char * export_area_name;
+   char * export_area_output_dir;
+
+   // --export-prefix-assets <virtual-prefix> <type|all> <output-dir>
+   char * export_prefix;
+   char * export_prefix_type;
+   char * export_prefix_output_dir;
 } CMD_LINE_S;
 
 /* ---- Area Browser data structures ---- */
@@ -485,7 +501,8 @@ typedef struct AREA_GROUP_S
 {
    char name[80];              /* Display name, e.g. "Town"           */
    int  lvltype_id;            /* LvlTypes.txt Id for this group      */
-   int  act;                   /* 1-5 for standard areas, 0 = "Other" */
+   int  act;                   /* LvlTypes.txt Act (palette authority) */
+   int  name_act;              /* Act parsed from Name, for matching  */
    AREA_DS1_ENTRY_S * entries; /* malloc'd array of DS1 entries        */
    int  entry_count;           /* Number of entries                    */
    int  entry_max;             /* Allocated capacity                   */
@@ -505,6 +522,7 @@ typedef struct AREA_BROWSER_S
    int  scroll_offset;         /* First visible group index            */
    int  is_active;             /* TRUE if browser is showing           */
    int  loaded_group;          /* group_idx of currently loaded area, -1=none */
+   int  lvltypes_act_mismatch_count; /* mismatched Name prefix vs Act column */
 } AREA_BROWSER_S;
 
 /* ---- Properties Panel data structures ---- */

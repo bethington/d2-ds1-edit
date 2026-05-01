@@ -1,7 +1,7 @@
 #ifndef _PROJECT_MENU_H_
 #define _PROJECT_MENU_H_
 
-// Poll Ctrl+Shift+{N,O,W} and dispatch to the appropriate project action.
+// Poll Ctrl+Shift+ shortcuts and dispatch to the appropriate project action.
 // Safe to call every frame. Blocks the main loop while a native file dialog
 // is up -- that's the cost of using the OS dialogs, mirrors the behaviour of
 // the rest of the editor's modal UI.

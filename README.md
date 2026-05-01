@@ -71,6 +71,17 @@ python scripts/run_golden_tests.py --core       # Golden screenshot tests
 ### Golden Screenshot Tests
 Renders maps in headless mode and compares against reference PNGs in `test/golden/`.
 
+## Command Line
+
+```bash
+ds1edit.exe <file.ds1> <ID> <DEF> --headless output.png
+ds1edit.exe --list-areas
+ds1edit.exe --list-files [filter]
+ds1edit.exe --audit-lvltypes
+```
+
+`--audit-lvltypes` prints every mismatch between a `LvlTypes.txt` row's `Act X - ...` name prefix and its authoritative `Act` column. Palette selection uses the `Act` column as the source of truth.
+
 ## Configuration
 
 After building, copy `Ds1edit.ini.sample` from the project root (or `bin/`) to `bin/Ds1edit.ini` and set your Diablo II MPQ paths:
