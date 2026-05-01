@@ -680,9 +680,9 @@ At any moment, if you're lost in the map (than can happen if you're playing with
 
 **Shift** \+ **P**
 
-**P** rintscreen (makes a screenshot). They're .pcx, and have names like "**screenshot-00037.pcx**". They're created into the directory of the editor. The editor will never erased a previous screenshot, it'll always search for the next unused number.
+**P** rintscreen (makes a screenshot). They're .png, and have names like "**screenshot-00037.png**". They're created into the directory of the editor. The editor will never erased a previous screenshot, it'll always search for the next unused number.
 
-If the **Shift** key is pressed, it'll make a BIG screenshot, and you'll have the **entire** map in 1 image. Note that this big screenshot takes care of the current zoom and various graphical layer state. In addition, the format of this screenshot is in .BMP instead of .PCX, because of the .PCX image dimensions limitations.
+If the **Shift** key is pressed, it'll make a BIG screenshot, and you'll have the **entire** map in 1 image. This big screenshot takes care of the current zoom and various graphical layer state, and it is also saved as a .png.
 
   
 

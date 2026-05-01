@@ -6,7 +6,6 @@
 #include "mpq/MpqView.h"
 #include "core/txtread.h"
 
-
 // ==========================================================================
 // prepare the reading of a col value
 // give del_char TRUE to replace the TAB and CR/LF chars by 0
@@ -15,68 +14,65 @@
 // function set is_new_line if after col was a LF of CR/LF
 // function return NULL if after col is EOF, else pointer on next col / line
 // note : handle both LF and CR/LF line type
-char * txt_gets(char * bptr, int * nb_char, int * is_new_line, int del_char)
+char *txt_gets(char *bptr, int *nb_char, int *is_new_line, int del_char)
 {
-   * is_new_line = FALSE;
-   * nb_char = 0;
-
+   *is_new_line = FALSE;
+   *nb_char = 0;
 
    for (;;)
    {
-      if (bptr[* nb_char] == 0)
+      if (bptr[*nb_char] == 0)
       {
          // end of file
          return NULL;
       }
-      else if (bptr[* nb_char] == '\t')
+      else if (bptr[*nb_char] == '\t')
       {
          // tab
          if (del_char == TRUE)
-            bptr[* nb_char] = 0;
-         return bptr + (* nb_char) + 1;
+            bptr[*nb_char] = 0;
+         return bptr + (*nb_char) + 1;
       }
-      else if (bptr[* nb_char] == 0x0A)
+      else if (bptr[*nb_char] == 0x0A)
       {
          // end of LF line
-         * is_new_line = TRUE;
+         *is_new_line = TRUE;
          if (del_char == TRUE)
-            bptr[* nb_char] = 0;
-         return bptr + (* nb_char) + 1;
+            bptr[*nb_char] = 0;
+         return bptr + (*nb_char) + 1;
       }
-      else if (bptr[* nb_char] == 0x0D)
+      else if (bptr[*nb_char] == 0x0D)
       {
          // end of CR / LF line
-         * is_new_line = TRUE;
+         *is_new_line = TRUE;
          if (del_char == TRUE)
-            bptr[* nb_char] = 0;
-         return bptr + (* nb_char) + 2;
+            bptr[*nb_char] = 0;
+         return bptr + (*nb_char) + 2;
       }
       else
-         (* nb_char)++;
+         (*nb_char)++;
    }
 }
 
-
 // ==========================================================================
-void txt_count_header_cols(char * cur_col, int * col_count)
+void txt_count_header_cols(char *cur_col, int *col_count)
 {
-   int  nb_char, is_new_line;
-   char * next_col = NULL;
-
+   int nb_char, is_new_line;
+   char *next_col = NULL;
 
    if ((cur_col == NULL) || (col_count == NULL))
       return;
 
-   (* col_count) = 0;
+   (*col_count) = 0;
    while (cur_col != NULL)
    {
-      next_col = txt_gets(cur_col, & nb_char, & is_new_line, FALSE);
+      next_col = txt_gets(cur_col, &nb_char, &is_new_line, FALSE);
 
       // don't count empty headers or "*eol" column
       if (nb_char)
       {
          if (strnicmp(cur_col, "*eol", 4) != 0)
-            (* col_count)++;
+            (*col_count)++;
       }
 
       // next col
@@ -87,21 +83,19 @@ void txt_count_header_cols(char * cur_col, int * col_count)
    }
 }
 
-
 // ==========================================================================
-char * txt_read_header(char * cur_col, TXT_S * txt)
+char *txt_read_header(char *cur_col, TXT_S *txt)
 {
-   int  nb_char, i, col_pos = 0, is_new_line;
-   char * next_col = NULL;
-
+   int nb_char, i, col_pos = 0, is_new_line;
+   char *next_col = NULL;
 
    while (cur_col != NULL)
    {
-      next_col = txt_gets(cur_col, & nb_char, & is_new_line, TRUE);
+      next_col = txt_gets(cur_col, &nb_char, &is_new_line, TRUE);
       if (nb_char)
       {
          // search if that col header is one of the required (or one of the user defined filters)
-         for (i=0; i < txt->col_num; i++)
+         for (i = 0; i < txt->col_num; i++)
          {
             if (stricmp(cur_col, txt->col[i].name) == 0)
             {
@@ -122,28 +116,27 @@ char * txt_read_header(char * cur_col, TXT_S * txt)
    return NULL;
 }
 
-
 // ==========================================================================
-int txt_check_type_and_size(char * cur_col, TXT_S * txt)
+int txt_check_type_and_size(char *cur_col, TXT_S *txt)
 {
-   int  nb_char, i, col_pos = 0, is_new_line = FALSE, x;
-   char * next_col;
-   
+   int nb_char, i, col_pos = 0, is_new_line = FALSE, x;
+   char *next_col;
+
    if (cur_col == NULL)
       return 1;
-      
+
    // for all lines, check the string size of the interesting columns
    txt->line_num = 0;
    col_pos = 0;
    while (cur_col != NULL)
    {
       // read this col
-      next_col = txt_gets(cur_col, & nb_char, & is_new_line, FALSE);
-      
+      next_col = txt_gets(cur_col, &nb_char, &is_new_line, FALSE);
+
       if (nb_char)
       {
          // does this col is one of the required ?
-         for (i=0; i < txt->col_num; i++)
+         for (i = 0; i < txt->col_num; i++)
          {
             if (col_pos == txt->col[i].pos)
             {
@@ -165,11 +158,10 @@ int txt_check_type_and_size(char * cur_col, TXT_S * txt)
 
                   if (txt->col[i].type != CT_STR)
                   {
-                     for (x=0; x < nb_char; x++)
+                     for (x = 0; x < nb_char; x++)
                      {
-                        if ( ((cur_col[x] < '0') || (cur_col[x] > '9'))
-                             &&
-                             cur_col[x] != '-')
+                        if (((cur_col[x] < '0') || (cur_col[x] > '9')) &&
+                            cur_col[x] != '-')
                         {
                            txt->col[i].type = CT_STR;
                            x = nb_char;
@@ -180,7 +172,7 @@ int txt_check_type_and_size(char * cur_col, TXT_S * txt)
             }
          }
       }
-      
+
       // this col done
       col_pos++;
 
@@ -195,29 +187,28 @@ int txt_check_type_and_size(char * cur_col, TXT_S * txt)
    return 0;
 }
 
-
 // ==========================================================================
-int txt_fill_data(char * cur_col, TXT_S * txt)
+int txt_fill_data(char *cur_col, TXT_S *txt)
 {
-   int  nb_char, i, col_pos = 0, is_new_line, cur_line = 0;
-   char * next_col, * data_ptr, * sptr;
-   long * lptr;
-   
+   int nb_char, i, col_pos = 0, is_new_line, cur_line = 0;
+   char *next_col, *data_ptr, *sptr;
+   long *lptr;
+
    if ((cur_col == NULL) || (txt->data == NULL))
       return 1;
-      
+
    // for all lines, read the data
    col_pos = 0;
    data_ptr = txt->data;
    while (cur_col != NULL)
    {
       // read this col
-      next_col = txt_gets(cur_col, & nb_char, & is_new_line, TRUE);
-      
+      next_col = txt_gets(cur_col, &nb_char, &is_new_line, TRUE);
+
       if (nb_char)
       {
          // does this col is one of the required ?
-         for (i=0; i < txt->col_num; i++)
+         for (i = 0; i < txt->col_num; i++)
          {
             if (col_pos == txt->col[i].pos)
             {
@@ -227,13 +218,13 @@ int txt_fill_data(char * cur_col, TXT_S * txt)
                   strcpy(sptr, cur_col);
                else if (txt->col[i].type == CT_NUM)
                {
-                  lptr = (long *) sptr;
-                  * lptr = atol(cur_col);
+                  lptr = (long *)sptr;
+                  *lptr = atol(cur_col);
                }
             }
          }
       }
-      
+
       // this col done
       col_pos++;
 
@@ -254,9 +245,8 @@ int txt_fill_data(char * cur_col, TXT_S * txt)
    return 0;
 }
 
-
 // ==========================================================================
-TXT_S * txt_destroy(TXT_S * txt)
+TXT_S *txt_destroy(TXT_S *txt)
 {
    if (txt == NULL)
       return NULL;
@@ -268,23 +258,21 @@ TXT_S * txt_destroy(TXT_S * txt)
    return NULL;
 }
 
-
 // ==========================================================================
-void txt_get_user_filter_cols(char * cur_col, TXT_S * txt)
+void txt_get_user_filter_cols(char *cur_col, TXT_S *txt)
 {
-   int  nb_char, is_new_line;
-   char * next_col = NULL;
-   int  i = 0;
+   int nb_char, is_new_line;
+   char *next_col = NULL;
+   int i = 0;
    char tmp[500] = "";
-   int  size = 0;
-
+   int size = 0;
 
    if ((cur_col == NULL) || (txt == NULL))
       return;
 
    while (cur_col != NULL)
    {
-      next_col = txt_gets(cur_col, & nb_char, & is_new_line, FALSE);
+      next_col = txt_gets(cur_col, &nb_char, &is_new_line, FALSE);
 
       // don't count empty headers or "*eol" column
       if (nb_char)
@@ -292,15 +280,15 @@ void txt_get_user_filter_cols(char * cur_col, TXT_S * txt)
          if (strnicmp(cur_col, "*eol", 4) != 0)
          {
             // is this column already in the required cols ?
-            for (i=0; i < txt->nb_required_cols; i++)
+            for (i = 0; i < txt->nb_required_cols; i++)
             {
                size = 0;
-               while ( (cur_col[size] != 0x00) && (cur_col[size] != '\t') &&
-                       (cur_col[size] != 0x0D) && (cur_col[size] != 0x0A) )
+               while ((cur_col[size] != 0x00) && (cur_col[size] != '\t') &&
+                      (cur_col[size] != 0x0D) && (cur_col[size] != 0x0A))
                {
                   size++;
                }
-               
+
                if (strnicmp(txt->col[i].name, cur_col, size) == 0)
                   break;
             }
@@ -318,16 +306,13 @@ void txt_get_user_filter_cols(char * cur_col, TXT_S * txt)
                   if (size >= TXT_COL_NAME_LENGTH)
                   {
                      sprintf(
-                      tmp
-                      ,
-                      "txt_get_user_filter_cols() : found a user defined filter header name that is more than %i "
-                      "characters : \"%.*s...\" (%i characters)"
-                      ,
-                      TXT_COL_NAME_LENGTH - 1,
-                      TXT_COL_NAME_LENGTH - 1,
-                      cur_col,
-                      size
-                     );
+                         tmp,
+                         "txt_get_user_filter_cols() : found a user defined filter header name that is more than %i "
+                         "characters : \"%.*s...\" (%i characters)",
+                         TXT_COL_NAME_LENGTH - 1,
+                         TXT_COL_NAME_LENGTH - 1,
+                         cur_col,
+                         size);
                      ds1edit_error(tmp);
                   }
                   strncpy(txt->col[i].name, cur_col, size);
@@ -344,16 +329,14 @@ void txt_get_user_filter_cols(char * cur_col, TXT_S * txt)
    }
 }
 
-
 // ==========================================================================
 // note : the mem buffer MUST end by a 0
-TXT_S * txt_load(char * mem, RQ_ENUM enum_txt, char * filename)
+TXT_S *txt_load(char *mem, RQ_ENUM enum_txt, char *filename)
 {
-   TXT_S * txt = NULL;
-   int   i=0, size=0, all_col_ok = TRUE;
-   char  * first_line = NULL, tmp[150] = "";
-   char  ** required_col = NULL;
-
+   TXT_S *txt = NULL;
+   int i = 0, size = 0, all_col_ok = TRUE;
+   char *first_line = NULL, tmp[150] = "";
+   char **required_col = NULL;
 
    if (((enum_txt < 0)) || (enum_txt >= RQ_MAX))
    {
@@ -368,7 +351,7 @@ TXT_S * txt_load(char * mem, RQ_ENUM enum_txt, char * filename)
 
    // create a new TXT_S structure
    size = sizeof(TXT_S);
-   txt = (TXT_S *) malloc(size);
+   txt = (TXT_S *)malloc(size);
    if (txt == NULL)
    {
       sprintf(tmp, "txt_load() : can't allocate %i bytes", size);
@@ -386,12 +369,12 @@ TXT_S * txt_load(char * mem, RQ_ENUM enum_txt, char * filename)
    if (enum_txt == RQ_OBJ)
    {
       // editor's data/obj.txt : count all columns that have a header, to include user filter columns
-      txt_count_header_cols(mem, & txt->col_num);
+      txt_count_header_cols(mem, &txt->col_num);
    }
    else
       txt->col_num = txt->nb_required_cols;
-   
-   txt->col = (TXT_COL_S *) calloc(txt->col_num + 1, sizeof(TXT_COL_S));
+
+   txt->col = (TXT_COL_S *)calloc(txt->col_num + 1, sizeof(TXT_COL_S));
    if (txt->col == NULL)
    {
       txt = txt_destroy(txt);
@@ -400,7 +383,7 @@ TXT_S * txt_load(char * mem, RQ_ENUM enum_txt, char * filename)
    }
 
    // init the cols, required cols first
-   for (i=0; i < txt->col_num; i++)
+   for (i = 0; i < txt->col_num; i++)
    {
       txt->col[i].pos = -1;
       if (i < txt->nb_required_cols)
@@ -411,9 +394,9 @@ TXT_S * txt_load(char * mem, RQ_ENUM enum_txt, char * filename)
    if (txt->nb_required_cols != txt->col_num)
       txt_get_user_filter_cols(mem, txt);
 
-   // stage 1, process header   
+   // stage 1, process header
    first_line = txt_read_header(mem, txt);
-   for (i=0; i < txt->col_num; i++)
+   for (i = 0; i < txt->col_num; i++)
    {
       if (txt->col[i].pos == -1)
       {
@@ -440,7 +423,7 @@ TXT_S * txt_load(char * mem, RQ_ENUM enum_txt, char * filename)
 
    // stage 3, make the struct
    size = 0;
-   for (i=0; i < txt->col_num; i++)
+   for (i = 0; i < txt->col_num; i++)
    {
       txt->col[i].offset = size;
       if (txt->col[i].type == CT_NUM)
@@ -450,14 +433,14 @@ TXT_S * txt_load(char * mem, RQ_ENUM enum_txt, char * filename)
    }
    txt->line_size = size;
 
-   txt->data = (char *) calloc(txt->line_num + 1, txt->line_size);
+   txt->data = (char *)calloc(txt->line_num + 1, txt->line_size);
    if (txt->data == NULL)
    {
       txt = txt_destroy(txt);
       sprintf(tmp, "txt_load() : calloc() error for %i elements * %i bytes each", txt->line_num + 1, txt->line_size);
       ds1edit_error(tmp);
    }
-   
+
    // stage 4, load the txt into the struct
    if (txt_fill_data(first_line, txt))
    {
@@ -469,18 +452,17 @@ TXT_S * txt_load(char * mem, RQ_ENUM enum_txt, char * filename)
    return txt;
 }
 
-
 // ==========================================================================
 // load a .txt from a mpq (or mod dir) into mem
-void * txt_read_in_mem(char * txtname)
+void *txt_read_in_mem(char *txtname)
 {
-   void * buff = NULL, * new_buff;
-   int  entry;
+   void *buff = NULL, *new_buff;
+   int entry;
    long len;
    char tmp[150];
 
    printf("\nwant to read a txt from mpq : %s\n", txtname);
-   entry = misc_load_mpq_file(txtname, (char **) & buff, & len, TRUE);
+   entry = misc_load_mpq_file(txtname, (char **)&buff, &len, TRUE);
    if ((entry == -1) || (buff == NULL))
    {
       sprintf(tmp, "txt_read_in_mem() : file %s not found", txtname);
@@ -491,7 +473,7 @@ void * txt_read_in_mem(char * txtname)
     * Use the larger file to ensure all entries are available. */
    {
       char local_path[256];
-      FILE * local_file;
+      FILE *local_file;
       sprintf(local_path, "assets/excel/%s", strrchr(txtname, '\\') ? strrchr(txtname, '\\') + 1 : txtname);
       local_file = fopen(local_path, "rb");
       if (local_file != NULL)
@@ -501,7 +483,7 @@ void * txt_read_in_mem(char * txtname)
          local_len = ftell(local_file);
          if (local_len > len)
          {
-            void * local_buff;
+            void *local_buff;
             fseek(local_file, 0, SEEK_SET);
             local_buff = malloc(local_len + 1);
             if (local_buff != NULL)
@@ -523,7 +505,7 @@ void * txt_read_in_mem(char * txtname)
    if (new_buff == NULL)
    {
       sprintf(tmp, "txt_read_in_mem() : can't reallocate %i bytes for %s",
-         len, txtname);
+              len, txtname);
       if (buff != NULL)
          free(buff);
       ds1edit_error(tmp);
@@ -532,35 +514,31 @@ void * txt_read_in_mem(char * txtname)
    if (new_buff != buff)
       memcpy(new_buff, buff, len - 1);
 
-   * (((char *) new_buff) + len - 1) = 0;
+   *(((char *)new_buff) + len - 1) = 0;
 
    return buff;
 }
 
-
 // ==========================================================================
-void txt_convert_slash(char * str)
+void txt_convert_slash(char *str)
 {
    int i, s = strlen(str);
 
-
-   for (i=0; i < s; i++)
+   for (i = 0; i < s; i++)
       if (str[i] == '/')
          str[i] = '\\';
 }
 
-
 // ==========================================================================
 // load lvlTypes.txt in mem, then load each dt1 for a 1 ds1
-void txt_debug(char * file_path_mem, char * file_path_def, TXT_S * txt)
+void txt_debug(char *file_path_mem, char *file_path_def, TXT_S *txt)
 {
-   FILE * out = NULL;
-   int  i     = 0;
-
+   FILE *out = NULL;
+   int i = 0;
 
    if (glb_ds1edit.cmd_line.debug_mode != TRUE)
       return;
-   
+
    if ((file_path_mem == NULL) || (file_path_def == NULL) || (txt == NULL))
       return;
 
@@ -574,42 +552,39 @@ void txt_debug(char * file_path_mem, char * file_path_def, TXT_S * txt)
    out = fopen(file_path_def, "wt");
    if (out != NULL)
    {
-      fprintf(out, "memory_col col_type %-*s txt_col_num data_type txt_data_size memory_offset\n",  TXT_COL_NAME_LENGTH, "header_name");
+      fprintf(out, "memory_col col_type %-*s txt_col_num data_type txt_data_size memory_offset\n", TXT_COL_NAME_LENGTH, "header_name");
       fprintf(out, "---------- -------- %-.*s ----------- --------- ------------- -------------\n", TXT_COL_NAME_LENGTH, "------------------------------");
-                               
-      for (i=0; i < txt->col_num; i++)
+
+      for (i = 0; i < txt->col_num; i++)
       {
          fprintf(
-            out,
-            "%10i %-8s %-*s %11i %-9s %13i %13i\n",
-            i,
-            (i >= txt->nb_required_cols) ? "Filter" : "Required",
-            TXT_COL_NAME_LENGTH,
-            txt->col[i].name,
-            txt->col[i].pos,
-            txt->col[i].type == CT_NUM ? "NUM" : "STR",
-            txt->col[i].size,
-            txt->col[i].offset
-         );
+             out,
+             "%10i %-8s %-*s %11i %-9s %13i %13i\n",
+             i,
+             (i >= txt->nb_required_cols) ? "Filter" : "Required",
+             TXT_COL_NAME_LENGTH,
+             txt->col[i].name,
+             txt->col[i].pos,
+             txt->col[i].type == CT_NUM ? "NUM" : "STR",
+             txt->col[i].size,
+             txt->col[i].offset);
       }
       fclose(out);
    }
 }
 
-
 // ==========================================================================
 // load lvlTypes.txt in mem, then load each dt1 for a 1 ds1
 int read_lvltypes_txt(int ds1_idx, int type)
 {
-   TXT_S * txt = NULL;
-   char  lvltypes[] = "Data\\Global\\Excel\\LvlTypes.txt",
-         ds1edt_file[] = "ds1edit.dt1", * buff, * sptr;
-   int   i, f;
-   long  * lptr = NULL, act;
-   char  tmp[150] = "", name[256] = "";
-   int   col_idx = 0, file_1_idx = 0;
-   long  * tmp_long = NULL;
-
+   TXT_S *txt = NULL;
+   char lvltypes[] = "Data\\Global\\Excel\\LvlTypes.txt",
+        ds1edt_file[] = "ds1edit.dt1", *buff, *sptr;
+   int i, f;
+   long *lptr = NULL, act;
+   char tmp[150] = "", name[256] = "";
+   int col_idx = 0, file_1_idx = 0;
+   long *tmp_long = NULL;
 
    // load the file in mem
    if (glb_ds1edit.lvltypes_buff == NULL)
@@ -633,38 +608,37 @@ int read_lvltypes_txt(int ds1_idx, int type)
       txt = glb_ds1edit.lvltypes_buff;
 
    // search the good Id
-   for (i=0; i < txt->line_num; i++)
+   for (i = 0; i < txt->line_num; i++)
    {
       sptr = txt->data + (i * txt->line_size) + txt->col[misc_get_txt_column_num(RQ_LVLTYPE, "ID")].offset;
-      lptr = (long *) sptr;
-      if ((* lptr) == type)
+      lptr = (long *)sptr;
+      if ((*lptr) == type)
       {
          // Id found
          printf("Found ID %i in LvlTypes.txt at row %i, col %i\n",
-            type, i + 1, txt->col[misc_get_txt_column_num(RQ_LVLTYPE, "ID")].pos);
+                type, i + 1, txt->col[misc_get_txt_column_num(RQ_LVLTYPE, "ID")].pos);
          fflush(stdout);
 
          // check act
          sptr = txt->data + (i * txt->line_size) + txt->col[misc_get_txt_column_num(RQ_LVLTYPE, "Act")].offset;
-         lptr = (long *) sptr;
-         act  = * lptr;
+         lptr = (long *)sptr;
+         act = *lptr;
          if ((act != glb_ds1[ds1_idx].act) && (glb_ds1edit.cmd_line.no_check_act == FALSE))
          {
-            sprintf(tmp, "read_lvltypes_txt() : Acts from LvlTypes.txt (%li) and the Ds1 (%li) "
-               "are different",
-               act,
-               glb_ds1[ds1_idx].act
-            );
-            ds1edit_error(tmp);
+            printf("WARNING: read_lvltypes_txt() : Acts from LvlTypes.txt (%li) and the Ds1 (%li) "
+                   "are different, keeping LvlTypes.txt as the palette source of truth\n",
+                   act,
+                   glb_ds1[ds1_idx].act);
+            fflush(stdout);
          }
 
          // opening dt1
          printf("Found dt1files :\n");
          file_1_idx = misc_get_txt_column_num(RQ_LVLTYPE, "File 1");
-         for (f=0; f<33; f++)
+         for (f = 0; f < 33; f++)
          {
             glb_ds1[ds1_idx].dt1_idx[f] = -1;
-            if (f==0)
+            if (f == 0)
             {
                sprintf(tmp, "%s%s", glb_ds1edit_data_dir, ds1edt_file);
                printf("\nwant to read a dt1 : %s\n", tmp);
@@ -678,10 +652,13 @@ int read_lvltypes_txt(int ds1_idx, int type)
                   strcpy(tmp, sptr);
                else if (txt->col[col_idx].type == CT_NUM)
                {
-                  tmp_long = (long *) sptr;
-                  sprintf(tmp, "%li", * tmp_long);
+                  tmp_long = (long *)sptr;
+                  sprintf(tmp, "%li", *tmp_long);
                }
                txt_convert_slash(tmp);
+               /* Skip "0" placeholder entries (empty DT1 slots in LvlTypes.txt) */
+               if (tmp[0] == '0' && tmp[1] == '\0')
+                  continue;
                strcpy(name, glb_tiles_path);
                strcat(name, tmp);
                if (glb_ds1[ds1_idx].dt1_mask[f])
@@ -706,19 +683,17 @@ int read_lvltypes_txt(int ds1_idx, int type)
    return -1;
 }
 
-
 // ==========================================================================
 // load lvlPrest.txt into mem, then search the Dt1Mask, given the Def Id
 int read_lvlprest_txt(int ds1_idx, int def)
 {
-   TXT_S * txt;
-   char  * buff, * lvlprest = "Data\\Global\\Excel\\LvlPrest.txt";
-   int   i, b;
-   long  * lptr;
-   char  * sptr, tmp[150], * found_ptr = NULL;
-   int   mask, filename_colidx[6], filename_idx, length, c, found_nb, last_found=0,
-         last_slash, found_col=0;
-
+   TXT_S *txt;
+   char *buff, *lvlprest = "Data\\Global\\Excel\\LvlPrest.txt";
+   int i, b;
+   long *lptr;
+   char *sptr, tmp[150], *found_ptr = NULL;
+   int mask, filename_colidx[6], filename_idx, length, c, found_nb, last_found = 0,
+                                                                    last_slash, found_col = 0;
 
    // load the file in mem
    if (glb_ds1edit.lvlprest_buff == NULL)
@@ -756,19 +731,19 @@ int read_lvlprest_txt(int ds1_idx, int def)
       filename_colidx[5] = misc_get_txt_column_num(RQ_LVLPREST, "File6");
 
       found_nb = 0;
-      for (i=0; i < txt->line_num; i++)
+      for (i = 0; i < txt->line_num; i++)
       {
          for (filename_idx = 0; filename_idx < 6; filename_idx++)
          {
-            sptr = txt->data + (i * txt->line_size) + txt->col[ filename_colidx[filename_idx] ].offset;
+            sptr = txt->data + (i * txt->line_size) + txt->col[filename_colidx[filename_idx]].offset;
             if (sptr != NULL)
             {
                length = strlen(sptr);
-               if(length > 0)
+               if (length > 0)
                {
                   // search last '/' or last '\'
                   last_slash = 0;
-                  for (c=0; c < length; c++)
+                  for (c = 0; c < length; c++)
                   {
                      if ((sptr[c] == '/') || (sptr[c] == '\\'))
                         last_slash = c;
@@ -784,8 +759,8 @@ int read_lvlprest_txt(int ds1_idx, int def)
                      // found one
                      found_nb++;
                      last_found = i;
-                     found_ptr  = sptr;
-                     found_col  = filename_idx;
+                     found_ptr = sptr;
+                     found_col = filename_idx;
                   }
                }
             }
@@ -799,32 +774,31 @@ int read_lvlprest_txt(int ds1_idx, int def)
          i = last_found;
 
          sptr = txt->data + (i * txt->line_size) + txt->col[misc_get_txt_column_num(RQ_LVLPREST, "Def")].offset;
-         lptr = (long *) sptr;
+         lptr = (long *)sptr;
 
          printf("Found \"%s\" in LvlPrest.txt at row %i (DEF = %li, 'File%i' = \"%s\")\n",
-            glb_ds1[ds1_idx].filename,
-            i + 1,
-            * lptr,
-            found_col + 1,
-            found_ptr
-         );
+                glb_ds1[ds1_idx].filename,
+                i + 1,
+                *lptr,
+                found_col + 1,
+                found_ptr);
          fflush(stdout);
 
          // dt1mask
          sptr = txt->data + (i * txt->line_size) + txt->col[misc_get_txt_column_num(RQ_LVLPREST, "Dt1Mask")].offset;
-         lptr = (long *) sptr;
-         mask = * lptr;
+         lptr = (long *)sptr;
+         mask = *lptr;
 
          printf("DT1MASK = %li in LvlPrest.txt at row %i, col %i\n",
-            mask, i + 1, txt->col[misc_get_txt_column_num(RQ_LVLPREST, "Dt1Mask")].pos);
+                mask, i + 1, txt->col[misc_get_txt_column_num(RQ_LVLPREST, "Dt1Mask")].pos);
          fflush(stdout);
-      
-         for (b=0; b < DT1_IN_DS1_MAX; b++)
+
+         for (b = 0; b < DT1_IN_DS1_MAX; b++)
          {
             if (b == 0)
                glb_ds1[ds1_idx].dt1_mask[b] = TRUE;
             else
-               glb_ds1[ds1_idx].dt1_mask[b] = mask & (1 << (b-1)) ? TRUE : FALSE;
+               glb_ds1[ds1_idx].dt1_mask[b] = mask & (1 << (b - 1)) ? TRUE : FALSE;
          }
 
          // end
@@ -835,48 +809,46 @@ int read_lvlprest_txt(int ds1_idx, int def)
          if (found_nb >= 2)
          {
             sprintf(tmp, "couldn't found ds1 filename \"%s\" in LvlPrest.txt for sure : present %i times\n",
-               glb_ds1[ds1_idx].filename,
-               found_nb
-            );
+                    glb_ds1[ds1_idx].filename,
+                    found_nb);
             ds1edit_error(tmp);
          }
          else
          {
             sprintf(tmp, "couldn't found ds1 filename \"%s\" in LvlPrest.txt\n",
-               glb_ds1[ds1_idx].filename
-            );
+                    glb_ds1[ds1_idx].filename);
             ds1edit_error(tmp);
          }
       }
    }
    else
    {
-      for (i=0; i < txt->line_num; i++)
+      for (i = 0; i < txt->line_num; i++)
       {
          sptr = txt->data + (i * txt->line_size) + txt->col[misc_get_txt_column_num(RQ_LVLPREST, "Def")].offset;
-         lptr = (long *) sptr;
-         if ((* lptr) == def)
+         lptr = (long *)sptr;
+         if ((*lptr) == def)
          {
             // Def found
             printf("Found DEF %i in LvlPrest.txt at row %i, col %i\n",
-               def, i + 1, txt->col[misc_get_txt_column_num(RQ_LVLPREST, "Def")].pos);
+                   def, i + 1, txt->col[misc_get_txt_column_num(RQ_LVLPREST, "Def")].pos);
             fflush(stdout);
 
             // dt1mask
             sptr = txt->data + (i * txt->line_size) + txt->col[misc_get_txt_column_num(RQ_LVLPREST, "Dt1Mask")].offset;
-            lptr = (long *) sptr;
-            mask = * lptr;
+            lptr = (long *)sptr;
+            mask = *lptr;
 
             printf("DT1MASK = %li in LvlPrest.txt at row %i, col %i\n",
-               mask, i + 1, txt->col[misc_get_txt_column_num(RQ_LVLPREST, "Dt1Mask")].pos);
+                   mask, i + 1, txt->col[misc_get_txt_column_num(RQ_LVLPREST, "Dt1Mask")].pos);
             fflush(stdout);
-         
-            for (b=0; b < DT1_IN_DS1_MAX; b++)
+
+            for (b = 0; b < DT1_IN_DS1_MAX; b++)
             {
                if (b == 0)
                   glb_ds1[ds1_idx].dt1_mask[b] = TRUE;
                else
-                  glb_ds1[ds1_idx].dt1_mask[b] = mask & (1 << (b-1)) ? TRUE : FALSE;
+                  glb_ds1[ds1_idx].dt1_mask[b] = mask & (1 << (b - 1)) ? TRUE : FALSE;
             }
 
             // end
@@ -884,24 +856,22 @@ int read_lvlprest_txt(int ds1_idx, int def)
          }
       }
    }
-   
+
    // end
    sprintf(tmp, "couldn't found the DEF %i in LvlPrest.txt\n", def);
    ds1edit_error(tmp);
    return -1; // useless, just to not have a warning under VC6
 }
 
-
 // ==========================================================================
 // load the obj.txt into mem
 int read_obj_txt(void)
 {
-   TXT_S * txt;
-   char  * buff, obj[] = "Obj.txt";
-   int   i, size;
-   long  * lptr, len;
-   char  * sptr, tmp[150];
-
+   TXT_S *txt;
+   char *buff, obj[] = "Obj.txt";
+   int i, size;
+   long *lptr, len;
+   char *sptr, tmp[150];
 
    // load the file in mem
    if (glb_ds1edit.obj_buff == NULL)
@@ -933,7 +903,7 @@ int read_obj_txt(void)
    // malloc
    glb_ds1edit.obj_desc_num = txt->line_num;
    size = glb_ds1edit.obj_desc_num * sizeof(OBJ_DESC_S);
-   glb_ds1edit.obj_desc = (OBJ_DESC_S *) malloc(size);
+   glb_ds1edit.obj_desc = (OBJ_DESC_S *)malloc(size);
    if (glb_ds1edit.obj_desc == NULL)
    {
       sprintf(tmp, "read_obj_txt() : not enough mem for %i bytes", size);
@@ -942,22 +912,22 @@ int read_obj_txt(void)
    memset(glb_ds1edit.obj_desc, 0, size);
 
    // read the obj.txt
-   for (i=0; i < txt->line_num; i++)
+   for (i = 0; i < txt->line_num; i++)
    {
       // act
       sptr = txt->data + (i * txt->line_size) + txt->col[misc_get_txt_column_num(RQ_OBJ, "Act")].offset;
-      lptr = (long *) sptr;
-      glb_ds1edit.obj_desc[i].act = * lptr;
-      
+      lptr = (long *)sptr;
+      glb_ds1edit.obj_desc[i].act = *lptr;
+
       // type
       sptr = txt->data + (i * txt->line_size) + txt->col[misc_get_txt_column_num(RQ_OBJ, "Type")].offset;
-      lptr = (long *) sptr;
-      glb_ds1edit.obj_desc[i].type = * lptr;
-      
+      lptr = (long *)sptr;
+      glb_ds1edit.obj_desc[i].type = *lptr;
+
       // id
       sptr = txt->data + (i * txt->line_size) + txt->col[misc_get_txt_column_num(RQ_OBJ, "ID")].offset;
-      lptr = (long *) sptr;
-      glb_ds1edit.obj_desc[i].id = * lptr;
+      lptr = (long *)sptr;
+      glb_ds1edit.obj_desc[i].id = *lptr;
 
       // description
       sptr = txt->data + (i * txt->line_size) + txt->col[misc_get_txt_column_num(RQ_OBJ, "Description")].offset;
@@ -970,14 +940,12 @@ int read_obj_txt(void)
    return 0;
 }
 
-
 // ==========================================================================
 // load the objects.txt into mem
 int read_objects_txt(void)
 {
-   TXT_S * txt;
-   char  * buff, * objects = "Data\\Global\\Excel\\Objects.txt";
-
+   TXT_S *txt;
+   char *buff, *objects = "Data\\Global\\Excel\\Objects.txt";
 
    // load the file in mem
    if (glb_ds1edit.objects_buff == NULL)
@@ -1003,7 +971,7 @@ int read_objects_txt(void)
 
    // lookups, to avoid to search them again and again
 
-   glb_ds1edit.col_objects_id     = misc_get_txt_column_num(RQ_OBJECTS, "Id");
+   glb_ds1edit.col_objects_id = misc_get_txt_column_num(RQ_OBJECTS, "Id");
 
    glb_ds1edit.col_frame_delta[0] = misc_get_txt_column_num(RQ_OBJECTS, "FrameDelta0");
    glb_ds1edit.col_frame_delta[1] = misc_get_txt_column_num(RQ_OBJECTS, "FrameDelta1");
@@ -1025,15 +993,14 @@ int read_objects_txt(void)
    return 0;
 }
 
-
 // ==========================================================================
 // load Levels.txt into memory (for area browser)
 // return 0 if ok, -1 if error
 int read_levels_txt(void)
 {
-   TXT_S * txt = NULL;
-   char  levels[] = "Data\\Global\\Excel\\Levels.txt";
-   char  * buff;
+   TXT_S *txt = NULL;
+   char levels[] = "Data\\Global\\Excel\\Levels.txt";
+   char *buff;
 
    if (glb_ds1edit.levels_buff == NULL)
    {

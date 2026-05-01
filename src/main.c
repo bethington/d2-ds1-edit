@@ -8,7 +8,7 @@ October 30 2011 :
   - similar objects animates with a random starting frame. fire is more natural, and monsters don't 'dance' anymore.
 */
 
-#define COMPILER_NAME              "MSVC"
+#define COMPILER_NAME "MSVC"
 #define WINDS1EDIT_GUI_LOADER_LINK "https://github.com/bethington/d2-ds1-edit"
 
 #ifndef DS1EDIT_VERSION_STR
@@ -16,17 +16,17 @@ October 30 2011 :
 #endif
 
 #ifdef WIN32
-   #define DS1EDIT_BUILD __DATE__
+#define DS1EDIT_BUILD __DATE__
 #else
-   #define DS1EDIT_BUILD "?"
+#define DS1EDIT_BUILD "?"
 #endif
 
 #ifdef _DEBUG
-   #define DS1EDIT_BUILD_MODE "Debug"
+#define DS1EDIT_BUILD_MODE "Debug"
 #elif NDEBUG
-   #define DS1EDIT_BUILD_MODE "Release"
+#define DS1EDIT_BUILD_MODE "Release"
 #else
-   #define DS1EDIT_BUILD_MODE "unknown"
+#define DS1EDIT_BUILD_MODE "unknown"
 #endif
 
 #include "structs.h"
@@ -39,299 +39,312 @@ October 30 2011 :
 #include "editor/undo.h"
 #include "core/txtread.h"
 #include "core/area_browser.h"
+#include "ui/props_panel.h"
 #include "misc.h"
 #include "config.h"
 #include "core/animdata.h"
+#include "core/asset_export.h"
+#include "core/d2install.h"
+#include "core/mpq_index.h"
+#include "core/preferences.h"
+#include "core/project.h"
+#include "core/palette.h"
 #include "ui/interface.h"
 #include "render/preview.h"
 
-
 WRKSPC_DATAS_S glb_wrkspc_datas[WRKSPC_MAX] = // workspace datas saved in .ds1
-{
-   {("DS1EDIT_WRKSPC_TILE_X")},
-   {("DS1EDIT_WRKSPC_TILE_Y")},
-   {("DS1EDIT_WRKSPC_ZOOM")},
-   {("DS1EDIT_VERSION")},
-   {("DS1EDIT_SAVE_COUNT")}
-};
+    {
+        {("DS1EDIT_WRKSPC_TILE_X")},
+        {("DS1EDIT_WRKSPC_TILE_Y")},
+        {("DS1EDIT_WRKSPC_ZOOM")},
+        {("DS1EDIT_VERSION")},
+        {("DS1EDIT_SAVE_COUNT")}};
 
 GAMMA_S glb_gamma_str[GC_MAX] = // gamma correction string table
-{
-   {"0.60", GC_060}, {"0.62", GC_062}, {"0.64", GC_064},
-   {"0.66", GC_066}, {"0.68", GC_068}, {"0.70", GC_070},
-   {"0.72", GC_072}, {"0.74", GC_074}, {"0.76", GC_076},
-   {"0.78", GC_078}, {"0.80", GC_080}, {"0.82", GC_082},
-   {"0.84", GC_084}, {"0.86", GC_086}, {"0.88", GC_088},
-   {"0.90", GC_090}, {"0.92", GC_092}, {"0.94", GC_094},
-   {"0.96", GC_096}, {"0.98", GC_098}, {"1.00", GC_100},
-   {"1.10", GC_110}, {"1.20", GC_120}, {"1.30", GC_130},
-   {"1.40", GC_140}, {"1.50", GC_150}, {"1.60", GC_160},
-   {"1.70", GC_170}, {"1.80", GC_180}, {"1.90", GC_190},
-   {"2.00", GC_200}, {"2.10", GC_210}, {"2.20", GC_220},
-   {"2.30", GC_230}, {"2.40", GC_240}, {"2.50", GC_250},
-   {"2.60", GC_260}, {"2.70", GC_270}, {"2.80", GC_280},
-   {"2.90", GC_290}, {"3.00", GC_300}
+    {
+        {"0.60", GC_060}, {"0.62", GC_062}, {"0.64", GC_064}, {"0.66", GC_066}, {"0.68", GC_068}, {"0.70", GC_070}, {"0.72", GC_072}, {"0.74", GC_074}, {"0.76", GC_076}, {"0.78", GC_078}, {"0.80", GC_080}, {"0.82", GC_082}, {"0.84", GC_084}, {"0.86", GC_086}, {"0.88", GC_088}, {"0.90", GC_090}, {"0.92", GC_092}, {"0.94", GC_094}, {"0.96", GC_096}, {"0.98", GC_098}, {"1.00", GC_100}, {"1.10", GC_110}, {"1.20", GC_120}, {"1.30", GC_130}, {"1.40", GC_140}, {"1.50", GC_150}, {"1.60", GC_160}, {"1.70", GC_170}, {"1.80", GC_180}, {"1.90", GC_190}, {"2.00", GC_200}, {"2.10", GC_210}, {"2.20", GC_220}, {"2.30", GC_230}, {"2.40", GC_240}, {"2.50", GC_250}, {"2.60", GC_260}, {"2.70", GC_270}, {"2.80", GC_280}, {"2.90", GC_290}, {"3.00", GC_300}};
+
+char *txt_def_lvltype_req[] =
+    {
+        ("Id"), ("Act"), ("Name"),
+        ("File 1"), ("File 2"), ("File 3"), ("File 4"), ("File 5"),
+        ("File 6"), ("File 7"), ("File 8"), ("File 9"), ("File 10"),
+        ("File 11"), ("File 12"), ("File 13"), ("File 14"), ("File 15"),
+        ("File 16"), ("File 17"), ("File 18"), ("File 19"), ("File 20"),
+        ("File 21"), ("File 22"), ("File 23"), ("File 24"), ("File 25"),
+        ("File 26"), ("File 27"), ("File 28"), ("File 29"), ("File 30"),
+        ("File 31"), ("File 32"),
+        NULL // DO NOT REMOVE !
 };
 
-char * txt_def_lvltype_req[] =
-{
-   ("Id"),      ("Act"),     ("Name"),
-   ("File 1"),  ("File 2"),  ("File 3"),  ("File 4"),  ("File 5"),
-   ("File 6"),  ("File 7"),  ("File 8"),  ("File 9"),  ("File 10"),
-   ("File 11"), ("File 12"), ("File 13"), ("File 14"), ("File 15"),
-   ("File 16"), ("File 17"), ("File 18"), ("File 19"), ("File 20"),
-   ("File 21"), ("File 22"), ("File 23"), ("File 24"), ("File 25"),
-   ("File 26"), ("File 27"), ("File 28"), ("File 29"), ("File 30"),
-   ("File 31"), ("File 32"),
-   NULL // DO NOT REMOVE !
+char *txt_def_lvlprest_req[] =
+    {
+        ("Def"), ("Dt1Mask"),
+        ("File1"), ("File2"), ("File3"), ("File4"), ("File5"), ("File6"),
+        ("Name"), ("LevelId"),
+        NULL // DO NOT REMOVE !
 };
 
-char * txt_def_lvlprest_req[] =
-{
-   ("Def"),   ("Dt1Mask"),
-   ("File1"), ("File2"), ("File3"), ("File4"), ("File5"), ("File6"),
-   ("Name"),  ("LevelId"),
-   NULL // DO NOT REMOVE !
+char *txt_def_levels_req[] =
+    {
+        ("Name"), ("Id"), ("Act"), ("LevelType"),
+        ("SizeX"), ("SizeY"), ("OffsetX"), ("OffsetY"),
+        ("Waypoint"), ("Quest"),
+        ("MonLvl1"), ("MonLvl2"), ("MonLvl3"),
+        ("MonDen"), ("MonDen(N)"), ("MonDen(H)"),
+        /* Visibility */
+        ("Vis0"), ("Vis1"), ("Vis2"), ("Vis3"),
+        ("Vis4"), ("Vis5"), ("Vis6"), ("Vis7"),
+        ("Warp0"), ("Warp1"), ("Warp2"), ("Warp3"),
+        ("Warp4"), ("Warp5"), ("Warp6"), ("Warp7"),
+        /* Environment */
+        ("Rain"), ("Mud"), ("Intensity"), ("Red"), ("Green"), ("Blue"),
+        ("IsInside"), ("Teleport"),
+        /* Monster Types */
+        ("NumMon"),
+        ("mon1"), ("mon2"), ("mon3"), ("mon4"), ("mon5"),
+        ("mon6"), ("mon7"), ("mon8"), ("mon9"), ("mon10"),
+        ("nmon1"), ("nmon2"), ("nmon3"), ("nmon4"), ("nmon5"),
+        ("nmon6"), ("nmon7"), ("nmon8"), ("nmon9"), ("nmon10"),
+        ("umon1"), ("umon2"), ("umon3"), ("umon4"), ("umon5"),
+        ("umon6"), ("umon7"), ("umon8"), ("umon9"), ("umon10"),
+        /* Properties */
+        ("DrlgType"), ("SubType"), ("SubTheme"), ("Depend"),
+        ("Layer"), ("Pal"), ("LevelName"), ("LevelWarp"),
+        ("SoundEnv"), ("Portal"), ("Position"), ("SaveMonsters"),
+        NULL // DO NOT REMOVE !
 };
 
-char * txt_def_levels_req[] =
-{
-   ("Name"), ("Id"), ("Act"), ("LevelType"),
-   NULL // DO NOT REMOVE !
+char *txt_def_obj_req[] =
+    {
+        // number
+        ("Act"),
+        ("Type"),
+        ("Id"),
+        ("Direction"),
+        ("Index"),
+        ("Objects.txt_ID"),
+        ("Monstats.txt_ID"),
+
+        // text
+        ("Base"),
+        ("Token"),
+        ("Mode"),
+        ("Class"),
+        ("HD"), ("TR"), ("LG"), ("RA"), ("LA"), ("RH"), ("LH"), ("SH"),
+        ("S1"), ("S2"), ("S3"), ("S4"), ("S5"), ("S6"), ("S7"), ("S8"),
+        ("Colormap"),
+        ("Description"),
+
+        NULL // DO NOT REMOVE !
 };
 
-char * txt_def_obj_req[] =
-{
-   // number
-   ("Act"),
-   ("Type"),
-   ("Id"),
-   ("Direction"),
-   ("Index"),
-   ("Objects.txt_ID"),
-   ("Monstats.txt_ID"),
+char *txt_def_objects_req[] =
+    {
+        // number
+        ("Id"),
+        ("SizeX"),
+        ("SizeY"),
+        ("FrameCnt0"),
+        ("FrameCnt1"),
+        ("FrameCnt2"),
+        ("FrameCnt3"),
+        ("FrameCnt4"),
+        ("FrameCnt5"),
+        ("FrameCnt6"),
+        ("FrameCnt7"),
+        ("FrameDelta0"),
+        ("FrameDelta1"),
+        ("FrameDelta2"),
+        ("FrameDelta3"),
+        ("FrameDelta4"),
+        ("FrameDelta5"),
+        ("FrameDelta6"),
+        ("FrameDelta7"),
+        ("CycleAnim0"),
+        ("CycleAnim1"),
+        ("CycleAnim2"),
+        ("CycleAnim3"),
+        ("CycleAnim4"),
+        ("CycleAnim5"),
+        ("CycleAnim6"),
+        ("CycleAnim7"),
+        ("Lit0"),
+        ("Lit1"),
+        ("Lit2"),
+        ("Lit3"),
+        ("Lit4"),
+        ("Lit5"),
+        ("Lit6"),
+        ("Lit7"),
+        ("BlocksLight0"),
+        ("BlocksLight1"),
+        ("BlocksLight2"),
+        ("BlocksLight3"),
+        ("BlocksLight4"),
+        ("BlocksLight5"),
+        ("BlocksLight6"),
+        ("BlocksLight7"),
+        ("Start0"),
+        ("Start1"),
+        ("Start2"),
+        ("Start3"),
+        ("Start4"),
+        ("Start5"),
+        ("Start6"),
+        ("Start7"),
+        ("BlocksVis"),
+        ("Trans"),
+        ("OrderFlag0"),
+        ("OrderFlag1"),
+        ("OrderFlag2"),
+        ("OrderFlag3"),
+        ("OrderFlag4"),
+        ("OrderFlag5"),
+        ("OrderFlag6"),
+        ("OrderFlag7"),
+        ("Mode0"),
+        ("Mode1"),
+        ("Mode2"),
+        ("Mode3"),
+        ("Mode4"),
+        ("Mode5"),
+        ("Mode6"),
+        ("Mode7"),
+        ("Yoffset"),
+        ("Xoffset"),
+        ("Draw"),
+        ("Red"),
+        ("Green"),
+        ("Blue"),
+        ("TotalPieces"),
+        ("SubClass"),
+        ("Xspace"),
+        ("YSpace"),
+        ("OperateRange"),
+        ("Act"),
+        ("Sync"),
+        ("Flicker"),
+        ("Overlay"),
+        ("CollisionSubst"),
+        ("Left"),
+        ("Top"),
+        ("Width"),
+        ("Height"),
+        ("BlockMissile"),
+        ("DrawUnder"),
+        ("HD"), ("TR"), ("LG"), ("RA"), ("LA"), ("RH"), ("LH"), ("SH"),
+        ("S1"), ("S2"), ("S3"), ("S4"), ("S5"), ("S6"), ("S7"), ("S8"),
 
-   // text
-   ("Base"),
-   ("Token"),
-   ("Mode"),
-   ("Class"),
-   ("HD"), ("TR"), ("LG"), ("RA"), ("LA"), ("RH"), ("LH"), ("SH"),
-   ("S1"), ("S2"), ("S3"), ("S4"), ("S5"), ("S6"), ("S7"), ("S8"),
-   ("Colormap"),
-   ("Description"),
+        // text
+        ("Token"),
 
-   NULL // DO NOT REMOVE !
+        NULL // DO NOT REMOVE !
 };
 
-char * txt_def_objects_req[] =
-{
-   // number
-   ("Id"),
-   ("SizeX"),
-   ("SizeY"),
-   ("FrameCnt0"),
-   ("FrameCnt1"),
-   ("FrameCnt2"),
-   ("FrameCnt3"),
-   ("FrameCnt4"),
-   ("FrameCnt5"),
-   ("FrameCnt6"),
-   ("FrameCnt7"),
-   ("FrameDelta0"),
-   ("FrameDelta1"),
-   ("FrameDelta2"),
-   ("FrameDelta3"),
-   ("FrameDelta4"),
-   ("FrameDelta5"),
-   ("FrameDelta6"),
-   ("FrameDelta7"),
-   ("CycleAnim0"),
-   ("CycleAnim1"),
-   ("CycleAnim2"),
-   ("CycleAnim3"),
-   ("CycleAnim4"),
-   ("CycleAnim5"),
-   ("CycleAnim6"),
-   ("CycleAnim7"),
-   ("Lit0"),
-   ("Lit1"),
-   ("Lit2"),
-   ("Lit3"),
-   ("Lit4"),
-   ("Lit5"),
-   ("Lit6"),
-   ("Lit7"),
-   ("BlocksLight0"),
-   ("BlocksLight1"),
-   ("BlocksLight2"),
-   ("BlocksLight3"),
-   ("BlocksLight4"),
-   ("BlocksLight5"),
-   ("BlocksLight6"),
-   ("BlocksLight7"),
-   ("Start0"),
-   ("Start1"),
-   ("Start2"),
-   ("Start3"),
-   ("Start4"),
-   ("Start5"),
-   ("Start6"),
-   ("Start7"),
-   ("BlocksVis"),
-   ("Trans"),
-   ("OrderFlag0"),
-   ("OrderFlag1"),
-   ("OrderFlag2"),
-   ("OrderFlag3"),
-   ("OrderFlag4"),
-   ("OrderFlag5"),
-   ("OrderFlag6"),
-   ("OrderFlag7"),
-   ("Mode0"),
-   ("Mode1"),
-   ("Mode2"),
-   ("Mode3"),
-   ("Mode4"),
-   ("Mode5"),
-   ("Mode6"),
-   ("Mode7"),
-   ("Yoffset"),
-   ("Xoffset"),
-   ("Draw"),
-   ("Red"),
-   ("Green"),
-   ("Blue"),
-   ("TotalPieces"),
-   ("SubClass"),
-   ("Xspace"),
-   ("YSpace"),
-   ("OperateRange"),
-   ("Act"),
-   ("Sync"),
-   ("Flicker"),
-   ("Overlay"),
-   ("CollisionSubst"),
-   ("Left"),
-   ("Top"),
-   ("Width"),
-   ("Height"),
-   ("BlockMissile"),
-   ("DrawUnder"),
-   ("HD"), ("TR"), ("LG"), ("RA"), ("LA"), ("RH"), ("LH"), ("SH"),
-   ("S1"), ("S2"), ("S3"), ("S4"), ("S5"), ("S6"), ("S7"), ("S8"),
+char **glb_txt_req_ptr[RQ_MAX] = {NULL, NULL, NULL, NULL, NULL};
 
-   // text
-   ("Token"),
-
-   NULL // DO NOT REMOVE !
-};
-
-char ** glb_txt_req_ptr[RQ_MAX] = {NULL, NULL, NULL, NULL, NULL};
-       
-CONFIG_S      glb_config;                     // global configuration datas
-GLB_DS1EDIT_S glb_ds1edit;                    // global datas of the editor
-GLB_MPQ_S     glb_mpq_struct [MAX_MPQ_FILE];  // global data of 1 mpq
-DS1_S         * glb_ds1                = NULL; // ds1 datas
-DT1_S         * glb_dt1                = NULL; // dt1 datas
-char          glb_tiles_path        [] = "Data\\Global\\Tiles\\";
-char          glb_ds1edit_data_dir  [] = "Data\\";
-char          glb_ds1edit_tmp_dir   [] = "Tmp\\";
+CONFIG_S glb_config;                    // global configuration datas
+GLB_DS1EDIT_S glb_ds1edit;              // global datas of the editor
+GLB_MPQ_S glb_mpq_struct[MAX_MPQ_FILE]; // global data of 1 mpq
+DS1_S *glb_ds1 = NULL;                  // ds1 datas
+DT1_S *glb_dt1 = NULL;                  // dt1 datas
+char glb_tiles_path[] = "Data\\Global\\Tiles\\";
+char glb_ds1edit_data_dir[] = "Data\\";
+char glb_ds1edit_tmp_dir[] = "Tmp\\";
 
 // debug files
-char          * glb_path_lvltypes_mem = "Debug\\Editor.lvltypes.memory.bin";
-char          * glb_path_lvltypes_def = "Debug\\D2.lvltypes.headers.txt";
-char          * glb_path_lvlprest_mem = "Debug\\Editor.lvlprest.memory.bin";
-char          * glb_path_lvlprest_def = "Debug\\D2.lvlprest.headers.txt";
-char          * glb_path_obj_mem      = "Debug\\Editor.obj.memory.bin";
-char          * glb_path_obj_def      = "Debug\\Editor.obj.headers.txt";
-char          * glb_path_objects_mem  = "Debug\\Editor.objects.memory.bin";
-char          * glb_path_objects_def  = "Debug\\D2.objects.headers.txt";
-
+char *glb_path_lvltypes_mem = "Debug\\Editor.lvltypes.memory.bin";
+char *glb_path_lvltypes_def = "Debug\\D2.lvltypes.headers.txt";
+char *glb_path_lvlprest_mem = "Debug\\Editor.lvlprest.memory.bin";
+char *glb_path_lvlprest_def = "Debug\\D2.lvlprest.headers.txt";
+char *glb_path_obj_mem = "Debug\\Editor.obj.memory.bin";
+char *glb_path_obj_def = "Debug\\Editor.obj.headers.txt";
+char *glb_path_objects_mem = "Debug\\Editor.objects.memory.bin";
+char *glb_path_objects_def = "Debug\\D2.objects.headers.txt";
 
 // ==========================================================================
 // near the start of the prog
 void ds1edit_init(void)
 {
-   FILE * out;
+   FILE *out;
    static struct
    {
-      char   name[40];
+      char name[40];
       MODE_E idx;
    } cursor[MOD_MAX] = {
-        {"pcx\\cursor_t.png", MOD_T}, // tiles
-        {"pcx\\cursor_o.png", MOD_O}, // objects
-        {"pcx\\cursor_p.png", MOD_P}, // paths
-        {"pcx\\cursor_l.png", MOD_L}  // lights
-     };
-   int  i, o;
+       {"pcx\\cursor_t.png", MOD_T}, // tiles
+       {"pcx\\cursor_o.png", MOD_O}, // objects
+       {"pcx\\cursor_p.png", MOD_P}, // paths
+       {"pcx\\cursor_l.png", MOD_L}  // lights
+   };
+   int i, o;
    static int
-        dir4[4]   = { 0,  1,  2,  3},
-        dir8[8]   = { 4,  0,  5,  1,  6,  2,  7,  3},
+       dir4[4] = {0, 1, 2, 3},
+       dir8[8] = {4, 0, 5, 1, 6, 2, 7, 3},
 
-        dir16[16] = { 4,  8,  0,  9,  5, 10,  1, 11,
-                      6, 12,  2, 13,  7, 14,  3, 15},
+       dir16[16] = {4, 8, 0, 9, 5, 10, 1, 11,
+                    6, 12, 2, 13, 7, 14, 3, 15},
 
-        dir32[32] = { 4, 16,  8, 17,  0, 18,  9, 19,
-                      5, 20, 10, 21,  1, 22, 11, 23,
-                      6, 24, 12, 25,  2, 26, 13, 27,
-                      7, 28, 14, 29,  3, 30, 15, 31},
+       dir32[32] = {4, 16, 8, 17, 0, 18, 9, 19,
+                    5, 20, 10, 21, 1, 22, 11, 23,
+                    6, 24, 12, 25, 2, 26, 13, 27,
+                    7, 28, 14, 29, 3, 30, 15, 31},
 
-        obj_sub_tile[5][5] = {
-           { 0,  2,  5,  9, 14},
-           { 1,  4,  8, 13, 18},
-           { 3,  7, 12, 17, 21},
-           { 6, 11, 16, 20, 23},
-           {10, 15, 19, 22, 24}
-        };
+       obj_sub_tile[5][5] = {
+           {0, 2, 5, 9, 14},
+           {1, 4, 8, 13, 18},
+           {3, 7, 12, 17, 21},
+           {6, 11, 16, 20, 23},
+           {10, 15, 19, 22, 24}};
    char tmp[80];
-
 
    // zero mem
    printf("ds1edit_init()\n");
-   memset( & glb_config,  0, sizeof(glb_config));
-   memset( & glb_ds1edit, 0, sizeof(glb_ds1edit));
+   memset(&glb_config, 0, sizeof(glb_config));
+   memset(&glb_ds1edit, 0, sizeof(glb_ds1edit));
    glb_ds1edit.sidebar_width = 250;
+   glb_ds1edit.props_panel_width = 360;
+   props_panel_init();
 
    // allocate mem for DT1 & DS1
    i = sizeof(DS1_S) * DS1_MAX;
    printf("\nallocate %i bytes for glb_ds1[%i]\n", i, DS1_MAX);
-   glb_ds1 = (DS1_S *) malloc(i);
+   glb_ds1 = (DS1_S *)malloc(i);
    if (glb_ds1 == NULL)
    {
       sprintf(
-         tmp,
-         "ds1edit_init(), error.\n"
-         "Can't allocate %i bytes for the glb_ds1[%i] table.", i, DS1_MAX
-      );
+          tmp,
+          "ds1edit_init(), error.\n"
+          "Can't allocate %i bytes for the glb_ds1[%i] table.",
+          i, DS1_MAX);
       ds1edit_error(tmp);
    }
    memset(glb_ds1, 0, i);
 
    i = sizeof(DT1_S) * DT1_MAX;
    printf("allocate %i bytes for glb_dt1[%i]\n\n", i, DT1_MAX);
-   glb_dt1 = (DT1_S *) malloc(i);
+   glb_dt1 = (DT1_S *)malloc(i);
    if (glb_dt1 == NULL)
    {
       sprintf(
-         tmp,
-         "ds1edit_init(), error.\n"
-         "Can't allocate %i bytes for the glb_dt1[%i] table.", i, DT1_MAX
-      );
+          tmp,
+          "ds1edit_init(), error.\n"
+          "Can't allocate %i bytes for the glb_dt1[%i] table.",
+          i, DT1_MAX);
       ds1edit_error(tmp);
    }
    memset(glb_dt1, 0, i);
 
    // set the version
    glb_ds1edit.version_build = DS1EDIT_BUILD;
-   glb_ds1edit.version_dll   = "Allegro 5";
+   glb_ds1edit.version_dll = "Allegro 5";
    strcpy(glb_ds1edit.version, DS1EDIT_BUILD);
    printf(".exe version : %s", COMPILER_NAME);
    printf(
-      ", Build Date = %s, Build Mode = %s\n",
-      glb_ds1edit.version,
-      DS1EDIT_BUILD_MODE
-   );
+       ", Build Date = %s, Build Mode = %s\n",
+       glb_ds1edit.version,
+       DS1EDIT_BUILD_MODE);
    // update the version info on disk
    sprintf(tmp, "%sversion", glb_ds1edit_data_dir);
    out = fopen(tmp, "wb");
@@ -342,34 +355,34 @@ void ds1edit_init(void)
       fclose(out);
    }
 
-   for (i=0; i<MAX_MPQ_FILE; i++)
+   for (i = 0; i < MAX_MPQ_FILE; i++)
    {
-      memset( & glb_mpq_struct[i], 0, sizeof(GLB_MPQ_S));
+      memset(&glb_mpq_struct[i], 0, sizeof(GLB_MPQ_S));
       glb_mpq_struct[i].is_open = FALSE;
    }
 
    // mouse cursors
-   for (i=0; i<MOD_MAX; i++)
+   for (i = 0; i < MOD_MAX; i++)
    {
       glb_ds1edit.mouse_cursor[i] =
-         al_load_bitmap(cursor[i].name);
+          al_load_bitmap(cursor[i].name);
       if (glb_ds1edit.mouse_cursor[i] == NULL)
       {
          sprintf(
-            tmp,
-            "ds1edit_init(), error.\n"
-            "Can't open the file \"%s\".", cursor[i].name
-         );
+             tmp,
+             "ds1edit_init(), error.\n"
+             "Can't open the file \"%s\".",
+             cursor[i].name);
          ds1edit_error(tmp);
       }
    }
 
    // txt
-   glb_txt_req_ptr[RQ_LVLTYPE]  = txt_def_lvltype_req;
+   glb_txt_req_ptr[RQ_LVLTYPE] = txt_def_lvltype_req;
    glb_txt_req_ptr[RQ_LVLPREST] = txt_def_lvlprest_req;
-   glb_txt_req_ptr[RQ_OBJ]      = txt_def_obj_req;
-   glb_txt_req_ptr[RQ_OBJECTS]  = txt_def_objects_req;
-   glb_txt_req_ptr[RQ_LEVELS]   = txt_def_levels_req;
+   glb_txt_req_ptr[RQ_OBJ] = txt_def_obj_req;
+   glb_txt_req_ptr[RQ_OBJECTS] = txt_def_objects_req;
+   glb_txt_req_ptr[RQ_LEVELS] = txt_def_levels_req;
 
    // debug files
    remove(glb_path_lvltypes_mem);
@@ -384,42 +397,50 @@ void ds1edit_init(void)
    // tables
    glb_ds1edit.new_dir1[0] = 0;
 
-   for (i=0; i < 4; i++)
+   for (i = 0; i < 4; i++)
       glb_ds1edit.new_dir4[i] = dir4[i];
 
-   for (i=0; i < 8; i++)
+   for (i = 0; i < 8; i++)
       glb_ds1edit.new_dir8[i] = dir8[i];
-   
-   for (i=0; i < 16; i++)
+
+   for (i = 0; i < 16; i++)
       glb_ds1edit.new_dir16[i] = dir16[i];
 
-   for (i=0; i < 32; i++)
+   for (i = 0; i < 32; i++)
       glb_ds1edit.new_dir32[i] = dir32[i];
 
    // for re-ordering sub-tile objects, from back to front
-   for (i=0; i < 5; i++)
-      for (o=0; o < 5; o++)
+   for (i = 0; i < 5; i++)
+      for (o = 0; o < 5; o++)
          glb_ds1edit.obj_sub_tile_order[i][o] = obj_sub_tile[i][o];
 
    // init the default values of the command line
-   glb_ds1edit.cmd_line.ds1_filename  = NULL;
-   glb_ds1edit.cmd_line.ini_filename  = NULL;
-   glb_ds1edit.cmd_line.lvltype_id    = -1;
-   glb_ds1edit.cmd_line.lvlprest_def  = -1;
-   glb_ds1edit.cmd_line.resize_width  = -1;
+   glb_ds1edit.cmd_line.ds1_filename = NULL;
+   glb_ds1edit.cmd_line.ini_filename = NULL;
+   glb_ds1edit.cmd_line.lvltype_id = -1;
+   glb_ds1edit.cmd_line.lvlprest_def = -1;
+   glb_ds1edit.cmd_line.resize_width = -1;
    glb_ds1edit.cmd_line.resize_height = -1;
    glb_ds1edit.cmd_line.force_pal_num = -1;
-   glb_ds1edit.cmd_line.no_check_act  = FALSE;
-   glb_ds1edit.cmd_line.dt1_list_num  = -1;
+   glb_ds1edit.cmd_line.no_check_act = FALSE;
+   glb_ds1edit.cmd_line.dt1_list_num = -1;
    glb_ds1edit.cmd_line.headless_mode = FALSE;
    glb_ds1edit.cmd_line.headless_output = NULL;
    glb_ds1edit.cmd_line.area_name = NULL;
    glb_ds1edit.cmd_line.list_areas = FALSE;
    glb_ds1edit.cmd_line.list_areas_ext = FALSE;
    glb_ds1edit.cmd_line.list_files = FALSE;
+   glb_ds1edit.cmd_line.audit_lvltypes = FALSE;
    glb_ds1edit.cmd_line.list_files_filter = NULL;
    glb_ds1edit.cmd_line.file_path = NULL;
-   for (i=0; i < DT1_IN_DS1_MAX; i++)
+   glb_ds1edit.cmd_line.export_asset_path = NULL;
+   glb_ds1edit.cmd_line.export_asset_output_dir = NULL;
+   glb_ds1edit.cmd_line.export_area_name = NULL;
+   glb_ds1edit.cmd_line.export_area_output_dir = NULL;
+   glb_ds1edit.cmd_line.export_prefix = NULL;
+   glb_ds1edit.cmd_line.export_prefix_type = NULL;
+   glb_ds1edit.cmd_line.export_prefix_output_dir = NULL;
+   for (i = 0; i < DT1_IN_DS1_MAX; i++)
       glb_ds1edit.cmd_line.dt1_list_filename[i] = NULL;
 
    // 2nd row of infos
@@ -429,9 +450,8 @@ void ds1edit_init(void)
    glb_ds1edit.video_page_num = 0;
 }
 
-
 // ==========================================================================
-UDWORD ds1edit_get_bitmap_size(ALLEGRO_BITMAP * bmp)
+UDWORD ds1edit_get_bitmap_size(ALLEGRO_BITMAP *bmp)
 {
    UDWORD size = 0;
    int w, h;
@@ -448,13 +468,11 @@ UDWORD ds1edit_get_bitmap_size(ALLEGRO_BITMAP * bmp)
    return size;
 }
 
-
-
 // ==========================================================================
 // RLE sprites no longer exist in Allegro 5 -- this is kept as a stub
 // that treats the pointer as an ALLEGRO_BITMAP for callers that still
 // reference it during the migration period.
-UDWORD ds1edit_get_RLE_bitmap_size(ALLEGRO_BITMAP * bmp)
+UDWORD ds1edit_get_RLE_bitmap_size(ALLEGRO_BITMAP *bmp)
 {
    if (bmp == NULL)
       return 0;
@@ -462,14 +480,13 @@ UDWORD ds1edit_get_RLE_bitmap_size(ALLEGRO_BITMAP * bmp)
    return (UDWORD)(4 * al_get_bitmap_width(bmp) * al_get_bitmap_height(bmp));
 }
 
-
 // ==========================================================================
 // Recreate the offscreen render targets after the display exists so Allegro
 // can allocate them as display bitmaps instead of memory bitmaps.
 void ds1edit_recreate_render_targets(void)
 {
-   ALLEGRO_BITMAP * new_big_screen_buff;
-   ALLEGRO_BITMAP * new_screen_buff;
+   ALLEGRO_BITMAP *new_big_screen_buff;
+   ALLEGRO_BITMAP *new_screen_buff;
    int old_width;
    int old_height;
    char tmp[160];
@@ -477,37 +494,33 @@ void ds1edit_recreate_render_targets(void)
    old_width = glb_config.screen.width;
    old_height = glb_config.screen.height;
 
-   glb_config.screen.width  += 600;
+   glb_config.screen.width += 600;
    glb_config.screen.height += 600;
    new_big_screen_buff = al_create_bitmap(
-      glb_config.screen.width,
-      glb_config.screen.height
-   );
+       glb_config.screen.width,
+       glb_config.screen.height);
    if (new_big_screen_buff == NULL)
    {
       sprintf(tmp, "main(), error.\nCan't recreate big_screen_buff (%i*%i pixels).",
-         glb_config.screen.width,
-         glb_config.screen.height
-      );
+              glb_config.screen.width,
+              glb_config.screen.height);
       ds1edit_error(tmp);
    }
    glb_config.screen.width = old_width;
    glb_config.screen.height = old_height;
 
    new_screen_buff = al_create_sub_bitmap(
-      new_big_screen_buff,
-      300,
-      300,
-      glb_config.screen.width,
-      glb_config.screen.height
-   );
+       new_big_screen_buff,
+       300,
+       300,
+       glb_config.screen.width,
+       glb_config.screen.height);
    if (new_screen_buff == NULL)
    {
       al_destroy_bitmap(new_big_screen_buff);
       sprintf(tmp, "main(), error.\nCan't recreate sub-bitmap screen_buff (%i*%i pixels).",
-         glb_config.screen.width,
-         glb_config.screen.height
-      );
+              glb_config.screen.width,
+              glb_config.screen.height);
       ds1edit_error(tmp);
    }
 
@@ -520,7 +533,6 @@ void ds1edit_recreate_render_targets(void)
    glb_ds1edit.screen_buff = new_screen_buff;
 }
 
-
 // ==========================================================================
 // automatically called at the end, with the help of atexit()
 void ds1edit_exit(void)
@@ -529,31 +541,41 @@ void ds1edit_exit(void)
    static int already_called = 0;
 
    /* Guard against being called twice (atexit + explicit) */
-   if (already_called) return;
+   if (already_called)
+      return;
    already_called = 1;
 
    printf("\nds1edit_exit()\n");
+
+   // Persist preferences (recent projects, last D2 install). Best-effort;
+   // failures are logged but not fatal.
+   if (prefs_save() == 0)
+      fprintf(stderr, "prefs_save: failed\n");
+
+   // Release the preset index (just a flat malloc; tables themselves live
+   // in glb_ds1edit.*_buff and are freed elsewhere).
+   mpq_index_destroy();
 
    /* Skip Allegro bitmap cleanup — al_destroy_bitmap is unsafe during shutdown
     * due to heap corruption. The OS reclaims all process memory on exit anyway.
     * We still close file handles and free non-bitmap allocations. */
 
    // close all mpq
-   for (i=0; i<MAX_MPQ_FILE; i++)
+   for (i = 0; i < MAX_MPQ_FILE; i++)
    {
       if (glb_mpq_struct[i].is_open != FALSE)
       {
          fprintf(stderr, "closing %s\n", glb_mpq_struct[i].file_name);
          fflush(stderr);
 
-         glb_mpq = & glb_mpq_struct[i];
+         glb_mpq = &glb_mpq_struct[i];
          mpq_batch_close();
-         
-         memset( & glb_mpq_struct[i], 0, sizeof(GLB_MPQ_S));
+
+         memset(&glb_mpq_struct[i], 0, sizeof(GLB_MPQ_S));
          glb_mpq_struct[i].is_open = FALSE;
       }
    }
-   
+
    // free non-bitmap memory (skip al_destroy_bitmap — causes heap corruption
    // during shutdown; OS reclaims all process memory on exit)
    fprintf(stderr, "exit, memory free :\n");
@@ -562,27 +584,31 @@ void ds1edit_exit(void)
    // config, mpq name
    fprintf(stderr, "   * config, mpq names...\n");
    fflush(stderr);
-   for (i=0; i<MAX_MPQ_FILE; i++)
+   if (glb_config.d2_install != NULL)
+      free(glb_config.d2_install);
+   if (glb_config.upscale_service_url != NULL)
+      free(glb_config.upscale_service_url);
+   for (i = 0; i < MAX_MPQ_FILE; i++)
    {
-      if(glb_config.mpq_file[i] != NULL)
+      if (glb_config.mpq_file[i] != NULL)
          free(glb_config.mpq_file[i]);
    }
 
    // config, mod directory
    fprintf(stderr, "   * config, mod directory name...\n");
    fflush(stderr);
-   for (i=0; i<MAX_MOD_DIR; i++)
+   for (i = 0; i < MAX_MOD_DIR; i++)
    {
-      if(glb_config.mod_dir[i] != NULL)
+      if (glb_config.mod_dir[i] != NULL)
          free(glb_config.mod_dir[i]);
    }
 
    // palettes
    fprintf(stderr, "   * palettes...\n");
    fflush(stderr);
-   for (i=0; i<ACT_MAX; i++)
+   for (i = 0; i < ACT_MAX; i++)
    {
-      if(glb_ds1edit.d2_pal[i] != NULL)
+      if (glb_ds1edit.d2_pal[i] != NULL)
       {
          free(glb_ds1edit.d2_pal[i]);
          glb_ds1edit.d2_pal[i] = NULL;
@@ -623,7 +649,7 @@ void ds1edit_exit(void)
    // ds1 & dt1
    if (glb_ds1 != NULL)
    {
-      for (i=0; i < DS1_MAX; i++)
+      for (i = 0; i < DS1_MAX; i++)
       {
          if (glb_ds1[i].obj != NULL)
             free(glb_ds1[i].obj);
@@ -634,10 +660,9 @@ void ds1edit_exit(void)
    }
    if (glb_dt1 != NULL)
       free(glb_dt1);
-   
+
    fflush(stderr);
 }
-
 
 // ==========================================================================
 // just for debug purpose
@@ -649,6 +674,8 @@ void ds1edit_debug(void)
    printf("d2exp                   = %s\n", glb_config.mpq_file[1]);
    printf("patch_d2                = %s\n", glb_config.mpq_file[0]);
    printf("mod_dir                 = %s\n", glb_config.mod_dir[0]);
+   printf("upscale_enabled         = %s\n", glb_config.upscale_enabled ? "YES" : "NO");
+   printf("upscale_service_url     = %s\n", glb_config.upscale_service_url ? glb_config.upscale_service_url : "");
    printf("fullscreen              = %s\n", glb_config.fullscreen ? "YES" : "NO");
    printf("screen_width            = %i\n", glb_config.screen.width);
    printf("screen_height           = %i\n", glb_config.screen.height);
@@ -658,60 +685,88 @@ void ds1edit_debug(void)
    printf("mouse_scroll_x          = %i\n", glb_config.scroll.mouse.x);
    printf("mouse_scroll_y          = %i\n", glb_config.scroll.mouse.y);
    printf("edit_scroll_x           = %i\n", glb_config.scroll.edit.x);
-   printf("edit_scroll_y           = %i\n", glb_config.scroll.edit.y);   
+   printf("edit_scroll_y           = %i\n", glb_config.scroll.edit.y);
    printf("obj_edit_scroll         = %i\n", glb_config.scroll.obj_edit);
    printf("gamma_correction        = %s\n", glb_gamma_str[glb_config.gamma].str);
-   printf("only_normal_type2       = %s\n", glb_config.normal_type2        ? "YES" : "NO");
-   printf("always_max_layers       = %s\n", glb_config.always_max_layers   ? "YES" : "NO");
-   printf("stretch_sprites         = %s\n", glb_config.stretch_sprites     ? "YES" : "NO");
-   printf("winobj_can_scroll_keyb  = %s\n", glb_config.winobj_scroll_keyb  ? "YES" : "NO");
+   printf("only_normal_type2       = %s\n", glb_config.normal_type2 ? "YES" : "NO");
+   printf("always_max_layers       = %s\n", glb_config.always_max_layers ? "YES" : "NO");
+   printf("stretch_sprites         = %s\n", glb_config.stretch_sprites ? "YES" : "NO");
+   printf("winobj_can_scroll_keyb  = %s\n", glb_config.winobj_scroll_keyb ? "YES" : "NO");
    printf("winobj_can_scroll_mouse = %s\n", glb_config.winobj_scroll_mouse ? "YES" : "NO");
 
    printf("center_zoom             = ");
-   switch(glb_config.center_zoom)
+   switch (glb_config.center_zoom)
    {
-      case -1    : printf("NO_CHANGE\n"); break;
-      case ZM_21 : printf("2:1\n"); break;
-      case ZM_11 : printf("1:1\n"); break;
-      case ZM_12 : printf("1:2\n"); break;
-      case ZM_14 : printf("1:4\n"); break;
-      case ZM_18 : printf("1:8\n"); break;
-      case ZM_116: printf("1:16\n"); break;
-      default : printf("?\n"); break;
+   case -1:
+      printf("NO_CHANGE\n");
+      break;
+   case ZM_21:
+      printf("2:1\n");
+      break;
+   case ZM_11:
+      printf("1:1\n");
+      break;
+   case ZM_12:
+      printf("1:2\n");
+      break;
+   case ZM_14:
+      printf("1:4\n");
+      break;
+   case ZM_18:
+      printf("1:8\n");
+      break;
+   case ZM_116:
+      printf("1:16\n");
+      break;
+   default:
+      printf("?\n");
+      break;
    }
 
    printf("default_zoom            = ");
-   switch(glb_config.default_zoom)
+   switch (glb_config.default_zoom)
    {
-      case ZM_21 : printf("2:1\n"); break;
-      case ZM_11 : printf("1:1\n"); break;
-      case ZM_12 : printf("1:2\n"); break;
-      case ZM_14 : printf("1:4\n"); break;
-      case ZM_18 : printf("1:8\n"); break;
-      case ZM_116: printf("1:16\n"); break;
-      default : printf("1:1\n"); break;
+   case ZM_21:
+      printf("2:1\n");
+      break;
+   case ZM_11:
+      printf("1:1\n");
+      break;
+   case ZM_12:
+      printf("1:2\n");
+      break;
+   case ZM_14:
+      printf("1:4\n");
+      break;
+   case ZM_18:
+      printf("1:8\n");
+      break;
+   case ZM_116:
+      printf("1:16\n");
+      break;
+   default:
+      printf("1:1\n");
+      break;
    }
    printf("nb_type1_per_act        = %i\n", glb_config.nb_type1_per_act);
    printf("nb_type2_per_act        = %i\n", glb_config.nb_type2_per_act);
-   printf("ds1_saved_minimize      = %s\n", glb_config.minimize_ds1         ? "YES" : "NO");
+   printf("ds1_saved_minimize      = %s\n", glb_config.minimize_ds1 ? "YES" : "NO");
    printf("lower_speed_zoom_out    = %s\n", glb_config.lower_speed_zoom_out ? "YES" : "NO");
-   printf("workspace_enable        = %s\n", glb_config.workspace_enable     ? "YES" : "NO");
+   printf("workspace_enable        = %s\n", glb_config.workspace_enable ? "YES" : "NO");
    printf("\n");
 }
 
-
 // Timer callbacks removed -- Allegro 5 uses event-based timers.
 // Tick and FPS counting is now handled in the main event loop.
-
 
 // ==========================================================================
 // open all mpq
 void ds1edit_open_all_mpq(void)
 {
-   int  i;
+   int i;
 
    printf("ds1edit_open_all_mpq()\n");
-   for (i=0; i<MAX_MPQ_FILE; i++)
+   for (i = 0; i < MAX_MPQ_FILE; i++)
    {
       if (glb_config.mpq_file[i] != NULL)
       {
@@ -719,26 +774,25 @@ void ds1edit_open_all_mpq(void)
          fprintf(stderr, "opening %s\n", glb_config.mpq_file[i]);
          fflush(stdout);
          fflush(stderr);
-         glb_mpq = & glb_mpq_struct[i];
+         glb_mpq = &glb_mpq_struct[i];
          mpq_batch_open(glb_config.mpq_file[i]);
       }
    }
 }
 
-
 // ==========================================================================
 // load palettes of the 5 acts from disk, else from mpq
 void ds1edit_load_palettes(void)
 {
-   int  i, entry;
+   int i, entry;
    char palname[80], tmp[150];
-   
+
    fprintf(stderr, "loading palettes");
    fprintf(stdout, "\nloading palettes\n");
    fflush(stderr);
    fflush(stdout);
-   
-   for (i=0; i<ACT_MAX; i++)
+
+   for (i = 0; i < ACT_MAX; i++)
    {
       glb_ds1edit.pal_loaded[i] = TRUE;
       // first checking on disk
@@ -746,26 +800,24 @@ void ds1edit_load_palettes(void)
       {
          // not already on disk
          glb_ds1edit.pal_loaded[i] = FALSE;
-         
+
          // make full path
-         sprintf(palname, "Data\\Global\\Palette\\Act%i\\Pal.pl2", i+1);
-         
+         sprintf(palname, "Data\\Global\\Palette\\Act%i\\Pal.pl2", i + 1);
+
          // load the palette
          printf("want to read a palette from mpq : %s\n", palname);
          entry = misc_load_mpq_file(
-                    palname,
-                    (char **) & glb_ds1edit.d2_pal[i],
-                    & glb_ds1edit.pal_size[i],
-                    TRUE
-                 );
+             palname,
+             (char **)&glb_ds1edit.d2_pal[i],
+             &glb_ds1edit.pal_size[i],
+             TRUE);
          if (entry == -1)
          {
             sprintf(
-               tmp,
-               "ds1edit_load_palettes() :\n"
-               "File \"%s\" not found.",
-               palname
-            );
+                tmp,
+                "ds1edit_load_palettes() :\n"
+                "File \"%s\" not found.",
+                palname);
             if (i < 4)
                ds1edit_error(tmp);
             else
@@ -787,15 +839,14 @@ void ds1edit_load_palettes(void)
    printf("\n");
 }
 
-
 // ==========================================================================
 // as expected, the start of the prog
-int main(int argc, char * argv[])
+int main(int argc, char *argv[])
 {
-   int         i, mpq_num=0, mod_num=0, ds1_idx=0;
-   char        * ininame = "ds1edit.ini";
-   static char tmp  [512];
-   static char tmp2 [512];
+   int i, mpq_num = 0, mod_num = 0, ds1_idx = 0;
+   char *ininame = "ds1edit.ini";
+   static char tmp[512];
+   static char tmp2[512];
 
    // init
    srand(time(NULL));
@@ -822,9 +873,9 @@ int main(int argc, char * argv[])
    // Allegro 5 version info
    printf("\n[allegro]\n");
    printf("allegro_version     = %i.%i.%i\n",
-      al_get_allegro_version() >> 24,
-      (al_get_allegro_version() >> 16) & 0xFF,
-      (al_get_allegro_version() >> 8) & 0xFF);
+          al_get_allegro_version() >> 24,
+          (al_get_allegro_version() >> 16) & 0xFF,
+          (al_get_allegro_version() >> 8) & 0xFF);
    printf("\n");
 
    // check data\tmp directory
@@ -839,31 +890,64 @@ int main(int argc, char * argv[])
       {
          // re-use the tmp var for a different string
          sprintf(
-            tmp,
-            "main(), error.\n"
-            "Can't create directory \"%s%s\".",
-            glb_ds1edit_data_dir, glb_ds1edit_tmp_dir);
+             tmp,
+             "main(), error.\n"
+             "Can't create directory \"%s%s\".",
+             glb_ds1edit_data_dir, glb_ds1edit_tmp_dir);
          tmp[strlen(tmp) - 1] = 0;
          ds1edit_error(tmp);
       }
    }
-   
+
    // check if ds1edit.ini exists
    sprintf(tmp, "ds1edit.ini");
    if (a5_file_exists(tmp) == 0)
    {
       ini_create(tmp);
       printf(
-         "main(), error.\n"
-         "There was no 'Ds1edit.ini' file in the Ds1edit directory.\n"
-         "A new one with default values was created.\n"
-         "Edit it to fit your configuration, then restart the program.\n"
-      );
+          "main(), error.\n"
+          "There was no 'Ds1edit.ini' file in the Ds1edit directory.\n"
+          "A new one with default values was created.\n"
+          "Edit it to fit your configuration, then restart the program.\n");
       exit(DS1ERR_INICREATE);
    }
 
    // init (config)
    ini_read(ininame);
+
+   // global preferences (remembered across sessions)
+   prefs_load();
+
+   // If the INI didn't specify a D2 install, fall back to the last one the
+   // editor used. Registry / common-path detection still runs as a further
+   // fallback inside d2install_resolve_mpqs().
+   if ((glb_config.d2_install == NULL || glb_config.d2_install[0] == 0) &&
+       glb_prefs.last_d2_install[0] != 0)
+   {
+      size_t len = strlen(glb_prefs.last_d2_install);
+      char *buf = (char *)malloc(len + 1);
+      if (buf != NULL)
+      {
+         memcpy(buf, glb_prefs.last_d2_install, len + 1);
+         glb_config.d2_install = buf;
+         fprintf(stdout,
+                 "d2install: seeded from preferences <%s>\n",
+                 glb_config.d2_install);
+      }
+   }
+
+   // Fill empty MPQ slots from the resolved install path (explicit INI
+   // entries always win).
+   d2install_resolve_mpqs();
+
+   // Record the install we landed on back into preferences for next session.
+   if (glb_config.d2_install != NULL && glb_config.d2_install[0] != 0)
+   {
+      strncpy(glb_prefs.last_d2_install, glb_config.d2_install,
+              sizeof(glb_prefs.last_d2_install) - 1);
+      glb_prefs.last_d2_install[sizeof(glb_prefs.last_d2_install) - 1] = 0;
+   }
+
    ds1edit_debug();
 
    // optional data_dir override from ini (default is "Data\")
@@ -876,10 +960,10 @@ int main(int argc, char * argv[])
          // ensure trailing backslash
          {
             int len = strlen(glb_ds1edit_data_dir);
-            if (len > 0 && glb_ds1edit_data_dir[len-1] != '\\' && glb_ds1edit_data_dir[len-1] != '/')
+            if (len > 0 && glb_ds1edit_data_dir[len - 1] != '\\' && glb_ds1edit_data_dir[len - 1] != '/')
             {
                glb_ds1edit_data_dir[len] = '\\';
-               glb_ds1edit_data_dir[len+1] = '\0';
+               glb_ds1edit_data_dir[len + 1] = '\0';
             }
          }
          printf("data_dir                = %s\n", glb_ds1edit_data_dir);
@@ -894,31 +978,29 @@ int main(int argc, char * argv[])
       if (a5_file_exists(tmp) == 0)
       {
          sprintf(
-            tmp2,
-            "main(), warning.\n"
-            "Can't find the Mod Directory defined in 'Ds1edit.ini' :\n"
-            "%s",
-            tmp
-         );
+             tmp2,
+             "main(), warning.\n"
+             "Can't find the Mod Directory defined in 'Ds1edit.ini' :\n"
+             "%s",
+             tmp);
          printf("%s\n", tmp2);
       }
       else
          mod_num = 1;
    }
 
-   for (i=0; i<MAX_MPQ_FILE; i++)
+   for (i = 0; i < MAX_MPQ_FILE; i++)
    {
       if (glb_config.mpq_file[i] != NULL)
       {
          if (a5_file_exists(glb_config.mpq_file[i]) == 0)
          {
             sprintf(
-               tmp2,
-               "main(), warning.\n"
-               "Can't find this MPQ defined in 'Ds1edit.ini' :\n"
-               "%s",
-               glb_config.mpq_file[i]
-            );
+                tmp2,
+                "main(), warning.\n"
+                "Can't find this MPQ defined in 'Ds1edit.ini' :\n"
+                "%s",
+                glb_config.mpq_file[i]);
             printf("%s\n", tmp2);
          }
          else
@@ -928,9 +1010,9 @@ int main(int argc, char * argv[])
    if ((mod_num == 0) && (mpq_num == 0))
    {
       sprintf(
-         tmp,
-         "main(), error.\n"
-         "No Mod Directory and no MPQ files available : it can't work.");
+          tmp,
+          "main(), error.\n"
+          "No Mod Directory and no MPQ files available : it can't work.");
       ds1edit_error(tmp);
    }
    else if (mpq_num < 4)
@@ -943,8 +1025,8 @@ int main(int argc, char * argv[])
    // preview window update
    glb_ds1edit.win_preview.x0 = 0;
    glb_ds1edit.win_preview.y0 = 0;
-   glb_ds1edit.win_preview.w  = glb_config.screen.width;
-   glb_ds1edit.win_preview.h  = glb_config.screen.height;
+   glb_ds1edit.win_preview.w = glb_config.screen.width;
+   glb_ds1edit.win_preview.h = glb_config.screen.height;
 
    // edit window
    wedit_read_pcx();
@@ -957,36 +1039,32 @@ int main(int argc, char * argv[])
    // this is to avoid potential problems with clipings, especially when using
    // the functions from gfx_custom.c
 
-   glb_config.screen.width  += 600;
+   glb_config.screen.width += 600;
    glb_config.screen.height += 600;
    glb_ds1edit.big_screen_buff = al_create_bitmap(
-      glb_config.screen.width,
-      glb_config.screen.height
-   );
+       glb_config.screen.width,
+       glb_config.screen.height);
    if (glb_ds1edit.big_screen_buff == NULL)
    {
       sprintf(tmp, "main(), error.\nCan't create big_screen_buff (%i*%i pixels).",
-         glb_config.screen.width,
-         glb_config.screen.height
-      );
+              glb_config.screen.width,
+              glb_config.screen.height);
       ds1edit_error(tmp);
    }
-   glb_config.screen.width  -= 600;
+   glb_config.screen.width -= 600;
    glb_config.screen.height -= 600;
 
    glb_ds1edit.screen_buff = al_create_sub_bitmap(
-      glb_ds1edit.big_screen_buff,
-      300,
-      300,
-      glb_config.screen.width,
-      glb_config.screen.height
-   );
+       glb_ds1edit.big_screen_buff,
+       300,
+       300,
+       glb_config.screen.width,
+       glb_config.screen.height);
    if (glb_ds1edit.screen_buff == NULL)
    {
       sprintf(tmp, "main(), error.\nCan't create sub-bitmap screen_buff (%i*%i pixels).",
-         glb_config.screen.width,
-         glb_config.screen.height
-      );
+              glb_config.screen.width,
+              glb_config.screen.height);
       ds1edit_error(tmp);
    }
 
@@ -1001,7 +1079,7 @@ int main(int argc, char * argv[])
    a5_current_palette = &glb_ds1edit.vga_pal[0];
 
    // parse the command line
-   if (misc_cmd_line_parse (argc, argv))
+   if (misc_cmd_line_parse(argc, argv))
       ds1edit_error("main(), error.\nProblem in the command line.");
 
    // create debug directory if necessary
@@ -1018,6 +1096,15 @@ int main(int argc, char * argv[])
    read_obj_txt();
    fprintf(stderr, "done\n");
 
+   // build the preset index from LvlPrest + Levels + LvlTypes (eager load +
+   // pre-joined rows so the preset picker and DS1->preset resolution are
+   // both O(1) lookups instead of re-scanning tables per call).
+   fprintf(stderr, "building preset index...");
+   if (mpq_index_build() < 0)
+      fprintf(stderr, "failed\n");
+   else
+      fprintf(stderr, "done\n");
+
    if (glb_ds1edit.cmd_line.ds1_filename != NULL)
    {
       // .ds1
@@ -1032,13 +1119,12 @@ int main(int argc, char * argv[])
       {
          // find dt1 list from .txt
          misc_open_1_ds1(
-            ds1_idx,
-            glb_ds1edit.cmd_line.ds1_filename,
-            glb_ds1edit.cmd_line.lvltype_id,
-            glb_ds1edit.cmd_line.lvlprest_def,
-            glb_ds1edit.cmd_line.resize_width,
-            glb_ds1edit.cmd_line.resize_height
-         );
+             ds1_idx,
+             glb_ds1edit.cmd_line.ds1_filename,
+             glb_ds1edit.cmd_line.lvltype_id,
+             glb_ds1edit.cmd_line.lvlprest_def,
+             glb_ds1edit.cmd_line.resize_width,
+             glb_ds1edit.cmd_line.resize_height);
       }
       glb_ds1edit.has_loaded_ds1 = TRUE;
    }
@@ -1082,6 +1168,131 @@ int main(int argc, char * argv[])
       }
       glb_ds1edit.has_loaded_ds1 = TRUE;
    }
+   else if (glb_ds1edit.cmd_line.export_area_name != NULL)
+   {
+      int group_idx;
+      int pal_idx;
+      int exported_count;
+
+      if (area_browser_init() != 0)
+      {
+         fprintf(stderr, "failed to initialize area browser for export\n");
+         return DS1ERR_CMDLINE;
+      }
+
+      if (area_browser_open_by_name(glb_ds1edit.cmd_line.export_area_name) < 0)
+      {
+         fprintf(stderr, "area export failed: area '%s' not found\n",
+                 glb_ds1edit.cmd_line.export_area_name);
+         return DS1ERR_CMDLINE;
+      }
+
+      group_idx = glb_ds1edit.area_browser.selected_group;
+      if (group_idx < 0)
+      {
+         fprintf(stderr, "area export failed: no area selected\n");
+         return DS1ERR_CMDLINE;
+      }
+
+      pal_idx = palette_resolve_index(glb_ds1edit.area_browser.groups[group_idx].act,
+                                      0);
+      if (pal_idx < 0 || pal_idx > 4)
+      {
+         pal_idx = (glb_ds1edit.cmd_line.force_pal_num == -1)
+                       ? 0
+                       : (glb_ds1edit.cmd_line.force_pal_num - 1);
+      }
+      a5_current_palette = &glb_ds1edit.vga_pal[pal_idx];
+
+      exported_count = asset_export_area_group_png(
+          &glb_ds1edit.area_browser.groups[group_idx],
+          glb_ds1edit.cmd_line.export_area_output_dir);
+      if (exported_count <= 0)
+      {
+         fprintf(stderr, "area export failed for %s\n",
+                 glb_ds1edit.cmd_line.export_area_name);
+         return DS1ERR_CMDLINE;
+      }
+
+      printf("exported %i PNG(s) for area %s into %s\n",
+             exported_count,
+             glb_ds1edit.cmd_line.export_area_name,
+             glb_ds1edit.cmd_line.export_area_output_dir);
+      return DS1ERR_OK;
+   }
+   else if (glb_ds1edit.cmd_line.export_prefix != NULL)
+   {
+      int pal_idx;
+      int exported_count;
+
+      pal_idx = (glb_ds1edit.cmd_line.force_pal_num == -1)
+                    ? 0
+                    : (glb_ds1edit.cmd_line.force_pal_num - 1);
+      a5_current_palette = &glb_ds1edit.vga_pal[pal_idx];
+
+      exported_count = asset_export_prefix_png(
+          glb_ds1edit.cmd_line.export_prefix,
+          glb_ds1edit.cmd_line.export_prefix_type,
+          glb_ds1edit.cmd_line.export_prefix_output_dir);
+      if (exported_count <= 0)
+      {
+         fprintf(stderr, "prefix asset export failed for %s (%s)\n",
+                 glb_ds1edit.cmd_line.export_prefix,
+                 glb_ds1edit.cmd_line.export_prefix_type);
+         return DS1ERR_CMDLINE;
+      }
+
+      printf("exported %i PNG(s) from prefix %s [%s] into %s\n",
+             exported_count,
+             glb_ds1edit.cmd_line.export_prefix,
+             glb_ds1edit.cmd_line.export_prefix_type,
+             glb_ds1edit.cmd_line.export_prefix_output_dir);
+      return DS1ERR_OK;
+   }
+   else if (glb_ds1edit.cmd_line.export_asset_path != NULL)
+   {
+      int pal_idx;
+      int exported_count;
+
+      pal_idx = (glb_ds1edit.cmd_line.force_pal_num == -1)
+                    ? 0
+                    : (glb_ds1edit.cmd_line.force_pal_num - 1);
+      a5_current_palette = &glb_ds1edit.vga_pal[pal_idx];
+
+      exported_count = asset_export_png(
+          glb_ds1edit.cmd_line.export_asset_path,
+          glb_ds1edit.cmd_line.export_asset_output_dir);
+      if (exported_count <= 0)
+      {
+         fprintf(stderr, "asset export failed for %s\n",
+                 glb_ds1edit.cmd_line.export_asset_path);
+         return DS1ERR_CMDLINE;
+      }
+
+      printf("exported %i PNG(s) from %s into %s\n",
+             exported_count,
+             glb_ds1edit.cmd_line.export_asset_path,
+             glb_ds1edit.cmd_line.export_asset_output_dir);
+      return DS1ERR_OK;
+   }
+   else if (glb_ds1edit.cmd_line.audit_lvltypes == TRUE)
+   {
+      int mismatch_count;
+
+      mismatch_count = area_browser_audit_lvltypes(stdout);
+      if (mismatch_count < 0)
+      {
+         fprintf(stderr, "LvlTypes audit failed\n");
+         return DS1ERR_CMDLINE;
+      }
+
+      if (mismatch_count == 0)
+         printf("LvlTypes audit: no Name/Act mismatches found\n");
+      else
+         printf("LvlTypes audit: %d Name/Act mismatches found\n", mismatch_count);
+
+      return DS1ERR_OK;
+   }
    else if (glb_ds1edit.cmd_line.area_name != NULL)
    {
       // --area "Act X - Name" : load from Excel data
@@ -1115,6 +1326,8 @@ int main(int argc, char * argv[])
    {
    }
    else if (glb_ds1edit.cmd_line.area_name != NULL ||
+            glb_ds1edit.cmd_line.export_area_name != NULL ||
+            glb_ds1edit.cmd_line.export_prefix != NULL ||
             glb_ds1edit.cmd_line.list_areas == TRUE ||
             glb_ds1edit.cmd_line.list_areas_ext == TRUE ||
             glb_ds1edit.cmd_line.list_files == TRUE ||
@@ -1125,18 +1338,19 @@ int main(int argc, char * argv[])
    else // syntax error
    {
       printf("syntaxe 1 : ds1edit <file.ds1> <lvlTypes.txt Id> <lvlPrest.txt Def> [options]\n");
+      printf("syntaxe 1b : ds1edit --export-asset <file.dt1|file.dcc|file.dc6> <output-dir> [options]\n");
+      printf("syntaxe 1c : ds1edit --export-area-assets \"Act X - Name\" <output-dir> [options]\n");
+      printf("syntaxe 1d : ds1edit --export-prefix-assets <virtual-prefix> <dt1|dc6|dcc|all> <output-dir> [options]\n");
       printf("syntaxe 2 : ds1edit <file.ini>\n"
              "\n"
              "   file.ini in syntaxe 2 is a text file, each line for 1 ds1 to load,\n"
              "   3 elements : <lvlTypes.txt Id> <lvlPrest.txt Def> <file.ds1>\n");
       printf(
-         "main(), error.\n"
-         "This program needs to get parameters by the command-line.\n"
-         "\n"
-         "Check the README.txt to know how to make .bat files,\n"
-         "or use a front-end tool like \"ds1edit Loader\" :\n"
-         WINDS1EDIT_GUI_LOADER_LINK "\n"
-      );
+          "main(), error.\n"
+          "This program needs to get parameters by the command-line.\n"
+          "\n"
+          "Check the README.txt to know how to make .bat files,\n"
+          "or use a front-end tool like \"ds1edit Loader\" :\n" WINDS1EDIT_GUI_LOADER_LINK "\n");
       exit(DS1ERR_CMDLINE);
    }
    printf("============================================================\n");
@@ -1174,15 +1388,16 @@ int main(int argc, char * argv[])
    // headless mode : render one frame and save to file, then exit
    if (glb_ds1edit.cmd_line.headless_mode == TRUE)
    {
-      ALLEGRO_BITMAP * old_screen_buff;
-      int              pal_idx;
+      ALLEGRO_BITMAP *old_screen_buff;
+      int pal_idx;
 
       printf("headless mode : rendering to \"%s\"...\n", glb_ds1edit.cmd_line.headless_output);
       fflush(stdout);
 
       // determine palette
       if (glb_ds1edit.cmd_line.force_pal_num == -1)
-         pal_idx = glb_ds1[ds1_idx].act - 1;
+         pal_idx = palette_resolve_index(glb_ds1[ds1_idx].txt_act,
+                                         glb_ds1[ds1_idx].act);
       else
          pal_idx = glb_ds1edit.cmd_line.force_pal_num - 1;
 
@@ -1230,25 +1445,23 @@ int main(int argc, char * argv[])
       if (a5_display == NULL)
       {
          sprintf(
-            tmp,
-            "main(), error.\nCan't create display (%i*%i %s).",
-            glb_config.screen.width,
-            glb_config.screen.height,
-            glb_config.fullscreen ? "Fullscreen" : "Windowed"
-         );
+             tmp,
+             "main(), error.\nCan't create display (%i*%i %s).",
+             glb_config.screen.width,
+             glb_config.screen.height,
+             glb_config.fullscreen ? "Fullscreen" : "Windowed");
          ds1edit_error(tmp);
       }
    }
 
    sprintf(
-      tmp,
-      "DS1 Editor v%s (%s), Allegro %i.%i.%i",
-      DS1EDIT_VERSION_STR,
-      DS1EDIT_BUILD_MODE,
-      al_get_allegro_version() >> 24,
-      (al_get_allegro_version() >> 16) & 0xFF,
-      (al_get_allegro_version() >> 8) & 0xFF
-   );
+       tmp,
+       "DS1 Editor v%s (%s), Allegro %i.%i.%i",
+       DS1EDIT_VERSION_STR,
+       DS1EDIT_BUILD_MODE,
+       al_get_allegro_version() >> 24,
+       (al_get_allegro_version() >> 16) & 0xFF,
+       (al_get_allegro_version() >> 8) & 0xFF);
    al_set_window_title(a5_display, tmp);
 
    // Now that a display exists, promote the hot render surfaces and cached
@@ -1266,15 +1479,18 @@ int main(int argc, char * argv[])
       for (oi = 0; oi < glb_ds1edit.obj_desc_num; oi++)
       {
          COF_S *cof = glb_ds1edit.obj_desc[oi].cof;
-         if (cof == NULL) continue;
+         if (cof == NULL)
+            continue;
          for (li = 0; li < COMPOSIT_NB; li++)
          {
             LAY_INF_S *lay = &cof->lay_inf[li];
-            if (lay->bmp == NULL) continue;
+            if (lay->bmp == NULL)
+               continue;
             for (fi = 0; fi < lay->bmp_num; fi++)
             {
                ALLEGRO_BITMAP *old_bmp = lay->bmp[fi];
-               if (old_bmp == NULL) continue;
+               if (old_bmp == NULL)
+                  continue;
                total++;
                if (al_get_bitmap_flags(old_bmp) & ALLEGRO_MEMORY_BITMAP)
                {
@@ -1291,16 +1507,14 @@ int main(int argc, char * argv[])
       }
    }
 
-
    // mouse (skip if already installed by area browser)
    if (!al_is_mouse_installed())
    {
       if (!al_install_mouse())
       {
          sprintf(
-            tmp,
-            "main(), error.\nCan't install the Mouse handler."
-         );
+             tmp,
+             "main(), error.\nCan't install the Mouse handler.");
          ds1edit_error(tmp);
       }
    }
@@ -1324,8 +1538,8 @@ int main(int argc, char * argv[])
    {
       glb_ds1edit.win_preview.x0 = glb_ds1[ds1_idx].own_wpreview.x0;
       glb_ds1edit.win_preview.y0 = glb_ds1[ds1_idx].own_wpreview.y0;
-      glb_ds1edit.win_preview.w  = glb_ds1[ds1_idx].own_wpreview.w ;
-      glb_ds1edit.win_preview.h  = glb_ds1[ds1_idx].own_wpreview.h ;
+      glb_ds1edit.win_preview.w = glb_ds1[ds1_idx].own_wpreview.w;
+      glb_ds1edit.win_preview.h = glb_ds1[ds1_idx].own_wpreview.h;
 
       // Initialize palette state so the first frame doesn't trigger a redundant
       // dt1_rebuild_bitmaps_from_cache (already done during init above).
@@ -1335,8 +1549,8 @@ int main(int argc, char * argv[])
    {
       glb_ds1edit.win_preview.x0 = 0;
       glb_ds1edit.win_preview.y0 = 0;
-      glb_ds1edit.win_preview.w  = glb_config.screen.width;
-      glb_ds1edit.win_preview.h  = glb_config.screen.height;
+      glb_ds1edit.win_preview.w = glb_config.screen.width;
+      glb_ds1edit.win_preview.h = glb_config.screen.height;
    }
 
    // Ensure area browser data is available for the sidebar (all launch modes)
@@ -1346,6 +1560,12 @@ int main(int argc, char * argv[])
    // main loop
    freopen("stderr.txt", "wt", stderr);
    setvbuf(stderr, NULL, _IONBF, 0); // unbuffered so perf stats survive process kill
+   if (glb_ds1edit.area_browser.lvltypes_act_mismatch_count > 0)
+   {
+      fprintf(stderr,
+              "WARNING: LvlTypes.txt contains %d Name/Act mismatches; palette selection uses the Act column as the source of truth. Run --audit-lvltypes for details.\n",
+              glb_ds1edit.area_browser.lvltypes_act_mismatch_count);
+   }
    interfac_user_handler(ds1_idx);
 
    // cleanup

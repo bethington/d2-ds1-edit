@@ -143,6 +143,9 @@ extern GAMMA_S glb_gamma_str[GC_MAX];
 typedef struct CONFIG_S
 {
    int      fullscreen;
+   char     * d2_install;   // optional D2 install dir; auto-detected if empty
+   int      upscale_enabled;
+   char     * upscale_service_url;
    char     * mpq_file[MAX_MPQ_FILE];
    char     * mod_dir[MAX_MOD_DIR];
    SCREEN_S screen;
@@ -465,10 +468,24 @@ typedef struct CMD_LINE_S
    int    list_areas;
    int    list_areas_ext;
    int    list_files;
+   int    audit_lvltypes;
    char * list_files_filter; // optional substring filter for --list-files
 
    // --file : load a single DS1 by path
    char * file_path;
+
+   // --export-asset <file.dt1|file.dcc|file.dc6> <output-dir>
+   char * export_asset_path;
+   char * export_asset_output_dir;
+
+   // --export-area-assets <area-name> <output-dir>
+   char * export_area_name;
+   char * export_area_output_dir;
+
+   // --export-prefix-assets <virtual-prefix> <type|all> <output-dir>
+   char * export_prefix;
+   char * export_prefix_type;
+   char * export_prefix_output_dir;
 } CMD_LINE_S;
 
 /* ---- Area Browser data structures ---- */
@@ -484,7 +501,8 @@ typedef struct AREA_GROUP_S
 {
    char name[80];              /* Display name, e.g. "Town"           */
    int  lvltype_id;            /* LvlTypes.txt Id for this group      */
-   int  act;                   /* 1-5 for standard areas, 0 = "Other" */
+   int  act;                   /* LvlTypes.txt Act (palette authority) */
+   int  name_act;              /* Act parsed from Name, for matching  */
    AREA_DS1_ENTRY_S * entries; /* malloc'd array of DS1 entries        */
    int  entry_count;           /* Number of entries                    */
    int  entry_max;             /* Allocated capacity                   */
@@ -504,7 +522,132 @@ typedef struct AREA_BROWSER_S
    int  scroll_offset;         /* First visible group index            */
    int  is_active;             /* TRUE if browser is showing           */
    int  loaded_group;          /* group_idx of currently loaded area, -1=none */
+   int  lvltypes_act_mismatch_count; /* mismatched Name prefix vs Act column */
 } AREA_BROWSER_S;
+
+/* ---- Properties Panel data structures ---- */
+
+#define PP_EDIT_BUF_MAX  256
+#define PP_MAX_PENDING    32
+
+typedef enum PP_FIELD_SOURCE_E
+{
+   PFS_DS1,          /* DS1 internal header field          */
+   PFS_DS1_FILES,    /* DS1 embedded filename list         */
+   PFS_LVLPREST,     /* LvlPrest.txt field                 */
+   PFS_LVLTYPES,     /* LvlTypes.txt field                 */
+   PFS_LEVELS        /* Levels.txt field                   */
+} PP_FIELD_SOURCE_E;
+
+typedef struct PP_FIELD_ID_S
+{
+   PP_FIELD_SOURCE_E source;
+   int               row;       /* TXT row index, or 0 for DS1 fields */
+   int               col;       /* TXT col index, or field enum for DS1 */
+   int               sub_idx;   /* For DS1 file list: file index       */
+} PP_FIELD_ID_S;
+
+typedef struct PP_PENDING_S
+{
+   PP_FIELD_ID_S field;
+   char          col_name[32];                /* TXT column name for write-back */
+   int           key_val;                     /* Key value (Def, Id, etc.) */
+   char          old_value[PP_EDIT_BUF_MAX];
+   char          new_value[PP_EDIT_BUF_MAX];
+} PP_PENDING_S;
+
+typedef enum PP_SECTION_E
+{
+   PPS_DS1_HEADER,
+   PPS_DS1_FILES,
+   PPS_TXT_IDENTITY,
+   PPS_TXT_TILESETS,
+   PPS_TXT_LAYOUT,
+   PPS_TXT_ROOMSIZE,
+   PPS_TXT_MONSTERS,
+   PPS_TXT_MONTYPES,
+   PPS_TXT_QUESTS,
+   PPS_TXT_VISIBILITY,
+   PPS_TXT_ENVIRONMENT,
+   PPS_TXT_PROPERTIES,
+   PPS_MAX
+} PP_SECTION_E;
+
+/* ---- Tile Picker types ---- */
+
+typedef enum PP_TAB_E
+{
+   PP_TAB_PROPERTIES = 0,
+   PP_TAB_TILES,
+   PP_TAB_MAX
+} PP_TAB_E;
+
+typedef enum TP_CATEGORY_E
+{
+   TPC_FLOORS = 0,    /* BT_STATIC + BT_ANIMATED                        */
+   TPC_WALLS,         /* BT_WALL_UP + BT_WALL_DOWN + BT_WALL_ANIMATED   */
+   TPC_SHADOWS,       /* BT_SHADOW                                      */
+   TPC_ROOFS,         /* BT_ROOF                                        */
+   TPC_SPECIAL,       /* BT_SPECIAL                                     */
+   TPC_MAX
+} TP_CATEGORY_E;
+
+#define TP_MRU_MAX            16
+#define TP_RECENT_POPUP_MAX    8
+#define TP_VARIANTS_POPUP_MAX 16
+
+typedef struct TP_BRUSH_S
+{
+   int        valid;
+   int        bt_idx;       /* index into glb_ds1[idx].block_table      */
+   BLK_TYP_E  type;         /* for wedit_update_tile type argument      */
+   BUT_TYP_E  button;       /* target layer: BU_FLOOR1/2/SHADOW/WALL1..4 */
+   int        m_idx;        /* main_line index                          */
+   int        s_idx;        /* sub_elm index                            */
+} TP_BRUSH_S;
+
+typedef struct TP_STATE_S
+{
+   TP_CATEGORY_E category;
+   int           zoom_cols;               /* 1..4, default 2            */
+   int           scroll_y;                /* pixels                     */
+   TP_BRUSH_S    brush;
+   int           mru_bt_idx[BT_MAX][TP_MRU_MAX];
+   int           mru_count [BT_MAX];
+   int           tiles_built_for_ds1;     /* -1 if not built            */
+} TP_STATE_S;
+
+typedef struct PROPS_PANEL_S
+{
+   int            scroll_offset;
+   int            section_expanded[PPS_MAX];
+
+   /* Keyboard focus */
+   int            has_focus;   /* TRUE when panel accepts arrow keys   */
+   int            focused_row; /* Index of focused row (-1=none)       */
+   int            total_rows;  /* Total rows last frame (for bounds)   */
+
+   /* Inline editing */
+   int            editing;     /* TRUE if a field is being edited      */
+   PP_FIELD_ID_S  edit_field;
+   char           edit_buf[PP_EDIT_BUF_MAX];
+   int            edit_cursor;
+
+   /* Pending changes */
+   PP_PENDING_S   pending[PP_MAX_PENDING];
+   int            pending_count;
+
+   /* Shared-scope cache */
+   int            shared_count_lvlprest;
+   int            shared_count_lvltypes;
+
+   /* Which ds1_idx this panel shows */
+   int            ds1_idx;
+
+   /* Tile picker tab */
+   PP_TAB_E       active_tab;
+   TP_STATE_S     tiles;
+} PROPS_PANEL_S;
 
 // Tile Grid states
 typedef enum TILEGRID_ENUM
@@ -574,6 +717,9 @@ typedef struct GLB_DS1EDIT_S
    char          * version_dll;
    int           sidebar_visible;
    int           sidebar_width;
+   int           props_panel_visible;
+   int           props_panel_width;
+   PROPS_PANEL_S props_panel;
    int           has_loaded_ds1;  /* TRUE after at least one DS1 is loaded */
 } GLB_DS1EDIT_S;
 

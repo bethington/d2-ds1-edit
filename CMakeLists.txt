@@ -21,6 +21,7 @@ find_library(ALLEGRO5_IMAGE_LIB allegro_image)
 find_library(ALLEGRO5_FONT_LIB allegro_font)
 find_library(ALLEGRO5_PRIMITIVES_LIB allegro_primitives)
 find_library(ALLEGRO5_MAIN_LIB allegro_main)
+find_library(ALLEGRO5_DIALOG_LIB allegro_dialog)
 
 if(NOT ALLEGRO5_INCLUDE_DIR OR NOT ALLEGRO5_LIB)
     message(FATAL_ERROR
@@ -39,8 +40,12 @@ set(SOURCES
     src/misc.c
     # core/
     src/core/area_browser.c
+    src/core/area_metadata.c
+    src/core/d2install.c
     src/core/ds1.c
     src/core/ds1_manager.c
+    src/core/asset_export.c
+    src/core/upscale.c
     src/core/dt1.c
     src/core/dt1_draw.c
     src/core/dt1_decode.c
@@ -48,7 +53,12 @@ set(SOURCES
     src/core/animdata.c
     src/core/dcc.c
     src/core/dc6.c
+    src/core/export_common.c
+    src/core/mpq_index.c
+    src/core/mpq_index_query.c
     src/core/palette.c
+    src/core/preferences.c
+    src/core/project.c
     src/core/rgba_cache.c
     src/core/txtread.c
     # render/
@@ -64,6 +74,13 @@ set(SOURCES
     src/ui/dialogs.c
     src/ui/edit_window.c
     src/ui/bits_window.c
+    src/ui/props_panel.c
+    src/ui/tile_picker.c
+    src/ui/project_menu.c
+    src/ui/export_type_picker.c
+    src/ui/upscale_mode_picker.c
+    src/ui/preset_picker.c
+    src/ui/win_folder_picker.c
     # mpq/
     src/mpq/Dcl_tbl.c
     src/mpq/Explode.c
@@ -90,7 +107,8 @@ if(WIN32)
         ${ALLEGRO5_FONT_LIB}
         ${ALLEGRO5_PRIMITIVES_LIB}
         ${ALLEGRO5_MAIN_LIB}
-        user32 gdi32 ole32 winmm shlwapi
+        ${ALLEGRO5_DIALOG_LIB}
+        user32 gdi32 ole32 winmm shlwapi advapi32 comctl32 comdlg32 shell32 uuid
     )
 
     # Whole-program optimization for Release builds
@@ -202,6 +220,7 @@ if(WIN32 AND EXISTS "${ALLEGRO5_BIN_DIR}")
         allegro_font-5.2.dll
         allegro_primitives-5.2.dll
         allegro_main-5.2.dll
+        allegro_dialog-5.2.dll
     )
     foreach(DLL_NAME ${REQUIRED_DLLS})
         if(EXISTS "${ALLEGRO5_BIN_DIR}/${DLL_NAME}")

@@ -4,33 +4,33 @@
 #include "core/ds1.h"
 #include "core/txtread.h"
 #include "core/dt1.h"
+#include "core/palette.h"
+#include "core/mpq_index.h"
 #include "mpq/mpqview.h"
 #include "core/area_browser.h"
+#include "ui/props_panel.h"
 #include "misc.h"
-
 
 // ==========================================================================
 // make a palette from the original one, with the current gamma correction
 void misc_pal_d2_2_vga(int pal_idx)
 {
    palette_d2_to_rgba(
-      glb_ds1edit.d2_pal[pal_idx],
-      glb_ds1edit.pal_size[pal_idx],
-      glb_ds1edit.gamma_table[glb_ds1edit.cur_gamma],
-      &glb_ds1edit.vga_pal[pal_idx]
-   );
+       glb_ds1edit.d2_pal[pal_idx],
+       glb_ds1edit.pal_size[pal_idx],
+       glb_ds1edit.gamma_table[glb_ds1edit.cur_gamma],
+       &glb_ds1edit.vga_pal[pal_idx]);
 }
 
-      
 // ==========================================================================
 // helper of the qsort function, same order as in the game
-int misc_qsort_helper_block_table_1(const void * e1, const void * e2)
+int misc_qsort_helper_block_table_1(const void *e1, const void *e2)
 {
-   BLOCK_TABLE_S * bt1, * bt2;
-   long          n1=0, n2=0;
+   BLOCK_TABLE_S *bt1, *bt2;
+   long n1 = 0, n2 = 0;
 
-   bt1 = (BLOCK_TABLE_S *) e1;
-   bt2 = (BLOCK_TABLE_S *) e2;
+   bt1 = (BLOCK_TABLE_S *)e1;
+   bt2 = (BLOCK_TABLE_S *)e2;
    if (bt1->orientation != bt2->orientation)
    {
       n1 = bt1->orientation;
@@ -51,8 +51,10 @@ int misc_qsort_helper_block_table_1(const void * e1, const void * e2)
       n1 = bt1->dt1_idx_for_ds1;
       n2 = bt2->dt1_idx_for_ds1;
 
-      if (n1 == 0) n1 = DT1_MAX;
-      if (n2 == 0) n2 = DT1_MAX;
+      if (n1 == 0)
+         n1 = DT1_MAX;
+      if (n2 == 0)
+         n2 = DT1_MAX;
    }
    else if (bt1->rarity != bt2->rarity)
    {
@@ -67,25 +69,24 @@ int misc_qsort_helper_block_table_1(const void * e1, const void * e2)
    return n1 - n2;
 }
 
-
 // ==========================================================================
 // helper of the qsort function, order for the end-user
-int misc_qsort_helper_block_table_2(const void * e1, const void * e2)
+int misc_qsort_helper_block_table_2(const void *e1, const void *e2)
 {
-   BLOCK_TABLE_S * bt1, * bt2;
-   long          n1=0, n2=0;
+   BLOCK_TABLE_S *bt1, *bt2;
+   long n1 = 0, n2 = 0;
 
-   bt1 = (BLOCK_TABLE_S *) e1;
-   bt2 = (BLOCK_TABLE_S *) e2;
+   bt1 = (BLOCK_TABLE_S *)e1;
+   bt2 = (BLOCK_TABLE_S *)e2;
 
-/*
-   if (bt1->dt1_idx != bt2->dt1_idx)
-   {
-      n1 = bt1->dt1_idx;
-      n2 = bt2->dt1_idx;
-   }
-   else
-*/
+   /*
+      if (bt1->dt1_idx != bt2->dt1_idx)
+      {
+         n1 = bt1->dt1_idx;
+         n2 = bt2->dt1_idx;
+      }
+      else
+   */
    if (bt1->main_index != bt2->main_index)
    {
       n1 = bt1->main_index;
@@ -109,7 +110,7 @@ int misc_qsort_helper_block_table_2(const void * e1, const void * e2)
       n2 = bt2->dt1_idx;
    }
    // ----------------
-   
+
    else if (bt1->rarity != bt2->rarity)
    {
       n1 = bt1->rarity;
@@ -123,21 +124,19 @@ int misc_qsort_helper_block_table_2(const void * e1, const void * e2)
    return n1 - n2;
 }
 
-
 // ==========================================================================
 // after the 1st qsort, find the tiles the game will use
 // it handles conflicts, and rarity of the tiles
 void misc_check_tiles_conflicts(int ds1_idx)
 {
-   BLOCK_TABLE_S * bt = glb_ds1[ds1_idx].block_table;
-   long          old_o, old_m, old_s, o, m, s;
-   int           old_d, d, done = FALSE, done2, start_i = 0, i, end_i, r;
-   int           last_block, first_block;
-   int           bt_max = glb_ds1[ds1_idx].bt_num, b;
-   long          sum_rarity, max_rarity;
-   
+   BLOCK_TABLE_S *bt = glb_ds1[ds1_idx].block_table;
+   long old_o, old_m, old_s, o, m, s;
+   int old_d, d, done = FALSE, done2, start_i = 0, i, end_i, r;
+   int last_block, first_block;
+   int bt_max = glb_ds1[ds1_idx].bt_num, b;
+   long sum_rarity, max_rarity;
 
-   while ( ! done)
+   while (!done)
    {
       old_o = bt[start_i].orientation;
       old_m = bt[start_i].main_index;
@@ -147,16 +146,16 @@ void misc_check_tiles_conflicts(int ds1_idx)
       bt[start_i].used_by_game = bt[start_i].used_by_editor = FALSE;
 
       // how many tiles have the same Orientation / Main index / Sub index ?
-      done2       = FALSE;
-      sum_rarity  = bt[start_i].rarity;
-      last_block  = start_i;
-      i           = start_i + 1;
-      max_rarity  = -1;
+      done2 = FALSE;
+      sum_rarity = bt[start_i].rarity;
+      last_block = start_i;
+      i = start_i + 1;
+      max_rarity = -1;
       if (bt[start_i].rarity)
          first_block = start_i;
       else
          first_block = -1;
-      while ( ! done2)
+      while (!done2)
       {
          o = bt[i].orientation;
          m = bt[i].main_index;
@@ -197,7 +196,7 @@ void misc_check_tiles_conflicts(int ds1_idx)
       {
          // editor : only first block having the highest rarity
          bt[first_block].used_by_editor = TRUE;
-         
+
          // game   : same, but also others which have a non-zero rarity
          for (b = start_i; b <= end_i; b++)
          {
@@ -214,17 +213,16 @@ void misc_check_tiles_conflicts(int ds1_idx)
    }
 }
 
-
 // ==========================================================================
 // make the block table of 1 ds1
 void misc_make_block_table(int ds1_idx)
 {
-   BLOCK_TABLE_S * bt_ptr;
-   BLOCK_S       * b_ptr;
-   char          tmp_str[80];
-   int           i, d, b, size, n = 0;
+   BLOCK_TABLE_S *bt_ptr;
+   BLOCK_S *b_ptr;
+   char tmp_str[80];
+   int i, d, b, size, n = 0;
 
-   for (i=0; i<DT1_IN_DS1_MAX; i++)
+   for (i = 0; i < DT1_IN_DS1_MAX; i++)
    {
       d = glb_ds1[ds1_idx].dt1_idx[i];
       if (d != -1)
@@ -232,11 +230,11 @@ void misc_make_block_table(int ds1_idx)
    }
    n++;
    size = sizeof(BLOCK_TABLE_S) * n;
-   glb_ds1[ds1_idx].block_table = (BLOCK_TABLE_S *) malloc(size);
+   glb_ds1[ds1_idx].block_table = (BLOCK_TABLE_S *)malloc(size);
    if (glb_ds1[ds1_idx].block_table == NULL)
    {
       sprintf(tmp_str, "make_block_table(%i), not enough mem for %i bytes\n",
-         ds1_idx, size);
+              ds1_idx, size);
       ds1edit_error(tmp_str);
    }
    memset(glb_ds1[ds1_idx].block_table, 0, size);
@@ -245,41 +243,41 @@ void misc_make_block_table(int ds1_idx)
    // fill it
    bt_ptr = glb_ds1[ds1_idx].block_table;
 
-   bt_ptr->orientation     = -1;
-   bt_ptr->main_index      = -1;
-   bt_ptr->sub_index       = -1;
-   bt_ptr->rarity          = -1;
+   bt_ptr->orientation = -1;
+   bt_ptr->main_index = -1;
+   bt_ptr->sub_index = -1;
+   bt_ptr->rarity = -1;
    bt_ptr->dt1_idx_for_ds1 = -1;
-   bt_ptr->dt1_idx         = -1;
-   bt_ptr->block_idx       = -1;
-   bt_ptr->roof_y          = -1;
-   bt_ptr->type            = -1;
-   bt_ptr->zero_line       = -1;
+   bt_ptr->dt1_idx = -1;
+   bt_ptr->block_idx = -1;
+   bt_ptr->roof_y = -1;
+   bt_ptr->type = -1;
+   bt_ptr->zero_line = -1;
    bt_ptr->corner_pair_idx = -1;
    bt_ptr++;
 
-   for (i=0; i<DT1_IN_DS1_MAX; i++)
+   for (i = 0; i < DT1_IN_DS1_MAX; i++)
    {
       d = glb_ds1[ds1_idx].dt1_idx[i];
       if (d != -1)
       {
          b_ptr = glb_dt1[d].bh_buffer;
-         for (b=0; b<glb_dt1[d].block_num; b++)
+         for (b = 0; b < glb_dt1[d].block_num; b++)
          {
             // sort-key
             bt_ptr->orientation = b_ptr->orientation;
-            bt_ptr->main_index  = b_ptr->main_index;
-            bt_ptr->sub_index   = b_ptr->sub_index;
-            bt_ptr->rarity      = b_ptr->rarity;
+            bt_ptr->main_index = b_ptr->main_index;
+            bt_ptr->sub_index = b_ptr->sub_index;
+            bt_ptr->rarity = b_ptr->rarity;
 
             // datas
             bt_ptr->dt1_idx_for_ds1 = i;
-            bt_ptr->dt1_idx         = d;
-            bt_ptr->block_idx       = b;
-            bt_ptr->roof_y          = 0;
-            bt_ptr->zero_line       = 0;
+            bt_ptr->dt1_idx = d;
+            bt_ptr->block_idx = b;
+            bt_ptr->roof_y = 0;
+            bt_ptr->zero_line = 0;
             bt_ptr->corner_pair_idx = -1;
-            
+
             // type
             if (bt_ptr->orientation == 0)
             {
@@ -299,8 +297,8 @@ void misc_make_block_table(int ds1_idx)
             else if (bt_ptr->orientation == 13)
             {
                // shadow
-               bt_ptr->type      = BT_SHADOW;
-               bt_ptr->zero_line = - b_ptr->size_y;
+               bt_ptr->type = BT_SHADOW;
+               bt_ptr->zero_line = -b_ptr->size_y;
             }
             else
             {
@@ -308,26 +306,26 @@ void misc_make_block_table(int ds1_idx)
                if ((bt_ptr->orientation == 10) || (bt_ptr->orientation == 11))
                {
                   // special
-                  bt_ptr->type      = BT_SPECIAL;
-                  bt_ptr->zero_line = - b_ptr->size_y;
+                  bt_ptr->type = BT_SPECIAL;
+                  bt_ptr->zero_line = -b_ptr->size_y;
                }
                else if (bt_ptr->orientation == 15)
                {
                   // roof
-                  bt_ptr->type      = BT_ROOF;
-                  bt_ptr->roof_y    = b_ptr->roof_y;
+                  bt_ptr->type = BT_ROOF;
+                  bt_ptr->roof_y = b_ptr->roof_y;
                   bt_ptr->zero_line = 0;
                }
                else if (bt_ptr->orientation < 15)
                {
                   // wall up
-                  bt_ptr->type      = BT_WALL_UP;
-                  bt_ptr->zero_line = - b_ptr->size_y;
+                  bt_ptr->type = BT_WALL_UP;
+                  bt_ptr->zero_line = -b_ptr->size_y;
                }
                else if (bt_ptr->orientation > 15)
                {
                   // wall down
-                  bt_ptr->type      = BT_WALL_DOWN;
+                  bt_ptr->type = BT_WALL_DOWN;
                   bt_ptr->zero_line = 96;
                }
             }
@@ -338,15 +336,15 @@ void misc_make_block_table(int ds1_idx)
          }
       }
    }
-   
+
    // display dt1 idx & file, to help user
    printf("\ndt1_idx file\n"
-            "------- ---------------------------------------------------------------------\n");
-   for (d=0; d<DT1_IN_DS1_MAX; d++)
+          "------- ---------------------------------------------------------------------\n");
+   for (d = 0; d < DT1_IN_DS1_MAX; d++)
    {
       if (glb_ds1[ds1_idx].dt1_idx[d] != -1)
       {
-         for (i=0; i<DT1_MAX; i++)
+         for (i = 0; i < DT1_MAX; i++)
          {
             if (i == glb_ds1[ds1_idx].dt1_idx[d])
             {
@@ -356,80 +354,76 @@ void misc_make_block_table(int ds1_idx)
          }
       }
    }
-   
+
    // sort it for conflict
    qsort(glb_ds1[ds1_idx].block_table, n, sizeof(BLOCK_TABLE_S),
-      misc_qsort_helper_block_table_1);
+         misc_qsort_helper_block_table_1);
 
    // conflicts managment
    misc_check_tiles_conflicts(ds1_idx);
-   
+
    // sort it for useability
    qsort(glb_ds1[ds1_idx].block_table, n, sizeof(BLOCK_TABLE_S),
-      misc_qsort_helper_block_table_2);
+         misc_qsort_helper_block_table_2);
 
    // display it
    printf("\nsorted block_table of glb_ds1[%i] (%i blocks) :\n", ds1_idx, n);
    printf("block orientation main_idx sub_idx frame dt1_idx blk_idx roof_y type line0\n");
    printf("----- ----------- -------- ------- ----- ------- ------- ------ ---- -----\n");
-   for (b=0; b<glb_ds1[ds1_idx].bt_num; b++)
+   for (b = 0; b < glb_ds1[ds1_idx].bt_num; b++)
    {
       if (glb_ds1[ds1_idx].block_table[b].orientation == 3)
       {
          glb_ds1[ds1_idx].block_table[b].corner_pair_idx =
-            misc_seach_block_or4(
-               ds1_idx,
-               glb_ds1[ds1_idx].block_table,
-               b + 1,
-               glb_ds1[ds1_idx].block_table[b].main_index,
-               glb_ds1[ds1_idx].block_table[b].sub_index
-            );
+             misc_seach_block_or4(
+                 ds1_idx,
+                 glb_ds1[ds1_idx].block_table,
+                 b + 1,
+                 glb_ds1[ds1_idx].block_table[b].main_index,
+                 glb_ds1[ds1_idx].block_table[b].sub_index);
       }
 
       printf("%5i %11li %8li %7li %5li %7li %7li %6i %4i %5i",
-         b,
-         glb_ds1[ds1_idx].block_table[b].orientation,
-         glb_ds1[ds1_idx].block_table[b].main_index,
-         glb_ds1[ds1_idx].block_table[b].sub_index,
-         glb_ds1[ds1_idx].block_table[b].rarity,
-         glb_ds1[ds1_idx].block_table[b].dt1_idx,
-         glb_ds1[ds1_idx].block_table[b].block_idx,
-         glb_ds1[ds1_idx].block_table[b].roof_y,
-         glb_ds1[ds1_idx].block_table[b].type,
-         glb_ds1[ds1_idx].block_table[b].zero_line
-      );
+             b,
+             glb_ds1[ds1_idx].block_table[b].orientation,
+             glb_ds1[ds1_idx].block_table[b].main_index,
+             glb_ds1[ds1_idx].block_table[b].sub_index,
+             glb_ds1[ds1_idx].block_table[b].rarity,
+             glb_ds1[ds1_idx].block_table[b].dt1_idx,
+             glb_ds1[ds1_idx].block_table[b].block_idx,
+             glb_ds1[ds1_idx].block_table[b].roof_y,
+             glb_ds1[ds1_idx].block_table[b].type,
+             glb_ds1[ds1_idx].block_table[b].zero_line);
       glb_ds1[ds1_idx].block_table[b].conflict = FALSE;
       if (glb_ds1[ds1_idx].block_table[b].rarity == 0)
       {
-         if (b>1)
+         if (b > 1)
          {
-            if ( (glb_ds1[ds1_idx].block_table[b].orientation == glb_ds1[ds1_idx].block_table[b-1].orientation) &&
-                 (glb_ds1[ds1_idx].block_table[b].main_index  == glb_ds1[ds1_idx].block_table[b-1].main_index)  &&
-                 (glb_ds1[ds1_idx].block_table[b].sub_index   == glb_ds1[ds1_idx].block_table[b-1].sub_index)
-            )
+            if ((glb_ds1[ds1_idx].block_table[b].orientation == glb_ds1[ds1_idx].block_table[b - 1].orientation) &&
+                (glb_ds1[ds1_idx].block_table[b].main_index == glb_ds1[ds1_idx].block_table[b - 1].main_index) &&
+                (glb_ds1[ds1_idx].block_table[b].sub_index == glb_ds1[ds1_idx].block_table[b - 1].sub_index))
                glb_ds1[ds1_idx].block_table[b].conflict = TRUE;
          }
-         if (b < (glb_ds1[ds1_idx].bt_num-1))
+         if (b < (glb_ds1[ds1_idx].bt_num - 1))
          {
-            if ( (glb_ds1[ds1_idx].block_table[b].orientation == glb_ds1[ds1_idx].block_table[b+1].orientation) &&
-                 (glb_ds1[ds1_idx].block_table[b].main_index  == glb_ds1[ds1_idx].block_table[b+1].main_index)  &&
-                 (glb_ds1[ds1_idx].block_table[b].sub_index   == glb_ds1[ds1_idx].block_table[b+1].sub_index)
-            )
+            if ((glb_ds1[ds1_idx].block_table[b].orientation == glb_ds1[ds1_idx].block_table[b + 1].orientation) &&
+                (glb_ds1[ds1_idx].block_table[b].main_index == glb_ds1[ds1_idx].block_table[b + 1].main_index) &&
+                (glb_ds1[ds1_idx].block_table[b].sub_index == glb_ds1[ds1_idx].block_table[b + 1].sub_index))
                glb_ds1[ds1_idx].block_table[b].conflict = TRUE;
          }
-      }  if (glb_ds1[ds1_idx].block_table[b].conflict)
+      }
+      if (glb_ds1[ds1_idx].block_table[b].conflict)
          printf(" *");
       printf("\n");
    }
 }
 
-
 // ==========================================================================
 // read the gamma correction file
 void misc_read_gamma(void)
 {
-   FILE * in;
-   int  gt, i, v;
+   FILE *in;
+   int gt, i, v;
    char tmp[150], gamma_path[100];
 
    sprintf(gamma_path, "%s%s", glb_ds1edit_data_dir, "gamma.dat");
@@ -440,9 +434,9 @@ void misc_read_gamma(void)
       sprintf(tmp, "misc_read_gamma() : can't open %s", gamma_path);
       ds1edit_error(tmp);
    }
-   for (gt=GC_060; gt<GC_MAX; gt++)
+   for (gt = GC_060; gt < GC_MAX; gt++)
    {
-      for (i=0; i<256; i++)
+      for (i = 0; i < 256; i++)
       {
          v = fgetc(in);
          glb_ds1edit.gamma_table[gt][i] = v;
@@ -451,26 +445,24 @@ void misc_read_gamma(void)
    fclose(in);
 }
 
-
 // ==========================================================================
 // update all the palettes with the current gamma correction
 void misc_update_pal_with_gamma(void)
 {
    int i;
 
-   for (i=0; i<ACT_MAX; i++)
+   for (i = 0; i < ACT_MAX; i++)
       misc_pal_d2_2_vga(i);
 }
-
 
 // ==========================================================================
 // hexedit the screenshot to have the *exact* original palette
 //    (allegro lost the 2 lowest bits)
 // use the current gamma correction
-void misc_pcx_put_d2_palette(char * name, int pal_idx)
+void misc_pcx_put_d2_palette(char *name, int pal_idx)
 {
-   FILE * in;
-   int  i, r, g, b, ridx;
+   FILE *in;
+   int i, r, g, b, ridx;
 
    in = fopen(name, "rb+");
    if (in == NULL)
@@ -480,7 +472,7 @@ void misc_pcx_put_d2_palette(char * name, int pal_idx)
    }
 
    fseek(in, -768, SEEK_END);
-   for (i=0; i<256; i++)
+   for (i = 0; i < 256; i++)
    {
       ridx = 4 * i;
       r = glb_ds1edit.d2_pal[pal_idx][ridx];
@@ -493,25 +485,23 @@ void misc_pcx_put_d2_palette(char * name, int pal_idx)
    fclose(in);
 }
 
-
 // ==========================================================================
 // color map helper (no longer called directly; kept for reference)
 // The logic has been moved into palette_build_select_colormap() in palette.c.
-
 
 // ==========================================================================
 // make (or read) all colormaps for all palettes
 void misc_make_cmaps(void)
 {
    CMAP_E cm;
-   int    a, cmap_ok;
-   char   tmp[100];
-   FILE   * out, * in;
+   int a, cmap_ok;
+   char tmp[100];
+   FILE *out, *in;
 
    printf("\n");
-   for (cm=0; cm < CM_MAX; cm++)
+   for (cm = 0; cm < CM_MAX; cm++)
    {
-      for (a=0; a < ACT_MAX; a++)
+      for (a = 0; a < ACT_MAX; a++)
       {
          fprintf(stderr, ".");
          sprintf(tmp, "%scmap%i_%i.bin", glb_ds1edit_data_dir, a, cm);
@@ -525,7 +515,7 @@ void misc_make_cmaps(void)
             else
             {
                printf("loading %s\n", tmp);
-               fread(& glb_ds1edit.cmap[cm][a], sizeof(INDEX_COLORMAP), 1, in);
+               fread(&glb_ds1edit.cmap[cm][a], sizeof(INDEX_COLORMAP), 1, in);
                fclose(in);
                cmap_ok = TRUE;
             }
@@ -538,21 +528,21 @@ void misc_make_cmaps(void)
             if (cm == CM_SELECT)
             {
                palette_build_select_colormap(
-                  &glb_ds1edit.vga_pal[a],
-                  &glb_ds1edit.cmap[cm][a]);
+                   &glb_ds1edit.vga_pal[a],
+                   &glb_ds1edit.cmap[cm][a]);
             }
             else if (cm == CM_TRANS)
             {
                palette_build_trans_colormap(
-                  &glb_ds1edit.vga_pal[a],
-                  &glb_ds1edit.cmap[cm][a]);
+                   &glb_ds1edit.vga_pal[a],
+                   &glb_ds1edit.cmap[cm][a]);
             }
             else if (cm == CM_SHADOW)
             {
                palette_build_shadow_colormap(
-                  glb_ds1edit.d2_pal[a],
-                  glb_ds1edit.pal_size[a],
-                  &glb_ds1edit.cmap[cm][a]);
+                   glb_ds1edit.d2_pal[a],
+                   glb_ds1edit.pal_size[a],
+                   &glb_ds1edit.cmap[cm][a]);
             }
 
             out = fopen(tmp, "wb");
@@ -561,7 +551,7 @@ void misc_make_cmaps(void)
             else
             {
                printf("saving %s\n", tmp);
-               fwrite(& glb_ds1edit.cmap[cm][a], sizeof(INDEX_COLORMAP), 1, out);
+               fwrite(&glb_ds1edit.cmap[cm][a], sizeof(INDEX_COLORMAP), 1, out);
                fclose(out);
             }
          }
@@ -569,15 +559,14 @@ void misc_make_cmaps(void)
    }
 }
 
-
 // ==========================================================================
 // try to load 1 palette from the data\ directory
 int misc_load_pal_from_disk(int pal_idx)
 {
    char tmp[100];
-   FILE * in;
+   FILE *in;
    long size;
-   
+
    sprintf(tmp, "%spal%i.bin", glb_ds1edit_data_dir, pal_idx);
    if (a5_file_exists(tmp))
    {
@@ -591,16 +580,17 @@ int misc_load_pal_from_disk(int pal_idx)
          fseek(in, 0, SEEK_END);
          size = ftell(in);
          fseek(in, 0, SEEK_SET);
-         
+
          // malloc
-         glb_ds1edit.d2_pal[pal_idx] = (UBYTE *) malloc(size);
+         glb_ds1edit.d2_pal[pal_idx] = (UBYTE *)malloc(size);
          if (glb_ds1edit.d2_pal[pal_idx] == NULL)
          {
             sprintf(tmp, "misc_load_pal_from_disk() : "
-               "not enough mem (%li bytes) for palette %i", size, pal_idx);
+                         "not enough mem (%li bytes) for palette %i",
+                    size, pal_idx);
             ds1edit_error(tmp);
          }
-         
+
          // filling it
          printf("loading %s\n", tmp);
          fread(glb_ds1edit.d2_pal[pal_idx], size, 1, in);
@@ -612,14 +602,13 @@ int misc_load_pal_from_disk(int pal_idx)
    return FALSE;
 }
 
-
 // ==========================================================================
 // save the palette in the data\ directory (for quicker access next time)
-void misc_save_pal_on_disk(int pal_idx, UBYTE * d2_pal_ptr)
+void misc_save_pal_on_disk(int pal_idx, UBYTE *d2_pal_ptr)
 {
    char tmp[100];
-   FILE * out;
-   
+   FILE *out;
+
    sprintf(tmp, "%spal%i.bin", glb_ds1edit_data_dir, pal_idx);
    out = fopen(tmp, "wb");
    if (out == NULL)
@@ -632,18 +621,17 @@ void misc_save_pal_on_disk(int pal_idx, UBYTE * d2_pal_ptr)
    }
 }
 
-
 // ==========================================================================
 // own version of fgets()
 // any special char means End Of String now, but NOT spaces !
-int misc_my_fgets(char * dst, int max, FILE * in)
+int misc_my_fgets(char *dst, int max, FILE *in)
 {
-   int i=0, c;
+   int i = 0, c;
 
    if (max <= 0)
       return 0;
-      
-   for(;;)
+
+   for (;;)
    {
       c = fgetc(in);
       if (c == EOF)
@@ -658,7 +646,7 @@ int misc_my_fgets(char * dst, int max, FILE * in)
       {
          dst[i] = 0;
          while ((c < 32) && (c != EOF))
-            c  = fgetc(in);
+            c = fgetc(in);
          if (c != EOF)
             ungetc(c, in);
          return 1;
@@ -668,12 +656,11 @@ int misc_my_fgets(char * dst, int max, FILE * in)
    }
 }
 
-
 // ==========================================================================
 // return start of ds1 file to open (multiple ds1 to open mode)
-char * misc_search_name(char * tmp)
+char *misc_search_name(char *tmp)
 {
-   int max, i=0;
+   int max, i = 0;
 
    max = strlen(tmp);
    if (max < 1)
@@ -710,13 +697,19 @@ char * misc_search_name(char * tmp)
       return NULL;
 
    // found name
-   return & tmp[i];
+   return &tmp[i];
 }
-
 
 // ==========================================================================
 // open 1 ds1, & all the dt1 it needs
-void misc_open_1_ds1(int ds1_idx, char * name, int type, int def,
+//
+// `type` and `def` may be -1 when the caller doesn't know them (CLI without
+// -t/-d, INI row missing the params, etc.). In that case we consult the
+// preset index for the DS1's basename and fill in whatever's missing. This
+// is the "no more DrTester hunting" path: running `ds1edit foo.ds1` with no
+// other args now resolves to the correct tileset + palette automatically,
+// provided foo.ds1 is referenced by LvlPrest.txt.
+void misc_open_1_ds1(int ds1_idx, char *name, int type, int def,
                      int new_width, int new_height)
 {
    // ds1
@@ -725,7 +718,34 @@ void misc_open_1_ds1(int ds1_idx, char * name, int type, int def,
    fprintf(stderr, "reading %s...", name);
    ds1_read(name, ds1_idx, new_width, new_height);
    fprintf(stderr, "done\n");
-      
+
+   // Auto-resolve missing LvlPrest.Def / LvlTypes.Id from the preset index.
+   // Explicit values passed by the caller always win.
+   if (type == -1 || def == -1)
+   {
+      const char *base = glb_ds1[ds1_idx].filename;
+      const PRESET_ENTRY_S *hit =
+          base ? mpq_index_find_by_ds1_name(base, NULL) : NULL;
+      if (hit != NULL)
+      {
+         if (def == -1)
+            def = hit->def;
+         if (type == -1)
+            type = hit->level_type;
+         fprintf(stdout,
+                 "auto-resolve: %s -> preset \"%s\" (type=%d def=%d act=%d)\n",
+                 base, hit->name, hit->level_type, hit->def, hit->act);
+         fprintf(stderr,
+                 "auto-resolve: %s -> type=%d def=%d\n", base, type, def);
+      }
+      else
+      {
+         fprintf(stderr,
+                 "auto-resolve: %s not in preset index, falling back\n",
+                 base ? base : "(null)");
+      }
+   }
+
    // lvl*.txt (and loading dt1 from mpq)
    fprintf(stderr, "searching Dt1Mask...");
    read_lvlprest_txt(ds1_idx, def);
@@ -735,6 +755,18 @@ void misc_open_1_ds1(int ds1_idx, char * name, int type, int def,
    glb_ds1[ds1_idx].txt_act = read_lvltypes_txt(ds1_idx, type);
    printf("\ndone\n");
    printf("txt_act = %i\n", glb_ds1[ds1_idx].txt_act);
+   if (glb_ds1edit.cmd_line.debug_mode == TRUE)
+   {
+      int resolved_act = palette_resolve_act(glb_ds1[ds1_idx].txt_act,
+                                             glb_ds1[ds1_idx].act);
+
+      printf("palette resolve: ds1=\"%s\" ds1_act=%ld txt_act=%d resolved_act=%d palette_idx=%d\n",
+             glb_ds1[ds1_idx].filename,
+             glb_ds1[ds1_idx].act,
+             glb_ds1[ds1_idx].txt_act,
+             resolved_act,
+             resolved_act - 1);
+   }
 
    // make the block_table of this ds1
    misc_make_block_table(ds1_idx);
@@ -743,18 +775,16 @@ void misc_open_1_ds1(int ds1_idx, char * name, int type, int def,
    ds1_make_prop_2_block(ds1_idx);
 }
 
-
 // ==========================================================================
 // open 1 ds1, and all the the dt1 it'll use
 void misc_open_1_ds1_force_dt1(int ds1_idx)
 {
-   int  d;
-   char * ds1_name = glb_ds1edit.cmd_line.ds1_filename;
-   int  new_width  = glb_ds1edit.cmd_line.resize_width;
-   int  new_height = glb_ds1edit.cmd_line.resize_height;
+   int d;
+   char *ds1_name = glb_ds1edit.cmd_line.ds1_filename;
+   int new_width = glb_ds1edit.cmd_line.resize_width;
+   int new_height = glb_ds1edit.cmd_line.resize_height;
    char ds1edt_file[] = "ds1edit.dt1";
    char tmp[150];
-
 
    // ds1
    printf("\nreading ds1 : %s\n", ds1_name);
@@ -769,12 +799,12 @@ void misc_open_1_ds1_force_dt1(int ds1_idx)
    glb_ds1[ds1_idx].dt1_idx[0] = dt1_add_special(tmp);
 
    // opening other dt1
-   for (d=0; d < DT1_IN_DS1_MAX; d++)
+   for (d = 0; d < DT1_IN_DS1_MAX; d++)
       glb_ds1[ds1_idx].dt1_idx[d + 1] = -1;
 
    printf("\nloading dt1 from disk...\n");
 
-   for (d=0; d < glb_ds1edit.cmd_line.dt1_list_num; d++)
+   for (d = 0; d < glb_ds1edit.cmd_line.dt1_list_num; d++)
    {
       printf("\nwant to read a dt1 : %s\n", glb_ds1edit.cmd_line.dt1_list_filename[d]);
       glb_ds1[ds1_idx].dt1_idx[d + 1] = dt1_add_special(glb_ds1edit.cmd_line.dt1_list_filename[d]);
@@ -790,15 +820,13 @@ void misc_open_1_ds1_force_dt1(int ds1_idx)
    ds1_make_prop_2_block(ds1_idx);
 }
 
-
 // ==========================================================================
 // loop for opening several ds1
-void misc_open_several_ds1(char * filename)
+void misc_open_several_ds1(char *filename)
 {
-   FILE * in;
-   int  type, def, ret, ds1_idx=0;
-   char tmp[1000], * name;
-
+   FILE *in;
+   int type, def, ret, ds1_idx = 0;
+   char tmp[1000], *name;
 
    in = fopen(filename, "rt");
    if (in == NULL)
@@ -823,13 +851,12 @@ void misc_open_several_ds1(char * filename)
       {
          // find dt1 list from .txt
          misc_open_1_ds1(
-            ds1_idx,
-            name,
-            type,
-            def,
-            glb_ds1edit.cmd_line.resize_width,
-            glb_ds1edit.cmd_line.resize_height
-         );
+             ds1_idx,
+             name,
+             type,
+             def,
+             glb_ds1edit.cmd_line.resize_width,
+             glb_ds1edit.cmd_line.resize_height);
       }
 
       ds1_idx++;
@@ -839,29 +866,26 @@ void misc_open_several_ds1(char * filename)
    fclose(in);
 }
 
-
 // ==========================================================================
 // load several pcx and make all the various tiles pcx for walkable info
 void misc_walkable_tile_info_pcx(void)
 {
    static char pcxname[11][30] = {
-             {"pcx\\bit0.png"},
-             {"pcx\\bit1.png"},
-             {"pcx\\bit2.png"},
-             {"pcx\\bit3.png"},
-             {"pcx\\bit4.png"},
-             {"pcx\\bit5.png"},
-             {"pcx\\bit6.png"},
-             {"pcx\\bit7.png"},
-             {"pcx\\bit8.png"},
-             {"pcx\\st_nowalk.png"},
-             {"pcx\\st_nojump.png"}
-          };
-   int    loop, i, x0, y0, z, w=0, h=0;
-   ALLEGRO_BITMAP * tmpbmp, * subtile, * subtile2;
-   char   tmp[150];
-   int    b=0;
-
+       {"pcx\\bit0.png"},
+       {"pcx\\bit1.png"},
+       {"pcx\\bit2.png"},
+       {"pcx\\bit3.png"},
+       {"pcx\\bit4.png"},
+       {"pcx\\bit5.png"},
+       {"pcx\\bit6.png"},
+       {"pcx\\bit7.png"},
+       {"pcx\\bit8.png"},
+       {"pcx\\st_nowalk.png"},
+       {"pcx\\st_nojump.png"}};
+   int loop, i, x0, y0, z, w = 0, h = 0;
+   ALLEGRO_BITMAP *tmpbmp, *subtile, *subtile2;
+   char tmp[150];
+   int b = 0;
 
    fprintf(stderr, "walkable tile infos");
    fflush(stderr);
@@ -872,7 +896,7 @@ void misc_walkable_tile_info_pcx(void)
       ds1edit_error(tmp);
    }
 
-   for (loop=0; loop<11; loop++)
+   for (loop = 0; loop < 11; loop++)
    {
       fprintf(stderr, ".");
       fflush(stderr);
@@ -880,21 +904,22 @@ void misc_walkable_tile_info_pcx(void)
       if (tmpbmp == NULL)
       {
          sprintf(tmp, "misc_walkable_tile_info_pcx(), can't open %s",
-            pcxname[loop]);
+                 pcxname[loop]);
          ds1edit_error(tmp);
       }
-      for (i=0; i<25; i++)
+      for (i = 0; i < 25; i++)
       {
          subtile = al_create_bitmap(160, 80);
          if (subtile == NULL)
          {
             sprintf(tmp, "misc_walkable_tile_info_pcx(), can't create "
-               "the (%i - %i) bitmap ", loop, i);
+                         "the (%i - %i) bitmap ",
+                    loop, i);
             ds1edit_error(tmp);
          }
          a5_clear(subtile);
-         x0 = 64 - ((i/5) * 16) + ((i%5) * 16);
-         y0 = ((i/5) * 8) + ((i%5) * 8);
+         x0 = 64 - ((i / 5) * 16) + ((i % 5) * 16);
+         y0 = ((i / 5) * 8) + ((i % 5) * 8);
          a5_draw_sprite(subtile, tmpbmp, x0, y0);
 
          if (loop < 9)
@@ -903,23 +928,36 @@ void misc_walkable_tile_info_pcx(void)
             glb_ds1edit.subtile_nowalk[ZM_11][i] = subtile;
          else
             glb_ds1edit.subtile_nojump[ZM_11][i] = subtile;
-            
-         for (z=0; z<ZM_MAX; z++)
+
+         for (z = 0; z < ZM_MAX; z++)
          {
             if (z == ZM_11)
                continue;
-            switch(z)
+            switch (z)
             {
-               case ZM_12  : w = 160 /  2; h = 80 /  2; break;
-               case ZM_14  : w = 160 /  4; h = 80 /  4; break;
-               case ZM_18  : w = 160 /  8; h = 80 /  8; break;
-               case ZM_116 : w = 160 / 16; h = 80 / 16; break;
+            case ZM_12:
+               w = 160 / 2;
+               h = 80 / 2;
+               break;
+            case ZM_14:
+               w = 160 / 4;
+               h = 80 / 4;
+               break;
+            case ZM_18:
+               w = 160 / 8;
+               h = 80 / 8;
+               break;
+            case ZM_116:
+               w = 160 / 16;
+               h = 80 / 16;
+               break;
             }
             subtile2 = al_create_bitmap(w, h);
             if (subtile2 == NULL)
             {
                sprintf(tmp, "misc_walkable_tile_info_pcx(), can't create "
-                  "the (%i - %i) bitmap at zoom %i", loop, i, z);
+                            "the (%i - %i) bitmap at zoom %i",
+                       loop, i, z);
                ds1edit_error(tmp);
             }
             a5_clear(subtile2);
@@ -985,11 +1023,11 @@ void misc_walkable_tile_info_pcx(void)
 #endif
 
    // we don't need the non-combination bitmaps anymore
-   for (b=0; b<9; b++)
+   for (b = 0; b < 9; b++)
    {
-      for (z=0; z<ZM_MAX; z++)
+      for (z = 0; z < ZM_MAX; z++)
       {
-         for (i=0; i<25; i++)
+         for (i = 0; i < 25; i++)
          {
             if (glb_ds1edit.subtile_flag[b][z][i] != NULL)
             {
@@ -1004,23 +1042,21 @@ void misc_walkable_tile_info_pcx(void)
    fflush(stderr);
 }
 
-
 // ==========================================================================
 // search the 2nd block table index of a upper / left corner tile
 // (2nd corner tile = orientation 4)
-int misc_seach_block_or4(int ds1_idx, BLOCK_TABLE_S * bt_ptr, int b,
+int misc_seach_block_or4(int ds1_idx, BLOCK_TABLE_S *bt_ptr, int b,
                          int m, int s)
 {
-   for(;;)
+   for (;;)
    {
       if (b >= glb_ds1[ds1_idx].bt_num)
          return -1;
       else
       {
-         if ( (bt_ptr[b].orientation == 4) &&
-              (bt_ptr[b].main_index  == m) &&
-              (bt_ptr[b].sub_index   == s)
-            )
+         if ((bt_ptr[b].orientation == 4) &&
+             (bt_ptr[b].main_index == m) &&
+             (bt_ptr[b].sub_index == s))
          {
             return b;
          }
@@ -1029,50 +1065,48 @@ int misc_seach_block_or4(int ds1_idx, BLOCK_TABLE_S * bt_ptr, int b,
    }
 }
 
-
 // ==========================================================================
 // fill the table with the walkable infos of all layers for 1 cell
-void misc_search_walk_infos(int ds1_idx, int x, int y, UBYTE * dsttable)
+void misc_search_walk_infos(int ds1_idx, int x, int y, UBYTE *dsttable)
 {
-   BLOCK_TABLE_S * bt_ptr;
-   CELL_F_S      * f_ptr;
-   CELL_W_S      * w_ptr;
-   int           tf, tw, b, f, w, di, bi, i;
-   BLOCK_S       * bh_ptr;
-   UBYTE         * u_ptr, all_floor_props = 0;
-   
-   
-   tf    = (y * glb_ds1[ds1_idx].floor_line) + (x * glb_ds1[ds1_idx].floor_num);
-   tw    = (y * glb_ds1[ds1_idx].wall_line)  + (x * glb_ds1[ds1_idx].wall_num);
+   BLOCK_TABLE_S *bt_ptr;
+   CELL_F_S *f_ptr;
+   CELL_W_S *w_ptr;
+   int tf, tw, b, f, w, di, bi, i;
+   BLOCK_S *bh_ptr;
+   UBYTE *u_ptr, all_floor_props = 0;
+
+   tf = (y * glb_ds1[ds1_idx].floor_line) + (x * glb_ds1[ds1_idx].floor_num);
+   tw = (y * glb_ds1[ds1_idx].wall_line) + (x * glb_ds1[ds1_idx].wall_num);
    f_ptr = glb_ds1[ds1_idx].floor_buff + tf;
-   w_ptr = glb_ds1[ds1_idx].wall_buff  + tw;
+   w_ptr = glb_ds1[ds1_idx].wall_buff + tw;
 
    // init
-   for (i=0; i<25; i++)
+   for (i = 0; i < 25; i++)
       dsttable[i] = 0; // no flags by default
    bt_ptr = glb_ds1[ds1_idx].block_table;
-   
+
    // floors
-   for (f=0; f < glb_ds1[ds1_idx].floor_num; f++)
+   for (f = 0; f < glb_ds1[ds1_idx].floor_num; f++)
    {
       all_floor_props |= f_ptr[f].prop1 | f_ptr[f].prop2 |
                          f_ptr[f].prop3 | f_ptr[f].prop4;
       if (f_ptr[f].prop3 & 0x02)
       {
          // this is a global unwalkable info
-         for (i=0; i<25; i++)
+         for (i = 0; i < 25; i++)
             dsttable[i] |= 1;
       }
       b = f_ptr[f].bt_idx;
       if (b > 0) // not -1 and not 0
       {
-         di     = bt_ptr[b].dt1_idx;
-         bi     = bt_ptr[b].block_idx;
+         di = bt_ptr[b].dt1_idx;
+         bi = bt_ptr[b].block_idx;
          bh_ptr = glb_dt1[di].bh_buffer;
-         u_ptr  = bh_ptr[bi].sub_tiles_flags;
+         u_ptr = bh_ptr[bi].sub_tiles_flags;
 
          // add the flags
-         for (i=0; i<25; i++)
+         for (i = 0; i < 25; i++)
             dsttable[i] |= u_ptr[i];
       }
    }
@@ -1082,7 +1116,7 @@ void misc_search_walk_infos(int ds1_idx, int x, int y, UBYTE * dsttable)
    {
       if (f_ptr[0].prop1 == 0)
       {
-         for (i=0; i<25; i++)
+         for (i = 0; i < 25; i++)
             dsttable[i] |= 1;
       }
    }
@@ -1090,51 +1124,50 @@ void misc_search_walk_infos(int ds1_idx, int x, int y, UBYTE * dsttable)
    {
       if ((f_ptr[0].prop1 == 0) && (f_ptr[1].prop1 == 0))
       {
-         for (i=0; i<25; i++)
+         for (i = 0; i < 25; i++)
             dsttable[i] |= 1;
       }
    }
 
    // walls
-   for (w=0; w < glb_ds1[ds1_idx].wall_num; w++)
+   for (w = 0; w < glb_ds1[ds1_idx].wall_num; w++)
    {
       if (w_ptr[w].prop3 & 0x02)
       {
          // this is a global unwalkable info
-         for (i=0; i<25; i++)
+         for (i = 0; i < 25; i++)
             dsttable[i] |= 1;
       }
       b = w_ptr[w].bt_idx;
       if (b > 0) // not -1 and not 0
       {
-         di     = bt_ptr[b].dt1_idx;
-         bi     = bt_ptr[b].block_idx;
+         di = bt_ptr[b].dt1_idx;
+         bi = bt_ptr[b].block_idx;
          bh_ptr = glb_dt1[di].bh_buffer;
-         u_ptr  = bh_ptr[bi].sub_tiles_flags;
+         u_ptr = bh_ptr[bi].sub_tiles_flags;
 
          // add the flags
-         for (i=0; i<25; i++)
+         for (i = 0; i < 25; i++)
             dsttable[i] |= u_ptr[i];
 
          // upper / left tile corner 2nd tile
          if (w_ptr[w].orientation == 3)
          {
             i = misc_seach_block_or4(ds1_idx,
-                   bt_ptr,
-                   b,
-                   bt_ptr[b].main_index,
-                   bt_ptr[b].sub_index
-                );
+                                     bt_ptr,
+                                     b,
+                                     bt_ptr[b].main_index,
+                                     bt_ptr[b].sub_index);
             if (i != -1)
             {
-               b      = i;
-               di     = bt_ptr[b].dt1_idx;
-               bi     = bt_ptr[b].block_idx;
+               b = i;
+               di = bt_ptr[b].dt1_idx;
+               bi = bt_ptr[b].block_idx;
                bh_ptr = glb_dt1[di].bh_buffer;
-               u_ptr  = bh_ptr[bi].sub_tiles_flags;
+               u_ptr = bh_ptr[bi].sub_tiles_flags;
 
                // add the flags
-               for (i=0; i<25; i++)
+               for (i = 0; i < 25; i++)
                   dsttable[i] |= u_ptr[i];
             }
          }
@@ -1142,34 +1175,31 @@ void misc_search_walk_infos(int ds1_idx, int x, int y, UBYTE * dsttable)
    }
 }
 
-
 // ==========================================================================
 // load a file from mpq
 //    first try in the mod directory, if not found in the 1st mpq it can
-int misc_load_mpq_file(char * filename, char ** buffer, long * buf_len, int output)
+int misc_load_mpq_file(char *filename, char **buffer, long *buf_len, int output)
 {
-   int  i, entry, max;
-
+   int i, entry, max;
 
    // convert slash ('/') to backslash ('\\')
    // seems the mpq library expect backslash and not slash as directory separator
    strcpy(glb_ds1edit.strtmp, filename);
    max = strlen(glb_ds1edit.strtmp);
-   for (i=0; i < max; i++)
+   for (i = 0; i < max; i++)
    {
       if (glb_ds1edit.strtmp[i] == '/')
          glb_ds1edit.strtmp[i] = '\\';
    }
 
    // 1st try in mod directory
-   for (i=0; i<MAX_MOD_DIR; i++)
+   for (i = 0; i < MAX_MOD_DIR; i++)
    {
       entry = mod_load_in_mem(
-                 glb_config.mod_dir[i],
-                 glb_ds1edit.strtmp,
-                 buffer,
-                 buf_len
-              );
+          glb_config.mod_dir[i],
+          glb_ds1edit.strtmp,
+          buffer,
+          buf_len);
       if (entry != -1)
       {
          if (output)
@@ -1179,17 +1209,16 @@ int misc_load_mpq_file(char * filename, char ** buffer, long * buf_len, int outp
    }
 
    // 2nd try, in a mpq
-   for (i=0; i<MAX_MPQ_FILE; i++)
+   for (i = 0; i < MAX_MPQ_FILE; i++)
    {
       if (glb_mpq_struct[i].is_open != FALSE)
       {
-         glb_mpq = & glb_mpq_struct[i];
+         glb_mpq = &glb_mpq_struct[i];
          entry = mpq_batch_load_in_mem(
-                    glb_ds1edit.strtmp,
-                    buffer,
-                    buf_len,
-                    output
-                 );
+             glb_ds1edit.strtmp,
+             buffer,
+             buf_len,
+             output);
          if (entry != -1)
          {
             if (output)
@@ -1203,32 +1232,30 @@ int misc_load_mpq_file(char * filename, char ** buffer, long * buf_len, int outp
    return -1;
 }
 
-
 // ==========================================================================
 // return the column number of a txt file, given its name
-int misc_get_txt_column_num(RQ_ENUM txt_idx, char * col_name)
+int misc_get_txt_column_num(RQ_ENUM txt_idx, char *col_name)
 {
-   int   i = 0;
-   char  * desc, tmp_str[256],
-         txt_list[RQ_MAX][80] = {
-            {"Data\\Global\\Excel\\LvlTypes.txt"},
-            {"Data\\Global\\Excel\\LvlPrest.txt"},
-            {"data\\obj.txt"},
-            {"Data\\Global\\Excel\\Objects.txt"},
-            {"Data\\Global\\Excel\\Levels.txt"},
-         };
+   int i = 0;
+   char *desc, tmp_str[256],
+       txt_list[RQ_MAX][80] = {
+           {"Data\\Global\\Excel\\LvlTypes.txt"},
+           {"Data\\Global\\Excel\\LvlPrest.txt"},
+           {"data\\obj.txt"},
+           {"Data\\Global\\Excel\\Objects.txt"},
+           {"Data\\Global\\Excel\\Levels.txt"},
+       };
 
    if (txt_idx >= RQ_MAX)
       return -1;
-   for(;;)
+   for (;;)
    {
       desc = glb_txt_req_ptr[txt_idx][i];
       if (desc == NULL)
       {
          sprintf(tmp_str, "misc_get_txt_column_num() :\n"
-            "   can't find <%s> in txt file <%i> <%s>\n",
-            col_name, txt_idx, txt_list[txt_idx]
-         );
+                          "   can't find <%s> in txt file <%i> <%s>\n",
+                 col_name, txt_idx, txt_list[txt_idx]);
          ds1edit_error(tmp_str);
       }
       else
@@ -1241,19 +1268,17 @@ int misc_get_txt_column_num(RQ_ENUM txt_idx, char * col_name)
    }
 }
 
-
 // ==========================================================================
-int misc_is_numerical(char * str)
+int misc_is_numerical(char *str)
 {
    int i, max = strlen(str);
 
-   for (i=0; i < max; i++)
+   for (i = 0; i < max; i++)
    {
-      if ( (str[i] == '-') ||
-           (str[i] == '+') ||
-           (str[i] == '.') ||
-           ((str[i] >= '0') && (str[i] <= '9'))
-         )
+      if ((str[i] == '-') ||
+          (str[i] == '+') ||
+          (str[i] == '.') ||
+          ((str[i] >= '0') && (str[i] <= '9')))
       {
          // ok
       }
@@ -1263,61 +1288,58 @@ int misc_is_numerical(char * str)
    return TRUE;
 }
 
-
 // ==========================================================================
 // correct the pl2, for making draw_sprite work as expected
 void misc_pl2_correct(int i)
 {
-   UBYTE          * bptr;
-   int            c;
-   INDEX_COLORMAP * cmap;
+   UBYTE *bptr;
+   int c;
+   INDEX_COLORMAP *cmap;
 
    bptr = glb_ds1edit.d2_pal[i];
-   for (c=0; c < 256; c++)
+   for (c = 0; c < 256; c++)
    {
-      cmap = (INDEX_COLORMAP *) & bptr[COF_75TRANS * 256];
+      cmap = (INDEX_COLORMAP *)&bptr[COF_75TRANS * 256];
       cmap->data[0][c] = c;
 
-      cmap = (INDEX_COLORMAP *) & bptr[COF_50TRANS * 256];
+      cmap = (INDEX_COLORMAP *)&bptr[COF_50TRANS * 256];
       cmap->data[0][c] = c;
 
-      cmap = (INDEX_COLORMAP *) & bptr[COF_25TRANS * 256];
+      cmap = (INDEX_COLORMAP *)&bptr[COF_25TRANS * 256];
       cmap->data[0][c] = c;
 
-      cmap = (INDEX_COLORMAP *) & bptr[COF_ALPHA * 256];
+      cmap = (INDEX_COLORMAP *)&bptr[COF_ALPHA * 256];
       cmap->data[0][c] = c;
 
-      cmap = (INDEX_COLORMAP *) & bptr[COF_LUMINANCE * 256];
+      cmap = (INDEX_COLORMAP *)&bptr[COF_LUMINANCE * 256];
       cmap->data[0][c] = c;
 
-      cmap = (INDEX_COLORMAP *) & bptr[COF_ALPHABRIGHT * 256];
+      cmap = (INDEX_COLORMAP *)&bptr[COF_ALPHABRIGHT * 256];
       cmap->data[0][c] = c;
    }
 }
 
-
 // ==========================================================================
 // parse a command line
 // return -1 if error, 0 otherwise
-int misc_cmd_line_parse(int argc, char ** argv)
+int misc_cmd_line_parse(int argc, char **argv)
 {
-   int  i                  = 0;
-   int  force_dt1_present  = FALSE;
-   const char * ext        = NULL;
-   int  n                  = 0;
-   int  lvltype_id_found   = 0;
-   int  lvlprest_def_found = 0;
-
+   int i = 0;
+   int force_dt1_present = FALSE;
+   const char *ext = NULL;
+   int n = 0;
+   int lvltype_id_found = 0;
+   int lvlprest_def_found = 0;
 
    // is -force_dt1 present ?
-   for (i=1; i < argc; i++)
+   for (i = 1; i < argc; i++)
    {
       if (stricmp(argv[i], "-force_dt1") == 0)
          force_dt1_present = TRUE; // no LvlType.txt ID and no LvlPrest.txt DEF expected in the arguments
    }
 
    // scan all parameters 1 by 1
-   for (i=1; i < argc; i++)
+   for (i = 1; i < argc; i++)
    {
       if (i == 1 && stricmp(argv[i], "--area") == 0)
       {
@@ -1348,6 +1370,10 @@ int misc_cmd_line_parse(int argc, char ** argv)
             glb_ds1edit.cmd_line.list_files_filter = argv[i];
          }
       }
+      else if (i == 1 && stricmp(argv[i], "--audit-lvltypes") == 0)
+      {
+         glb_ds1edit.cmd_line.audit_lvltypes = TRUE;
+      }
       else if (i == 1 && stricmp(argv[i], "--file") == 0)
       {
          i++;
@@ -1357,6 +1383,44 @@ int misc_cmd_line_parse(int argc, char ** argv)
             return -1;
          }
          glb_ds1edit.cmd_line.file_path = argv[i];
+      }
+      else if (i == 1 && stricmp(argv[i], "--export-asset") == 0)
+      {
+         i++;
+         if ((i + 1) >= argc)
+         {
+            printf("misc_cmd_line_parse(), error : --export-asset requires an asset path and output directory\n");
+            return -1;
+         }
+         glb_ds1edit.cmd_line.export_asset_path = argv[i];
+         i++;
+         glb_ds1edit.cmd_line.export_asset_output_dir = argv[i];
+      }
+      else if (i == 1 && stricmp(argv[i], "--export-area-assets") == 0)
+      {
+         i++;
+         if ((i + 1) >= argc)
+         {
+            printf("misc_cmd_line_parse(), error : --export-area-assets requires an area name and output directory\n");
+            return -1;
+         }
+         glb_ds1edit.cmd_line.export_area_name = argv[i];
+         i++;
+         glb_ds1edit.cmd_line.export_area_output_dir = argv[i];
+      }
+      else if (i == 1 && stricmp(argv[i], "--export-prefix-assets") == 0)
+      {
+         i++;
+         if ((i + 2) >= argc)
+         {
+            printf("misc_cmd_line_parse(), error : --export-prefix-assets requires a prefix, type filter, and output directory\n");
+            return -1;
+         }
+         glb_ds1edit.cmd_line.export_prefix = argv[i];
+         i++;
+         glb_ds1edit.cmd_line.export_prefix_type = argv[i];
+         i++;
+         glb_ds1edit.cmd_line.export_prefix_output_dir = argv[i];
       }
       else if (i == 1)
       {
@@ -1368,7 +1432,7 @@ int misc_cmd_line_parse(int argc, char ** argv)
             glb_ds1edit.cmd_line.ds1_filename = argv[i];
          else
          {
-            printf("misc_cmd_line_parse(), error : the first argument must be a .INI, .DS1, or --area\n");
+            printf("misc_cmd_line_parse(), error : the first argument must be a .INI, .DS1, --area, --list-areas, --list-files, --audit-lvltypes, --export-asset, --export-area-assets, or --export-prefix-assets\n");
             return -1;
          }
       }
@@ -1386,15 +1450,16 @@ int misc_cmd_line_parse(int argc, char ** argv)
       {
          // -force_dt1, folowed by 1 to 32 .dt1 files
          i++;
-         for (n=0; ((i + n) < argc) && (stricmp(a5_get_extension(argv[i + n]), "dt1") == 0); n++)
-         {}
+         for (n = 0; ((i + n) < argc) && (stricmp(a5_get_extension(argv[i + n]), "dt1") == 0); n++)
+         {
+         }
          if ((n < 1) || (n > DT1_IN_DS1_MAX))
          {
             printf("misc_cmd_line_parse(), error : there must be between 1 and %i .DT1 files folowing the -force_dt1 parameter\n", DT1_IN_DS1_MAX);
             return -1;
          }
          glb_ds1edit.cmd_line.dt1_list_num = n;
-         for (n=0; n < glb_ds1edit.cmd_line.dt1_list_num; n++)
+         for (n = 0; n < glb_ds1edit.cmd_line.dt1_list_num; n++)
             glb_ds1edit.cmd_line.dt1_list_filename[n] = argv[i + n];
          i += (n - 1);
       }
@@ -1456,7 +1521,7 @@ int misc_cmd_line_parse(int argc, char ** argv)
       }
       else if (stricmp(argv[i], "--headless") == 0)
       {
-         // --headless <output.bmp> : render one frame and save, then exit
+         // --headless <output.png> : render one frame and save, then exit
          glb_ds1edit.cmd_line.headless_mode = TRUE;
          i++;
          if (i >= argc)
@@ -1473,7 +1538,7 @@ int misc_cmd_line_parse(int argc, char ** argv)
       }
       else if ((force_dt1_present == FALSE) && (glb_ds1edit.cmd_line.ds1_filename != NULL))
       {
-         if ( ! lvltype_id_found)
+         if (!lvltype_id_found)
          {
             // LvlType.txt ID
             lvltype_id_found = 1;
@@ -1485,7 +1550,7 @@ int misc_cmd_line_parse(int argc, char ** argv)
                return -1;
             }
          }
-         else if ( ! lvlprest_def_found)
+         else if (!lvlprest_def_found)
          {
             // LvlPrest.txt DEF
             lvlprest_def_found = 1;
@@ -1508,11 +1573,10 @@ int misc_cmd_line_parse(int argc, char ** argv)
    return 0;
 }
 
-
 // ==========================================================================
 void misc_draw_screen(int mx, int my)
 {
-   ALLEGRO_BITMAP * mouse_sprite = glb_ds1edit.mouse_cursor[glb_ds1edit.mode];
+   ALLEGRO_BITMAP *mouse_sprite = glb_ds1edit.mouse_cursor[glb_ds1edit.mode];
    int disp_h = al_get_display_height(a5_display);
 
    al_set_target_backbuffer(a5_display);
@@ -1530,6 +1594,12 @@ void misc_draw_screen(int mx, int my)
    else
       area_browser_draw_sidebar_tab(disp_h);
 
+   /* Draw properties panel or collapsed tab on right side */
+   if (glb_ds1edit.props_panel_visible)
+      props_panel_draw(glb_ds1edit.props_panel_width, disp_h);
+   else
+      props_panel_draw_tab(disp_h);
+
    if (mouse_sprite != NULL)
       al_draw_bitmap(mouse_sprite, (float)mx, (float)my, 0);
    al_flip_display();
@@ -1540,55 +1610,54 @@ void misc_draw_screen(int mx, int my)
 // return 0 if ok, -1 if error
 int misc_increase_ds1_objects_max(int ds1_idx, long nb_objects)
 {
-	long old_max;
-	long new_max;
-	void * new_buffer;
-	long old_size;
-	long new_size;
-	long nb_gran;
+   long old_max;
+   long new_max;
+   void *new_buffer;
+   long old_size;
+   long new_size;
+   long nb_gran;
 
+   if (nb_objects < 0)
+      return 0;
 
-	if (nb_objects < 0)
-		return 0;
+   nb_gran = 1 + (nb_objects / OBJ_MAX_GRANULARITY);
+   old_max = glb_ds1[ds1_idx].current_obj_max;
+   new_max = old_max + (nb_gran * OBJ_MAX_GRANULARITY);
 
-	nb_gran = 1 + (nb_objects / OBJ_MAX_GRANULARITY);
-    old_max = glb_ds1[ds1_idx].current_obj_max;
-    new_max = old_max + (nb_gran * OBJ_MAX_GRANULARITY);
+   // drawing_order
+   old_size = old_max * sizeof(int);
+   new_size = new_max * sizeof(int);
+   new_buffer = (int *)malloc(new_size);
+   if (new_buffer == NULL)
+      return -1;
+   memset(new_buffer, 0x00, new_size);
+   memcpy(new_buffer, glb_ds1[ds1_idx].drawing_order, old_size);
+   free(glb_ds1[ds1_idx].drawing_order);
+   glb_ds1[ds1_idx].drawing_order = (int *)new_buffer;
 
-	// drawing_order
-	old_size = old_max * sizeof(int);
-	new_size = new_max * sizeof(int);
-	new_buffer = (int *) malloc(new_size);
-	if (new_buffer == NULL)
-		return -1;
-    memset(new_buffer, 0x00, new_size);
-	memcpy(new_buffer, glb_ds1[ds1_idx].drawing_order, old_size);
-	free(glb_ds1[ds1_idx].drawing_order);
-	glb_ds1[ds1_idx].drawing_order = (int *) new_buffer;
+   // obj
+   old_size = old_max * sizeof(OBJ_S);
+   new_size = new_max * sizeof(OBJ_S);
+   new_buffer = (OBJ_S *)malloc(new_size);
+   if (new_buffer == NULL)
+      return -1;
 
-	// obj
-	old_size = old_max * sizeof(OBJ_S);
-	new_size = new_max * sizeof(OBJ_S);
-	new_buffer = (OBJ_S *) malloc(new_size);
-	if (new_buffer == NULL)
-		return -1;
+   memset(new_buffer, 0x00, new_size);
+   memcpy(new_buffer, glb_ds1[ds1_idx].obj, old_size);
+   free(glb_ds1[ds1_idx].obj);
+   glb_ds1[ds1_idx].obj = (OBJ_S *)new_buffer;
 
-	memset(new_buffer, 0x00, new_size);
-	memcpy(new_buffer, glb_ds1[ds1_idx].obj, old_size);
-	free(glb_ds1[ds1_idx].obj);
-	glb_ds1[ds1_idx].obj = (OBJ_S *) new_buffer;
+   // obj_undo
+   old_size = old_max * sizeof(OBJ_S);
+   new_size = new_max * sizeof(OBJ_S);
+   new_buffer = (OBJ_S *)malloc(new_size);
+   if (new_buffer == NULL)
+      return -1;
+   memset(new_buffer, 0x00, new_size);
+   memcpy(new_buffer, glb_ds1[ds1_idx].obj_undo, old_size);
+   free(glb_ds1[ds1_idx].obj_undo);
+   glb_ds1[ds1_idx].obj_undo = (OBJ_S *)new_buffer;
 
-	// obj_undo
-	old_size = old_max * sizeof(OBJ_S);
-	new_size = new_max * sizeof(OBJ_S);
-	new_buffer = (OBJ_S *) malloc(new_size);
-	if (new_buffer == NULL)
-		return -1;
-    memset(new_buffer, 0x00, new_size);
-	memcpy(new_buffer, glb_ds1[ds1_idx].obj_undo, old_size);
-	free(glb_ds1[ds1_idx].obj_undo);
-	glb_ds1[ds1_idx].obj_undo = (OBJ_S *) new_buffer;
-
-	glb_ds1[ds1_idx].current_obj_max = new_max;
-	return 0;
+   glb_ds1[ds1_idx].current_obj_max = new_max;
+   return 0;
 }

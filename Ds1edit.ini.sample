@@ -3,21 +3,36 @@
 ; Copy this file to "Ds1edit.ini" and edit the paths below to match
 ; your Diablo II installation directory.
 
-; Paths to the mpqs. When the editor need to read a file from a mpq
-; it scan first in mod_dir. If not found, in patch_d2. If not found,
-; in d2exp. If again not found, in d2data (just like the game)
+; D2 install directory. When set, the editor resolves the standard Blizzard
+; MPQs (patch_d2, d2exp, d2data, d2char) from this folder automatically.
+; If left blank, the editor auto-detects via the Windows registry and a short
+; list of common install paths.
 ; =================================================================
-d2char   = C:\Diablo2\d2char.mpq
-d2data   = C:\Diablo2\d2data.mpq
-d2exp    = C:\Diablo2\d2exp.mpq
-patch_d2 = C:\Diablo2\patch_d2.mpq
+d2_install =
+
+; You can still override individual MPQs below. An explicit path here always
+; wins over d2_install / auto-detection. Leave blank to let resolution fill
+; the slot from d2_install. When a file is loaded, the editor scans mod_dir
+; first, then patch_d2, d2exp, d2data, d2char (in that order, matching D2).
+; =================================================================
+d2char   =
+d2data   =
+d2exp    =
+patch_d2 =
 mod_dir  =
 
-; if you don't have a mpq, put a blank, like :
-; d2exp =
+; Optional remote PNG upscaling service. When enabled and a base URL is set,
+; export actions can offer None / 2x / 4x modes using the configured service.
+; ===========================================================================
+upscale_enabled     = NO
+upscale_service_url =
 
-; mod_dir is an optional Mod Directory, like :
-; mod_dir = C:\Diablo2\mods\my_mod
+; Examples of explicit configuration:
+; d2_install = C:\Diablo2
+; d2exp      = D:\custom\d2exp.mpq
+; mod_dir    = C:\Diablo2\mods\my_mod
+; upscale_enabled     = YES
+; upscale_service_url = http://10.0.10.30:8084
 
 ; data_dir overrides where the editor looks for its runtime data
 ; (palettes, gamma table, obj.txt, ds1edit.dt1, undo temp files).

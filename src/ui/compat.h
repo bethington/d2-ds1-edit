@@ -278,6 +278,7 @@ extern ALLEGRO_KEYBOARD_STATE a5_kb_state;
 #define KEY_H         ALLEGRO_KEY_H
 #define KEY_I         ALLEGRO_KEY_I
 #define KEY_N         ALLEGRO_KEY_N
+#define KEY_O         ALLEGRO_KEY_O
 #define KEY_P         ALLEGRO_KEY_P
 #define KEY_Q         ALLEGRO_KEY_Q
 #define KEY_R         ALLEGRO_KEY_R
@@ -346,6 +347,8 @@ extern ALLEGRO_KEYBOARD_STATE a5_kb_state;
 #define KEY_9_PAD     ALLEGRO_KEY_PAD_9
 #define KEY_PGUP      ALLEGRO_KEY_PGUP
 #define KEY_PGDN      ALLEGRO_KEY_PGDN
+#define KEY_LBRACKET  ALLEGRO_KEY_OPENBRACE
+#define KEY_RBRACKET  ALLEGRO_KEY_CLOSEBRACE
 
 /* Global 'font' alias for a5_font */
 #define font a5_font

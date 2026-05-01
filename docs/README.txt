@@ -297,7 +297,7 @@ Mouse wheel
 P = Print screen (screenshot)
 
 SHIFT + P
-   BIG screenshot. This will make a .bmp that contains the entire ds1 image, not
+   BIG screenshot. This will make a .png that contains the entire ds1 image, not
    only the visible screen : how to dump the entire ds1 into 1 image in 1 second
 
 
@@ -498,7 +498,7 @@ In the 'Object' editing mode
 ============================
 
 Objects are in the 'Obj.txt' file, open it with Excel or D2Excel if you're
-planning to edit it, there's Tabulations that mustn’t go away.
+planning to edit it, there's Tabulations that mustnï¿½t go away.
 
 Objects are displayed as 2 parts : a Label with infos, and the Feet
 (the object itself). The label don't exists in the game, it's just internal to

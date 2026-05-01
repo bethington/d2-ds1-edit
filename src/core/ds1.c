@@ -1,6 +1,7 @@
 #include <string.h>
 #include "structs.h"
 #include "core/dt1.h"
+#include "core/project.h"
 #include "error.h"
 #include "editor/objects.h"
 #include "render/preview.h"
@@ -412,11 +413,11 @@ int ds1_read(const char * ds1name, int ds1_idx, int new_width, int new_height)
       glb_ds1[ds1_idx].shadow_layer_mask[x] = 3; // transparent is default
 
    glb_ds1[ds1_idx].objects_layer_mask    = OL_NONE;
-   glb_ds1[ds1_idx].paths_layer_mask      = 1;
+   glb_ds1[ds1_idx].paths_layer_mask      = 0;
    glb_ds1[ds1_idx].walkable_layer_mask   = 0;
    glb_ds1[ds1_idx].subtile_help_display  = 1;
    glb_ds1[ds1_idx].animations_layer_mask = 1;
-   glb_ds1[ds1_idx].special_layer_mask    = 1;
+   glb_ds1[ds1_idx].special_layer_mask    = 0;
    
    // load from disk into memory
    in = fopen(ds1name, "rb");
@@ -1275,6 +1276,30 @@ void ds1_save(int ds1_idx, int is_tmp_file)
    if (strlen(glb_ds1[ds1_idx].name) == 0)
       return;
 
+   // Phase 6 copy-on-save: on a real save (not the rolling .TMP autosave),
+   // if a project is open and the DS1 was loaded from outside it, redirect
+   // the write into the project's Global\Tiles\<suffix> tree. After the
+   // first redirected save, glb_ds1[idx].name lives inside the project, so
+   // subsequent saves are in-place and the backup-rename path works.
+   // TMP saves stay next to the origin so auto-saves don't silently move a
+   // file into the project before the user has explicitly committed to it.
+   if (!is_tmp_file)
+   {
+      char redir[256];
+      if (project_redirect_ds1_save_path(glb_ds1[ds1_idx].name,
+                                         redir, sizeof(redir)))
+      {
+         fprintf(stdout, "copy-on-save: %s -> %s\n",
+                 glb_ds1[ds1_idx].name, redir);
+         fprintf(stderr, "copy-on-save: %s -> %s\n",
+                 glb_ds1[ds1_idx].name, redir);
+         project_ensure_parent_dirs(redir);
+         strncpy(glb_ds1[ds1_idx].name, redir,
+                 sizeof(glb_ds1[ds1_idx].name) - 1);
+         glb_ds1[ds1_idx].name[sizeof(glb_ds1[ds1_idx].name) - 1] = 0;
+      }
+   }
+
    // file must have an extension
    strcpy(tmp, glb_ds1[ds1_idx].name);
    if (strlen(tmp) < 4)
@@ -1298,21 +1323,27 @@ void ds1_save(int ds1_idx, int is_tmp_file)
       // save a ds1 with the extension .ds1
       // 1st, rename the current .ds1 to an incremental name (for backup)
 
-      // find the 1st free slot
-      sprintf(tmp_name, "%s-%03i.ds1", tmp, i);
-      while (a5_file_exists(tmp_name))
+      if (a5_file_exists(glb_ds1[ds1_idx].name))
       {
-         i++;
+         // find the 1st free slot
          sprintf(tmp_name, "%s-%03i.ds1", tmp, i);
-      }
+         while (a5_file_exists(tmp_name))
+         {
+            i++;
+            sprintf(tmp_name, "%s-%03i.ds1", tmp, i);
+         }
 
-      // rename the original ds1 to that incremental name
-      if (rename(glb_ds1[ds1_idx].name, tmp_name))
-      {
-         sprintf(tmp, "ds1save(), couldn't rename %s to %s",
-            glb_ds1[ds1_idx].name, tmp_name);
-         ds1edit_error(tmp);
+         // rename the original ds1 to that incremental name
+         if (rename(glb_ds1[ds1_idx].name, tmp_name))
+         {
+            sprintf(tmp, "ds1save(), couldn't rename %s to %s",
+               glb_ds1[ds1_idx].name, tmp_name);
+            ds1edit_error(tmp);
+         }
       }
+      // else: fresh path (e.g. copy-on-save redirected us into the
+      // project for the first time) -- no existing file to back up,
+      // skip the rename step entirely.
 
       // then, we can save the ds1
       strcpy(tmp_name, glb_ds1[ds1_idx].name);
