@@ -902,8 +902,30 @@ static int resolve_target_token_category(const char *token,
 /* Bring the editor up to the point where compose_apng_export works:
  * MPQ chain open, palettes loaded, a5_current_palette set. Caller has
  * already done cli_minimum_init. */
+/* Allocate the global DS1/DT1 storage tables. The full ds1edit_init
+ * does this plus a lot of GUI work (cursors, font, screen buffer,
+ * etc.) we deliberately skip in CLI mode -- but the asset_export
+ * pipeline's DT1 path uses glb_dt1[idx] as a slot table, so it
+ * needs to exist. Idempotent. */
+static void cli_alloc_global_buffers(void)
+{
+   if (glb_ds1 == NULL)
+   {
+      size_t bytes = sizeof(DS1_S) * DS1_MAX;
+      glb_ds1 = (DS1_S *) malloc(bytes);
+      if (glb_ds1 != NULL) memset(glb_ds1, 0, bytes);
+   }
+   if (glb_dt1 == NULL)
+   {
+      size_t bytes = sizeof(DT1_S) * DT1_MAX;
+      glb_dt1 = (DT1_S *) malloc(bytes);
+      if (glb_dt1 != NULL) memset(glb_dt1, 0, bytes);
+   }
+}
+
 static int compose_runtime_init(void)
 {
+   cli_alloc_global_buffers();
    ds1edit_load_palettes();
    a5_current_palette = &glb_ds1edit.vga_pal[0];
    /* compose_index is needed for monsters / NPCs / objects; idempotent
