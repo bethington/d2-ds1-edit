@@ -54,6 +54,7 @@ set(SOURCES
     src/core/dcc.c
     src/core/dc6.c
     src/core/export_common.c
+    src/core/glob_match.c
     src/core/mpq_index.c
     src/core/mpq_index_query.c
     src/core/palette.c

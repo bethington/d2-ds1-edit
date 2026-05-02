@@ -15,6 +15,14 @@ target_include_directories(test_export_common PRIVATE
 )
 add_test(NAME export_common COMMAND test_export_common)
 
+# Glob matcher (used by export preset patterns)
+add_executable(test_glob_match test_glob_match.c ../src/core/glob_match.c)
+target_link_libraries(test_glob_match PRIVATE unity)
+target_include_directories(test_glob_match PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
+add_test(NAME glob_match COMMAND test_glob_match)
+
 add_executable(test_asset_export_smoke
     test_asset_export_smoke.c
     test_asset_export_stubs.c
