@@ -40,6 +40,7 @@ set(SOURCES
     src/misc.c
     # core/
     src/core/apng_writer.c
+    src/core/compose_naming.c
     src/core/area_browser.c
     src/core/area_metadata.c
     src/core/d2install.c

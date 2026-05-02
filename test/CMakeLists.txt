@@ -55,6 +55,14 @@ target_include_directories(test_animdata_speed PRIVATE
 )
 add_test(NAME animdata_speed COMMAND test_animdata_speed)
 
+# Compose naming: class code -> full name + filename sanitization
+add_executable(test_compose_naming test_compose_naming.c ../src/core/compose_naming.c)
+target_link_libraries(test_compose_naming PRIVATE unity)
+target_include_directories(test_compose_naming PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
+add_test(NAME compose_naming COMMAND test_compose_naming)
+
 add_executable(test_asset_export_smoke
     test_asset_export_smoke.c
     test_asset_export_stubs.c
