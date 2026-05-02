@@ -13,8 +13,11 @@
 #include "structs.h"
 #include "core/compose_cof.h"
 #include "core/compose_cof_path.h"
+#include "core/compose_index.h"
 #include "core/compose_iter.h"
+#include "core/compose_naming.h"
 #include "core/compose_palette.h"
+#include "core/compose_presets.h"
 #include "core/d2install.h"
 
 extern void ds1edit_open_all_mpq(void);
@@ -39,22 +42,28 @@ typedef struct CLI_VERB_S
 
 /* Forward declarations of per-verb entry points. As we add Phase N
  * verbs we register them here. */
-static int verb_list_mpqs(int argc, char **argv);
-static int verb_probe    (int argc, char **argv);
-static int verb_probe_cof(int argc, char **argv);
-static int verb_help     (int argc, char **argv);
+static int verb_list_mpqs   (int argc, char **argv);
+static int verb_probe       (int argc, char **argv);
+static int verb_probe_cof   (int argc, char **argv);
+static int verb_list_tokens (int argc, char **argv);
+static int verb_list_presets(int argc, char **argv);
+static int verb_help        (int argc, char **argv);
 
 static const CLI_VERB_S s_verbs[] = {
-   { "list-mpqs", verb_list_mpqs,
+   { "list-mpqs",    verb_list_mpqs,
      "Show which MPQ slots are open and how many files each contains." },
-   { "probe",     verb_probe,
+   { "probe",        verb_probe,
      "Look up a virtual path in the MPQ chain (e.g. data\\Global\\AnimData.d2)." },
-   { "probe-cof", verb_probe_cof,
+   { "probe-cof",    verb_probe_cof,
      "Build the COF path for <category> <token> <mode> <weapon>, load + parse, dump info." },
-   { "help",      verb_help,
+   { "list-tokens",  verb_list_tokens,
+     "Dump tokens compose_index discovered in <category> (chars/monsters/npcs/objects)." },
+   { "list-presets", verb_list_presets,
+     "Dump parsed [char_mode_presets] and [char_weapon_presets] from Ds1edit.ini." },
+   { "help",         verb_help,
      "Show this help text." },
-   { "--help",    verb_help, NULL },
-   { "-h",        verb_help, NULL },
+   { "--help",       verb_help, NULL },
+   { "-h",           verb_help, NULL },
    { NULL, NULL, NULL }
 };
 
@@ -527,6 +536,149 @@ static int verb_probe_cof(int argc, char **argv)
 
    compose_cof_free(&cof);
    free(buf);
+   return CLI_EXIT_OK;
+}
+
+/* ---- list-tokens ----------------------------------------------------- */
+
+static int verb_list_tokens(int argc, char **argv)
+{
+   CLI_COMMON_OPTS_S opts;
+   const char *positional[2];
+   int n_pos;
+   COMPOSE_CATEGORY_E category;
+   int rc, i, count;
+
+   if (!parse_common_opts(argc, argv, &opts))
+      return CLI_EXIT_BAD_ARGS;
+
+   n_pos = collect_positional(argc, argv, positional, 2);
+   if (n_pos < 1)
+   {
+      fprintf(stderr,
+         "ds1edit list-tokens: missing category argument\n"
+         "Usage: ds1edit list-tokens <chars|monsters|npcs|objects>\n");
+      return CLI_EXIT_BAD_ARGS;
+   }
+
+   category = parse_category(positional[0]);
+   if (category == COMPOSE_CATEGORY_NONE)
+   {
+      fprintf(stderr, "ds1edit list-tokens: unknown category '%s'\n",
+              positional[0]);
+      return CLI_EXIT_BAD_ARGS;
+   }
+
+   rc = cli_minimum_init(&opts);
+   if (rc != CLI_EXIT_OK) return rc;
+
+   /* Player chars come from the hardcoded list in compose_iter; the
+    * other categories require the MonStats/Objects index. */
+   if (category == COMPOSE_CATEGORY_PLAYER_CHAR)
+   {
+      count = compose_iter_player_class_count();
+      printf("category: chars  count: %d\n", count);
+      for (i = 0; i < count; i++)
+      {
+         const char *code = compose_iter_player_class_at(i);
+         const char *name = compose_naming_class_name(code);
+         printf("  %-8s %s\n", code != NULL ? code : "?",
+                name != NULL ? name : "");
+      }
+      return CLI_EXIT_OK;
+   }
+
+   if (!compose_index_build())
+   {
+      fprintf(stderr,
+         "ds1edit list-tokens: compose_index_build failed "
+         "(MonStats.txt / Objects.txt missing or unparseable)\n");
+      return CLI_EXIT_NOTHING;
+   }
+
+   switch (category)
+   {
+      case COMPOSE_CATEGORY_MONSTER:
+         count = compose_index_monster_count();
+         printf("category: monsters  count: %d\n", count);
+         for (i = 0; i < count; i++)
+         {
+            const COMPOSE_TOKEN_S *t = compose_index_monster_at(i);
+            if (t != NULL) printf("  %-8s %s\n", t->code, t->name);
+         }
+         break;
+      case COMPOSE_CATEGORY_NPC:
+         count = compose_index_npc_count();
+         printf("category: npcs  count: %d\n", count);
+         for (i = 0; i < count; i++)
+         {
+            const COMPOSE_TOKEN_S *t = compose_index_npc_at(i);
+            if (t != NULL) printf("  %-8s %s\n", t->code, t->name);
+         }
+         break;
+      case COMPOSE_CATEGORY_OBJECT:
+         count = compose_index_object_count();
+         printf("category: objects  count: %d\n", count);
+         for (i = 0; i < count; i++)
+         {
+            const COMPOSE_TOKEN_S *t = compose_index_object_at(i);
+            if (t != NULL) printf("  %-8s %s\n", t->code, t->name);
+         }
+         break;
+      default:
+         return CLI_EXIT_BAD_ARGS;
+   }
+   return CLI_EXIT_OK;
+}
+
+/* ---- list-presets ---------------------------------------------------- */
+
+static int dump_preset_table(const char *label,
+                             int (*count_fn)(void),
+                             const COMPOSE_PRESET_S *(*at_fn)(int))
+{
+   int n = count_fn();
+   int i, j;
+
+   printf("[%s]  count: %d\n", label, n);
+   for (i = 0; i < n; i++)
+   {
+      const COMPOSE_PRESET_S *p = at_fn(i);
+      if (p == NULL) continue;
+      printf("  %-24s = ", p->name);
+      for (j = 0; j < p->code_count; j++)
+      {
+         if (j > 0) printf(", ");
+         printf("%s", p->codes[j]);
+      }
+      printf("\n");
+   }
+   return n;
+}
+
+static int verb_list_presets(int argc, char **argv)
+{
+   CLI_COMMON_OPTS_S opts;
+   int rc;
+
+   if (!parse_common_opts(argc, argv, &opts))
+      return CLI_EXIT_BAD_ARGS;
+
+   /* INI load is the load-bearing thing here; MPQ chain is irrelevant.
+    * cli_minimum_init runs both, which is fine -- the MPQ open just
+    * adds a few hundred ms. */
+   rc = cli_minimum_init(&opts);
+   if (rc != CLI_EXIT_OK && rc != CLI_EXIT_NOTHING)
+      return rc;
+   /* Tolerate "no MPQs" here -- we only need the INI. */
+
+   dump_preset_table("char_mode_presets",
+                     compose_mode_presets_count,
+                     compose_mode_presets_at);
+   printf("\n");
+   dump_preset_table("char_weapon_presets",
+                     compose_weapon_presets_count,
+                     compose_weapon_presets_at);
    return CLI_EXIT_OK;
 }
 
