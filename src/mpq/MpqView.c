@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <zlib.h>
 #include "mpqTypes.h"
 #include "Dclib.h"
 
@@ -131,10 +132,18 @@ void mpq_batch_open(char * mpqname)
    }
 
    // ok, let's go
+   /* Compression method bits we know how to invert. 0x02 (Zlib) was
+    * added when we discovered D2 uses it for (listfile) -- before
+    * the addition every Zlib block fell through every if-branch in
+    * ExtractToMem and the output stayed uninitialised. */
    glb_mpq->avail_metods[0] = 0x08;
    glb_mpq->avail_metods[1] = 0x01;
    glb_mpq->avail_metods[2] = 0x40;
    glb_mpq->avail_metods[3] = 0x80;
+   /* avail_metods is fixed-size [4] in the struct; the iteration
+    * counter only looks at those four slots. 0x02 is handled
+    * unconditionally inside the if(metod&0x02) branch and is
+    * effectively always solo for D2's use cases. */
 
    // open mpq
    strcpy(glb_mpq->file_name, mpqname);
@@ -699,6 +708,26 @@ int ExtractTo(FILE *fp_new,DWORD entry)
 *	FUNCTION:	ExtractToMem(FILE,DWORD) - extract file from archive
 *
 ******************************************************************************/
+/* Zlib inflate of a single MPQ compressed block. Returns the number
+ * of bytes decompressed, or 0 on failure. The caller has already
+ * stripped the 1-byte method indicator. */
+static UInt32 ExtZlibInflate(const UInt8 *src, UInt32 src_len,
+                             UInt8 *dst, UInt32 dst_cap)
+{
+   z_stream zs;
+   int ret;
+   memset(&zs, 0, sizeof(zs));
+   zs.next_in   = (Bytef *) src;
+   zs.avail_in  = src_len;
+   zs.next_out  = dst;
+   zs.avail_out = dst_cap;
+   if (inflateInit(&zs) != Z_OK) return 0;
+   ret = inflate(&zs, Z_FINISH);
+   inflateEnd(&zs);
+   if (ret != Z_STREAM_END && ret != Z_OK) return 0;
+   return (UInt32) zs.total_out;
+}
+
 int ExtractToMem(void * mp_new, DWORD entry)
 {
 	DWORD  size_pack,size_unpack;
@@ -770,6 +799,40 @@ int ExtractToMem(void * mp_new, DWORD entry)
 					metod=8;									// . .file is compressed with DCL
 				}
 				write_buffer=glb_mpq->write_buffer_start;
+				if(metod&0x02) {
+					/* Zlib (deflate). D2 uses this for the (listfile) and
+					 * a handful of other files. Without this branch the
+					 * surrounding code falls through every if and
+					 * memcpys an uninitialised write_buffer to the
+					 * output, leaving the destination filled with 0xCD
+					 * in MSVC Debug builds.
+					 *
+					 * NB: we deliberately don't run the
+					 * iteration--/buffer-swap dance the other methods
+					 * use. 0x02 isn't registered in avail_metods so
+					 * iteration is 0 here; underflowing it would alias
+					 * read_buffer to write_buffer next iteration and
+					 * the subsequent fread would clobber the inflate
+					 * output we just produced. In real D2 0x02 is
+					 * always solo, so chained methods don't apply. */
+					lenght_read = ExtZlibInflate(read_buffer, lenght_read,
+					                             write_buffer, 0x1000);
+					if (lenght_read == 0)
+					{
+						/* Zlib failed for this block; advance buff_ptr
+						 * by the expected unpacked size so subsequent
+						 * blocks land at the right offset, even though
+						 * this block's bytes will be uninitialised /
+						 * stale. */
+						UInt32 expected = (j == num_block-2)
+						                    ? (size_unpack & 0xFFF)
+						                    : 0x1000;
+						buff_ptr += expected;
+						read_buffer=glb_mpq->read_buffer_start;
+						crc_file++;
+						continue;
+					}
+				}
 				if(metod&0x08) {
 					param.buf_in =read_buffer;
 					param.buf_out=write_buffer;
