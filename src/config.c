@@ -4,6 +4,7 @@
 #include "error.h"
 #include "config.h"
 #include "core/export_presets.h"
+#include "core/compose_presets.h"
 
 // ==========================================================================
 // create a new ds1edit.ini
@@ -190,7 +191,32 @@ void ini_create(char *ininame)
        "tiles_act2    = dt1 | data\\global\\tiles\\ACT2\\**\\*.dt1\n"
        "tiles_act3    = dt1 | data\\global\\tiles\\ACT3\\**\\*.dt1\n"
        "tiles_act4    = dt1 | data\\global\\tiles\\ACT4\\**\\*.dt1\n"
-       "tiles_act5    = dt1 | data\\global\\tiles\\ACT5\\**\\*.dt1\n",
+       "tiles_act5    = dt1 | data\\global\\tiles\\ACT5\\**\\*.dt1\n"
+       "\n"
+       "\n"
+       "; Compose-mode export: full descriptive folder names switch.\n"
+       "; ==================================================================\n"
+       "compose_use_full_folder_names = NO\n"
+       "\n"
+       "\n"
+       "; Animation mode presets for compose-mode multi-select picker.\n"
+       "; Codes: NU TW WL RN A1 A2 DT GH SC TH KK BL S1..S8\n"
+       "; ==================================================================\n"
+       "[char_mode_presets]\n"
+       "idle_only       = NU\n"
+       "idle_walk       = NU, WL\n"
+       "standard_combat = NU, WL, A1, DT\n"
+       "\n"
+       "\n"
+       "; Weapon-class presets for compose-mode multi-select picker.\n"
+       "; Codes: HTH 1HS 1HT 2HS 2HT BOW XBW STF HT1 HT2\n"
+       "; ==================================================================\n"
+       "[char_weapon_presets]\n"
+       "bare_hands = HTH\n"
+       "melee      = HTH, 1HS, 2HS\n"
+       "ranged     = HTH, BOW, XBW\n"
+       "magic      = HTH, STF\n"
+       "common     = HTH, 1HS, BOW, STF\n",
        out);
 
    fclose(out);
@@ -224,6 +250,7 @@ void ini_read(char *ininame)
            {"upscale_enabled", T_YES, &glb_config.upscale_enabled, "NO"},
            {"upscale_service_url", T_STR, &glb_config.upscale_service_url, ""},
            {"export_dc6_single_frame_only", T_YES, &glb_config.export_dc6_single_frame_only, "YES"},
+           {"compose_use_full_folder_names", T_YES, &glb_config.compose_use_full_folder_names, "NO"},
            {"d2char", T_MPQ, &glb_config.mpq_file[3], ""},
            {"d2data", T_MPQ, &glb_config.mpq_file[2], ""},
            {"d2exp", T_MPQ, &glb_config.mpq_file[1], ""},
@@ -426,6 +453,52 @@ void ini_read(char *ininame)
          else
             fprintf(stderr,
                     "ini_read(): ignored malformed [export_presets] entry: %s\n",
+                    key);
+         key = al_get_next_config_entry(&ent_iter);
+      }
+   }
+
+   // [char_mode_presets] section — named D2 mode-code lists for the
+   // compose-mode multi-select picker.
+   compose_mode_presets_reset();
+   {
+      ALLEGRO_CONFIG_ENTRY *ent_iter = NULL;
+      const char *key = al_get_first_config_entry(a5_config,
+                                                  "char_mode_presets",
+                                                  &ent_iter);
+      while (key != NULL)
+      {
+         const char *value = al_get_config_value(a5_config,
+                                                 "char_mode_presets", key);
+         COMPOSE_PRESET_S preset;
+         if (value != NULL && compose_preset_parse(key, value, &preset))
+            compose_mode_presets_add(&preset);
+         else
+            fprintf(stderr,
+                    "ini_read(): ignored malformed [char_mode_presets] entry: %s\n",
+                    key);
+         key = al_get_next_config_entry(&ent_iter);
+      }
+   }
+
+   // [char_weapon_presets] section — named D2 weapon-class-code lists
+   // for the compose-mode multi-select picker.
+   compose_weapon_presets_reset();
+   {
+      ALLEGRO_CONFIG_ENTRY *ent_iter = NULL;
+      const char *key = al_get_first_config_entry(a5_config,
+                                                  "char_weapon_presets",
+                                                  &ent_iter);
+      while (key != NULL)
+      {
+         const char *value = al_get_config_value(a5_config,
+                                                 "char_weapon_presets", key);
+         COMPOSE_PRESET_S preset;
+         if (value != NULL && compose_preset_parse(key, value, &preset))
+            compose_weapon_presets_add(&preset);
+         else
+            fprintf(stderr,
+                    "ini_read(): ignored malformed [char_weapon_presets] entry: %s\n",
                     key);
          key = al_get_next_config_entry(&ent_iter);
       }
