@@ -15,6 +15,7 @@
 #include "core/dcc.h"
 #include "core/dc6.h"
 #include "core/dc6_header.h"
+#include "core/glob_match.h"
 #include "core/asset_export.h"
 
 #ifdef WIN32
@@ -424,27 +425,29 @@ static int dc6_path_is_single_frame(const char *asset_path)
    return sf == 1;
 }
 
-// Considers a discovered asset path for inclusion in the export plan.
-// Counts each first-time-seen path as a candidate (drives `total_candidates`
-// for diagnostic messages), then applies content-level filters before
-// deciding whether to actually add to the plan. Idempotent: re-considering
-// the same path is a no-op (does not double-count).
-static void consider_candidate_for_plan(const char *asset_path,
-                                        const char *type_filter,
-                                        EXPORT_PATH_LIST_S *out_paths)
+// Applies content-level filters to a path that has already passed the
+// scope check (type filter or glob pattern). Increments total_candidates
+// for first-time-seen paths and adds to the plan if the content filters
+// pass. Invalid DT1 payloads are silently discarded (not counted) to
+// preserve existing behavior. Idempotent on duplicate paths.
+static void consider_path_after_scope_match(const char *asset_path,
+                                            EXPORT_PATH_LIST_S *out_paths)
 {
    const char *ext;
 
    if (out_paths == NULL || asset_path == NULL || asset_path[0] == 0)
       return;
-   if (!asset_path_matches_discovery_filter(asset_path, type_filter))
-      return;
    if (export_path_list_contains(out_paths, asset_path))
+      return;
+
+   ext = a5_get_extension(asset_path);
+
+   if (ext != NULL && stricmp(ext, "dt1") == 0
+       && !dt1_payload_looks_valid_for_export(asset_path))
       return;
 
    out_paths->total_candidates++;
 
-   ext = a5_get_extension(asset_path);
    if (ext != NULL && stricmp(ext, "dc6") == 0
        && glb_config.export_dc6_single_frame_only)
    {
@@ -453,6 +456,32 @@ static void consider_candidate_for_plan(const char *asset_path,
    }
 
    export_path_list_add(out_paths, asset_path);
+}
+
+// Considers a discovered asset path under a type-filter scope (legacy
+// prefix-based discovery). Wraps the type-extension check around the
+// shared content-filter helper.
+static void consider_candidate_for_plan(const char *asset_path,
+                                        const char *type_filter,
+                                        EXPORT_PATH_LIST_S *out_paths)
+{
+   if (asset_path == NULL)
+      return;
+   if (!asset_path_matches_type(asset_path, type_filter))
+      return;
+   consider_path_after_scope_match(asset_path, out_paths);
+}
+
+// Considers a discovered asset path under a glob-pattern scope.
+static void consider_candidate_for_pattern(const char *asset_path,
+                                           const char *pattern,
+                                           EXPORT_PATH_LIST_S *out_paths)
+{
+   if (asset_path == NULL || pattern == NULL)
+      return;
+   if (!glob_match(pattern, asset_path))
+      return;
+   consider_path_after_scope_match(asset_path, out_paths);
 }
 
 static int asset_path_matches_prefix(const char *asset_path, const char *asset_prefix)
@@ -616,9 +645,12 @@ static void dt1_discovery_cache_store(const char *asset_path, int is_valid)
 }
 
 #ifdef WIN32
+// `type_filter` is consulted when `pattern` is NULL; otherwise pattern
+// matching takes over and type_filter is ignored.
 static void collect_overlay_assets_recursive(const char *root_dir,
                                              const char *current_dir,
                                              const char *type_filter,
+                                             const char *pattern,
                                              EXPORT_PATH_LIST_S *out_paths)
 {
    WIN32_FIND_DATAA fd;
@@ -640,7 +672,8 @@ static void collect_overlay_assets_recursive(const char *root_dir,
       snprintf(disk_path, sizeof(disk_path), "%s\\%s", current_dir, fd.cFileName);
       if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
       {
-         collect_overlay_assets_recursive(root_dir, disk_path, type_filter, out_paths);
+         collect_overlay_assets_recursive(root_dir, disk_path,
+                                          type_filter, pattern, out_paths);
       }
       else
       {
@@ -650,7 +683,11 @@ static void collect_overlay_assets_recursive(const char *root_dir,
          if (*relative == '\\')
             relative++;
          snprintf(virtual_path, sizeof(virtual_path), "Data\\%s", relative);
-         consider_candidate_for_plan(virtual_path, type_filter, out_paths);
+
+         if (pattern != NULL)
+            consider_candidate_for_pattern(virtual_path, pattern, out_paths);
+         else
+            consider_candidate_for_plan(virtual_path, type_filter, out_paths);
       }
    } while (FindNextFileA(hFind, &fd));
 
@@ -690,12 +727,29 @@ static void collect_overlay_assets_for_prefix(const char *asset_prefix,
       return;
 
    if ((attrs & FILE_ATTRIBUTE_DIRECTORY) != 0)
-      collect_overlay_assets_recursive(glb_config.mod_dir[0], disk_prefix, type_filter, out_paths);
+      collect_overlay_assets_recursive(glb_config.mod_dir[0], disk_prefix,
+                                       type_filter, NULL, out_paths);
    else
       consider_candidate_for_plan(prefix_norm, type_filter, out_paths);
 #else
    (void) asset_prefix;
    (void) type_filter;
+   (void) out_paths;
+#endif
+}
+
+static void collect_overlay_assets_for_pattern(const char *pattern,
+                                               EXPORT_PATH_LIST_S *out_paths)
+{
+#ifdef WIN32
+   if (glb_config.mod_dir[0] == NULL || pattern == NULL || out_paths == NULL)
+      return;
+
+   collect_overlay_assets_recursive(glb_config.mod_dir[0],
+                                    glb_config.mod_dir[0],
+                                    NULL, pattern, out_paths);
+#else
+   (void) pattern;
    (void) out_paths;
 #endif
 }
@@ -725,9 +779,13 @@ static void trim_listfile_line(char *line)
    }
 }
 
+// Walks the (listfile) inside `mpq`. When `pattern` is non-NULL the
+// scope is glob-based and `asset_prefix`/`type_filter` are unused;
+// otherwise the scope is the prefix + type combination.
 static void collect_internal_listfile_assets(GLB_MPQ_S *mpq,
                                              const char *asset_prefix,
                                              const char *type_filter,
+                                             const char *pattern,
                                              EXPORT_PATH_LIST_S *out_paths)
 {
    GLB_MPQ_S *saved_mpq;
@@ -760,8 +818,13 @@ static void collect_internal_listfile_assets(GLB_MPQ_S *mpq,
       {
          line[line_len] = 0;
          trim_listfile_line(line);
-         if (line[0] != 0 && asset_path_matches_prefix(line, asset_prefix))
-            consider_candidate_for_plan(line, type_filter, out_paths);
+         if (line[0] != 0)
+         {
+            if (pattern != NULL)
+               consider_candidate_for_pattern(line, pattern, out_paths);
+            else if (asset_path_matches_prefix(line, asset_prefix))
+               consider_candidate_for_plan(line, type_filter, out_paths);
+         }
          line_len = 0;
          continue;
       }
@@ -774,20 +837,30 @@ static void collect_internal_listfile_assets(GLB_MPQ_S *mpq,
    {
       line[line_len] = 0;
       trim_listfile_line(line);
-      if (line[0] != 0 && asset_path_matches_prefix(line, asset_prefix))
-         consider_candidate_for_plan(line, type_filter, out_paths);
+      if (line[0] != 0)
+      {
+         if (pattern != NULL)
+            consider_candidate_for_pattern(line, pattern, out_paths);
+         else if (asset_path_matches_prefix(line, asset_prefix))
+            consider_candidate_for_plan(line, type_filter, out_paths);
+      }
    }
 
    free(buffer);
 }
 
-static void collect_known_mpq_assets_for_prefix(const char *asset_prefix,
-                                                const char *type_filter,
-                                                EXPORT_PATH_LIST_S *out_paths)
+// Walks every open MPQ's (listfile) and identify_table. When `pattern`
+// is non-NULL the scope is glob-based; otherwise prefix + type-filter.
+static void collect_known_mpq_assets(const char *asset_prefix,
+                                     const char *type_filter,
+                                     const char *pattern,
+                                     EXPORT_PATH_LIST_S *out_paths)
 {
    int mpq_idx;
 
-   if (asset_prefix == NULL || out_paths == NULL)
+   if (out_paths == NULL)
+      return;
+   if (pattern == NULL && asset_prefix == NULL)
       return;
 
    for (mpq_idx = 0; mpq_idx < MAX_MPQ_FILE; mpq_idx++)
@@ -798,7 +871,8 @@ static void collect_known_mpq_assets_for_prefix(const char *asset_prefix,
       if (mpq->is_open == FALSE)
          continue;
 
-      collect_internal_listfile_assets(mpq, asset_prefix, type_filter, out_paths);
+      collect_internal_listfile_assets(mpq, asset_prefix, type_filter,
+                                       pattern, out_paths);
 
       if (mpq->filename_table == NULL || mpq->identify_table == NULL)
          continue;
@@ -811,11 +885,32 @@ static void collect_known_mpq_assets_for_prefix(const char *asset_prefix,
             continue;
 
          asset_path = mpq->filename_table + (MPQTYPES_MAX_PATH * entry);
-         if (!asset_path_matches_prefix(asset_path, asset_prefix))
-            continue;
-         consider_candidate_for_plan(asset_path, type_filter, out_paths);
+
+         if (pattern != NULL)
+         {
+            consider_candidate_for_pattern(asset_path, pattern, out_paths);
+         }
+         else
+         {
+            if (!asset_path_matches_prefix(asset_path, asset_prefix))
+               continue;
+            consider_candidate_for_plan(asset_path, type_filter, out_paths);
+         }
       }
    }
+}
+
+static void collect_known_mpq_assets_for_prefix(const char *asset_prefix,
+                                                const char *type_filter,
+                                                EXPORT_PATH_LIST_S *out_paths)
+{
+   collect_known_mpq_assets(asset_prefix, type_filter, NULL, out_paths);
+}
+
+static void collect_known_mpq_assets_for_pattern(const char *pattern,
+                                                 EXPORT_PATH_LIST_S *out_paths)
+{
+   collect_known_mpq_assets(NULL, NULL, pattern, out_paths);
 }
 
 static int path_list_contains(char paths[][256], int count, const char *path)
@@ -1244,6 +1339,22 @@ int asset_export_plan_for_prefix(const char *asset_prefix,
 
    collect_overlay_assets_for_prefix(asset_prefix, type_filter, plan_out);
    collect_known_mpq_assets_for_prefix(asset_prefix, type_filter, plan_out);
+
+   dt1_discovery_cache_reset();
+   return 1;
+}
+
+int asset_export_plan_for_pattern(const char *pattern,
+                                  ASSET_EXPORT_PLAN_S *plan_out)
+{
+   if (plan_out == NULL || pattern == NULL || pattern[0] == 0)
+      return 0;
+
+   asset_export_plan_init(plan_out);
+   dt1_discovery_cache_reset();
+
+   collect_overlay_assets_for_pattern(pattern, plan_out);
+   collect_known_mpq_assets_for_pattern(pattern, plan_out);
 
    dt1_discovery_cache_reset();
    return 1;

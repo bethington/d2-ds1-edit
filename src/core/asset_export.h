@@ -30,6 +30,14 @@ int asset_export_plan_for_prefix(const char *asset_prefix,
                                  const char *type_filter,
                                  ASSET_EXPORT_PLAN_S *plan_out);
 
+// Build a plan from a glob pattern (see core/glob_match.h). The pattern
+// is matched against virtual asset paths under both the mod overlay and
+// the open MPQ chain. The pattern itself encodes the file extension, so
+// no separate type filter is required. Returns 1 on success, 0 on
+// parameter error.
+int asset_export_plan_for_pattern(const char *pattern,
+                                  ASSET_EXPORT_PLAN_S *plan_out);
+
 // Build a plan from an area group (the assets referenced by the loaded
 // area's lvltype/lvlprest entries). Returns 1 on success, 0 on
 // parameter error.
