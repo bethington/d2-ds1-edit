@@ -14,6 +14,7 @@
 #include "ui/compat.h"
 #include "ui/export_type_picker.h"
 #include "ui/project_menu.h"
+#include "ui/scope_picker.h"
 #include "ui/upscale_mode_picker.h"
 #include "ui/win_folder_picker.h"
 
@@ -741,6 +742,182 @@ static void action_export_all_assets(void)
 }
 
 
+// Unified export action: type picker -> scope picker -> output folder ->
+// upscale mode -> run. Replaces the four legacy export actions.
+static void action_export_unified(void)
+{
+   const char *type_filter;
+   AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
+   int area_available;
+   SCOPE_RESULT_S scope;
+   ASSET_EXPORT_PLAN_S plan;
+   char output_path[PROJECT_PATH_MAX];
+   char staging_path[PROJECT_PATH_MAX];
+   const char *export_path;
+   char folder_path[PROJECT_PATH_MAX];
+   char asset_prefix[PROJECT_PATH_MAX];
+   int exported_count;
+   int upscale_mode;
+
+   if (glb_config.mod_dir[0] == NULL || glb_config.mod_dir[0][0] == 0)
+   {
+      al_show_native_message_box(a5_display,
+         "Export Assets",
+         "No mod overlay is configured.",
+         "Set a mod directory in Ds1edit.ini before exporting.",
+         NULL,
+         ALLEGRO_MESSAGEBOX_WARN);
+      return;
+   }
+
+   type_filter = choose_export_type("Export - choose asset type");
+   if (type_filter == NULL)
+      return;
+
+   area_available =
+      (ab->selected_group >= 0 && ab->selected_group < ab->group_count);
+
+   if (!scope_picker_choose("Export - choose scope",
+                            type_filter, area_available, &scope))
+      return;
+
+   asset_export_plan_init(&plan);
+
+   switch (scope.kind)
+   {
+   case SCOPE_KIND_ALL:
+      asset_export_plan_for_prefix("Data", type_filter, &plan);
+      break;
+
+   case SCOPE_KIND_AREA:
+      if (area_available)
+         asset_export_plan_for_area_group(&ab->groups[ab->selected_group],
+                                          &plan);
+      break;
+
+   case SCOPE_KIND_FOLDER:
+      if (!pick_folder("Export - choose a source folder under the mod overlay",
+                       glb_config.mod_dir[0],
+                       folder_path, sizeof(folder_path)))
+         return;
+      if (!make_virtual_prefix_from_mod_path(folder_path,
+                                             asset_prefix, sizeof(asset_prefix)))
+      {
+         al_show_native_message_box(a5_display,
+            "Export Assets",
+            "The selected folder is outside the current mod overlay.",
+            glb_config.mod_dir[0],
+            NULL,
+            ALLEGRO_MESSAGEBOX_ERROR);
+         return;
+      }
+      asset_export_plan_for_prefix(asset_prefix, type_filter, &plan);
+      break;
+
+   case SCOPE_KIND_PATTERN:
+      asset_export_plan_for_pattern(scope.pattern, &plan);
+      break;
+
+   default:
+      return;
+   }
+
+   if (plan.count <= 0)
+   {
+      asset_export_plan_free(&plan);
+      al_show_native_message_box(a5_display,
+         "Export Assets",
+         "No exportable assets matched.",
+         "Check your scope, mod_dir, or single-frame DC6 filter.",
+         NULL,
+         ALLEGRO_MESSAGEBOX_WARN);
+      return;
+   }
+
+   if (!pick_folder("Export - choose an output folder",
+                    glb_project.is_open ? glb_project.path : NULL,
+                    output_path, sizeof(output_path)))
+   {
+      asset_export_plan_free(&plan);
+      return;
+   }
+   if (!confirm_overwrite_output("Export Assets", output_path))
+   {
+      asset_export_plan_free(&plan);
+      return;
+   }
+
+   upscale_mode = choose_upscale_mode("Export - choose upscale mode");
+   if (upscale_mode < 0)
+   {
+      asset_export_plan_free(&plan);
+      return;
+   }
+
+   export_path = output_path;
+   staging_path[0] = 0;
+   if (upscale_mode != UPSCALE_MODE_NONE)
+   {
+      if (!upscale_create_temp_dir(staging_path, sizeof(staging_path)))
+      {
+         asset_export_plan_free(&plan);
+         al_show_native_message_box(a5_display,
+            "Export Assets",
+            "Failed to prepare temporary export staging.",
+            NULL,
+            NULL,
+            ALLEGRO_MESSAGEBOX_ERROR);
+         return;
+      }
+      export_path = staging_path;
+   }
+
+   if (scope.kind == SCOPE_KIND_AREA && area_available)
+   {
+      int pal_idx = palette_resolve_index(ab->groups[ab->selected_group].act, 0);
+      a5_current_palette = &glb_ds1edit.vga_pal[pal_idx];
+   }
+   else
+   {
+      ensure_export_palette_ready();
+   }
+
+   exported_count = asset_export_run_plan(&plan, export_path);
+   asset_export_plan_free(&plan);
+
+   if (exported_count <= 0)
+   {
+      if (staging_path[0] != 0)
+         upscale_remove_tree(staging_path);
+      al_show_native_message_box(a5_display,
+         "Export Assets",
+         "No PNGs were written.",
+         "The matched assets did not produce any PNGs (decoder errors or empty input).",
+         NULL,
+         ALLEGRO_MESSAGEBOX_ERROR);
+      return;
+   }
+
+   if (upscale_mode != UPSCALE_MODE_NONE)
+   {
+      if (!run_upscale_pipeline("Export Assets", staging_path,
+                                output_path, upscale_mode))
+      {
+         upscale_remove_tree(staging_path);
+         return;
+      }
+      upscale_remove_tree(staging_path);
+   }
+
+   show_export_result(
+      "Export Assets",
+      "Exported %d PNG(s).",
+      "No PNGs were exported.",
+      exported_count,
+      output_path);
+}
+
+
 /* ---- public entry points ---- */
 
 void project_menu_handle_shortcuts(void)
@@ -785,7 +962,7 @@ void project_menu_handle_shortcuts(void)
    else if (key_pressed(ALLEGRO_KEY_A))
    {
       wait_release(ALLEGRO_KEY_A, KEY_LCONTROL, KEY_LSHIFT);
-      action_export_all_assets();
+      action_export_unified();
    }
 }
 
