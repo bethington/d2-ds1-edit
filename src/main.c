@@ -51,6 +51,7 @@ October 30 2011 :
 #include "core/palette.h"
 #include "ui/interface.h"
 #include "render/preview.h"
+#include "cli/cli.h"
 
 WRKSPC_DATAS_S glb_wrkspc_datas[WRKSPC_MAX] = // workspace datas saved in .ds1
     {
@@ -860,6 +861,17 @@ int main(int argc, char *argv[])
 
    if (!al_install_keyboard())
       ds1edit_error("main(), error.\nCan't install the Keyboard Handler.");
+
+   /* CLI mode: if argv[1] is a known verb, run headless and exit before
+    * any of the GUI-affecting startup machinery (display creation,
+    * cursor loading, screen buffers, etc.). The CLI does its own
+    * minimal init; we only pre-initialised Allegro itself + the addons
+    * the CLI's MPQ + asset code needs. */
+   if (cli_is_verb(argc, argv))
+   {
+      int rc = cli_run(argc, argv);
+      return rc;
+   }
 
    if (atexit(ds1edit_exit) != 0)
       ds1edit_error("main(), error.\nCan't install the 'atexit' Handler.");

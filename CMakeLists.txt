@@ -38,6 +38,8 @@ set(SOURCES
     src/config.c
     src/error.c
     src/misc.c
+    # cli/
+    src/cli/cli.c
     # core/
     src/core/apng_writer.c
     src/core/compose_apng.c
