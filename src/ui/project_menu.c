@@ -350,6 +350,20 @@ static int run_upscale_pipeline(const char *title,
    scale = (upscale_mode == UPSCALE_MODE_4X) ? 4 : 2;
    error[0] = 0;
 
+   /* Remote path is one big synchronous blob (zip + upload + wait +
+    * download + extract). Until the async-upscale plan lands, we can
+    * only repaint the dialog ONCE before the call to indicate what is
+    * happening, then the dialog freezes until the call returns. The
+    * label tells the user; the bar advances when control returns. */
+   if (export_task_is_active())
+   {
+      export_progress_set_show_remote_stages(1);
+      export_progress_set_stage(EXPORT_STAGE_REMOTE_PROCESSING,
+                                "Uploading and processing on remote service...",
+                                0);
+      export_progress_pump();
+   }
+
    if (upscale_directory_remote(staging_path, output_path, scale,
                                 "realesrgan", error, sizeof(error)))
       return 1;
@@ -362,6 +376,16 @@ static int run_upscale_pipeline(const char *title,
       ALLEGRO_MESSAGEBOX_YES_NO | ALLEGRO_MESSAGEBOX_WARN);
    if (rc != 1)
       return 0;
+
+   /* Falling back to local upscale -- restore local-stage weights. */
+   if (export_task_is_active())
+   {
+      export_progress_set_show_remote_stages(0);
+      export_progress_set_stage(EXPORT_STAGE_LOCAL_UPSCALE,
+                                (scale == 4) ? "Upscaling 4x (local)..."
+                                             : "Upscaling 2x (local)...",
+                                0);
+   }
 
    error[0] = 0;
    if (upscale_directory_local(staging_path, output_path, scale,
