@@ -939,6 +939,7 @@ static void run_one_token(COMPOSE_CATEGORY_E category,
    COMPOSE_RENDER_PARAMS_S p;
    char path_buf[1024];
    char dir_buf[1024];
+   char resolved_wclass_buf[16];
    int m, w;
 
    if (base == NULL) return;
@@ -972,8 +973,9 @@ static void run_one_token(COMPOSE_CATEGORY_E category,
             wclass = "";
          if (wclass == NULL) wclass = "";
 
-         dir_count = compose_iter_probe_direction_count(category, token,
-                                                        mode, wclass);
+         dir_count = compose_iter_probe_direction_count_resolve(
+            category, token, mode, wclass,
+            resolved_wclass_buf, (int) sizeof(resolved_wclass_buf));
          if (dir_count <= 0)
          {
             r->skipped++;
@@ -982,6 +984,10 @@ static void run_one_token(COMPOSE_CATEGORY_E category,
                       token, mode, wclass[0] ? wclass : "-");
             continue;
          }
+         /* Use the resolved wclass for the actual export so the COF
+          * + DCC path resolution inside compose_render is consistent
+          * with the probe. */
+         wclass = resolved_wclass_buf;
 
          if (compose_iter_build_output_dir(dir_buf, (int) sizeof(dir_buf),
                                            r->out_root, category, token,

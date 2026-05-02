@@ -121,4 +121,18 @@ int compose_iter_probe_direction_count(COMPOSE_CATEGORY_E category,
                                        const char *mode,
                                        const char *wclass);
 
+// Same probe, but also resolves the actual wclass that worked. For
+// chars the wclass is passed through; for monsters / NPCs / objects
+// the COF filename usually has "HTH" as a placeholder weapon-class
+// suffix even when the monster has no real weapon, so we try the
+// caller's wclass first then fall back to "HTH". On success, writes
+// the resolved wclass into out_wclass (cap >= 8). Returns the
+// direction_count, or 0 if no wclass produced a parseable COF.
+int compose_iter_probe_direction_count_resolve(COMPOSE_CATEGORY_E category,
+                                               const char *token,
+                                               const char *mode,
+                                               const char *wclass_in,
+                                               char *out_wclass,
+                                               int   out_wclass_cap);
+
 #endif
