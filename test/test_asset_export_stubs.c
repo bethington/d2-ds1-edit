@@ -188,6 +188,15 @@ int area_browser_init(void)
     return -1;
 }
 
+/* Stubs for the export_progress UI; the asset_export plan emitter calls
+ * these but they are dormant in tests because export_task_is_active()
+ * always returns 0 here. */
+int export_task_is_active(void) { return 0; }
+int export_progress_pump(void) { return 0; }
+void export_progress_set_current_item(const char *path) { (void) path; }
+void export_progress_advance(int delta) { (void) delta; }
+void export_progress_force_repaint(void) {}
+
 int dt1_add(char *dt1name)
 {
     (void)dt1name;

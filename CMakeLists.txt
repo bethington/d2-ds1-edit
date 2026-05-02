@@ -56,6 +56,7 @@ set(SOURCES
     src/core/dc6_header.c
     src/core/export_common.c
     src/core/export_presets.c
+    src/core/export_progress.c
     src/core/glob_match.c
     src/core/mpq_index.c
     src/core/mpq_index_query.c

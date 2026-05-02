@@ -15,6 +15,7 @@
 #include "core/dcc.h"
 #include "core/dc6.h"
 #include "core/dc6_header.h"
+#include "core/export_progress.h"
 #include "core/glob_match.h"
 #include "core/asset_export.h"
 
@@ -126,6 +127,63 @@ static void make_asset_basename_png(const char *asset_path, char *out, int out_c
    snprintf(out, out_cap, "%s.png", base);
 }
 
+// Build a FLAT output path for one frame of a single-direction
+// multi-frame DC6:
+//
+//   <output_dir>\<stem_parent>\<basename>_<NN>.png
+//
+// The frame-index suffix zero-pads to 1 digit when total_frames <= 9
+// and to 3 digits otherwise (per the user-visible naming convention).
+// For multi-direction DC6 (and for DCC) we keep the legacy nested
+// layout via make_anim_leaf + make_output_path.
+static int make_flat_frame_output(char *out, int out_cap,
+                                  const char *output_dir,
+                                  const char *asset_path,
+                                  int frame_idx, int total_frames)
+{
+   char stem[512];
+   char stem_parent[512];
+   const char *base;
+   char *last_sep;
+   int width;
+
+   if (out == NULL || out_cap <= 0
+       || output_dir == NULL || asset_path == NULL)
+      return 0;
+
+   normalize_asset_stem(asset_path, stem, sizeof(stem));
+   if (stem[0] == 0)
+      return 0;
+
+   strcpy(stem_parent, stem);
+   last_sep = strrchr(stem_parent, PATH_SEP);
+   if (last_sep != NULL)
+   {
+      base = last_sep + 1;
+      *last_sep = 0;
+   }
+   else
+   {
+      base = stem_parent;
+      stem_parent[0] = 0;
+   }
+
+   width = (total_frames > 9) ? 3 : 1;
+
+   if (stem_parent[0] != 0)
+   {
+      snprintf(out, out_cap, "%s%c%s%c%s_%0*d.png",
+         output_dir, PATH_SEP, stem_parent, PATH_SEP,
+         base, width, frame_idx);
+   }
+   else
+   {
+      snprintf(out, out_cap, "%s%c%s_%0*d.png",
+         output_dir, PATH_SEP, base, width, frame_idx);
+   }
+   return 1;
+}
+
 static int save_bitmap_png(const char *path, ALLEGRO_BITMAP *bmp)
 {
    if (path == NULL || bmp == NULL)
@@ -172,6 +230,15 @@ static void make_anim_leaf(const char *asset_path, char *out, int out_cap, int d
 // version adding `total_candidates` for diagnostic accounting. Internal
 // helpers below operate on the public type directly.
 typedef ASSET_EXPORT_PLAN_S EXPORT_PATH_LIST_S;
+
+// Per-discovery-pass set of every path the candidate-consideration
+// helper has decided about, regardless of whether the path was
+// accepted into the plan or rejected by the single-frame DC6 filter.
+// Without this, a multi-frame DC6 visible in BOTH the mod overlay and
+// the MPQ chain gets counted twice in total_candidates (the existing
+// dedup against the plan's `paths` list misses it because rejected
+// paths are never added there).
+static EXPORT_PATH_LIST_S g_seen_candidates;
 
 typedef struct DT1_DISCOVERY_CACHE_ENTRY_S
 {
@@ -437,15 +504,27 @@ static void consider_path_after_scope_match(const char *asset_path,
 
    if (out_paths == NULL || asset_path == NULL || asset_path[0] == 0)
       return;
-   if (export_path_list_contains(out_paths, asset_path))
+   /* Dedup against EVERY previously-considered path in this discovery
+    * pass, not just the ones added to the plan. This is what keeps
+    * multi-frame DC6 visible in both the overlay and the MPQ chain
+    * from inflating total_candidates. */
+   if (export_path_list_contains(&g_seen_candidates, asset_path))
       return;
 
    ext = a5_get_extension(asset_path);
 
    if (ext != NULL && stricmp(ext, "dt1") == 0
        && !dt1_payload_looks_valid_for_export(asset_path))
+   {
+      /* Invalid DT1 -- not a candidate at all. Still record it in the
+       * seen set so we don't re-validate it on a second sighting. */
+      export_path_list_add(&g_seen_candidates, asset_path);
       return;
+   }
 
+   /* Decided to count this as a candidate. Claim it before any
+    * further filtering so a second sighting bails out above. */
+   export_path_list_add(&g_seen_candidates, asset_path);
    out_paths->total_candidates++;
 
    if (ext != NULL && stricmp(ext, "dc6") == 0
@@ -1232,11 +1311,28 @@ int asset_export_dc6_buffer_png(const char *asset_path, const void *buffer,
             h - 1 + (int) (f_offy - y2)
          );
 
-         make_anim_leaf(asset_path, leaf, sizeof(leaf), (int) dc6_dir,
-            (int) dc6_fpd, d, f);
-         if (make_output_path(out_path, sizeof(out_path), output_dir, asset_path, leaf) &&
-             save_bitmap_png(out_path, bmp))
-            exported++;
+         /* For single-direction multi-frame DC6 (UI spritesheets like
+          * inv1x1, inv2x3, etc.) emit a flat <basename>_NN.png in the
+          * stem parent. For multi-direction or single-frame DC6, fall
+          * back to the legacy nested make_anim_leaf + make_output_path
+          * pair. */
+         if (dc6_dir == 1 && dc6_fpd > 1)
+         {
+            if (make_flat_frame_output(out_path, sizeof(out_path),
+                                       output_dir, asset_path,
+                                       f, (int) dc6_fpd) &&
+                save_bitmap_png(out_path, bmp))
+               exported++;
+         }
+         else
+         {
+            make_anim_leaf(asset_path, leaf, sizeof(leaf), (int) dc6_dir,
+               (int) dc6_fpd, d, f);
+            if (make_output_path(out_path, sizeof(out_path), output_dir,
+                                 asset_path, leaf) &&
+                save_bitmap_png(out_path, bmp))
+               exported++;
+         }
 
          al_destroy_bitmap(bmp);
       }
@@ -1336,11 +1432,13 @@ int asset_export_plan_for_prefix(const char *asset_prefix,
 
    asset_export_plan_init(plan_out);
    dt1_discovery_cache_reset();
+   export_path_list_destroy(&g_seen_candidates);
 
    collect_overlay_assets_for_prefix(asset_prefix, type_filter, plan_out);
    collect_known_mpq_assets_for_prefix(asset_prefix, type_filter, plan_out);
 
    dt1_discovery_cache_reset();
+   export_path_list_destroy(&g_seen_candidates);
    return 1;
 }
 
@@ -1352,11 +1450,13 @@ int asset_export_plan_for_pattern(const char *pattern,
 
    asset_export_plan_init(plan_out);
    dt1_discovery_cache_reset();
+   export_path_list_destroy(&g_seen_candidates);
 
    collect_overlay_assets_for_pattern(pattern, plan_out);
    collect_known_mpq_assets_for_pattern(pattern, plan_out);
 
    dt1_discovery_cache_reset();
+   export_path_list_destroy(&g_seen_candidates);
    return 1;
 }
 
@@ -1370,7 +1470,34 @@ int asset_export_run_plan(const ASSET_EXPORT_PLAN_S *plan,
       return 0;
 
    for (i = 0; i < plan->count; i++)
+   {
+      /* Per-item progress reporting + cancellation. Dormant when no
+       * export task is active (the legacy CLI export path does not
+       * begin a task; this loop just runs straight through). */
+      if (export_task_is_active())
+      {
+         export_progress_set_current_item(plan->paths[i]);
+         if (export_progress_pump())
+            return exported_total;
+      }
+
       exported_total += asset_export_png(plan->paths[i], output_dir);
+
+      if (export_task_is_active())
+      {
+         export_progress_advance(1);
+         /* Pump again AFTER advance so the just-completed item is
+          * visible on the bar (subject to the throttle window). */
+         export_progress_pump();
+      }
+   }
+
+   /* Final paint: the last advance() may have been throttled out, and
+    * after the loop nothing else pumps until we hand off to the next
+    * stage. Force a non-throttled repaint so the dialog actually shows
+    * items_total/items_total. */
+   if (export_task_is_active())
+      export_progress_force_repaint();
 
    return exported_total;
 }

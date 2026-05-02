@@ -19,6 +19,7 @@
 #include "ui/win_folder_picker.h"
 
 #include "core/asset_export.h"
+#include "core/export_progress.h"
 #include "core/palette.h"
 #include "core/project.h"
 #include "core/preferences.h"
@@ -349,6 +350,20 @@ static int run_upscale_pipeline(const char *title,
    scale = (upscale_mode == UPSCALE_MODE_4X) ? 4 : 2;
    error[0] = 0;
 
+   /* Remote path is one big synchronous blob (zip + upload + wait +
+    * download + extract). Until the async-upscale plan lands, we can
+    * only repaint the dialog ONCE before the call to indicate what is
+    * happening, then the dialog freezes until the call returns. The
+    * label tells the user; the bar advances when control returns. */
+   if (export_task_is_active())
+   {
+      export_progress_set_show_remote_stages(1);
+      export_progress_set_stage(EXPORT_STAGE_REMOTE_PROCESSING,
+                                "Uploading and processing on remote service...",
+                                0);
+      export_progress_pump();
+   }
+
    if (upscale_directory_remote(staging_path, output_path, scale,
                                 "realesrgan", error, sizeof(error)))
       return 1;
@@ -361,6 +376,16 @@ static int run_upscale_pipeline(const char *title,
       ALLEGRO_MESSAGEBOX_YES_NO | ALLEGRO_MESSAGEBOX_WARN);
    if (rc != 1)
       return 0;
+
+   /* Falling back to local upscale -- restore local-stage weights. */
+   if (export_task_is_active())
+   {
+      export_progress_set_show_remote_stages(0);
+      export_progress_set_stage(EXPORT_STAGE_LOCAL_UPSCALE,
+                                (scale == 4) ? "Upscaling 4x (local)..."
+                                             : "Upscaling 2x (local)...",
+                                0);
+   }
 
    error[0] = 0;
    if (upscale_directory_local(staging_path, output_path, scale,
@@ -420,6 +445,14 @@ static void action_export_unified(void)
    char asset_prefix[PROJECT_PATH_MAX];
    int exported_count;
    int upscale_mode;
+
+   /* Defensive guard against re-entry. Should never fire under the
+    * current flow (export runs synchronously on the main thread, so a
+    * second Ctrl+Shift+A can't arrive mid-export), but keeps us safe
+    * if a future scripted invocation or worker-thread driver ever
+    * lands. */
+   if (export_task_is_active())
+      return;
 
    if (glb_config.mod_dir[0] == NULL || glb_config.mod_dir[0][0] == 0)
    {
@@ -565,13 +598,38 @@ static void action_export_unified(void)
       ensure_export_palette_ready();
    }
 
+   /* From here on the export is running. The progress dialog renders
+    * from the cooperative pump that asset_export_run_plan and
+    * upscale_directory_local_recursive call between items. */
+   export_progress_begin("Export Assets");
+   export_progress_set_stage(EXPORT_STAGE_NATIVE_EXPORT,
+                             "Exporting native PNGs...", plan.count);
+
    exported_count = asset_export_run_plan(&plan, export_path);
    asset_export_plan_free(&plan);
+
+   if (export_progress_cancel_requested())
+   {
+      char detail[256];
+      snprintf(detail, sizeof(detail),
+         "Exported %d native PNG(s) to %s before cancel; partial output "
+         "was kept.", exported_count,
+         staging_path[0] != 0 ? staging_path : output_path);
+      export_progress_end();
+      al_show_native_message_box(a5_display,
+         "Export Assets",
+         "Canceled.",
+         detail,
+         NULL,
+         ALLEGRO_MESSAGEBOX_WARN);
+      return;
+   }
 
    if (exported_count <= 0)
    {
       if (staging_path[0] != 0)
          upscale_remove_tree(staging_path);
+      export_progress_end();
       al_show_native_message_box(a5_display,
          "Export Assets",
          "No PNGs were written.",
@@ -583,14 +641,39 @@ static void action_export_unified(void)
 
    if (upscale_mode != UPSCALE_MODE_NONE)
    {
+      const char *upscale_label = (upscale_mode == UPSCALE_MODE_4X)
+         ? "Upscaling 4x..." : "Upscaling 2x...";
+      export_progress_set_stage(EXPORT_STAGE_LOCAL_UPSCALE,
+                                upscale_label, 0);
+
       if (!run_upscale_pipeline("Export Assets", staging_path,
                                 output_path, upscale_mode))
       {
+         /* On cancel during upscale, keep both staging and partial
+          * output_path per the locked Q3 multi-stage cancel rule. */
+         if (export_progress_cancel_requested())
+         {
+            char detail[512];
+            snprintf(detail, sizeof(detail),
+               "Canceled during upscale. Native PNGs are at %s; partially "
+               "upscaled files are at %s.", staging_path, output_path);
+            export_progress_end();
+            al_show_native_message_box(a5_display,
+               "Export Assets",
+               "Canceled.",
+               detail,
+               NULL,
+               ALLEGRO_MESSAGEBOX_WARN);
+            return;
+         }
          upscale_remove_tree(staging_path);
+         export_progress_end();
          return;
       }
       upscale_remove_tree(staging_path);
    }
+
+   export_progress_end();
 
    show_export_result(
       "Export Assets",

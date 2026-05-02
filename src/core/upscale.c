@@ -11,6 +11,7 @@
 #include <allegro5/allegro_image.h>
 
 #include "structs.h"
+#include "core/export_progress.h"
 #include "core/project.h"
 #include "core/upscale.h"
 
@@ -247,6 +248,18 @@ static int upscale_directory_local_recursive(const char *src_dir,
          ALLEGRO_BITMAP *src_bmp;
          ALLEGRO_BITMAP *scaled_bmp;
 
+         /* Per-PNG progress + cancel; dormant when no task is active. */
+         if (export_task_is_active())
+         {
+            export_progress_set_current_item(src_path);
+            if (export_progress_pump())
+            {
+               set_error_text(error, error_cap, "Upscale canceled by user.");
+               FindClose(hFind);
+               return 0;
+            }
+         }
+
          create_memory_bitmap_context(1);
          src_bmp = al_load_bitmap(src_path);
          create_memory_bitmap_context(0);
@@ -275,6 +288,9 @@ static int upscale_directory_local_recursive(const char *src_dir,
          }
 
          al_destroy_bitmap(scaled_bmp);
+
+         if (export_task_is_active())
+            export_progress_advance(1);
       }
    } while (FindNextFileA(hFind, &fd));
 
