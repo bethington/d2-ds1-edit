@@ -97,6 +97,14 @@ target_include_directories(test_compose_dcc_path PRIVATE
 )
 add_test(NAME compose_dcc_path COMMAND test_compose_dcc_path)
 
+# Compose COF path builder
+add_executable(test_compose_cof_path test_compose_cof_path.c ../src/core/compose_cof_path.c)
+target_link_libraries(test_compose_cof_path PRIVATE unity)
+target_include_directories(test_compose_cof_path PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
+add_test(NAME compose_cof_path COMMAND test_compose_cof_path)
+
 add_executable(test_asset_export_smoke
     test_asset_export_smoke.c
     test_asset_export_stubs.c
