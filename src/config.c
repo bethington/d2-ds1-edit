@@ -42,6 +42,15 @@ void ini_create(char *ininame)
       "upscale_enabled     = NO\n"
       "upscale_service_url =\n"
       "\n"
+      "; PNG export filter. When YES (default), multi-frame DC6 files\n"
+      "; (animations, multi-direction sprites) are skipped during export.\n"
+      "; Multi-frame export to a dedicated animation format is a planned\n"
+      "; future feature; for now PNG output is single-frame only. Flip to\n"
+      "; NO to fall back to the prior behavior (export every frame of\n"
+      "; multi-frame DC6 alongside single-frame icons).\n"
+      "; =================================================================\n"
+      "export_dc6_single_frame_only = YES\n"
+      "\n"
        "; Example explicit configuration:\n"
        "; d2_install = C:\\Diablo2\n"
        "; mod_dir    = C:\\Diablo2\\mods\\my_mod\n"
@@ -195,6 +204,7 @@ void ini_read(char *ininame)
            {"d2_install", T_MOD, &glb_config.d2_install, ""},
            {"upscale_enabled", T_YES, &glb_config.upscale_enabled, "NO"},
            {"upscale_service_url", T_STR, &glb_config.upscale_service_url, ""},
+           {"export_dc6_single_frame_only", T_YES, &glb_config.export_dc6_single_frame_only, "YES"},
            {"d2char", T_MPQ, &glb_config.mpq_file[3], ""},
            {"d2data", T_MPQ, &glb_config.mpq_file[2], ""},
            {"d2exp", T_MPQ, &glb_config.mpq_file[1], ""},

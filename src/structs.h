@@ -146,6 +146,7 @@ typedef struct CONFIG_S
    char     * d2_install;   // optional D2 install dir; auto-detected if empty
    int      upscale_enabled;
    char     * upscale_service_url;
+   int      export_dc6_single_frame_only;  // YES: skip multi-frame DC6 in PNG export
    char     * mpq_file[MAX_MPQ_FILE];
    char     * mod_dir[MAX_MOD_DIR];
    SCREEN_S screen;

@@ -53,6 +53,7 @@ set(SOURCES
     src/core/animdata.c
     src/core/dcc.c
     src/core/dc6.c
+    src/core/dc6_header.c
     src/core/export_common.c
     src/core/export_presets.c
     src/core/glob_match.c

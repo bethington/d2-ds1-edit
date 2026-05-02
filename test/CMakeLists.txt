@@ -31,10 +31,19 @@ target_include_directories(test_export_presets PRIVATE
 )
 add_test(NAME export_presets COMMAND test_export_presets)
 
+# DC6 header inspection (single-frame check for export filter)
+add_executable(test_dc6_header test_dc6_header.c ../src/core/dc6_header.c)
+target_link_libraries(test_dc6_header PRIVATE unity)
+target_include_directories(test_dc6_header PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
+add_test(NAME dc6_header COMMAND test_dc6_header)
+
 add_executable(test_asset_export_smoke
     test_asset_export_smoke.c
     test_asset_export_stubs.c
     ../src/core/asset_export.c
+    ../src/core/dc6_header.c
 )
 target_link_libraries(test_asset_export_smoke PRIVATE unity ${ALLEGRO5_LIB} ${ALLEGRO5_IMAGE_LIB})
 target_include_directories(test_asset_export_smoke PRIVATE
