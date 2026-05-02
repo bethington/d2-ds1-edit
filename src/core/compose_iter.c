@@ -77,8 +77,13 @@ const char *compose_iter_category_base(COMPOSE_CATEGORY_E category)
    switch (category)
    {
       case COMPOSE_CATEGORY_PLAYER_CHAR: return "data\\global\\chars";
-      case COMPOSE_CATEGORY_MONSTER:     return "data\\global\\monsters";
-      case COMPOSE_CATEGORY_NPC:         return "data\\global\\npc";
+      /* NPCs (Cain, Akara, Charsi, vendors, etc.) live under
+       * monsters\ in real D2 -- there's no "data\global\npc\"
+       * subtree. The npc=1 column in MonStats just classifies them
+       * as town-NPCs vs combat monsters; both share the sprite
+       * folder layout. */
+      case COMPOSE_CATEGORY_MONSTER:
+      case COMPOSE_CATEGORY_NPC:         return "data\\global\\monsters";
       case COMPOSE_CATEGORY_OBJECT:      return "data\\global\\objects";
       default: return NULL;
    }

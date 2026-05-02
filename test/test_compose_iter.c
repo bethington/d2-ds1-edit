@@ -77,7 +77,8 @@ static void test_category_base_paths(void)
       compose_iter_category_base(COMPOSE_CATEGORY_PLAYER_CHAR));
    TEST_ASSERT_EQUAL_STRING("data\\global\\monsters",
       compose_iter_category_base(COMPOSE_CATEGORY_MONSTER));
-   TEST_ASSERT_EQUAL_STRING("data\\global\\npc",
+   /* NPCs share the monsters\ subtree in real D2. */
+   TEST_ASSERT_EQUAL_STRING("data\\global\\monsters",
       compose_iter_category_base(COMPOSE_CATEGORY_NPC));
    TEST_ASSERT_EQUAL_STRING("data\\global\\objects",
       compose_iter_category_base(COMPOSE_CATEGORY_OBJECT));
