@@ -23,6 +23,14 @@ target_include_directories(test_glob_match PRIVATE
 )
 add_test(NAME glob_match COMMAND test_glob_match)
 
+# Export presets parser ([export_presets] section in Ds1edit.ini)
+add_executable(test_export_presets test_export_presets.c ../src/core/export_presets.c)
+target_link_libraries(test_export_presets PRIVATE unity)
+target_include_directories(test_export_presets PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
+add_test(NAME export_presets COMMAND test_export_presets)
+
 add_executable(test_asset_export_smoke
     test_asset_export_smoke.c
     test_asset_export_stubs.c

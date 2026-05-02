@@ -3,6 +3,7 @@
 #include "structs.h"
 #include "error.h"
 #include "config.h"
+#include "core/export_presets.h"
 
 // ==========================================================================
 // create a new ds1edit.ini
@@ -376,6 +377,29 @@ void ini_read(char *ininame)
           "then edit it to make changes where necessary, then relaunch this prog",
           ininame);
       ds1edit_error(tmp);
+   }
+
+   // [export_presets] section — user-defined wildcard scope presets shown
+   // in the unified export action's scope picker.
+   export_presets_reset();
+   {
+      ALLEGRO_CONFIG_ENTRY *ent_iter = NULL;
+      const char *key = al_get_first_config_entry(a5_config,
+                                                  "export_presets",
+                                                  &ent_iter);
+      while (key != NULL)
+      {
+         const char *value = al_get_config_value(a5_config,
+                                                 "export_presets", key);
+         EXPORT_PRESET_S preset;
+         if (value != NULL && export_preset_parse(key, value, &preset))
+            export_presets_add(&preset);
+         else
+            fprintf(stderr,
+                    "ini_read(): ignored malformed [export_presets] entry: %s\n",
+                    key);
+         key = al_get_next_config_entry(&ent_iter);
+      }
    }
 
    // MPQ slot resolution runs later in main() — after preferences are loaded
