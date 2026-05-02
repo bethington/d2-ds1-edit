@@ -922,6 +922,7 @@ typedef struct EXPORT_RUN_S
    int failure;
    int skipped;
    int verbose;
+   int scale;          /* 1, 2, or 4 -- nearest-neighbour APNG scale */
    const char *out_root;
    char first_failure[256];
 } EXPORT_RUN_S;
@@ -1074,7 +1075,8 @@ static void run_one_token(COMPOSE_CATEGORY_E category,
                   continue;
                }
 
-               ok = compose_apng_export(&p, path_buf);
+               ok = compose_apng_export_scaled(&p, path_buf,
+                                              r->scale > 0 ? r->scale : 1);
                if (ok)
                {
                   r->success++;
@@ -1228,6 +1230,31 @@ static int verb_export_compose(int argc, char **argv)
    memset(&run,     0, sizeof(run));
    run.verbose = opts.verbose;
    run.out_root = out_str;
+   run.scale = 1;
+   {
+      const char *scale_str = find_flag_value(argc, argv, "upscale");
+      if (scale_str != NULL)
+      {
+         /* Accept 1 / 2 / 4 (and "none" / "2x" / "4x"). */
+         if (strcasecmp(scale_str, "none") == 0
+             || strcasecmp(scale_str, "1") == 0
+             || strcasecmp(scale_str, "1x") == 0)
+            run.scale = 1;
+         else if (strcasecmp(scale_str, "2") == 0
+                  || strcasecmp(scale_str, "2x") == 0)
+            run.scale = 2;
+         else if (strcasecmp(scale_str, "4") == 0
+                  || strcasecmp(scale_str, "4x") == 0)
+            run.scale = 4;
+         else
+         {
+            fprintf(stderr,
+               "ds1edit export-compose: --upscale=%s expected 1 / 2 / 4 "
+               "(or 'none' / '2x' / '4x')\n", scale_str);
+            return CLI_EXIT_BAD_ARGS;
+         }
+      }
+   }
 
    /* --target=A/B[/C] short form -- splits into token + mode + weapon.
     * Locks the relevant axes to count=1, ignoring --token / --mode /

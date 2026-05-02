@@ -35,4 +35,14 @@ int compose_apng_write(const COMPOSE_RENDER_RESULT_S *result,
 int compose_apng_export(const COMPOSE_RENDER_PARAMS_S *params,
                         const char *output_path);
 
+// Same, but also nearest-neighbour-upscale every frame by `scale`
+// (must be 1, 2, or 4) before writing. Scale=1 is a pass-through and
+// equivalent to compose_apng_export. The integer-NN scaler is
+// pixel-perfect for D2 sprite art and preserves the APNG's animation
+// (the alternative -- post-process upscale via Allegro's
+// al_load_bitmap -- only sees the first frame).
+int compose_apng_export_scaled(const COMPOSE_RENDER_PARAMS_S *params,
+                               const char *output_path,
+                               int scale);
+
 #endif

@@ -561,6 +561,7 @@ typedef struct COMPOSE_RUN_STATE_S
    int   success_count;
    int   failure_count;
    int   skipped_tuples;   /* (token, mode, wclass) tuples with no COF */
+   int   scale;            /* 1 / 2 / 4 -- nearest-neighbour APNG scale */
    FILE *failure_log;      /* opened lazily on first failure */
    char  failure_log_path[PROJECT_PATH_MAX];
    char  first_failure[256];
@@ -810,7 +811,8 @@ static int compose_run_token(const char *root,
                      d);
             export_progress_set_current_item(status);
 
-            ok = compose_apng_export(&params, path_buf);
+            ok = compose_apng_export_scaled(&params, path_buf,
+                                            st->scale > 0 ? st->scale : 1);
             if (ok)
                st->success_count++;
             else
@@ -898,6 +900,20 @@ static void action_export_compose(void)
       if (!pick_folder("Compose - choose an output folder",
                        initial, output_path, sizeof(output_path)))
          return;
+   }
+
+   /* Upscale picker. Always offered (1x / 2x / 4x) for compose mode --
+    * unlike raw export which gates 2x/4x behind upscale_is_remote_
+    * configured, compose-mode's scaler is local nearest-neighbour
+    * applied to the per-frame RGBA buffers before APNG write. It's
+    * pixel-perfect for D2 sprite art and has no external dependency. */
+   {
+      int picked = upscale_mode_picker_choose(
+         "Compose Export - choose upscale", FALSE);
+      if (picked < 0) return;  /* cancel */
+      if (picked == UPSCALE_MODE_4X)      run.scale = 4;
+      else if (picked == UPSCALE_MODE_2X) run.scale = 2;
+      else                                run.scale = 1;
    }
 
    /* Build the monster / NPC / object index from MonStats.txt and
