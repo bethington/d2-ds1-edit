@@ -144,6 +144,15 @@ target_include_directories(test_compose_iter PRIVATE
 )
 add_test(NAME compose_iter COMMAND test_compose_iter)
 
+# MonStats2 parser: pure logic tested against synthetic fixtures; the
+# MPQ-loading glue lives in monstats2_build.c and is not linked here.
+add_executable(test_monstats2 test_monstats2.c ../src/core/monstats2.c)
+target_link_libraries(test_monstats2 PRIVATE unity)
+target_include_directories(test_monstats2 PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
+add_test(NAME monstats2 COMMAND test_monstats2)
+
 # CLI dispatcher smoke test. Shells out to the built ds1edit.exe and
 # validates exit codes + help output for the verbs that don't need an
 # MPQ chain. Depends on the main ds1edit target being built first.

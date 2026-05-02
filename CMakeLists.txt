@@ -57,6 +57,8 @@ set(SOURCES
     src/core/compose_palette.c
     src/core/compose_presets.c
     src/core/compose_render.c
+    src/core/monstats2.c
+    src/core/monstats2_build.c
     src/core/area_browser.c
     src/core/area_metadata.c
     src/core/d2install.c

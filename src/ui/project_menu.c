@@ -30,6 +30,7 @@
 #include "core/compose_palette.h"
 #include "core/compose_render.h"
 #include "core/export_progress.h"
+#include "core/monstats2.h"
 #include "core/palette.h"
 #include "core/project.h"
 #include "core/preferences.h"
@@ -686,6 +687,7 @@ static int compose_run_token(const char *root,
       {
          const char *wclass;
          int dir_count;
+         char resolved_wclass_buf[16] = {0};
 
          if (weapon_sel != NULL && weapon_sel->code_count > 0
              && !weapon_sel->use_all && weapon_sel->codes[0][0] == 0)
@@ -695,14 +697,19 @@ static int compose_run_token(const char *root,
                                     compose_iter_default_weapon_at);
          if (wclass == NULL) wclass = "";
 
-         /* Probe the COF to learn the direction count. If the COF
-          * doesn't exist for this (token, mode, wclass) combo, skip
-          * the entire tuple cheaply (no compose_render call, no
-          * spurious failure record). Most (token, mode, wclass)
-          * combinations are invalid in D2 -- a Necromancer doesn't
-          * have a Whirlwind animation, etc. */
-         dir_count = compose_iter_probe_direction_count(category, token,
-                                                        mode, wclass);
+         /* Probe the COF to learn the direction count. The resolve
+          * variant tries the supplied wclass first, then MonStats2
+          * BaseW for monsters/NPCs, then "HTH" as a last fallback;
+          * on success it writes the wclass that worked into
+          * resolved_wclass_buf, which we feed to compose_apng_export
+          * below. Most (token, mode, wclass) combinations are invalid
+          * in D2 -- a Necromancer doesn't have a Whirlwind animation,
+          * etc. -- so dir_count==0 means "skip this tuple cleanly." */
+         dir_count = compose_iter_probe_direction_count_resolve(
+            category, token, mode, wclass,
+            resolved_wclass_buf, (int) sizeof(resolved_wclass_buf));
+         if (dir_count > 0 && resolved_wclass_buf[0] != 0)
+            wclass = resolved_wclass_buf;
          if (dir_count <= 0)
          {
             st->skipped_tuples++;
@@ -743,6 +750,41 @@ static int compose_run_token(const char *root,
          params.mode   = mode;
          params.wclass = wclass;
          params.skin   = skin;
+
+         /* For monsters / NPCs, MonStats2 has per-layer skin variants.
+          * Look them up via compose_index's stored MonStatsEx. */
+         if (category == COMPOSE_CATEGORY_MONSTER
+             || category == COMPOSE_CATEGORY_NPC)
+         {
+            const COMPOSE_TOKEN_S *(*at)(int) =
+               (category == COMPOSE_CATEGORY_MONSTER)
+                  ? compose_index_monster_at
+                  : compose_index_npc_at;
+            int n_tok = (category == COMPOSE_CATEGORY_MONSTER)
+                           ? compose_index_monster_count()
+                           : compose_index_npc_count();
+            int ti;
+            for (ti = 0; ti < n_tok; ti++)
+            {
+               const COMPOSE_TOKEN_S *t = at(ti);
+               const MONSTATS2_ENTRY_S *e;
+               int li;
+               if (t == NULL) continue;
+               if (stricmp(t->code, token) != 0) continue;
+               if (t->mon_stats_ex[0] == 0) break;
+               e = monstats2_find(t->mon_stats_ex);
+               if (e == NULL) break;
+               for (li = 0; li < COMPOSE_RENDER_LAYER_COUNT
+                        && li < MONSTATS2_LAYER_COUNT; li++)
+               {
+                  if (e->layers[li].used && e->layers[li].skin[0] != 0)
+                     strncpy(params.skin_per_layer[li],
+                             e->layers[li].skin,
+                             COMPOSE_RENDER_SKIN_MAX - 1);
+               }
+               break;
+            }
+         }
 
          for (d = 0; d < dir_count; d++)
          {
@@ -859,11 +901,15 @@ static void action_export_compose(void)
    }
 
    /* Build the monster / NPC / object index from MonStats.txt and
-    * Objects.txt. compose_index_build is idempotent, but we don't
-    * actually need it for player-chars-only runs. */
+    * Objects.txt; build the MonStats2 sprite-info index too so
+    * monsters' COF wclass + per-layer skins resolve correctly.
+    * Both are idempotent and skipped for player-chars-only runs. */
    compose_expand_categories(category, &cat_list);
    if (category != COMPOSE_CATEGORY_PLAYER_CHAR)
+   {
       (void) compose_index_build();
+      (void) monstats2_build();
+   }
 
    /* Drive the run via the export_progress dialog. We don't know the
     * exact items_total ahead of time (each tuple's direction count is

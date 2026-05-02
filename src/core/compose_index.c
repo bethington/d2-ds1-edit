@@ -167,12 +167,13 @@ int compose_index_parse_monstats(const char *txt_text,
    int pos = 0;
    LINE_S header_line;
    LINE_S row;
-   int col_code, col_id, col_npc, col_namestr;
+   int col_code, col_id, col_npc, col_namestr, col_mon_stats_ex;
    int monster_n = 0, npc_n = 0;
    static const char *code_names[]    = { "Code", NULL };
    static const char *id_names[]      = { "Id", "ID", NULL };
    static const char *npc_names[]     = { "npc", "Npc", "NPC", NULL };
    static const char *namestr_names[] = { "NameStr", "namestr", NULL };
+   static const char *mse_names[]     = { "MonStatsEx", "monstatsex", NULL };
 
    if (txt_text == NULL || monster_count_out == NULL || npc_count_out == NULL)
       return 0;
@@ -183,10 +184,11 @@ int compose_index_parse_monstats(const char *txt_text,
    if (!next_line(txt_text, len, &pos, &header_line))
       return 0;
 
-   col_code    = find_column(header_line.start, header_line.length, code_names);
-   col_id      = find_column(header_line.start, header_line.length, id_names);
-   col_npc     = find_column(header_line.start, header_line.length, npc_names);
-   col_namestr = find_column(header_line.start, header_line.length, namestr_names);
+   col_code         = find_column(header_line.start, header_line.length, code_names);
+   col_id           = find_column(header_line.start, header_line.length, id_names);
+   col_npc          = find_column(header_line.start, header_line.length, npc_names);
+   col_namestr      = find_column(header_line.start, header_line.length, namestr_names);
+   col_mon_stats_ex = find_column(header_line.start, header_line.length, mse_names);
 
    if (col_code < 0 || col_id < 0)
       return 0;
@@ -228,6 +230,19 @@ int compose_index_parse_monstats(const char *txt_text,
          strncpy(tok.name, id_buf, sizeof(tok.name) - 1);
       else
          strncpy(tok.name, code_buf, sizeof(tok.name) - 1);
+
+      /* MonStatsEx is the join key into MonStats2.txt; empty if the
+       * column isn't present (graceful) or the row has nothing. */
+      if (col_mon_stats_ex >= 0)
+      {
+         char mse_buf[COMPOSE_TOKEN_NAME_MAX];
+         if (field_at(row.start, row.length, col_mon_stats_ex,
+                      mse_buf, sizeof(mse_buf)))
+         {
+            strip_ws(mse_buf);
+            strncpy(tok.mon_stats_ex, mse_buf, sizeof(tok.mon_stats_ex) - 1);
+         }
+      }
 
       if (is_npc)
       {

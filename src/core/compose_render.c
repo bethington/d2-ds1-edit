@@ -221,9 +221,14 @@ int compose_render(const COMPOSE_RENDER_PARAMS_S *params,
     *    for many mode/weapon combos) silently skip. */
    for (slot = 0; slot < COMPOSE_COF_MAX_LAYERS; slot++)
    {
+      const char *layer_skin = params->skin;
+      if (slot < COMPOSE_RENDER_LAYER_COUNT
+          && params->skin_per_layer[slot][0] != 0)
+         layer_skin = params->skin_per_layer[slot];
+
       if (!compose_dcc_path_build(dcc_path, sizeof(dcc_path),
                                   params->base, params->token, slot,
-                                  params->skin, params->mode,
+                                  layer_skin, params->mode,
                                   cof.layers[slot].weapon_class))
          continue;
 

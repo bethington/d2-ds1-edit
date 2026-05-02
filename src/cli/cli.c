@@ -23,6 +23,7 @@
 #include "core/compose_render.h"
 #include "core/d2install.h"
 #include "core/export_presets.h"
+#include "core/monstats2.h"
 
 extern void ds1edit_load_palettes(void);
 
@@ -908,6 +909,10 @@ static int compose_runtime_init(void)
    /* compose_index is needed for monsters / NPCs / objects; idempotent
     * for player-chars-only runs. */
    (void) compose_index_build();
+   /* MonStats2 supplies the per-monster sprite info (BaseW, per-layer
+    * skin variants, layer-used flags). Without this the COF probe and
+    * DCC paths for monsters point at files that don't exist. */
+   (void) monstats2_build();
    return CLI_EXIT_OK;
 }
 
@@ -1003,6 +1008,40 @@ static void run_one_token(COMPOSE_CATEGORY_E category,
          p.mode   = mode;
          p.wclass = wclass;
          p.skin   = skin;
+
+         /* For monsters / NPCs, MonStats2 has per-layer skin variants.
+          * Look them up via the compose_index's stored MonStatsEx. */
+         if (category == COMPOSE_CATEGORY_MONSTER
+             || category == COMPOSE_CATEGORY_NPC)
+         {
+            const COMPOSE_TOKEN_S *(*at)(int) =
+               (category == COMPOSE_CATEGORY_MONSTER)
+                  ? compose_index_monster_at
+                  : compose_index_npc_at;
+            int n = (category == COMPOSE_CATEGORY_MONSTER)
+                       ? compose_index_monster_count()
+                       : compose_index_npc_count();
+            int ti;
+            for (ti = 0; ti < n; ti++)
+            {
+               const COMPOSE_TOKEN_S *t = at(ti);
+               const MONSTATS2_ENTRY_S *e;
+               int li;
+               if (t == NULL) continue;
+               if (strcasecmp(t->code, token) != 0) continue;
+               if (t->mon_stats_ex[0] == 0) break;
+               e = monstats2_find(t->mon_stats_ex);
+               if (e == NULL) break;
+               for (li = 0; li < COMPOSE_RENDER_LAYER_COUNT
+                        && li < MONSTATS2_LAYER_COUNT; li++)
+               {
+                  if (e->layers[li].used && e->layers[li].skin[0] != 0)
+                     strncpy(p.skin_per_layer[li], e->layers[li].skin,
+                             COMPOSE_RENDER_SKIN_MAX - 1);
+               }
+               break;
+            }
+         }
 
          /* Iterate either an explicit dir list or the full set the
           * COF advertises. */
