@@ -211,6 +211,13 @@ int compose_index_parse_monstats(const char *txt_text,
        * starts with "Expansion" in some columns; skip if Code is
        * non-alphanumeric. */
       if (!isalnum((unsigned char) code_buf[0])) continue;
+      /* Code "xx" (case-insensitive) is D2's placeholder for unused /
+       * deleted MonStats rows -- they have no sprite and would just
+       * spam the iterator with hundreds of failed COF probes. */
+      if ((code_buf[0] == 'x' || code_buf[0] == 'X')
+          && (code_buf[1] == 'x' || code_buf[1] == 'X')
+          && code_buf[2] == 0)
+         continue;
 
       if (!field_at(row.start, row.length, col_id, id_buf, sizeof(id_buf)))
          id_buf[0] = 0;
@@ -242,6 +249,22 @@ int compose_index_parse_monstats(const char *txt_text,
             strip_ws(mse_buf);
             strncpy(tok.mon_stats_ex, mse_buf, sizeof(tok.mon_stats_ex) - 1);
          }
+      }
+
+      /* Dedupe by Code. Many MonStats rows share the same Code
+       * (skeleton1 / skeleton2 / skeleton3 all -> "SK") and they all
+       * point at the same sprite folder, so iterating each one is
+       * pure waste. Keep the first row that introduces a Code. */
+      {
+         COMPOSE_TOKEN_S *target_arr = is_npc ? npc_out : monster_out;
+         int target_n = is_npc ? npc_n : monster_n;
+         int dup;
+         for (dup = 0; dup < target_n; dup++)
+         {
+            if (cidx_stricmp(target_arr[dup].code, tok.code) == 0)
+               break;
+         }
+         if (dup < target_n) continue;  /* already have this Code */
       }
 
       if (is_npc)

@@ -1746,9 +1746,17 @@ static int verb_dump_txt_row(int argc, char **argv)
                            header, (int) sizeof(header),
                            line,   (int) sizeof(line)))
    {
+      /* Show the header anyway so the caller can re-issue with a
+       * known-good first-column id. The "Expansion" sentinel is a
+       * common waypoint -- pass it as <row-id> to find a row that
+       * exists. */
       fprintf(stderr,
          "ds1edit dump-txt-row: no row in %s with first-column id <%s>\n",
          txt_path, row_id);
+      if (header[0] != 0)
+      {
+         fprintf(stderr, "Header: %s\n", header);
+      }
       free(buf);
       return CLI_EXIT_NOTHING;
    }
