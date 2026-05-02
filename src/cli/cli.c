@@ -55,6 +55,7 @@ static int verb_list_tokens   (int argc, char **argv);
 static int verb_list_presets  (int argc, char **argv);
 static int verb_export_compose(int argc, char **argv);
 static int verb_export_raw    (int argc, char **argv);
+static int verb_dump_txt_row  (int argc, char **argv);
 static int verb_help          (int argc, char **argv);
 
 static const CLI_VERB_S s_verbs[] = {
@@ -74,6 +75,8 @@ static const CLI_VERB_S s_verbs[] = {
      "Compose layered DCC files into APNG animations for one or more tuples." },
    { "export-raw",     verb_export_raw,
      "Raw-frame export (DCC/DC6/DT1) -> per-frame PNG, mirrors the GUI flow." },
+   { "dump-txt-row",   verb_dump_txt_row,
+     "Load <txt-path>, find row matching <id> in column 0, dump column=value pairs." },
    { "help",         verb_help,
      "Show this help text." },
    { "--help",       verb_help, NULL },
@@ -1340,6 +1343,18 @@ static int verb_export_compose(int argc, char **argv)
    return CLI_EXIT_NOTHING;
 }
 
+/* ---- dump-txt-row (debug helper) ------------------------------------ */
+
+/* Quick-and-dirty: load <virtual-path>, find the row whose first field
+ * matches <id>, dump it column-by-column with the header names. Used
+ * to discover D2 TXT schemas like MonStats2 without reaching for an
+ * external editor. Returns the column count on success.
+ *
+ * Usage:
+ *   ds1edit dump-txt-row data\global\excel\MonStats2.txt skeleton1
+ */
+static int verb_dump_txt_row(int argc, char **argv);
+
 /* ---- export-raw ----------------------------------------------------- */
 
 /* Resolve the [export_defaults] fallback for the raw-export output dir
@@ -1596,6 +1611,133 @@ static int verb_export_raw(int argc, char **argv)
       if (exported > 0)                return CLI_EXIT_PARTIAL;
       return CLI_EXIT_NOTHING;
    }
+}
+
+/* ---- dump-txt-row ---------------------------------------------------- */
+
+/* Walk a tab-separated TXT buffer to the line whose first field
+ * (case-insensitive) matches `id`. Header line is line 0. Returns the
+ * matched line into out_line (capped) and the header line into
+ * out_header (capped). Returns 1 on match. */
+static int find_txt_row_by_id(const char *txt, long len, const char *id,
+                              char *out_header, int hdr_cap,
+                              char *out_line, int line_cap)
+{
+   long p = 0;
+   int line_no = 0;
+   int matched = 0;
+   if (out_header != NULL && hdr_cap > 0) out_header[0] = 0;
+   if (out_line != NULL && line_cap > 0) out_line[0] = 0;
+
+   while (p < len)
+   {
+      long start = p;
+      char field0[64];
+      int f0n = 0;
+      while (p < len && txt[p] != '\n' && txt[p] != '\r') p++;
+      {
+         long k = start;
+         while (k < p && txt[k] != '\t' && f0n < (int) sizeof(field0) - 1)
+            field0[f0n++] = txt[k++];
+         field0[f0n] = 0;
+      }
+      if (line_no == 0 && out_header != NULL)
+      {
+         long n = (p - start) < (long) hdr_cap - 1 ? (p - start) : (long) hdr_cap - 1;
+         memcpy(out_header, txt + start, (size_t) n);
+         out_header[n] = 0;
+      }
+      if (line_no > 0 && strcasecmp(field0, id) == 0)
+      {
+         long n = (p - start) < (long) line_cap - 1 ? (p - start) : (long) line_cap - 1;
+         memcpy(out_line, txt + start, (size_t) n);
+         out_line[n] = 0;
+         matched = 1;
+         break;
+      }
+      while (p < len && (txt[p] == '\n' || txt[p] == '\r')) p++;
+      line_no++;
+   }
+   return matched;
+}
+
+static int verb_dump_txt_row(int argc, char **argv)
+{
+   CLI_COMMON_OPTS_S opts;
+   const char *positional[3];
+   int n_pos;
+   const char *txt_path;
+   const char *row_id;
+   char *buf = NULL;
+   long buf_len = 0;
+   char header[8192];
+   char line  [8192];
+   int rc;
+   int field_idx = 0;
+   long h = 0;
+   long l = 0;
+
+   if (!parse_common_opts(argc, argv, &opts))
+      return CLI_EXIT_BAD_ARGS;
+
+   n_pos = collect_positional(argc, argv, positional, 3);
+   if (n_pos < 2)
+   {
+      fprintf(stderr,
+         "ds1edit dump-txt-row: too few arguments\n"
+         "Usage: ds1edit dump-txt-row <virtual-txt-path> <row-id>\n"
+         "Example: ds1edit dump-txt-row data\\global\\excel\\MonStats2.txt skeleton1\n");
+      return CLI_EXIT_BAD_ARGS;
+   }
+   txt_path = positional[0];
+   row_id   = positional[1];
+
+   rc = cli_minimum_init(&opts);
+   if (rc != CLI_EXIT_OK) return rc;
+
+   if (misc_load_mpq_file((char *) txt_path, &buf, &buf_len, 0) == -1
+       || buf == NULL)
+   {
+      fprintf(stderr, "ds1edit dump-txt-row: %s not in chain\n", txt_path);
+      if (buf != NULL) free(buf);
+      return CLI_EXIT_NOTHING;
+   }
+
+   if (!find_txt_row_by_id(buf, buf_len, row_id,
+                           header, (int) sizeof(header),
+                           line,   (int) sizeof(line)))
+   {
+      fprintf(stderr,
+         "ds1edit dump-txt-row: no row in %s with first-column id <%s>\n",
+         txt_path, row_id);
+      free(buf);
+      return CLI_EXIT_NOTHING;
+   }
+
+   /* Walk header + line in lockstep, printing "column = value" for
+    * each field. */
+   while (header[h] != 0 || line[l] != 0)
+   {
+      char hbuf[128], lbuf[128];
+      int hi = 0, li = 0;
+      while (header[h] != 0 && header[h] != '\t' && hi < (int) sizeof(hbuf) - 1)
+         hbuf[hi++] = header[h++];
+      hbuf[hi] = 0;
+      if (header[h] == '\t') h++;
+
+      while (line[l] != 0 && line[l] != '\t' && li < (int) sizeof(lbuf) - 1)
+         lbuf[li++] = line[l++];
+      lbuf[li] = 0;
+      if (line[l] == '\t') l++;
+
+      if (hbuf[0] != 0 || lbuf[0] != 0)
+         printf("  [%3d] %-24s = %s\n", field_idx, hbuf, lbuf);
+      field_idx++;
+      if (hbuf[0] == 0 && lbuf[0] == 0) break;
+   }
+
+   free(buf);
+   return CLI_EXIT_OK;
 }
 
 /* ---- help ------------------------------------------------------------ */
