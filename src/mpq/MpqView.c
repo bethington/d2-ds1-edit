@@ -710,7 +710,7 @@ int ExtractToMem(void * mp_new, DWORD entry)
 	ldiv_t divres;
 	params param;
    UBYTE  * buff_ptr = mp_new;
- 
+
 	offset_body=*(glb_mpq->block_table+entry*4);							// get offset of file in mpq
 	size_unpack=*(glb_mpq->block_table+entry*4+2);						// get unpacked size of file
 	flag=*(glb_mpq->block_table+entry*4+3);								// get flags for file

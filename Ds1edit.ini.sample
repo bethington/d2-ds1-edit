@@ -253,10 +253,29 @@ raw_dt1_output         =
 compose_modes_preset   =
 compose_weapons_preset =
 verbose                = NO
+listfile               =
 
 ; Examples:
 ; compose_output         = C:\d2_exports\compose
 ; raw_dc6_output         = C:\d2_exports\dc6
 ; compose_modes_preset   = idle_only
 ; compose_weapons_preset = bare_hands
+
+; The `listfile` key is the path to an external (listfile) text file
+; with one virtual asset path per line (lines starting with '#' or ';'
+; are skipped). When set, asset_export pre-populates each open MPQ's
+; filename_table from it before bulk runs. This is the workaround for
+; a pre-existing bug in this codebase's MPQ implementation:
+; ExtractToMem leaves the buffer uninitialised when reading the
+; encrypted-and-compressed (listfile) file out of real D2 MPQs (flag
+; 0x80030200 in d2exp.mpq). Small / single-block files decompress
+; fine -- which is why probe + compose-mode work -- but the in-MPQ
+; listfile is unreadable. With an external listfile, the bulk paths
+; (export-raw --target=glob, --preset=, --scope=folder) light up
+; without touching the MPQ code.
+;
+; You can extract a listfile once with any MPQ tool (StormLib's
+; mpqviewer, MPQEditor, etc.) or download a community-maintained one.
+; Save it next to your D2 install, e.g.:
+;   listfile = C:\Diablo2\listfile.txt
 

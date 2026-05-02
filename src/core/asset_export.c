@@ -1545,3 +1545,76 @@ int asset_export_png(const char *asset_path, const char *output_dir)
    fprintf(stderr, "asset_export_png: unsupported asset type <%s>\n", asset_path);
    return 0;
 }
+
+extern DWORD test_tell_entry(char *filename);
+
+int asset_export_seed_listfile_from_file(const char *file_path)
+{
+   FILE *fp;
+   GLB_MPQ_S *saved_mpq;
+   char line[MPQTYPES_MAX_PATH];
+   int seeded = 0;
+
+   if (file_path == NULL || file_path[0] == 0)
+      return 0;
+   fp = fopen(file_path, "r");
+   if (fp == NULL)
+   {
+      fprintf(stderr,
+         "asset_export_seed_listfile: can't open %s\n", file_path);
+      return 0;
+   }
+
+   saved_mpq = glb_mpq;
+   while (fgets(line, sizeof(line), fp) != NULL)
+   {
+      char *start;
+      char *nl;
+      int slot;
+
+      /* Trim trailing CR/LF and any whitespace. */
+      nl = strpbrk(line, "\r\n");
+      if (nl != NULL) *nl = 0;
+      {
+         int n = (int) strlen(line);
+         while (n > 0 && (line[n-1] == ' ' || line[n-1] == '\t'))
+            line[--n] = 0;
+      }
+      /* Trim leading whitespace; skip blank / comment lines. */
+      start = line;
+      while (*start == ' ' || *start == '\t') start++;
+      if (*start == 0 || *start == '#' || *start == ';') continue;
+
+      /* Hash-lookup against each open MPQ. test_tell_entry's side
+       * effect is to mark the entry as known and stash the filename
+       * via mpq_batch_load_in_mem -- but test_tell_entry alone DOES
+       * NOT do that side effect. So we replicate the same write
+       * mpq_batch_load_in_mem does on success. */
+      for (slot = 0; slot < MAX_MPQ_FILE; slot++)
+      {
+         GLB_MPQ_S *mpq = &glb_mpq_struct[slot];
+         DWORD num_entry;
+
+         if (mpq->is_open == FALSE) continue;
+
+         glb_mpq = mpq;
+         num_entry = test_tell_entry(start);
+         if (num_entry == (DWORD) -1) continue;
+         if (num_entry >= mpq->count_files) continue;
+
+         {
+            char *fn_slot =
+               mpq->filename_table + (num_entry * MPQTYPES_MAX_PATH);
+            strncpy(fn_slot, start, MPQTYPES_MAX_PATH - 1);
+            fn_slot[MPQTYPES_MAX_PATH - 1] = 0;
+            mpq->identify_table[num_entry] |= 0x1;
+         }
+         seeded++;
+         break;
+      }
+   }
+   glb_mpq = saved_mpq;
+   fclose(fp);
+
+   return seeded;
+}

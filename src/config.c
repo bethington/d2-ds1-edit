@@ -522,6 +522,7 @@ void ini_read(char *ininame)
          { "raw_dt1_output",          &glb_config.export_default_raw_dt1_output },
          { "compose_modes_preset",    &glb_config.export_default_compose_modes_preset },
          { "compose_weapons_preset",  &glb_config.export_default_compose_weapons_preset },
+         { "listfile",                &glb_config.export_default_listfile },
          { NULL, NULL }
       };
       int k;

@@ -163,6 +163,15 @@ int mpq_batch_load_in_mem(char *filename, void **buffer, long *buf_len, int outp
     return -1;
 }
 
+/* test_tell_entry is the MPQ hash-lookup helper; called by
+ * asset_export_seed_listfile_from_file. Tests don't open real MPQs,
+ * so always report "not found." */
+unsigned long test_tell_entry(char *filename)
+{
+    (void)filename;
+    return (unsigned long) -1;
+}
+
 int misc_get_txt_column_num(RQ_ENUM txt_idx, char *col_name)
 {
     (void)txt_idx;

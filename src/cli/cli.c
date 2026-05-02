@@ -1375,6 +1375,7 @@ static int verb_export_raw(int argc, char **argv)
    const char *preset_str;
    const char *pattern_str;
    const char *out_str;
+   const char *listfile_str;
    int rc;
    ASSET_EXPORT_PLAN_S plan;
    int planned_ok = 0;
@@ -1383,13 +1384,14 @@ static int verb_export_raw(int argc, char **argv)
    if (!parse_common_opts(argc, argv, &opts))
       return CLI_EXIT_BAD_ARGS;
 
-   type_str    = find_flag_value(argc, argv, "type");
-   target_str  = find_flag_value(argc, argv, "target");
-   scope_str   = find_flag_value(argc, argv, "scope");
-   folder_str  = find_flag_value(argc, argv, "folder");
-   preset_str  = find_flag_value(argc, argv, "preset");
-   pattern_str = find_flag_value(argc, argv, "pattern");
-   out_str     = find_flag_value(argc, argv, "out");
+   type_str     = find_flag_value(argc, argv, "type");
+   target_str   = find_flag_value(argc, argv, "target");
+   scope_str    = find_flag_value(argc, argv, "scope");
+   folder_str   = find_flag_value(argc, argv, "folder");
+   preset_str   = find_flag_value(argc, argv, "preset");
+   pattern_str  = find_flag_value(argc, argv, "pattern");
+   out_str      = find_flag_value(argc, argv, "out");
+   listfile_str = find_flag_value(argc, argv, "listfile");
 
    /* Mutually-exclusive selectors: --target / --preset / --pattern /
     * --scope drive different code paths. We allow exactly one; if the
@@ -1462,6 +1464,23 @@ static int verb_export_raw(int argc, char **argv)
       return CLI_EXIT_PARTIAL;
    }
 
+   /* Bulk paths need the MPQ filename_table populated before they can
+    * enumerate. The in-MPQ (listfile) decompression has a known bug
+    * for D2 MPQs, so we accept an external listfile via --listfile=
+    * or the [export_defaults] listfile= config key. Single-file
+    * fast-path above doesn't need this. */
+   {
+      const char *lf = listfile_str;
+      if (lf == NULL || lf[0] == 0)
+         lf = glb_config.export_default_listfile;
+      if (lf != NULL && lf[0] != 0)
+      {
+         int seeded = asset_export_seed_listfile_from_file(lf);
+         if (opts.verbose >= 1)
+            printf("listfile: %d path(s) seeded from %s\n", seeded, lf);
+      }
+   }
+
    asset_export_plan_init(&plan);
 
    /* Plan construction. Order of preference matches the mutually-
@@ -1495,9 +1514,11 @@ static int verb_export_raw(int argc, char **argv)
 
       if (strcasecmp(scope, "all") == 0)
       {
-         /* "all" maps to plan_for_prefix with empty prefix. The
-          * existing GUI does the same thing under the hood. */
-         planned_ok = asset_export_plan_for_prefix("", type, &plan);
+         /* "all" maps to prefix "Data" -- matches asset_export_all_png,
+          * the existing GUI's "everything" path. An empty prefix
+          * fails asset_path_matches_prefix (which rejects empty by
+          * design) and matches nothing. */
+         planned_ok = asset_export_plan_for_prefix("Data", type, &plan);
       }
       else if (strcasecmp(scope, "folder") == 0)
       {

@@ -180,6 +180,12 @@ typedef struct CONFIG_S
    char    *export_default_compose_modes_preset;
    char    *export_default_compose_weapons_preset;
    int      export_default_verbose;  // YES = always run CLI exports with -v
+
+   // Path to an external listfile (text, one path per line). When
+   // set, asset_export pre-populates the MPQ filename_table from it
+   // before running bulk exports. Workaround for the in-MPQ
+   // (listfile) decompression bug (flag 0x80030200 in d2exp.mpq).
+   char    *export_default_listfile;
 } CONFIG_S;
 
 extern CONFIG_S glb_config;
