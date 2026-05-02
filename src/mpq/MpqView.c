@@ -61,8 +61,23 @@ int mod_load_in_mem(
    * buf_len = 0;
 
    // open file
+   if (moddir == NULL)
+      return -1;
    sprintf(strtmp, "%s\\%s", moddir, filename);
    in = fopen(strtmp, "rb");
+
+   // Fallback: if filename starts with "Data\" (or "Data/"), the moddir
+   // may already be rooted INSIDE Data (a common convention, e.g.
+   // mod_dir = "D:\mods\pd2\data"). Try once more with the prefix
+   // stripped so overlay reads succeed in that layout.
+   if (in == NULL && filename != NULL
+       && (strnicmp(filename, "Data\\", 5) == 0
+           || strnicmp(filename, "Data/", 5) == 0))
+   {
+      sprintf(strtmp, "%s\\%s", moddir, filename + 5);
+      in = fopen(strtmp, "rb");
+   }
+
    if (in == NULL)
       return -1; // not read
 
