@@ -97,6 +97,7 @@ set(SOURCES
     src/ui/project_menu.c
     src/ui/export_type_picker.c
     src/ui/upscale_mode_picker.c
+    src/ui/compose_mode_modal.c
     src/ui/multi_select_picker.c
     src/ui/preset_picker.c
     src/ui/scope_picker.c
