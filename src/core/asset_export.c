@@ -1410,8 +1410,20 @@ int asset_export_run_plan(const ASSET_EXPORT_PLAN_S *plan,
       exported_total += asset_export_png(plan->paths[i], output_dir);
 
       if (export_task_is_active())
+      {
          export_progress_advance(1);
+         /* Pump again AFTER advance so the just-completed item is
+          * visible on the bar (subject to the throttle window). */
+         export_progress_pump();
+      }
    }
+
+   /* Final paint: the last advance() may have been throttled out, and
+    * after the loop nothing else pumps until we hand off to the next
+    * stage. Force a non-throttled repaint so the dialog actually shows
+    * items_total/items_total. */
+   if (export_task_is_active())
+      export_progress_force_repaint();
 
    return exported_total;
 }

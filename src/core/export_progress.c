@@ -102,6 +102,9 @@ void export_progress_set_stage(EXPORT_STAGE_E stage,
    {
       s_state.stage_label[0] = 0;
    }
+   /* Stage transitions are rare; force the next pump to repaint
+    * immediately rather than be skipped by the throttle window. */
+   s_last_paint_time = 0.0;
 }
 
 void export_progress_advance(int delta)
@@ -131,6 +134,14 @@ void export_progress_request_cancel(void)
    if (!s_state.active)
       return;
    s_state.cancel_requested = 1;
+}
+
+void export_progress_force_repaint(void)
+{
+   /* Bypass the next pump's throttle window. The pump itself does the
+    * actual paint; this just forces it to happen on the very next call. */
+   s_last_paint_time = 0.0;
+   export_progress_pump();
 }
 
 int export_progress_cancel_requested(void)

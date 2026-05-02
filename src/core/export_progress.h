@@ -86,4 +86,9 @@ void export_progress_set_show_remote_stages(int yes);
 // requested cancel; caller should bail out at the next safe point.
 int  export_progress_pump(void);
 
+// Force the next pump-driven repaint to skip the throttle window.
+// Use after a stage transition or final advance to guarantee the
+// dialog reflects the new state without waiting for the throttle.
+void export_progress_force_repaint(void);
+
 #endif
