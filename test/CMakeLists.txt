@@ -153,6 +153,14 @@ target_include_directories(test_monstats2 PRIVATE
 )
 add_test(NAME monstats2 COMMAND test_monstats2)
 
+# Compose nearest-neighbour RGBA scaler: pure pixel ops, no externals.
+add_executable(test_compose_scale test_compose_scale.c ../src/core/compose_scale.c)
+target_link_libraries(test_compose_scale PRIVATE unity)
+target_include_directories(test_compose_scale PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
+add_test(NAME compose_scale COMMAND test_compose_scale)
+
 # CLI dispatcher smoke test. Shells out to the built ds1edit.exe and
 # validates exit codes + help output for the verbs that don't need an
 # MPQ chain. Depends on the main ds1edit target being built first.

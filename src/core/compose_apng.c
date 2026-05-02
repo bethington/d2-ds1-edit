@@ -5,6 +5,7 @@
 #include "core/apng_writer.h"
 #include "core/compose_apng.h"
 #include "core/compose_render.h"
+#include "core/compose_scale.h"
 
 #define COMPOSE_APNG_DEFAULT_DELAY_MS  40
 
@@ -64,33 +65,6 @@ int compose_apng_export(const COMPOSE_RENDER_PARAMS_S *params,
    return compose_apng_export_scaled(params, output_path, 1);
 }
 
-/* Nearest-neighbour scale a single RGBA buffer by an integer factor.
- * `src` is `src_w * src_h * 4` bytes; `dst` is allocated by the
- * caller as `(src_w * scale) * (src_h * scale) * 4` bytes. */
-static void nn_scale_rgba(const unsigned char *src, int src_w, int src_h,
-                          unsigned char *dst, int scale)
-{
-   int dst_w = src_w * scale;
-   int sy, sx, oy, ox;
-   for (sy = 0; sy < src_h; sy++)
-   {
-      for (sx = 0; sx < src_w; sx++)
-      {
-         const unsigned char *p = src + ((size_t) sy * src_w + sx) * 4;
-         for (oy = 0; oy < scale; oy++)
-         {
-            int dy = sy * scale + oy;
-            for (ox = 0; ox < scale; ox++)
-            {
-               int dx = sx * scale + ox;
-               unsigned char *q = dst + ((size_t) dy * dst_w + dx) * 4;
-               q[0] = p[0]; q[1] = p[1]; q[2] = p[2]; q[3] = p[3];
-            }
-         }
-      }
-   }
-}
-
 int compose_apng_export_scaled(const COMPOSE_RENDER_PARAMS_S *params,
                                const char *output_path,
                                int scale)
@@ -147,8 +121,9 @@ int compose_apng_export_scaled(const COMPOSE_RENDER_PARAMS_S *params,
             compose_render_free(&result);
             return 0;
          }
-         nn_scale_rgba(result.frames[i], result.width, result.height,
-                       scaled.frames[i], scale);
+         compose_scale_nn_rgba(result.frames[i],
+                               result.width, result.height,
+                               scaled.frames[i], scale);
       }
       to_write = &scaled;
    }
