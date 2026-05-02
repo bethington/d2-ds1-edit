@@ -1050,17 +1050,87 @@ static int verb_export_compose(int argc, char **argv)
    dir_str      = find_flag_value(argc, argv, "direction");
    out_str      = find_flag_value(argc, argv, "out");
 
-   if (out_str == NULL || out_str[0] == 0)
-   {
-      fprintf(stderr,
-         "ds1edit export-compose: --out=<dir> is required.\n"
-         "(default-output config support lands in a follow-up phase)\n");
-      return CLI_EXIT_BAD_ARGS;
-   }
-
+   /* Init config + MPQs first so glb_config.export_default_* are
+    * available below for fallbacks. */
    rc = cli_minimum_init(&opts);
    if (rc != CLI_EXIT_OK) return rc;
    compose_runtime_init();
+
+   /* --out= falls back to [export_defaults] compose_output. */
+   if ((out_str == NULL || out_str[0] == 0)
+       && glb_config.export_default_compose_output != NULL
+       && glb_config.export_default_compose_output[0] != 0)
+   {
+      out_str = glb_config.export_default_compose_output;
+   }
+   if (out_str == NULL || out_str[0] == 0)
+   {
+      fprintf(stderr,
+         "ds1edit export-compose: no output dir.\n"
+         "Pass --out=<dir> or set [export_defaults] compose_output in "
+         "Ds1edit.ini.\n");
+      return CLI_EXIT_BAD_ARGS;
+   }
+
+   /* --mode / --weapon fall back to named presets. */
+   if (mode_str == NULL || mode_str[0] == 0)
+   {
+      const char *preset_name = glb_config.export_default_compose_modes_preset;
+      if (preset_name != NULL && preset_name[0] != 0)
+      {
+         int i;
+         for (i = 0; i < compose_mode_presets_count(); i++)
+         {
+            const COMPOSE_PRESET_S *p = compose_mode_presets_at(i);
+            if (p != NULL && strcasecmp(p->name, preset_name) == 0)
+            {
+               static char joined[512];
+               int j, off = 0;
+               joined[0] = 0;
+               for (j = 0; j < p->code_count && off < (int) sizeof(joined) - 1; j++)
+               {
+                  int n = snprintf(joined + off, sizeof(joined) - (size_t) off,
+                                   "%s%s", j == 0 ? "" : ",", p->codes[j]);
+                  if (n < 0) break;
+                  off += n;
+               }
+               mode_str = joined;
+               break;
+            }
+         }
+      }
+   }
+   if (weapon_str == NULL || weapon_str[0] == 0)
+   {
+      const char *preset_name = glb_config.export_default_compose_weapons_preset;
+      if (preset_name != NULL && preset_name[0] != 0)
+      {
+         int i;
+         for (i = 0; i < compose_weapon_presets_count(); i++)
+         {
+            const COMPOSE_PRESET_S *p = compose_weapon_presets_at(i);
+            if (p != NULL && strcasecmp(p->name, preset_name) == 0)
+            {
+               static char joined[512];
+               int j, off = 0;
+               joined[0] = 0;
+               for (j = 0; j < p->code_count && off < (int) sizeof(joined) - 1; j++)
+               {
+                  int n = snprintf(joined + off, sizeof(joined) - (size_t) off,
+                                   "%s%s", j == 0 ? "" : ",", p->codes[j]);
+                  if (n < 0) break;
+                  off += n;
+               }
+               weapon_str = joined;
+               break;
+            }
+         }
+      }
+   }
+
+   /* Default verbosity from config. CLI -v / -vv flags still escalate. */
+   if (opts.verbose == 0 && glb_config.export_default_verbose)
+      opts.verbose = 1;
 
    /* Resolve category. --category= wins; otherwise inferred from
     * --target= or --token=. */

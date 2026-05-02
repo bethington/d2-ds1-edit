@@ -841,10 +841,22 @@ static void action_export_compose(void)
       weapon_sel.codes[0][0] = 0;
    }
 
-   if (!pick_folder("Compose - choose an output folder",
-                    glb_project.is_open ? glb_project.path : NULL,
-                    output_path, sizeof(output_path)))
-      return;
+   /* Initial folder for the picker: prefer [export_defaults]
+    * compose_output if set, then the open project, then nothing.
+    * The CLI uses the same default as a fallback when --out= is
+    * omitted, so the two surfaces stay consistent. */
+   {
+      const char *initial = NULL;
+      if (glb_config.export_default_compose_output != NULL
+          && glb_config.export_default_compose_output[0] != 0)
+         initial = glb_config.export_default_compose_output;
+      else if (glb_project.is_open)
+         initial = glb_project.path;
+
+      if (!pick_folder("Compose - choose an output folder",
+                       initial, output_path, sizeof(output_path)))
+         return;
+   }
 
    /* Build the monster / NPC / object index from MonStats.txt and
     * Objects.txt. compose_index_build is idempotent, but we don't

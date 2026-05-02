@@ -228,3 +228,35 @@ melee      = HTH, 1HS, 2HS
 ranged     = HTH, BOW, XBW
 magic      = HTH, STF
 common     = HTH, 1HS, BOW, STF
+
+
+; Export default output paths and CLI defaults. When set, the CLI
+; falls back to these when the matching --out= flag is omitted, and
+; the GUI folder pickers pre-populate from them. Leave blank to keep
+; --out= mandatory and the picker default-empty.
+;   compose_output         used by export-compose / export
+;   raw_dcc_output         used by export-raw --type=dcc
+;   raw_dc6_output         used by export-raw --type=dc6
+;   raw_dt1_output         used by export-raw --type=dt1
+;   compose_modes_preset   named [char_mode_presets] preset to use
+;                          when --mode= is omitted (e.g. idle_only)
+;   compose_weapons_preset named [char_weapon_presets] preset to use
+;                          when --weapon= is omitted (e.g. bare_hands)
+;   verbose                YES = always run CLI exports as if -v was
+;                          passed
+; ===========================================================================
+[export_defaults]
+compose_output         =
+raw_dcc_output         =
+raw_dc6_output         =
+raw_dt1_output         =
+compose_modes_preset   =
+compose_weapons_preset =
+verbose                = NO
+
+; Examples:
+; compose_output         = C:\d2_exports\compose
+; raw_dc6_output         = C:\d2_exports\dc6
+; compose_modes_preset   = idle_only
+; compose_weapons_preset = bare_hands
+
