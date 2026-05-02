@@ -47,6 +47,14 @@ target_include_directories(test_apng_writer PRIVATE
 )
 add_test(NAME apng_writer COMMAND test_apng_writer)
 
+# animdata speed -> frame delay converter (pure math, no globals)
+add_executable(test_animdata_speed test_animdata_speed.c ../src/core/animdata_math.c)
+target_link_libraries(test_animdata_speed PRIVATE unity)
+target_include_directories(test_animdata_speed PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
+add_test(NAME animdata_speed COMMAND test_animdata_speed)
+
 add_executable(test_asset_export_smoke
     test_asset_export_smoke.c
     test_asset_export_stubs.c

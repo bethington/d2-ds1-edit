@@ -99,34 +99,61 @@ void animdata_load(void)
 // The ".cof" extension can be in the name, but it won't be used
 int animdata_get_cof_info(char * name, long * fpd, long * speed)
 {
+   int rc = animdata_get_cof_info_quiet(name, fpd, speed);
+   UBYTE hash = animdata_hash_value(name);
+   printf("%s is hash %i", name, hash);
+   if (rc == 0)
+      printf(", record found\n");
+   else
+      printf(", but error : not found in there\n");
+   fflush(stdout);
+   return rc;
+}
+
+// Quiet variant: same lookup, no debug output. Used by compose loops.
+int animdata_get_cof_info_quiet(const char * name, long * fpd, long * speed)
+{
    ANIM_DATA_RECORD_S * rec_ptr;
    UBYTE              hash;
    int                i;
    char               rec_name[80];
 
+   if (name == NULL || fpd == NULL || speed == NULL)
+   {
+      if (fpd   != NULL) *fpd   = 0;
+      if (speed != NULL) *speed = 0;
+      return -1;
+   }
 
-   hash = animdata_hash_value(name);
-   printf("%s is hash %i", name, hash);
+   hash = animdata_hash_value((char *) name);
    if (glb_ds1edit.anim_data.block_pointer[hash])
    {
       rec_ptr = glb_ds1edit.anim_data.block_pointer[hash];
-      for (i=0; i < glb_ds1edit.anim_data.nb_records[hash]; i++)
+      for (i = 0; i < glb_ds1edit.anim_data.nb_records[hash]; i++)
       {
          memset(rec_name, 0, sizeof(rec_name));
          strncpy(rec_name, rec_ptr[i].cof_name, 8);
          if (stricmp(rec_name, name) == 0)
          {
-            * fpd   = rec_ptr[i].frames_per_dir;
-            * speed = rec_ptr[i].speed;
-            printf(", record %i in that block\n", i);
-            fflush(stdout);
+            *fpd   = rec_ptr[i].frames_per_dir;
+            *speed = rec_ptr[i].speed;
             return 0;
          }
       }
    }
-   * fpd   = 0;
-   * speed = 0;
-   printf(", but error : not found in there\n");
-   fflush(stdout);
+   *fpd   = 0;
+   *speed = 0;
    return -1;
+}
+
+// animdata_speed_to_frame_delay_ms lives in core/animdata_math.c
+// so unit tests can link it without dragging in editor globals.
+
+int animdata_get_frame_delay_ms(const char * cof_name, int default_ms)
+{
+   long fpd, speed;
+
+   if (animdata_get_cof_info_quiet(cof_name, &fpd, &speed) != 0)
+      return default_ms;
+   return animdata_speed_to_frame_delay_ms(speed, default_ms);
 }

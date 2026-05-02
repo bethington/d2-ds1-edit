@@ -52,6 +52,7 @@ set(SOURCES
     src/core/dt1_decode.c
     src/core/cof.c
     src/core/animdata.c
+    src/core/animdata_math.c
     src/core/dcc.c
     src/core/dc6.c
     src/core/dc6_header.c
