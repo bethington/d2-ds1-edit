@@ -83,6 +83,7 @@ set(SOURCES
     src/ui/export_type_picker.c
     src/ui/upscale_mode_picker.c
     src/ui/preset_picker.c
+    src/ui/text_input_modal.c
     src/ui/win_folder_picker.c
     # mpq/
     src/mpq/Dcl_tbl.c
