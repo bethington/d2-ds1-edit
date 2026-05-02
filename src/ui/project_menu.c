@@ -22,7 +22,12 @@
 #include "ui/win_folder_picker.h"
 
 #include "core/asset_export.h"
+#include "core/compose_apng.h"
+#include "core/compose_index.h"
+#include "core/compose_iter.h"
+#include "core/compose_naming.h"
 #include "core/compose_palette.h"
+#include "core/compose_render.h"
 #include "core/export_progress.h"
 #include "core/palette.h"
 #include "core/project.h"
@@ -433,6 +438,247 @@ static void show_export_result(const char *title,
       0);
 }
 
+/* ---- Compose-mode discovery + iteration ---- */
+
+/* The set of leaf categories that get iterated. COMPOSE_CATEGORY_NONE
+ * ("All composed") expands to the full set; the four narrow choices
+ * just produce a single-element list. */
+typedef struct COMPOSE_CAT_LIST_S
+{
+   COMPOSE_CATEGORY_E cats[4];
+   int count;
+} COMPOSE_CAT_LIST_S;
+
+static void compose_expand_categories(COMPOSE_CATEGORY_E picked,
+                                      COMPOSE_CAT_LIST_S *out)
+{
+   out->count = 0;
+   if (picked == COMPOSE_CATEGORY_NONE)
+   {
+      out->cats[out->count++] = COMPOSE_CATEGORY_PLAYER_CHAR;
+      out->cats[out->count++] = COMPOSE_CATEGORY_MONSTER;
+      out->cats[out->count++] = COMPOSE_CATEGORY_NPC;
+      out->cats[out->count++] = COMPOSE_CATEGORY_OBJECT;
+   }
+   else
+   {
+      out->cats[out->count++] = picked;
+   }
+}
+
+/* Token enumeration: returns the count, and the i-th token. The
+ * supplied buffers receive code + full name (full name may be empty
+ * for player classes -- the naming helper handles that). For player
+ * chars we use the hardcoded compose_iter list and look up the
+ * descriptive name via compose_naming_class_name. For monsters / NPCs
+ * / objects we use the compose_index built earlier in this function. */
+static int compose_token_count(COMPOSE_CATEGORY_E category)
+{
+   switch (category)
+   {
+      case COMPOSE_CATEGORY_PLAYER_CHAR: return compose_iter_player_class_count();
+      case COMPOSE_CATEGORY_MONSTER:     return compose_index_monster_count();
+      case COMPOSE_CATEGORY_NPC:         return compose_index_npc_count();
+      case COMPOSE_CATEGORY_OBJECT:      return compose_index_object_count();
+      default: return 0;
+   }
+}
+
+static int compose_token_at(COMPOSE_CATEGORY_E category, int idx,
+                            char *code_out, int code_cap,
+                            char *name_out, int name_cap)
+{
+   if (code_out != NULL && code_cap > 0) code_out[0] = 0;
+   if (name_out != NULL && name_cap > 0) name_out[0] = 0;
+
+   if (category == COMPOSE_CATEGORY_PLAYER_CHAR)
+   {
+      const char *code = compose_iter_player_class_at(idx);
+      const char *name;
+      if (code == NULL) return 0;
+      strncpy(code_out, code, (size_t) code_cap - 1);
+      code_out[code_cap - 1] = 0;
+      name = compose_naming_class_name(code);
+      if (name != NULL)
+      {
+         strncpy(name_out, name, (size_t) name_cap - 1);
+         name_out[name_cap - 1] = 0;
+      }
+      return 1;
+   }
+   else
+   {
+      const COMPOSE_TOKEN_S *t = NULL;
+      switch (category)
+      {
+         case COMPOSE_CATEGORY_MONSTER: t = compose_index_monster_at(idx); break;
+         case COMPOSE_CATEGORY_NPC:     t = compose_index_npc_at(idx);     break;
+         case COMPOSE_CATEGORY_OBJECT:  t = compose_index_object_at(idx);  break;
+         default: break;
+      }
+      if (t == NULL) return 0;
+      strncpy(code_out, t->code, (size_t) code_cap - 1);
+      code_out[code_cap - 1] = 0;
+      strncpy(name_out, t->name, (size_t) name_cap - 1);
+      name_out[name_cap - 1] = 0;
+      return 1;
+   }
+}
+
+/* Mode/weapon iteration helpers: when the picker selection's
+ * use_all flag is set, walk the hardcoded compose_iter default
+ * list; otherwise walk the codes array stored in the selection. */
+static int compose_sel_count(const COMPOSE_PRESET_SELECTION_S *sel,
+                             int default_count)
+{
+   if (sel == NULL) return default_count;
+   if (sel->use_all) return default_count;
+   return sel->code_count;
+}
+
+static const char * compose_sel_at(const COMPOSE_PRESET_SELECTION_S *sel,
+                                   int idx,
+                                   const char *(*default_at)(int))
+{
+   if (sel == NULL || sel->use_all)
+      return default_at(idx);
+   if (idx < 0 || idx >= sel->code_count) return NULL;
+   return sel->codes[idx];
+}
+
+/* Run state for the iteration loop. */
+typedef struct COMPOSE_RUN_STATE_S
+{
+   int success_count;
+   int failure_count;
+   int skipped_tuples;   /* (token, mode, wclass) tuples with no COF */
+   char first_failure[256];
+} COMPOSE_RUN_STATE_S;
+
+/* Iterate the (mode, wclass, direction) sub-cube for one token.
+ * Returns 1 if the user requested cancel, 0 to continue. */
+static int compose_run_token(const char *root,
+                             COMPOSE_CATEGORY_E category,
+                             const char *token,
+                             const char *token_name,
+                             const COMPOSE_PRESET_SELECTION_S *mode_sel,
+                             const COMPOSE_PRESET_SELECTION_S *weapon_sel,
+                             COMPOSE_RUN_STATE_S *st)
+{
+   int n_modes = compose_sel_count(mode_sel,
+                                   compose_iter_default_mode_count());
+   int n_weapons = (weapon_sel != NULL && weapon_sel->code_count > 0
+                    && !weapon_sel->use_all
+                    && weapon_sel->codes[0][0] == 0)
+                   ? 1
+                   : compose_sel_count(weapon_sel,
+                                       compose_iter_default_weapon_count());
+   const char *skin = compose_iter_category_skin(category);
+   const char *base = compose_iter_category_base(category);
+   int m, w, d;
+   COMPOSE_RENDER_PARAMS_S params;
+   char path_buf[PROJECT_PATH_MAX];
+   char dir_buf[PROJECT_PATH_MAX];
+
+   if (base == NULL) return 0;
+
+   for (m = 0; m < n_modes; m++)
+   {
+      const char *mode = compose_sel_at(mode_sel, m,
+                                        compose_iter_default_mode_at);
+      if (mode == NULL || mode[0] == 0) continue;
+
+      for (w = 0; w < n_weapons; w++)
+      {
+         const char *wclass;
+         int dir_count;
+
+         if (weapon_sel != NULL && weapon_sel->code_count > 0
+             && !weapon_sel->use_all && weapon_sel->codes[0][0] == 0)
+            wclass = "";
+         else
+            wclass = compose_sel_at(weapon_sel, w,
+                                    compose_iter_default_weapon_at);
+         if (wclass == NULL) wclass = "";
+
+         /* Probe the COF to learn the direction count. If the COF
+          * doesn't exist for this (token, mode, wclass) combo, skip
+          * the entire tuple cheaply (no compose_render call, no
+          * spurious failure record). Most (token, mode, wclass)
+          * combinations are invalid in D2 -- a Necromancer doesn't
+          * have a Whirlwind animation, etc. */
+         dir_count = compose_iter_probe_direction_count(category, token,
+                                                        mode, wclass);
+         if (dir_count <= 0)
+         {
+            st->skipped_tuples++;
+            if (export_progress_pump())
+               return 1;
+            continue;
+         }
+
+         /* Make sure the per-token output dir exists once per tuple. */
+         if (compose_iter_build_output_dir(dir_buf, (int) sizeof(dir_buf),
+                                           root, category, token,
+                                           token_name))
+            compose_iter_ensure_dir(dir_buf);
+
+         memset(&params, 0, sizeof(params));
+         params.base   = base;
+         params.token  = token;
+         params.mode   = mode;
+         params.wclass = wclass;
+         params.skin   = skin;
+
+         for (d = 0; d < dir_count; d++)
+         {
+            char status[256];
+            int ok;
+
+            params.direction = d;
+
+            if (!compose_iter_build_output_path(path_buf, (int) sizeof(path_buf),
+                                                root, category, token,
+                                                token_name, mode,
+                                                wclass, d))
+            {
+               st->failure_count++;
+               continue;
+            }
+
+            snprintf(status, sizeof(status),
+                     "%s %s%s dir %d",
+                     token, mode,
+                     (wclass[0] != 0) ? wclass : "",
+                     d);
+            export_progress_set_current_item(status);
+
+            ok = compose_apng_export(&params, path_buf);
+            if (ok)
+            {
+               st->success_count++;
+            }
+            else
+            {
+               st->failure_count++;
+               if (st->first_failure[0] == 0)
+               {
+                  strncpy(st->first_failure, path_buf,
+                          sizeof(st->first_failure) - 1);
+                  st->first_failure[sizeof(st->first_failure) - 1] = 0;
+               }
+            }
+
+            export_progress_advance(1);
+            if (export_progress_pump())
+               return 1;
+         }
+      }
+   }
+
+   return 0;
+}
+
 // Compose-mode export flow. Invoked from action_export_unified when
 // the user picks DCC or All from the type picker AND confirms compose
 // mode in the follow-up modal. Walks through the compose-specific
@@ -442,23 +688,28 @@ static void show_export_result(const char *title,
 //   2. Mode preset picker (multi-select)
 //   3. Weapon preset picker (multi-select; only when chars in scope)
 //   4. Output folder picker
-//   5. Discovery + per-tuple iteration loop  <-- placeholder for now
+//   5. Discovery + per-tuple iteration loop
 //
-// The discovery loop and failure summary modal land in follow-up
-// commits. For now the flow ends with a summary message box that
-// echoes the user's selections so the picker chain can be smoke-
-// tested visually.
+// The iteration walks (category x token x mode x wclass x direction)
+// tuples; each leaf produces one APNG. COFs that don't exist for a
+// given (token, mode, wclass) combo are silently skipped (the vast
+// majority of combinations are invalid in D2).
 static void action_export_compose(void)
 {
    COMPOSE_CATEGORY_E category = COMPOSE_CATEGORY_NONE;
    COMPOSE_PRESET_SELECTION_S mode_sel;
    COMPOSE_PRESET_SELECTION_S weapon_sel;
+   COMPOSE_CAT_LIST_S cat_list;
+   COMPOSE_RUN_STATE_S run;
    char output_path[PROJECT_PATH_MAX];
-   int needs_weapons;
+   int any_chars_in_scope;
+   int c;
+   int cancelled = 0;
    char message[1024];
 
    memset(&mode_sel,   0, sizeof(mode_sel));
    memset(&weapon_sel, 0, sizeof(weapon_sel));
+   memset(&run,        0, sizeof(run));
 
    if (!compose_category_picker_show(&category))
       return;
@@ -466,10 +717,10 @@ static void action_export_compose(void)
    if (!compose_mode_picker_show(&mode_sel))
       return;
 
-   needs_weapons = (category == COMPOSE_CATEGORY_PLAYER_CHAR
-                    || category == COMPOSE_CATEGORY_NONE);
+   any_chars_in_scope = (category == COMPOSE_CATEGORY_PLAYER_CHAR
+                         || category == COMPOSE_CATEGORY_NONE);
 
-   if (needs_weapons)
+   if (any_chars_in_scope)
    {
       if (!compose_weapon_picker_show(&weapon_sel))
          return;
@@ -477,8 +728,8 @@ static void action_export_compose(void)
    else
    {
       /* Monsters / NPCs / objects don't have weapon-class variants;
-       * fill in a single empty entry so the iteration loop below
-       * has a uniform shape. */
+       * fill in a single empty entry so the iteration loop has a
+       * uniform shape. */
       weapon_sel.use_all = 0;
       weapon_sel.code_count = 1;
       weapon_sel.codes[0][0] = 0;
@@ -489,40 +740,126 @@ static void action_export_compose(void)
                     output_path, sizeof(output_path)))
       return;
 
-   /* Placeholder summary -- the real discovery + iteration loop lands
-    * in the next commit. For now, echo the selections so a user can
-    * visually verify the picker chain works end-to-end. */
+   /* Build the monster / NPC / object index from MonStats.txt and
+    * Objects.txt. compose_index_build is idempotent, but we don't
+    * actually need it for player-chars-only runs. */
+   compose_expand_categories(category, &cat_list);
+   if (category != COMPOSE_CATEGORY_PLAYER_CHAR)
+      (void) compose_index_build();
+
+   /* Drive the run via the export_progress dialog. We don't know the
+    * exact items_total ahead of time (each tuple's direction count is
+    * resolved by COF probe at iteration time), so we feed the dialog
+    * a coarse upper bound and let it advance one APNG per success.
+    * For the active-stage label we use NATIVE_EXPORT, the same stage
+    * the raw-export path uses for its main loop. */
+   export_progress_begin("Compose Export");
+   export_progress_set_show_remote_stages(0);
+   export_progress_set_stage(EXPORT_STAGE_PREPARE, "Indexing assets", 0);
+   export_progress_force_repaint();
+   export_progress_pump();
+
    {
-      const char *category_name = "All composed";
-      switch (category)
+      /* Coarse upper bound: each token contributes (n_modes * n_weapons
+       * * 16). The dialog clamps the bar at 100% so an over-estimate
+       * is harmless; we just won't see the bar fill all the way. The
+       * skip-on-COF-miss path is the dominant trim, and we don't pay
+       * for it here. */
+      int n_modes = compose_sel_count(&mode_sel,
+                                      compose_iter_default_mode_count());
+      int n_weapons = compose_sel_count(&weapon_sel,
+                                        compose_iter_default_weapon_count());
+      int total = 0;
+      int i;
+      for (i = 0; i < cat_list.count; i++)
+         total += compose_token_count(cat_list.cats[i]);
+      total *= n_modes * n_weapons * 16; /* 16 dirs upper bound per tuple */
+      if (total < 1) total = 1;
+
+      export_progress_set_stage(EXPORT_STAGE_NATIVE_EXPORT,
+                                "Composing animations", total);
+      export_progress_force_repaint();
+   }
+
+   /* Pre-build a "no weapon class" selection for monster / NPC / object
+    * categories. Player chars use the picker's weapon_sel verbatim. */
+   {
+      COMPOSE_PRESET_SELECTION_S empty_wclass;
+      memset(&empty_wclass, 0, sizeof(empty_wclass));
+      empty_wclass.code_count = 1;
+      empty_wclass.codes[0][0] = 0;
+
+      for (c = 0; !cancelled && c < cat_list.count; c++)
       {
-         case COMPOSE_CATEGORY_PLAYER_CHAR: category_name = "Player chars"; break;
-         case COMPOSE_CATEGORY_MONSTER:     category_name = "Monsters";    break;
-         case COMPOSE_CATEGORY_NPC:         category_name = "NPCs";        break;
-         case COMPOSE_CATEGORY_OBJECT:      category_name = "Objects";     break;
-         default: break;
+         COMPOSE_CATEGORY_E cat = cat_list.cats[c];
+         int n_tokens = compose_token_count(cat);
+         const COMPOSE_PRESET_SELECTION_S *cat_weapons =
+            (cat == COMPOSE_CATEGORY_PLAYER_CHAR) ? &weapon_sel
+                                                  : &empty_wclass;
+         int t;
+
+         for (t = 0; !cancelled && t < n_tokens; t++)
+         {
+            char tok_code[COMPOSE_TOKEN_CODE_MAX];
+            char tok_name[COMPOSE_TOKEN_NAME_MAX];
+
+            if (!compose_token_at(cat, t,
+                                  tok_code, sizeof(tok_code),
+                                  tok_name, sizeof(tok_name)))
+               continue;
+
+            cancelled = compose_run_token(output_path, cat, tok_code, tok_name,
+                                          &mode_sel, cat_weapons, &run);
+         }
       }
+   }
 
+   export_progress_end();
+
+   /* Final summary -- structured failure modal lands in a follow-up
+    * commit. For now, a native message box is sufficient. */
+   if (cancelled)
+   {
       snprintf(message, sizeof(message),
-         "Compose mode UI smoke-test:\n"
-         "  Category: %s\n"
-         "  Modes:    %s (%d codes)\n"
-         "  Weapons:  %s (%d codes)\n"
-         "  Output:   %s\n"
-         "\n"
-         "(Discovery + iteration loop lands in the next commit; this"
-         " modal will be replaced with a real export run.)",
-         category_name,
-         mode_sel.use_all   ? "ALL"      : "specific", mode_sel.code_count,
-         weapon_sel.use_all ? "ALL"      : "specific", weapon_sel.code_count,
-         output_path);
-
+         "Compose export was cancelled.\n\n"
+         "  Animations exported:    %d\n"
+         "  Failures:               %d\n"
+         "  Skipped (no COF):       %d\n",
+         run.success_count, run.failure_count, run.skipped_tuples);
       al_show_native_message_box(a5_display,
-         "Compose Export (placeholder)",
-         "Selections recorded.",
-         message,
-         NULL,
-         0);
+         "Compose Export - Cancelled",
+         "The export was interrupted.",
+         message, NULL, ALLEGRO_MESSAGEBOX_WARN);
+   }
+   else if (run.success_count == 0 && run.failure_count == 0)
+   {
+      snprintf(message, sizeof(message),
+         "No COFs matched the selected (category, mode, weapon)\n"
+         "tuples. This usually means the chosen combinations don't\n"
+         "exist in the loaded MPQ chain.\n\n"
+         "  Skipped (no COF):  %d\n",
+         run.skipped_tuples);
+      al_show_native_message_box(a5_display,
+         "Compose Export - Nothing Exported",
+         "No animations were produced.",
+         message, NULL, ALLEGRO_MESSAGEBOX_WARN);
+   }
+   else
+   {
+      snprintf(message, sizeof(message),
+         "  Animations exported:    %d\n"
+         "  Failures:               %d\n"
+         "  Skipped (no COF):       %d\n"
+         "\n"
+         "Output: %s%s%s",
+         run.success_count, run.failure_count, run.skipped_tuples,
+         output_path,
+         (run.first_failure[0] != 0) ? "\n\nFirst failure: " : "",
+         (run.first_failure[0] != 0) ? run.first_failure     : "");
+      al_show_native_message_box(a5_display,
+         "Compose Export - Done",
+         "Compose export finished.",
+         message, NULL, 0);
    }
 }
 

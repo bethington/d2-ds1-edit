@@ -129,6 +129,21 @@ target_include_directories(test_compose_palette PRIVATE
 )
 add_test(NAME compose_palette COMMAND test_compose_palette)
 
+# Compose iteration helpers: default lists + output path builder. The
+# pure helpers live in compose_iter.c; the MPQ/COF probe lives in
+# compose_iter_probe.c and is intentionally not linked here.
+add_executable(test_compose_iter
+    test_compose_iter.c
+    ../src/core/compose_iter.c
+    ../src/core/compose_naming.c
+)
+target_link_libraries(test_compose_iter PRIVATE unity)
+target_include_directories(test_compose_iter PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/mpq
+)
+add_test(NAME compose_iter COMMAND test_compose_iter)
+
 add_executable(test_asset_export_smoke
     test_asset_export_smoke.c
     test_asset_export_stubs.c

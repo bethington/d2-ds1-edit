@@ -48,6 +48,9 @@ set(SOURCES
     src/core/compose_dcc_path.c
     src/core/compose_index.c
     src/core/compose_index_build.c
+    src/core/compose_iter.c
+    src/core/compose_iter_config.c
+    src/core/compose_iter_probe.c
     src/core/compose_naming.c
     src/core/compose_palette.c
     src/core/compose_presets.c
