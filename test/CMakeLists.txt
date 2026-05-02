@@ -81,6 +81,22 @@ target_include_directories(test_compose_presets PRIVATE
 )
 add_test(NAME compose_presets COMMAND test_compose_presets)
 
+# Compose COF byte parser (offline composition; pure logic)
+add_executable(test_compose_cof test_compose_cof.c ../src/core/compose_cof.c)
+target_link_libraries(test_compose_cof PRIVATE unity)
+target_include_directories(test_compose_cof PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
+add_test(NAME compose_cof COMMAND test_compose_cof)
+
+# Compose DCC path builder (pure string formatting)
+add_executable(test_compose_dcc_path test_compose_dcc_path.c ../src/core/compose_dcc_path.c)
+target_link_libraries(test_compose_dcc_path PRIVATE unity)
+target_include_directories(test_compose_dcc_path PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
+add_test(NAME compose_dcc_path COMMAND test_compose_dcc_path)
+
 add_executable(test_asset_export_smoke
     test_asset_export_smoke.c
     test_asset_export_stubs.c
