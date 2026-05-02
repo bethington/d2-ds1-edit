@@ -144,6 +144,20 @@ target_include_directories(test_compose_iter PRIVATE
 )
 add_test(NAME compose_iter COMMAND test_compose_iter)
 
+# CLI dispatcher smoke test. Shells out to the built ds1edit.exe and
+# validates exit codes + help output for the verbs that don't need an
+# MPQ chain. Depends on the main ds1edit target being built first.
+add_executable(test_cli_smoke test_cli_smoke.c)
+target_link_libraries(test_cli_smoke PRIVATE unity)
+target_include_directories(test_cli_smoke PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
+target_compile_definitions(test_cli_smoke PRIVATE
+    DS1EDIT_BIN_EXE="${CMAKE_SOURCE_DIR}/bin/ds1edit.exe"
+)
+add_dependencies(test_cli_smoke ds1edit)
+add_test(NAME cli_smoke COMMAND test_cli_smoke)
+
 add_executable(test_asset_export_smoke
     test_asset_export_smoke.c
     test_asset_export_stubs.c

@@ -95,8 +95,32 @@ static const CLI_VERB_S *find_verb(const char *name)
 
 int cli_is_verb(int argc, char **argv)
 {
+   const char *a;
    if (argc < 2 || argv == NULL || argv[1] == NULL) return 0;
-   return (find_verb(argv[1]) != NULL) ? 1 : 0;
+   a = argv[1];
+   if (a[0] == 0) return 0;
+   /* Anything starting with '-' is a CLI flag (--help, -h, etc.) and
+    * counts as a CLI attempt; let cli_run validate it. */
+   if (a[0] == '-') return 1;
+   /* A path-shaped argv[1] (e.g. drag-and-drop a .ds1 file onto the
+    * exe) is a GUI invocation, not a verb. Heuristic: contains a
+    * path separator, a colon, or ends in a known file extension. */
+   if (strchr(a, '\\') != NULL || strchr(a, '/') != NULL
+       || strchr(a, ':') != NULL)
+      return 0;
+   {
+      const char *dot = strrchr(a, '.');
+      if (dot != NULL
+          && (strcasecmp(dot, ".ds1") == 0
+              || strcasecmp(dot, ".dt1") == 0
+              || strcasecmp(dot, ".dc6") == 0
+              || strcasecmp(dot, ".dcc") == 0
+              || strcasecmp(dot, ".cof") == 0))
+         return 0;
+   }
+   /* Treat as an attempted CLI verb -- known ones dispatch, unknowns
+    * return CLI_EXIT_BAD_ARGS via cli_run. */
+   return 1;
 }
 
 /* ---- Common option parsing ------------------------------------------ */
