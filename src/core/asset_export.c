@@ -164,12 +164,12 @@ static void make_anim_leaf(const char *asset_path, char *out, int out_cap, int d
    }
 }
 
-typedef struct EXPORT_PATH_LIST_S
-{
-   char **items;
-   int count;
-   int capacity;
-} EXPORT_PATH_LIST_S;
+// EXPORT_PATH_LIST_S is the legacy internal name; ASSET_EXPORT_PLAN_S
+// (declared in asset_export.h) is the public type. They are layout-
+// compatible: the path array fields share names + types, with the public
+// version adding `total_candidates` for diagnostic accounting. Internal
+// helpers below operate on the public type directly.
+typedef ASSET_EXPORT_PLAN_S EXPORT_PATH_LIST_S;
 
 typedef struct DT1_DISCOVERY_CACHE_ENTRY_S
 {
@@ -429,7 +429,7 @@ static int export_path_list_contains(const EXPORT_PATH_LIST_S *list, const char 
 
    for (i = 0; i < list->count; i++)
    {
-      if (stricmp(list->items[i], asset_path) == 0)
+      if (stricmp(list->paths[i], asset_path) == 0)
          return 1;
    }
 
@@ -450,10 +450,10 @@ static int export_path_list_add(EXPORT_PATH_LIST_S *list, const char *asset_path
    if (list->count >= list->capacity)
    {
       new_capacity = (list->capacity == 0) ? 64 : (list->capacity * 2);
-      new_items = (char **) realloc(list->items, sizeof(char *) * new_capacity);
+      new_items = (char **) realloc(list->paths, sizeof(char *) * new_capacity);
       if (new_items == NULL)
          return 0;
-      list->items = new_items;
+      list->paths = new_items;
       list->capacity = new_capacity;
    }
 
@@ -461,7 +461,7 @@ static int export_path_list_add(EXPORT_PATH_LIST_S *list, const char *asset_path
    if (copy == NULL)
       return 0;
    strcpy(copy, asset_path);
-   list->items[list->count++] = copy;
+   list->paths[list->count++] = copy;
    return 1;
 }
 
@@ -473,11 +473,12 @@ static void export_path_list_destroy(EXPORT_PATH_LIST_S *list)
       return;
 
    for (i = 0; i < list->count; i++)
-      free(list->items[i]);
-   free(list->items);
-   list->items = NULL;
+      free(list->paths[i]);
+   free(list->paths);
+   list->paths = NULL;
    list->count = 0;
    list->capacity = 0;
+   list->total_candidates = 0;
 }
 
 static void dt1_discovery_cache_reset(void)
@@ -1108,33 +1109,104 @@ static int export_dc6_png(const char *asset_path, const char *output_dir)
    return exported;
 }
 
-int asset_export_area_group_png(const AREA_GROUP_S *group, const char *output_dir)
+int asset_export_plan_for_area_group(const AREA_GROUP_S *group,
+                                     ASSET_EXPORT_PLAN_S *plan_out)
 {
-   char paths[256][256];
-   int path_count = 0;
+   char tmp_paths[256][256];
+   int tmp_count = 0;
    int entry_idx;
    int asset_idx;
-   int exported_total = 0;
 
-   if (group == NULL || output_dir == NULL || group->lvltype_id < 0)
+   if (plan_out == NULL || group == NULL || group->lvltype_id < 0)
       return 0;
+
+   asset_export_plan_init(plan_out);
 
    for (entry_idx = 0; entry_idx < group->entry_count; entry_idx++)
    {
       collect_dt1_paths_for_entry(
          group->entries[entry_idx].lvltype_id,
          group->entries[entry_idx].lvlprest_def,
-         paths,
+         tmp_paths,
          256,
-         &path_count
+         &tmp_count
       );
    }
 
-   if (path_count == 0)
-      collect_dt1_paths_for_entry(group->lvltype_id, -1, paths, 256, &path_count);
+   if (tmp_count == 0)
+      collect_dt1_paths_for_entry(group->lvltype_id, -1, tmp_paths, 256, &tmp_count);
 
-   for (asset_idx = 0; asset_idx < path_count; asset_idx++)
-      exported_total += asset_export_png(paths[asset_idx], output_dir);
+   for (asset_idx = 0; asset_idx < tmp_count; asset_idx++)
+      export_path_list_add(plan_out, tmp_paths[asset_idx]);
+
+   plan_out->total_candidates = plan_out->count;
+   return 1;
+}
+
+int asset_export_area_group_png(const AREA_GROUP_S *group, const char *output_dir)
+{
+   ASSET_EXPORT_PLAN_S plan;
+   int exported_total;
+
+   if (output_dir == NULL)
+      return 0;
+
+   if (!asset_export_plan_for_area_group(group, &plan))
+      return 0;
+
+   exported_total = asset_export_run_plan(&plan, output_dir);
+   asset_export_plan_free(&plan);
+   return exported_total;
+}
+
+void asset_export_plan_init(ASSET_EXPORT_PLAN_S *plan)
+{
+   if (plan == NULL)
+      return;
+   memset(plan, 0, sizeof(*plan));
+}
+
+void asset_export_plan_free(ASSET_EXPORT_PLAN_S *plan)
+{
+   export_path_list_destroy(plan);
+}
+
+int asset_export_plan_for_prefix(const char *asset_prefix,
+                                 const char *type_filter,
+                                 ASSET_EXPORT_PLAN_S *plan_out)
+{
+   if (plan_out == NULL || asset_prefix == NULL)
+      return 0;
+   if (type_filter != NULL && type_filter[0] != 0
+       && stricmp(type_filter, "all") != 0
+       && stricmp(type_filter, "dt1") != 0
+       && stricmp(type_filter, "dc6") != 0
+       && stricmp(type_filter, "dcc") != 0)
+      return 0;
+
+   asset_export_plan_init(plan_out);
+   dt1_discovery_cache_reset();
+
+   collect_overlay_assets_for_prefix(asset_prefix, type_filter, plan_out);
+   collect_known_mpq_assets_for_prefix(asset_prefix, type_filter, plan_out);
+
+   plan_out->total_candidates = plan_out->count;
+
+   dt1_discovery_cache_reset();
+   return 1;
+}
+
+int asset_export_run_plan(const ASSET_EXPORT_PLAN_S *plan,
+                          const char *output_dir)
+{
+   int i;
+   int exported_total = 0;
+
+   if (plan == NULL || output_dir == NULL)
+      return 0;
+
+   for (i = 0; i < plan->count; i++)
+      exported_total += asset_export_png(plan->paths[i], output_dir);
 
    return exported_total;
 }
@@ -1142,27 +1214,17 @@ int asset_export_area_group_png(const AREA_GROUP_S *group, const char *output_di
 int asset_export_prefix_png(const char *asset_prefix, const char *type_filter,
                             const char *output_dir)
 {
-   EXPORT_PATH_LIST_S paths;
-   int i;
-   int exported_total = 0;
+   ASSET_EXPORT_PLAN_S plan;
+   int exported_total;
 
-   memset(&paths, 0, sizeof(paths));
-   dt1_discovery_cache_reset();
-   if (asset_prefix == NULL || output_dir == NULL)
-      return 0;
-   if (type_filter != NULL && type_filter[0] != 0 && stricmp(type_filter, "all") != 0 &&
-       stricmp(type_filter, "dt1") != 0 && stricmp(type_filter, "dc6") != 0 &&
-       stricmp(type_filter, "dcc") != 0)
+   if (output_dir == NULL)
       return 0;
 
-   collect_overlay_assets_for_prefix(asset_prefix, type_filter, &paths);
-   collect_known_mpq_assets_for_prefix(asset_prefix, type_filter, &paths);
+   if (!asset_export_plan_for_prefix(asset_prefix, type_filter, &plan))
+      return 0;
 
-   for (i = 0; i < paths.count; i++)
-      exported_total += asset_export_png(paths.items[i], output_dir);
-
-   export_path_list_destroy(&paths);
-   dt1_discovery_cache_reset();
+   exported_total = asset_export_run_plan(&plan, output_dir);
+   asset_export_plan_free(&plan);
    return exported_total;
 }
 
