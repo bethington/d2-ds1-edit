@@ -53,7 +53,10 @@ set(SOURCES
     src/core/animdata.c
     src/core/dcc.c
     src/core/dc6.c
+    src/core/dc6_header.c
     src/core/export_common.c
+    src/core/export_presets.c
+    src/core/glob_match.c
     src/core/mpq_index.c
     src/core/mpq_index_query.c
     src/core/palette.c
@@ -80,6 +83,8 @@ set(SOURCES
     src/ui/export_type_picker.c
     src/ui/upscale_mode_picker.c
     src/ui/preset_picker.c
+    src/ui/scope_picker.c
+    src/ui/text_input_modal.c
     src/ui/win_folder_picker.c
     # mpq/
     src/mpq/Dcl_tbl.c

@@ -3,6 +3,7 @@
 #include "structs.h"
 #include "error.h"
 #include "config.h"
+#include "core/export_presets.h"
 
 // ==========================================================================
 // create a new ds1edit.ini
@@ -40,6 +41,15 @@ void ini_create(char *ininame)
       "; =================================================================\n"
       "upscale_enabled     = NO\n"
       "upscale_service_url =\n"
+      "\n"
+      "; PNG export filter. When YES (default), multi-frame DC6 files\n"
+      "; (animations, multi-direction sprites) are skipped during export.\n"
+      "; Multi-frame export to a dedicated animation format is a planned\n"
+      "; future feature; for now PNG output is single-frame only. Flip to\n"
+      "; NO to fall back to the prior behavior (export every frame of\n"
+      "; multi-frame DC6 alongside single-frame icons).\n"
+      "; =================================================================\n"
+      "export_dc6_single_frame_only = YES\n"
       "\n"
        "; Example explicit configuration:\n"
        "; d2_install = C:\\Diablo2\n"
@@ -161,7 +171,26 @@ void ini_create(char *ininame)
        "\n"
        "; enable the workspace feature ?\n"
        "; ------------------------------\n"
-       "workspace_enable = YES\n",
+       "workspace_enable = YES\n"
+       "\n"
+       "\n"
+       "; Export presets shown in the unified Ctrl+Shift+A export action's\n"
+       "; scope picker. Each entry is \"name = type | pattern\" where type is\n"
+       "; one of all/dt1/dc6/dcc and pattern is a glob matched against\n"
+       "; virtual asset paths under the mod overlay. Order in this section\n"
+       "; is the order in the picker. Wildcard syntax: * (any chars except\n"
+       "; \\), ? (one char except \\), ** (any number of subfolders).\n"
+       "; ==================================================================\n"
+       "[export_presets]\n"
+       "items_all     = dc6 | data\\global\\items\\*.dc6\n"
+       "items_inv     = dc6 | data\\global\\items\\inv*.dc6\n"
+       "items_potions = dc6 | data\\global\\items\\pot*.dc6\n"
+       "tiles_all     = dt1 | data\\global\\tiles\\**\\*.dt1\n"
+       "tiles_act1    = dt1 | data\\global\\tiles\\ACT1\\**\\*.dt1\n"
+       "tiles_act2    = dt1 | data\\global\\tiles\\ACT2\\**\\*.dt1\n"
+       "tiles_act3    = dt1 | data\\global\\tiles\\ACT3\\**\\*.dt1\n"
+       "tiles_act4    = dt1 | data\\global\\tiles\\ACT4\\**\\*.dt1\n"
+       "tiles_act5    = dt1 | data\\global\\tiles\\ACT5\\**\\*.dt1\n",
        out);
 
    fclose(out);
@@ -194,6 +223,7 @@ void ini_read(char *ininame)
            {"d2_install", T_MOD, &glb_config.d2_install, ""},
            {"upscale_enabled", T_YES, &glb_config.upscale_enabled, "NO"},
            {"upscale_service_url", T_STR, &glb_config.upscale_service_url, ""},
+           {"export_dc6_single_frame_only", T_YES, &glb_config.export_dc6_single_frame_only, "YES"},
            {"d2char", T_MPQ, &glb_config.mpq_file[3], ""},
            {"d2data", T_MPQ, &glb_config.mpq_file[2], ""},
            {"d2exp", T_MPQ, &glb_config.mpq_file[1], ""},
@@ -376,6 +406,29 @@ void ini_read(char *ininame)
           "then edit it to make changes where necessary, then relaunch this prog",
           ininame);
       ds1edit_error(tmp);
+   }
+
+   // [export_presets] section — user-defined wildcard scope presets shown
+   // in the unified export action's scope picker.
+   export_presets_reset();
+   {
+      ALLEGRO_CONFIG_ENTRY *ent_iter = NULL;
+      const char *key = al_get_first_config_entry(a5_config,
+                                                  "export_presets",
+                                                  &ent_iter);
+      while (key != NULL)
+      {
+         const char *value = al_get_config_value(a5_config,
+                                                 "export_presets", key);
+         EXPORT_PRESET_S preset;
+         if (value != NULL && export_preset_parse(key, value, &preset))
+            export_presets_add(&preset);
+         else
+            fprintf(stderr,
+                    "ini_read(): ignored malformed [export_presets] entry: %s\n",
+                    key);
+         key = al_get_next_config_entry(&ent_iter);
+      }
    }
 
    // MPQ slot resolution runs later in main() — after preferences are loaded
