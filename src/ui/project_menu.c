@@ -486,13 +486,34 @@ static void action_export_unified(void)
 
    if (plan.count <= 0)
    {
+      int candidates = plan.total_candidates;
       asset_export_plan_free(&plan);
-      al_show_native_message_box(a5_display,
-         "Export Assets",
-         "No exportable assets matched.",
-         "Check your scope, mod_dir, or single-frame DC6 filter.",
-         NULL,
-         ALLEGRO_MESSAGEBOX_WARN);
+
+      if (candidates == 0)
+      {
+         al_show_native_message_box(a5_display,
+            "Export Assets",
+            "Scope matched no files.",
+            "Check the pattern, the selected folder, or your mod_dir setting.",
+            NULL,
+            ALLEGRO_MESSAGEBOX_WARN);
+      }
+      else
+      {
+         char detail[256];
+         snprintf(detail, sizeof(detail),
+            "Found %d candidate(s) but skipped all of them. The only "
+            "content-level filter active is single-frame DC6 "
+            "(export_dc6_single_frame_only=YES). Set it to NO in "
+            "Ds1edit.ini to include multi-frame files.",
+            candidates);
+         al_show_native_message_box(a5_display,
+            "Export Assets",
+            "All matching files were filtered out.",
+            detail,
+            NULL,
+            ALLEGRO_MESSAGEBOX_WARN);
+      }
       return;
    }
 
