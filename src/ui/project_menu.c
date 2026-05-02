@@ -12,6 +12,9 @@
 
 #include "structs.h"
 #include "ui/compat.h"
+#include "ui/compose_category_picker.h"
+#include "ui/compose_mode_modal.h"
+#include "ui/compose_preset_picker.h"
 #include "ui/export_type_picker.h"
 #include "ui/project_menu.h"
 #include "ui/scope_picker.h"
@@ -19,6 +22,7 @@
 #include "ui/win_folder_picker.h"
 
 #include "core/asset_export.h"
+#include "core/compose_palette.h"
 #include "core/export_progress.h"
 #include "core/palette.h"
 #include "core/project.h"
@@ -429,6 +433,99 @@ static void show_export_result(const char *title,
       0);
 }
 
+// Compose-mode export flow. Invoked from action_export_unified when
+// the user picks DCC or All from the type picker AND confirms compose
+// mode in the follow-up modal. Walks through the compose-specific
+// picker sequence:
+//
+//   1. Compose category picker (player chars / monsters / NPCs / objects / all)
+//   2. Mode preset picker (multi-select)
+//   3. Weapon preset picker (multi-select; only when chars in scope)
+//   4. Output folder picker
+//   5. Discovery + per-tuple iteration loop  <-- placeholder for now
+//
+// The discovery loop and failure summary modal land in follow-up
+// commits. For now the flow ends with a summary message box that
+// echoes the user's selections so the picker chain can be smoke-
+// tested visually.
+static void action_export_compose(void)
+{
+   COMPOSE_CATEGORY_E category = COMPOSE_CATEGORY_NONE;
+   COMPOSE_PRESET_SELECTION_S mode_sel;
+   COMPOSE_PRESET_SELECTION_S weapon_sel;
+   char output_path[PROJECT_PATH_MAX];
+   int needs_weapons;
+   char message[1024];
+
+   memset(&mode_sel,   0, sizeof(mode_sel));
+   memset(&weapon_sel, 0, sizeof(weapon_sel));
+
+   if (!compose_category_picker_show(&category))
+      return;
+
+   if (!compose_mode_picker_show(&mode_sel))
+      return;
+
+   needs_weapons = (category == COMPOSE_CATEGORY_PLAYER_CHAR
+                    || category == COMPOSE_CATEGORY_NONE);
+
+   if (needs_weapons)
+   {
+      if (!compose_weapon_picker_show(&weapon_sel))
+         return;
+   }
+   else
+   {
+      /* Monsters / NPCs / objects don't have weapon-class variants;
+       * fill in a single empty entry so the iteration loop below
+       * has a uniform shape. */
+      weapon_sel.use_all = 0;
+      weapon_sel.code_count = 1;
+      weapon_sel.codes[0][0] = 0;
+   }
+
+   if (!pick_folder("Compose - choose an output folder",
+                    glb_project.is_open ? glb_project.path : NULL,
+                    output_path, sizeof(output_path)))
+      return;
+
+   /* Placeholder summary -- the real discovery + iteration loop lands
+    * in the next commit. For now, echo the selections so a user can
+    * visually verify the picker chain works end-to-end. */
+   {
+      const char *category_name = "All composed";
+      switch (category)
+      {
+         case COMPOSE_CATEGORY_PLAYER_CHAR: category_name = "Player chars"; break;
+         case COMPOSE_CATEGORY_MONSTER:     category_name = "Monsters";    break;
+         case COMPOSE_CATEGORY_NPC:         category_name = "NPCs";        break;
+         case COMPOSE_CATEGORY_OBJECT:      category_name = "Objects";     break;
+         default: break;
+      }
+
+      snprintf(message, sizeof(message),
+         "Compose mode UI smoke-test:\n"
+         "  Category: %s\n"
+         "  Modes:    %s (%d codes)\n"
+         "  Weapons:  %s (%d codes)\n"
+         "  Output:   %s\n"
+         "\n"
+         "(Discovery + iteration loop lands in the next commit; this"
+         " modal will be replaced with a real export run.)",
+         category_name,
+         mode_sel.use_all   ? "ALL"      : "specific", mode_sel.code_count,
+         weapon_sel.use_all ? "ALL"      : "specific", weapon_sel.code_count,
+         output_path);
+
+      al_show_native_message_box(a5_display,
+         "Compose Export (placeholder)",
+         "Selections recorded.",
+         message,
+         NULL,
+         0);
+   }
+}
+
 // Unified export action: type picker -> scope picker -> output folder ->
 // upscale mode -> run. Replaces the four legacy export actions.
 static void action_export_unified(void)
@@ -468,6 +565,27 @@ static void action_export_unified(void)
    type_filter = choose_export_type("Export - choose asset type");
    if (type_filter == NULL)
       return;
+
+   /* Q5b: when type is DCC or All, ask whether the user wants compose
+    * mode (fully-blended character/monster animations as APNG) or the
+    * existing raw-frame export. The follow-up modal returns 1 = yes,
+    * 2 = no, 0 = cancel. */
+   if (stricmp(type_filter, "dcc") == 0 || stricmp(type_filter, "all") == 0)
+   {
+      int compose_choice = compose_mode_modal_show();
+      if (compose_choice == 0)
+         return;  /* user cancelled the entire flow */
+      if (compose_choice == 1)
+      {
+         /* Compose mode: branch into the compose-specific picker
+          * sequence. Falls through to the placeholder summary at the
+          * end of action_export_compose. */
+         action_export_compose();
+         return;
+      }
+      /* compose_choice == 2 -> raw export; fall through to existing
+       * scope picker flow. */
+   }
 
    area_available =
       (ab->selected_group >= 0 && ab->selected_group < ab->group_count);
