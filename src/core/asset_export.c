@@ -174,6 +174,15 @@ static void make_anim_leaf(const char *asset_path, char *out, int out_cap, int d
 // helpers below operate on the public type directly.
 typedef ASSET_EXPORT_PLAN_S EXPORT_PATH_LIST_S;
 
+// Per-discovery-pass set of every path the candidate-consideration
+// helper has decided about, regardless of whether the path was
+// accepted into the plan or rejected by the single-frame DC6 filter.
+// Without this, a multi-frame DC6 visible in BOTH the mod overlay and
+// the MPQ chain gets counted twice in total_candidates (the existing
+// dedup against the plan's `paths` list misses it because rejected
+// paths are never added there).
+static EXPORT_PATH_LIST_S g_seen_candidates;
+
 typedef struct DT1_DISCOVERY_CACHE_ENTRY_S
 {
    char *asset_path;
@@ -438,15 +447,27 @@ static void consider_path_after_scope_match(const char *asset_path,
 
    if (out_paths == NULL || asset_path == NULL || asset_path[0] == 0)
       return;
-   if (export_path_list_contains(out_paths, asset_path))
+   /* Dedup against EVERY previously-considered path in this discovery
+    * pass, not just the ones added to the plan. This is what keeps
+    * multi-frame DC6 visible in both the overlay and the MPQ chain
+    * from inflating total_candidates. */
+   if (export_path_list_contains(&g_seen_candidates, asset_path))
       return;
 
    ext = a5_get_extension(asset_path);
 
    if (ext != NULL && stricmp(ext, "dt1") == 0
        && !dt1_payload_looks_valid_for_export(asset_path))
+   {
+      /* Invalid DT1 -- not a candidate at all. Still record it in the
+       * seen set so we don't re-validate it on a second sighting. */
+      export_path_list_add(&g_seen_candidates, asset_path);
       return;
+   }
 
+   /* Decided to count this as a candidate. Claim it before any
+    * further filtering so a second sighting bails out above. */
+   export_path_list_add(&g_seen_candidates, asset_path);
    out_paths->total_candidates++;
 
    if (ext != NULL && stricmp(ext, "dc6") == 0
@@ -1337,11 +1358,13 @@ int asset_export_plan_for_prefix(const char *asset_prefix,
 
    asset_export_plan_init(plan_out);
    dt1_discovery_cache_reset();
+   export_path_list_destroy(&g_seen_candidates);
 
    collect_overlay_assets_for_prefix(asset_prefix, type_filter, plan_out);
    collect_known_mpq_assets_for_prefix(asset_prefix, type_filter, plan_out);
 
    dt1_discovery_cache_reset();
+   export_path_list_destroy(&g_seen_candidates);
    return 1;
 }
 
@@ -1353,11 +1376,13 @@ int asset_export_plan_for_pattern(const char *pattern,
 
    asset_export_plan_init(plan_out);
    dt1_discovery_cache_reset();
+   export_path_list_destroy(&g_seen_candidates);
 
    collect_overlay_assets_for_pattern(pattern, plan_out);
    collect_known_mpq_assets_for_pattern(pattern, plan_out);
 
    dt1_discovery_cache_reset();
+   export_path_list_destroy(&g_seen_candidates);
    return 1;
 }
 
