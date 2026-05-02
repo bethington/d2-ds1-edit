@@ -438,6 +438,13 @@ void ini_read(char *ininame)
    // [export_presets] section — user-defined wildcard scope presets shown
    // in the unified export action's scope picker.
    export_presets_reset();
+   /* Allegro's al_get_first_config_entry returns comment lines (";")
+    * as if they were keys. Skip those silently rather than warning --
+    * they're not malformed entries, they're documentation. The actual
+    * malformed-value warning still fires for non-comment keys whose
+    * value doesn't parse. */
+#define KEY_IS_COMMENT(k) ((k) != NULL && ((k)[0] == ';' || (k)[0] == '#'))
+
    {
       ALLEGRO_CONFIG_ENTRY *ent_iter = NULL;
       const char *key = al_get_first_config_entry(a5_config,
@@ -448,7 +455,9 @@ void ini_read(char *ininame)
          const char *value = al_get_config_value(a5_config,
                                                  "export_presets", key);
          EXPORT_PRESET_S preset;
-         if (value != NULL && export_preset_parse(key, value, &preset))
+         if (KEY_IS_COMMENT(key))
+            ; /* skip */
+         else if (value != NULL && export_preset_parse(key, value, &preset))
             export_presets_add(&preset);
          else
             fprintf(stderr,
@@ -471,7 +480,9 @@ void ini_read(char *ininame)
          const char *value = al_get_config_value(a5_config,
                                                  "char_mode_presets", key);
          COMPOSE_PRESET_S preset;
-         if (value != NULL && compose_preset_parse(key, value, &preset))
+         if (KEY_IS_COMMENT(key))
+            ; /* skip */
+         else if (value != NULL && compose_preset_parse(key, value, &preset))
             compose_mode_presets_add(&preset);
          else
             fprintf(stderr,
@@ -494,7 +505,9 @@ void ini_read(char *ininame)
          const char *value = al_get_config_value(a5_config,
                                                  "char_weapon_presets", key);
          COMPOSE_PRESET_S preset;
-         if (value != NULL && compose_preset_parse(key, value, &preset))
+         if (KEY_IS_COMMENT(key))
+            ; /* skip */
+         else if (value != NULL && compose_preset_parse(key, value, &preset))
             compose_weapon_presets_add(&preset);
          else
             fprintf(stderr,
@@ -503,6 +516,7 @@ void ini_read(char *ininame)
          key = al_get_next_config_entry(&ent_iter);
       }
    }
+#undef KEY_IS_COMMENT
 
    // [export_defaults] section -- output roots and a couple of CLI
    // defaults so common runs are short. Direct lookups by known key
