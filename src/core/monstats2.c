@@ -14,7 +14,7 @@
 #define ms2_strnicmp strncasecmp
 #endif
 
-#define MONSTATS2_MAX_ROWS  256
+#define MONSTATS2_MAX_ROWS  512
 
 /* ------------------------------------------------------------------ */
 /* In-memory index. Identical pattern to compose_index_storage_*.     */
