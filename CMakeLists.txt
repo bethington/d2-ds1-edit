@@ -40,6 +40,8 @@ set(SOURCES
     src/misc.c
     # core/
     src/core/apng_writer.c
+    src/core/compose_index.c
+    src/core/compose_index_build.c
     src/core/compose_naming.c
     src/core/area_browser.c
     src/core/area_metadata.c
