@@ -23,6 +23,7 @@
 
 #include "core/asset_export.h"
 #include "core/compose_apng.h"
+#include "core/compose_cof_path.h"
 #include "core/compose_index.h"
 #include "core/compose_iter.h"
 #include "core/compose_naming.h"
@@ -562,6 +563,15 @@ typedef struct COMPOSE_RUN_STATE_S
    FILE *failure_log;      /* opened lazily on first failure */
    char  failure_log_path[PROJECT_PATH_MAX];
    char  first_failure[256];
+   /* Sample of first few skipped paths, to surface in the "Nothing
+    * Exported" dialog when ALL tuples skip. Without this the user can
+    * only see a count and has no way to diagnose whether the MPQ
+    * chain is missing, the path format is wrong, or the token list
+    * is bogus. We capture path strings only — no filehandle, no
+    * timestamps; this is a one-shot diagnostic, not a full audit. */
+   #define COMPOSE_SKIP_SAMPLE_MAX 5
+   int   skip_sample_count;
+   char  skip_sample[COMPOSE_SKIP_SAMPLE_MAX][PROJECT_PATH_MAX];
 } COMPOSE_RUN_STATE_S;
 
 /* Lazily open the failures log inside the chosen output root. The log
@@ -696,6 +706,26 @@ static int compose_run_token(const char *root,
          if (dir_count <= 0)
          {
             st->skipped_tuples++;
+            /* Capture the first few skipped paths so the "Nothing
+             * Exported" dialog can show them. Reconstructs the same
+             * path that compose_iter_probe_direction_count tried,
+             * which is what was looked up against the MPQ chain. */
+            if (st->skip_sample_count < COMPOSE_SKIP_SAMPLE_MAX)
+            {
+               char skip_path[PROJECT_PATH_MAX];
+               if (compose_cof_path_build(
+                       skip_path, (int) sizeof(skip_path),
+                       base, token, mode, wclass != NULL ? wclass : ""))
+               {
+                  strncpy(
+                     st->skip_sample[st->skip_sample_count],
+                     skip_path,
+                     sizeof(st->skip_sample[0]) - 1);
+                  st->skip_sample[st->skip_sample_count]
+                     [sizeof(st->skip_sample[0]) - 1] = 0;
+                  st->skip_sample_count++;
+               }
+            }
             if (export_progress_pump())
                return 1;
             continue;
@@ -922,12 +952,34 @@ static void action_export_compose(void)
       }
       else if (run.success_count == 0 && run.failure_count == 0)
       {
+         /* Append a sample of the first few paths the probe tried so
+          * the user can see whether the path format / casing / MPQ
+          * residency is what they expect. Without this they only
+          * have a count and no actionable diagnostic. */
+         char sample_tail[PROJECT_PATH_MAX * COMPOSE_SKIP_SAMPLE_MAX + 256];
+         sample_tail[0] = 0;
+         if (run.skip_sample_count > 0)
+         {
+            int sn;
+            int off = snprintf(sample_tail, sizeof(sample_tail),
+                               "\n\nFirst %d path(s) probed:",
+                               run.skip_sample_count);
+            for (sn = 0; sn < run.skip_sample_count
+                 && off < (int) sizeof(sample_tail); sn++)
+            {
+               int n = snprintf(sample_tail + off,
+                                sizeof(sample_tail) - (size_t) off,
+                                "\n  %s", run.skip_sample[sn]);
+               if (n < 0) break;
+               off += n;
+            }
+         }
          snprintf(message, sizeof(message),
             "No COFs matched the selected (category, mode, weapon)\n"
             "tuples. This usually means the chosen combinations don't\n"
             "exist in the loaded MPQ chain.\n\n"
-            "  Skipped (no COF):  %d",
-            run.skipped_tuples);
+            "  Skipped (no COF):  %d%s",
+            run.skipped_tuples, sample_tail);
          al_show_native_message_box(a5_display,
             "Compose Export - Nothing Exported",
             "No animations were produced.",
