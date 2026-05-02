@@ -546,14 +546,98 @@ static const char * compose_sel_at(const COMPOSE_PRESET_SELECTION_S *sel,
    return sel->codes[idx];
 }
 
-/* Run state for the iteration loop. */
+/* Run state for the iteration loop.
+ *
+ * Failures are streamed to a log file rather than collected in memory:
+ * tens of thousands of (token, mode, wclass, dir) tuples are walked
+ * per run, and an in-memory list isn't load-bearing for the user
+ * (they need either "yes everything worked" or a scrollable list to
+ * triage). The log file path is shown in the final summary modal so
+ * the user can open it in their editor of choice for triage. */
 typedef struct COMPOSE_RUN_STATE_S
 {
-   int success_count;
-   int failure_count;
-   int skipped_tuples;   /* (token, mode, wclass) tuples with no COF */
-   char first_failure[256];
+   int   success_count;
+   int   failure_count;
+   int   skipped_tuples;   /* (token, mode, wclass) tuples with no COF */
+   FILE *failure_log;      /* opened lazily on first failure */
+   char  failure_log_path[PROJECT_PATH_MAX];
+   char  first_failure[256];
 } COMPOSE_RUN_STATE_S;
+
+/* Lazily open the failures log inside the chosen output root. The log
+ * is plain text, one line per failure, with timestamp + tuple +
+ * output path. Called from the inner loop at the moment of the first
+ * failure so success-only runs don't leave an empty log file. */
+static void compose_open_failure_log(COMPOSE_RUN_STATE_S *st,
+                                     const char *root)
+{
+   if (st->failure_log != NULL) return;
+   if (root == NULL || root[0] == 0) return;
+
+   /* Path-mirrored layout: <root>/compose_failures.log. We don't
+    * stamp the filename with a timestamp; if the user re-runs we
+    * overwrite the previous log (which matches the "freshest run
+    * wins" mental model of the export-to-folder flow). */
+   snprintf(st->failure_log_path, sizeof(st->failure_log_path),
+            "%s\\compose_failures.log", root);
+
+   /* The output root may not exist yet (the ensure_dir calls happen
+    * per-token inside compose_run_token). Create it lazily. */
+   compose_iter_ensure_dir(root);
+
+   st->failure_log = fopen(st->failure_log_path, "w");
+   if (st->failure_log == NULL)
+   {
+      /* If we can't open the log, swallow the failure -- the modal
+       * will still show counts and the first_failure path. */
+      st->failure_log_path[0] = 0;
+      return;
+   }
+
+   fprintf(st->failure_log,
+      "Compose-mode export failures\n"
+      "============================\n"
+      "Each line: <token> <mode> <wclass> dir<N> -> <output path>\n"
+      "\n");
+}
+
+static void compose_record_failure(COMPOSE_RUN_STATE_S *st,
+                                   const char *root,
+                                   const char *token,
+                                   const char *mode,
+                                   const char *wclass,
+                                   int direction,
+                                   const char *output_path)
+{
+   st->failure_count++;
+   if (st->first_failure[0] == 0 && output_path != NULL)
+   {
+      strncpy(st->first_failure, output_path,
+              sizeof(st->first_failure) - 1);
+      st->first_failure[sizeof(st->first_failure) - 1] = 0;
+   }
+
+   compose_open_failure_log(st, root);
+   if (st->failure_log != NULL)
+   {
+      fprintf(st->failure_log, "%s %s %s dir%d -> %s\n",
+              token != NULL ? token : "?",
+              mode  != NULL ? mode  : "?",
+              (wclass != NULL && wclass[0] != 0) ? wclass : "-",
+              direction,
+              output_path != NULL ? output_path : "?");
+      fflush(st->failure_log);
+   }
+}
+
+static void compose_close_failure_log(COMPOSE_RUN_STATE_S *st)
+{
+   if (st->failure_log != NULL)
+   {
+      fclose(st->failure_log);
+      st->failure_log = NULL;
+   }
+}
 
 /* Iterate the (mode, wclass, direction) sub-cube for one token.
  * Returns 1 if the user requested cancel, 0 to continue. */
@@ -642,7 +726,8 @@ static int compose_run_token(const char *root,
                                                 token_name, mode,
                                                 wclass, d))
             {
-               st->failure_count++;
+               compose_record_failure(st, root, token, mode, wclass, d,
+                                      "<path-build-failure>");
                continue;
             }
 
@@ -655,19 +740,10 @@ static int compose_run_token(const char *root,
 
             ok = compose_apng_export(&params, path_buf);
             if (ok)
-            {
                st->success_count++;
-            }
             else
-            {
-               st->failure_count++;
-               if (st->first_failure[0] == 0)
-               {
-                  strncpy(st->first_failure, path_buf,
-                          sizeof(st->first_failure) - 1);
-                  st->first_failure[sizeof(st->first_failure) - 1] = 0;
-               }
-            }
+               compose_record_failure(st, root, token, mode, wclass, d,
+                                      path_buf);
 
             export_progress_advance(1);
             if (export_progress_pump())
@@ -815,51 +891,64 @@ static void action_export_compose(void)
    }
 
    export_progress_end();
+   compose_close_failure_log(&run);
 
-   /* Final summary -- structured failure modal lands in a follow-up
-    * commit. For now, a native message box is sufficient. */
-   if (cancelled)
+   /* Final summary. Failures (if any) were streamed to a log file in
+    * the output root; we point the user at it for triage rather than
+    * inflating the modal with a per-failure list. */
    {
-      snprintf(message, sizeof(message),
-         "Compose export was cancelled.\n\n"
-         "  Animations exported:    %d\n"
-         "  Failures:               %d\n"
-         "  Skipped (no COF):       %d\n",
-         run.success_count, run.failure_count, run.skipped_tuples);
-      al_show_native_message_box(a5_display,
-         "Compose Export - Cancelled",
-         "The export was interrupted.",
-         message, NULL, ALLEGRO_MESSAGEBOX_WARN);
-   }
-   else if (run.success_count == 0 && run.failure_count == 0)
-   {
-      snprintf(message, sizeof(message),
-         "No COFs matched the selected (category, mode, weapon)\n"
-         "tuples. This usually means the chosen combinations don't\n"
-         "exist in the loaded MPQ chain.\n\n"
-         "  Skipped (no COF):  %d\n",
-         run.skipped_tuples);
-      al_show_native_message_box(a5_display,
-         "Compose Export - Nothing Exported",
-         "No animations were produced.",
-         message, NULL, ALLEGRO_MESSAGEBOX_WARN);
-   }
-   else
-   {
-      snprintf(message, sizeof(message),
-         "  Animations exported:    %d\n"
-         "  Failures:               %d\n"
-         "  Skipped (no COF):       %d\n"
-         "\n"
-         "Output: %s%s%s",
-         run.success_count, run.failure_count, run.skipped_tuples,
-         output_path,
-         (run.first_failure[0] != 0) ? "\n\nFirst failure: " : "",
-         (run.first_failure[0] != 0) ? run.first_failure     : "");
-      al_show_native_message_box(a5_display,
-         "Compose Export - Done",
-         "Compose export finished.",
-         message, NULL, 0);
+      char failure_tail[PROJECT_PATH_MAX + 64];
+      failure_tail[0] = 0;
+      if (run.failure_count > 0 && run.failure_log_path[0] != 0)
+         snprintf(failure_tail, sizeof(failure_tail),
+                  "\n\nFailure log: %s", run.failure_log_path);
+      else if (run.first_failure[0] != 0)
+         snprintf(failure_tail, sizeof(failure_tail),
+                  "\n\nFirst failure: %s", run.first_failure);
+
+      if (cancelled)
+      {
+         snprintf(message, sizeof(message),
+            "Compose export was cancelled.\n\n"
+            "  Animations exported:    %d\n"
+            "  Failures:               %d\n"
+            "  Skipped (no COF):       %d%s",
+            run.success_count, run.failure_count, run.skipped_tuples,
+            failure_tail);
+         al_show_native_message_box(a5_display,
+            "Compose Export - Cancelled",
+            "The export was interrupted.",
+            message, NULL, ALLEGRO_MESSAGEBOX_WARN);
+      }
+      else if (run.success_count == 0 && run.failure_count == 0)
+      {
+         snprintf(message, sizeof(message),
+            "No COFs matched the selected (category, mode, weapon)\n"
+            "tuples. This usually means the chosen combinations don't\n"
+            "exist in the loaded MPQ chain.\n\n"
+            "  Skipped (no COF):  %d",
+            run.skipped_tuples);
+         al_show_native_message_box(a5_display,
+            "Compose Export - Nothing Exported",
+            "No animations were produced.",
+            message, NULL, ALLEGRO_MESSAGEBOX_WARN);
+      }
+      else
+      {
+         snprintf(message, sizeof(message),
+            "  Animations exported:    %d\n"
+            "  Failures:               %d\n"
+            "  Skipped (no COF):       %d\n"
+            "\n"
+            "Output: %s%s",
+            run.success_count, run.failure_count, run.skipped_tuples,
+            output_path, failure_tail);
+         al_show_native_message_box(a5_display,
+            "Compose Export - Done",
+            "Compose export finished.",
+            message, NULL,
+            (run.failure_count > 0) ? ALLEGRO_MESSAGEBOX_WARN : 0);
+      }
    }
 }
 
