@@ -113,6 +113,14 @@ target_include_directories(test_compose_bbox PRIVATE
 )
 add_test(NAME compose_bbox COMMAND test_compose_bbox)
 
+# Compose RGBA blit primitive (pure pixel ops)
+add_executable(test_compose_blit test_compose_blit.c ../src/core/compose_blit.c)
+target_link_libraries(test_compose_blit PRIVATE unity)
+target_include_directories(test_compose_blit PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
+add_test(NAME compose_blit COMMAND test_compose_blit)
+
 add_executable(test_asset_export_smoke
     test_asset_export_smoke.c
     test_asset_export_stubs.c
