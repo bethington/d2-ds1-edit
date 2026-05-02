@@ -11,6 +11,7 @@
 #include "cli/cli.h"
 #include "config.h"
 #include "structs.h"
+#include "core/asset_export.h"
 #include "core/compose_apng.h"
 #include "core/compose_cof.h"
 #include "core/compose_cof_path.h"
@@ -21,6 +22,7 @@
 #include "core/compose_presets.h"
 #include "core/compose_render.h"
 #include "core/d2install.h"
+#include "core/export_presets.h"
 
 extern void ds1edit_load_palettes(void);
 
@@ -52,6 +54,7 @@ static int verb_probe_cof     (int argc, char **argv);
 static int verb_list_tokens   (int argc, char **argv);
 static int verb_list_presets  (int argc, char **argv);
 static int verb_export_compose(int argc, char **argv);
+static int verb_export_raw    (int argc, char **argv);
 static int verb_help          (int argc, char **argv);
 
 static const CLI_VERB_S s_verbs[] = {
@@ -69,6 +72,8 @@ static const CLI_VERB_S s_verbs[] = {
      "Compose-mode APNG export. Alias for export-compose." },
    { "export-compose", verb_export_compose,
      "Compose layered DCC files into APNG animations for one or more tuples." },
+   { "export-raw",     verb_export_raw,
+     "Raw-frame export (DCC/DC6/DT1) -> per-frame PNG, mirrors the GUI flow." },
    { "help",         verb_help,
      "Show this help text." },
    { "--help",       verb_help, NULL },
@@ -1303,6 +1308,243 @@ static int verb_export_compose(int argc, char **argv)
    if (run.success > 0 && run.failure > 0)
       return CLI_EXIT_PARTIAL;
    return CLI_EXIT_NOTHING;
+}
+
+/* ---- export-raw ----------------------------------------------------- */
+
+/* Resolve the [export_defaults] fallback for the raw-export output dir
+ * given a type filter. Returns NULL if no default is set. */
+static const char *raw_default_out_for_type(const char *type_filter)
+{
+   if (type_filter == NULL || type_filter[0] == 0) return NULL;
+   if (strcasecmp(type_filter, "dcc") == 0)
+      return glb_config.export_default_raw_dcc_output;
+   if (strcasecmp(type_filter, "dc6") == 0)
+      return glb_config.export_default_raw_dc6_output;
+   if (strcasecmp(type_filter, "dt1") == 0)
+      return glb_config.export_default_raw_dt1_output;
+   /* "all" / "cof" / unknown have no default. */
+   return NULL;
+}
+
+/* Look up an [export_presets] entry by name (case-insensitive). */
+static const EXPORT_PRESET_S *find_export_preset(const char *name)
+{
+   int i;
+   if (name == NULL || name[0] == 0) return NULL;
+   for (i = 0; i < export_presets_count(); i++)
+   {
+      const EXPORT_PRESET_S *p = export_presets_at(i);
+      if (p != NULL && strcasecmp(p->name, name) == 0)
+         return p;
+   }
+   return NULL;
+}
+
+static int verb_export_raw(int argc, char **argv)
+{
+   CLI_COMMON_OPTS_S opts;
+   const char *type_str;
+   const char *target_str;
+   const char *scope_str;
+   const char *folder_str;
+   const char *preset_str;
+   const char *pattern_str;
+   const char *out_str;
+   int rc;
+   ASSET_EXPORT_PLAN_S plan;
+   int planned_ok = 0;
+   int exported = 0;
+
+   if (!parse_common_opts(argc, argv, &opts))
+      return CLI_EXIT_BAD_ARGS;
+
+   type_str    = find_flag_value(argc, argv, "type");
+   target_str  = find_flag_value(argc, argv, "target");
+   scope_str   = find_flag_value(argc, argv, "scope");
+   folder_str  = find_flag_value(argc, argv, "folder");
+   preset_str  = find_flag_value(argc, argv, "preset");
+   pattern_str = find_flag_value(argc, argv, "pattern");
+   out_str     = find_flag_value(argc, argv, "out");
+
+   /* Mutually-exclusive selectors: --target / --preset / --pattern /
+    * --scope drive different code paths. We allow exactly one; if the
+    * user passes none, --type+--scope=all is the implicit fallback. */
+   {
+      int n_selectors = 0;
+      if (target_str  != NULL) n_selectors++;
+      if (preset_str  != NULL) n_selectors++;
+      if (pattern_str != NULL) n_selectors++;
+      if (scope_str   != NULL) n_selectors++;
+      if (n_selectors > 1)
+      {
+         fprintf(stderr,
+            "ds1edit export-raw: --target / --preset / --pattern / --scope "
+            "are mutually exclusive (got %d).\n", n_selectors);
+         return CLI_EXIT_BAD_ARGS;
+      }
+   }
+
+   rc = cli_minimum_init(&opts);
+   if (rc != CLI_EXIT_OK) return rc;
+   /* compose_runtime_init's palette load is needed here too -- the raw
+    * exporter calls into the palette path for color decoding. */
+   compose_runtime_init();
+
+   /* Output dir resolution:
+    *   1. --out= wins
+    *   2. preset's type drives raw_<type>_output fallback
+    *   3. --type= drives raw_<type>_output fallback
+    * If both come back empty, fail. */
+   if ((out_str == NULL || out_str[0] == 0) && preset_str != NULL)
+   {
+      const EXPORT_PRESET_S *p = find_export_preset(preset_str);
+      if (p != NULL)
+         out_str = raw_default_out_for_type(p->type);
+   }
+   if ((out_str == NULL || out_str[0] == 0) && type_str != NULL)
+      out_str = raw_default_out_for_type(type_str);
+   if (out_str == NULL || out_str[0] == 0)
+   {
+      fprintf(stderr,
+         "ds1edit export-raw: no output dir.\n"
+         "Pass --out=<dir> or set [export_defaults] raw_<type>_output in "
+         "Ds1edit.ini.\n");
+      return CLI_EXIT_BAD_ARGS;
+   }
+
+   /* Fast path: --target= without any glob metacharacters is an exact
+    * file path. Skip the plan-builder + listfile enumeration entirely
+    * and call asset_export_png directly. This is also the only fully-
+    * working raw-export path right now -- the listfile-based
+    * enumeration relies on the MPQ's compressed (listfile) being
+    * decompressed correctly, and on real D2 MPQs ExtractToMem leaves
+    * the (listfile) buffer uninitialised (filled with 0xCD in Debug
+    * builds), so plan_for_pattern / plan_for_prefix produce zero
+    * candidates against real installs. Ship the fast path now; fix
+    * the underlying MPQ bug separately. */
+   if (target_str != NULL && target_str[0] != 0
+       && strpbrk(target_str, "*?") == NULL)
+   {
+      compose_iter_ensure_dir(out_str);
+      if (opts.verbose >= 1)
+         printf("export (single): %s -> %s\n", target_str, out_str);
+      if (asset_export_png(target_str, out_str) > 0)
+      {
+         printf("\nexported=1 failed=0 candidates=1  out=%s\n", out_str);
+         return CLI_EXIT_OK;
+      }
+      printf("\nexported=0 failed=1 candidates=1  out=%s\n", out_str);
+      return CLI_EXIT_PARTIAL;
+   }
+
+   asset_export_plan_init(&plan);
+
+   /* Plan construction. Order of preference matches the mutually-
+    * exclusive validation above. */
+   if (preset_str != NULL && preset_str[0] != 0)
+   {
+      const EXPORT_PRESET_S *p = find_export_preset(preset_str);
+      if (p == NULL)
+      {
+         fprintf(stderr,
+            "ds1edit export-raw: --preset=%s not found in [export_presets]\n",
+            preset_str);
+         return CLI_EXIT_BAD_ARGS;
+      }
+      planned_ok = asset_export_plan_for_pattern(p->pattern, &plan);
+   }
+   else if (target_str != NULL && target_str[0] != 0)
+   {
+      planned_ok = asset_export_plan_for_pattern(target_str, &plan);
+   }
+   else if (pattern_str != NULL && pattern_str[0] != 0)
+   {
+      planned_ok = asset_export_plan_for_pattern(pattern_str, &plan);
+   }
+   else
+   {
+      const char *scope = (scope_str != NULL && scope_str[0] != 0)
+                          ? scope_str : "all";
+      const char *type  = (type_str != NULL && type_str[0] != 0)
+                          ? type_str : "all";
+
+      if (strcasecmp(scope, "all") == 0)
+      {
+         /* "all" maps to plan_for_prefix with empty prefix. The
+          * existing GUI does the same thing under the hood. */
+         planned_ok = asset_export_plan_for_prefix("", type, &plan);
+      }
+      else if (strcasecmp(scope, "folder") == 0)
+      {
+         if (folder_str == NULL || folder_str[0] == 0)
+         {
+            fprintf(stderr,
+               "ds1edit export-raw: --scope=folder requires --folder=<prefix>\n");
+            asset_export_plan_free(&plan);
+            return CLI_EXIT_BAD_ARGS;
+         }
+         planned_ok = asset_export_plan_for_prefix(folder_str, type, &plan);
+      }
+      else if (strcasecmp(scope, "area") == 0)
+      {
+         /* Area-scope export needs a loaded DS1 + the area browser's
+          * group resolution. That machinery isn't initialised in CLI
+          * mode, and threading it through is out of scope for this
+          * phase. Document and reject for now. */
+         fprintf(stderr,
+            "ds1edit export-raw: --scope=area is GUI-only for now. "
+            "Use --target=<glob> or --scope=folder to drive the same "
+            "subset from the cmdline.\n");
+         asset_export_plan_free(&plan);
+         return CLI_EXIT_BAD_ARGS;
+      }
+      else
+      {
+         fprintf(stderr,
+            "ds1edit export-raw: unknown --scope=%s "
+            "(expected all / folder / area)\n", scope);
+         asset_export_plan_free(&plan);
+         return CLI_EXIT_BAD_ARGS;
+      }
+   }
+
+   if (!planned_ok)
+   {
+      fprintf(stderr, "ds1edit export-raw: plan construction failed\n");
+      asset_export_plan_free(&plan);
+      return CLI_EXIT_BAD_ARGS;
+   }
+
+   if (opts.verbose >= 1)
+      printf("plan: %d candidate(s) (after filter: %d to export)\n",
+             plan.total_candidates, plan.count);
+
+   if (plan.count <= 0)
+   {
+      printf("\nexported=0 failed=0 candidates=%d  out=%s\n",
+             plan.total_candidates, out_str);
+      asset_export_plan_free(&plan);
+      return CLI_EXIT_NOTHING;
+   }
+
+   /* mkdir the output root once before writing. */
+   compose_iter_ensure_dir(out_str);
+
+   exported = asset_export_run_plan(&plan, out_str);
+
+   {
+      int failed = plan.count - exported;
+      if (failed < 0) failed = 0;
+      printf("\nexported=%d failed=%d candidates=%d  out=%s\n",
+             exported, failed, plan.total_candidates, out_str);
+
+      asset_export_plan_free(&plan);
+
+      if (exported > 0 && failed == 0) return CLI_EXIT_OK;
+      if (exported > 0)                return CLI_EXIT_PARTIAL;
+      return CLI_EXIT_NOTHING;
+   }
 }
 
 /* ---- help ------------------------------------------------------------ */
