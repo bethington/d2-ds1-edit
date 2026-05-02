@@ -41,6 +41,7 @@ set(SOURCES
     # core/
     src/core/apng_writer.c
     src/core/compose_bbox.c
+    src/core/compose_blit.c
     src/core/compose_cof.c
     src/core/compose_cof_path.c
     src/core/compose_dcc_path.c
@@ -48,6 +49,7 @@ set(SOURCES
     src/core/compose_index_build.c
     src/core/compose_naming.c
     src/core/compose_presets.c
+    src/core/compose_render.c
     src/core/area_browser.c
     src/core/area_metadata.c
     src/core/d2install.c
