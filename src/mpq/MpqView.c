@@ -604,19 +604,23 @@ int ExtractTo(FILE *fp_new,DWORD entry)
 	}
 
 	if(flag&0x200 || flag&0x100) {							// IF FILE IS PACKED:
+		DWORD data_block_count;
 		divres=ldiv(size_unpack-1,0x1000);
-		num_block=divres.quot+2;								// . calculate lenght of file header
+		data_block_count = (DWORD)divres.quot + 1;           // . actual data sector count
+		num_block        = data_block_count + 1;             // . header_entries: data + end-sentinel
+		if (flag & 0x04000000)
+			num_block++;                                      // . + 1 for MPQ_FILE_SECTOR_CRC tail
 		fseek(glb_mpq->fpMpq,glb_mpq->offset_mpq+offset_body,SEEK_SET);
-		fread(glb_mpq->file_header,sizeof(DWORD),num_block,glb_mpq->fpMpq);		// . read file header 
+		fread(glb_mpq->file_header,sizeof(DWORD),num_block,glb_mpq->fpMpq);		// . read file header
 		if(flag&0x30000)
 			Decode(glb_mpq->file_header,glb_mpq->massive_base,(crc_file-1),num_block);// . decode file header (if file is coded)
 		read_buffer=glb_mpq->read_buffer_start;
-		for(j=0;j<(num_block-1);j++) {
+		for(j=0;j<data_block_count;j++) {
 			lenght_read=*(glb_mpq->file_header+j+1)-*(glb_mpq->file_header+j);	// . get lenght of block to read
 			fread(read_buffer,sizeof(char),lenght_read,glb_mpq->fpMpq);	// . read block
 			if(flag&0x30000)
 				Decode((DWORD *)read_buffer,glb_mpq->massive_base,crc_file,lenght_read/4);			// . decode block (if file is coded)
-			if(lenght_read==0x1000 || (j==num_block-2 && lenght_read==(size_unpack&0xFFF)))	// . if block is unpacked (its lenght=0x1000 or its last block and lenght=remainder)
+			if(lenght_read==0x1000 || (j==data_block_count-1 && lenght_read==(size_unpack&0xFFF)))	// . if block is unpacked (its lenght=0x1000 or its last block and lenght=remainder)
 //
 					fwrite(read_buffer,sizeof(char),lenght_read,fp_new);					// . write block "as is"
 			else {												// . block is packed
@@ -765,19 +769,23 @@ int ExtractToMem(void * mp_new, DWORD entry)
 	}
 
 	if(flag&0x200 || flag&0x100) {							// IF FILE IS PACKED:
+		DWORD data_block_count;
 		divres=ldiv(size_unpack-1,0x1000);
-		num_block=divres.quot+2;								// . calculate lenght of file header
+		data_block_count = (DWORD)divres.quot + 1;           // . actual data sector count
+		num_block        = data_block_count + 1;             // . header_entries: data + end-sentinel
+		if (flag & 0x04000000)
+			num_block++;                                      // . + 1 for MPQ_FILE_SECTOR_CRC tail
 		fseek(glb_mpq->fpMpq,glb_mpq->offset_mpq+offset_body,SEEK_SET);
-		fread(glb_mpq->file_header,sizeof(DWORD),num_block,glb_mpq->fpMpq);		// . read file header 
+		fread(glb_mpq->file_header,sizeof(DWORD),num_block,glb_mpq->fpMpq);		// . read file header
 		if(flag&0x30000)
 			Decode(glb_mpq->file_header,glb_mpq->massive_base,(crc_file-1),num_block);// . decode file header (if file is coded)
 		read_buffer=glb_mpq->read_buffer_start;
-		for(j=0;j<(num_block-1);j++) {
+		for(j=0;j<data_block_count;j++) {
 			lenght_read=*(glb_mpq->file_header+j+1)-*(glb_mpq->file_header+j);	// . get lenght of block to read
 			fread(read_buffer,sizeof(char),lenght_read,glb_mpq->fpMpq);	// . read block
 			if(flag&0x30000)
 				Decode((DWORD *)read_buffer,glb_mpq->massive_base,crc_file,lenght_read/4);			// . decode block (if file is coded)
-			if(lenght_read==0x1000 || (j==num_block-2 && lenght_read==(size_unpack&0xFFF)))	// . if block is unpacked (its lenght=0x1000 or its last block and lenght=remainder)
+			if(lenght_read==0x1000 || (j==data_block_count-1 && lenght_read==(size_unpack&0xFFF)))	// . if block is unpacked (its lenght=0x1000 or its last block and lenght=remainder)
          {
 //
 //					fwrite(read_buffer,sizeof(char),lenght_read,fp_new);					// . write block "as is"
@@ -824,7 +832,7 @@ int ExtractToMem(void * mp_new, DWORD entry)
 						 * blocks land at the right offset, even though
 						 * this block's bytes will be uninitialised /
 						 * stale. */
-						UInt32 expected = (j == num_block-2)
+						UInt32 expected = (j == data_block_count-1)
 						                    ? (size_unpack & 0xFFF)
 						                    : 0x1000;
 						buff_ptr += expected;
