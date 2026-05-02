@@ -574,13 +574,38 @@ static void action_export_unified(void)
       ensure_export_palette_ready();
    }
 
+   /* From here on the export is running. The progress dialog renders
+    * from the cooperative pump that asset_export_run_plan and
+    * upscale_directory_local_recursive call between items. */
+   export_progress_begin("Export Assets");
+   export_progress_set_stage(EXPORT_STAGE_NATIVE_EXPORT,
+                             "Exporting native PNGs...", plan.count);
+
    exported_count = asset_export_run_plan(&plan, export_path);
    asset_export_plan_free(&plan);
+
+   if (export_progress_cancel_requested())
+   {
+      char detail[256];
+      snprintf(detail, sizeof(detail),
+         "Exported %d native PNG(s) to %s before cancel; partial output "
+         "was kept.", exported_count,
+         staging_path[0] != 0 ? staging_path : output_path);
+      export_progress_end();
+      al_show_native_message_box(a5_display,
+         "Export Assets",
+         "Canceled.",
+         detail,
+         NULL,
+         ALLEGRO_MESSAGEBOX_WARN);
+      return;
+   }
 
    if (exported_count <= 0)
    {
       if (staging_path[0] != 0)
          upscale_remove_tree(staging_path);
+      export_progress_end();
       al_show_native_message_box(a5_display,
          "Export Assets",
          "No PNGs were written.",
@@ -592,14 +617,39 @@ static void action_export_unified(void)
 
    if (upscale_mode != UPSCALE_MODE_NONE)
    {
+      const char *upscale_label = (upscale_mode == UPSCALE_MODE_4X)
+         ? "Upscaling 4x..." : "Upscaling 2x...";
+      export_progress_set_stage(EXPORT_STAGE_LOCAL_UPSCALE,
+                                upscale_label, 0);
+
       if (!run_upscale_pipeline("Export Assets", staging_path,
                                 output_path, upscale_mode))
       {
+         /* On cancel during upscale, keep both staging and partial
+          * output_path per the locked Q3 multi-stage cancel rule. */
+         if (export_progress_cancel_requested())
+         {
+            char detail[512];
+            snprintf(detail, sizeof(detail),
+               "Canceled during upscale. Native PNGs are at %s; partially "
+               "upscaled files are at %s.", staging_path, output_path);
+            export_progress_end();
+            al_show_native_message_box(a5_display,
+               "Export Assets",
+               "Canceled.",
+               detail,
+               NULL,
+               ALLEGRO_MESSAGEBOX_WARN);
+            return;
+         }
          upscale_remove_tree(staging_path);
+         export_progress_end();
          return;
       }
       upscale_remove_tree(staging_path);
    }
+
+   export_progress_end();
 
    show_export_result(
       "Export Assets",

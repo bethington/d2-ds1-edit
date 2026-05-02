@@ -61,6 +61,10 @@ void export_progress_begin(const char *title)
       strncpy(s_state.title, title, sizeof(s_state.title) - 1);
       s_state.title[sizeof(s_state.title) - 1] = 0;
    }
+   /* Force the very next pump call to repaint instead of being skipped
+    * by the throttle window. */
+   s_last_paint_time = 0.0;
+   s_show_remote_stages = 0;
 }
 
 void export_progress_end(void)
