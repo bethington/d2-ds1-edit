@@ -15,6 +15,7 @@
 #include "core/dcc.h"
 #include "core/dc6.h"
 #include "core/dc6_header.h"
+#include "core/export_progress.h"
 #include "core/glob_match.h"
 #include "core/asset_export.h"
 
@@ -1370,7 +1371,22 @@ int asset_export_run_plan(const ASSET_EXPORT_PLAN_S *plan,
       return 0;
 
    for (i = 0; i < plan->count; i++)
+   {
+      /* Per-item progress reporting + cancellation. Dormant when no
+       * export task is active (the legacy CLI export path does not
+       * begin a task; this loop just runs straight through). */
+      if (export_task_is_active())
+      {
+         export_progress_set_current_item(plan->paths[i]);
+         if (export_progress_pump())
+            return exported_total;
+      }
+
       exported_total += asset_export_png(plan->paths[i], output_dir);
+
+      if (export_task_is_active())
+         export_progress_advance(1);
+   }
 
    return exported_total;
 }
