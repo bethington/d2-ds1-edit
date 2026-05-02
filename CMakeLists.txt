@@ -49,6 +49,7 @@ set(SOURCES
     src/core/compose_index.c
     src/core/compose_index_build.c
     src/core/compose_naming.c
+    src/core/compose_palette.c
     src/core/compose_presets.c
     src/core/compose_render.c
     src/core/area_browser.c
