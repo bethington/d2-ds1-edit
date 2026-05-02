@@ -39,6 +39,7 @@ set(SOURCES
     src/error.c
     src/misc.c
     # core/
+    src/core/apng_writer.c
     src/core/area_browser.c
     src/core/area_metadata.c
     src/core/d2install.c
@@ -94,6 +95,11 @@ set(SOURCES
     src/mpq/Wav_unp.c
 )
 
+# zlib (for the APNG writer's compress2/crc32; transitively a dep of
+# Allegro 5's image addon, but we want it as a direct dep so calls to
+# core/apng_writer.c link cleanly).
+find_package(ZLIB REQUIRED)
+
 # Main executable
 add_executable(ds1edit ${SOURCES})
 
@@ -114,6 +120,7 @@ if(WIN32)
         ${ALLEGRO5_PRIMITIVES_LIB}
         ${ALLEGRO5_MAIN_LIB}
         ${ALLEGRO5_DIALOG_LIB}
+        ZLIB::ZLIB
         user32 gdi32 ole32 winmm shlwapi advapi32 comctl32 comdlg32 shell32 uuid
     )
 

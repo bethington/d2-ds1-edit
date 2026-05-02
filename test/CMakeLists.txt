@@ -39,6 +39,14 @@ target_include_directories(test_dc6_header PRIVATE
 )
 add_test(NAME dc6_header COMMAND test_dc6_header)
 
+# APNG writer (used by character composition exports)
+add_executable(test_apng_writer test_apng_writer.c ../src/core/apng_writer.c)
+target_link_libraries(test_apng_writer PRIVATE unity ZLIB::ZLIB)
+target_include_directories(test_apng_writer PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
+add_test(NAME apng_writer COMMAND test_apng_writer)
+
 add_executable(test_asset_export_smoke
     test_asset_export_smoke.c
     test_asset_export_stubs.c
