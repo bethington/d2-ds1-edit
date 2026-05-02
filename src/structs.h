@@ -147,6 +147,7 @@ typedef struct CONFIG_S
    int      upscale_enabled;
    char     * upscale_service_url;
    int      export_dc6_single_frame_only;  // YES: skip multi-frame DC6 in PNG export
+   int      compose_use_full_folder_names; // YES: use full asset names for folder paths in compose-mode export
    char     * mpq_file[MAX_MPQ_FILE];
    char     * mod_dir[MAX_MOD_DIR];
    SCREEN_S screen;

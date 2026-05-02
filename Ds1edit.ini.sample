@@ -156,6 +156,15 @@ lower_speed_zoom_out = NO
 workspace_enable = YES
 
 
+; When YES, the compose-mode export action labels its output folders
+; with full descriptive names (e.g. "Necromancer", "Andariel") drawn
+; from the appropriate TXT tables. Filenames keep their compact 2-char
+; D2 codes regardless. When NO (default), folders also use the
+; 2-char codes so the output mirrors the MPQ structure exactly.
+; ============================================================================
+compose_use_full_folder_names = NO
+
+
 ; Export presets shown in the unified Ctrl+Shift+A export action's scope
 ; picker. Each entry is "name = type | pattern" where type is one of
 ; all/dt1/dc6/dcc and pattern is a glob matched against virtual asset
@@ -173,3 +182,31 @@ tiles_act2    = dt1 | data\global\tiles\ACT2\**\*.dt1
 tiles_act3    = dt1 | data\global\tiles\ACT3\**\*.dt1
 tiles_act4    = dt1 | data\global\tiles\ACT4\**\*.dt1
 tiles_act5    = dt1 | data\global\tiles\ACT5\**\*.dt1
+
+
+; Animation mode presets for the compose-mode multi-select picker.
+; Each entry is "name = comma-separated D2 mode codes". Mode codes
+; commonly used: NU (idle), TW (town walk), WL (walk), RN (run),
+; A1 (attack 1), A2 (attack 2), DT (death), GH (get hit), SC (cast),
+; TH (throw), KK (kick), BL (block), S1..S8 (skill 1..8). The picker
+; also always shows an "All modes" entry as a fallback.
+; ===========================================================================
+[char_mode_presets]
+idle_only       = NU
+idle_walk       = NU, WL
+standard_combat = NU, WL, A1, DT
+
+
+; Weapon-class presets for the compose-mode multi-select picker
+; (only shown for player chars; monsters/NPCs/objects don't have
+; weapon variants). Codes: HTH (bare hands), 1HS (1H sword),
+; 1HT (1H throwing), 2HS (2H sword), 2HT (2H throwing), BOW, XBW,
+; STF (staff), HT1, HT2 (twin handed). The picker also always
+; shows an "All weapons" entry as a fallback.
+; ===========================================================================
+[char_weapon_presets]
+bare_hands = HTH
+melee      = HTH, 1HS, 2HS
+ranged     = HTH, BOW, XBW
+magic      = HTH, STF
+common     = HTH, 1HS, BOW, STF

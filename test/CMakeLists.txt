@@ -73,6 +73,14 @@ target_include_directories(test_compose_index PRIVATE
 )
 add_test(NAME compose_index COMMAND test_compose_index)
 
+# Compose mode/weapon presets parser
+add_executable(test_compose_presets test_compose_presets.c ../src/core/compose_presets.c)
+target_link_libraries(test_compose_presets PRIVATE unity)
+target_include_directories(test_compose_presets PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
+add_test(NAME compose_presets COMMAND test_compose_presets)
+
 add_executable(test_asset_export_smoke
     test_asset_export_smoke.c
     test_asset_export_stubs.c
