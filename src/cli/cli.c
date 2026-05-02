@@ -11,9 +11,14 @@
 #include "cli/cli.h"
 #include "config.h"
 #include "structs.h"
+#include "core/compose_cof.h"
+#include "core/compose_cof_path.h"
+#include "core/compose_iter.h"
+#include "core/compose_palette.h"
 #include "core/d2install.h"
 
 extern void ds1edit_open_all_mpq(void);
+extern int  misc_load_mpq_file(char *filename, char **buffer, long *buf_len, int output);
 
 /* CLI exit codes (consistent across verbs). */
 #define CLI_EXIT_OK         0
@@ -35,11 +40,17 @@ typedef struct CLI_VERB_S
 /* Forward declarations of per-verb entry points. As we add Phase N
  * verbs we register them here. */
 static int verb_list_mpqs(int argc, char **argv);
+static int verb_probe    (int argc, char **argv);
+static int verb_probe_cof(int argc, char **argv);
 static int verb_help     (int argc, char **argv);
 
 static const CLI_VERB_S s_verbs[] = {
    { "list-mpqs", verb_list_mpqs,
      "Show which MPQ slots are open and how many files each contains." },
+   { "probe",     verb_probe,
+     "Look up a virtual path in the MPQ chain (e.g. data\\Global\\AnimData.d2)." },
+   { "probe-cof", verb_probe_cof,
+     "Build the COF path for <category> <token> <mode> <weapon>, load + parse, dump info." },
    { "help",      verb_help,
      "Show this help text." },
    { "--help",    verb_help, NULL },
@@ -111,6 +122,45 @@ static int parse_common_opts(int argc, char **argv, CLI_COMMON_OPTS_S *out)
       }
    }
    return 1;
+}
+
+/* Collect positional (non-flag) args from argv into out_args (capacity
+ * out_cap). Skips argv[0] (program) and argv[1] (verb). Flags are any
+ * argument starting with "-". Returns the count actually collected. */
+static int collect_positional(int argc, char **argv,
+                              const char **out_args, int out_cap)
+{
+   int i, n = 0;
+   for (i = 2; i < argc && n < out_cap; i++)
+   {
+      const char *a = argv[i];
+      if (a == NULL) continue;
+      if (a[0] == '-') continue;  /* flag */
+      out_args[n++] = a;
+   }
+   return n;
+}
+
+/* Map a category name to COMPOSE_CATEGORY_E. Returns COMPOSE_CATEGORY_NONE
+ * (which equals 0 / falsy) on unknown name. */
+static COMPOSE_CATEGORY_E parse_category(const char *name)
+{
+   if (name == NULL) return COMPOSE_CATEGORY_NONE;
+   if (strcasecmp(name, "chars") == 0
+       || strcasecmp(name, "char") == 0
+       || strcasecmp(name, "player") == 0
+       || strcasecmp(name, "players") == 0)
+      return COMPOSE_CATEGORY_PLAYER_CHAR;
+   if (strcasecmp(name, "monsters") == 0
+       || strcasecmp(name, "monster") == 0)
+      return COMPOSE_CATEGORY_MONSTER;
+   if (strcasecmp(name, "npcs") == 0
+       || strcasecmp(name, "npc") == 0)
+      return COMPOSE_CATEGORY_NPC;
+   if (strcasecmp(name, "objects") == 0
+       || strcasecmp(name, "object") == 0)
+      return COMPOSE_CATEGORY_OBJECT;
+   return COMPOSE_CATEGORY_NONE;
 }
 
 /* Allocate a heap copy of `s` and assign through `target`. Replaces any
@@ -280,6 +330,203 @@ static int verb_list_mpqs(int argc, char **argv)
               "pass --d2-install=<dir>, or use --mpq=<path> to add one.\n");
       return CLI_EXIT_NOTHING;
    }
+   return CLI_EXIT_OK;
+}
+
+/* ---- probe ----------------------------------------------------------- */
+
+static int verb_probe(int argc, char **argv)
+{
+   CLI_COMMON_OPTS_S opts;
+   const char *positional[4];
+   int n_pos;
+   const char *path;
+   char *buf = NULL;
+   long buf_len = 0;
+   int rc;
+   int slot;
+   int found_slot = -1;
+
+   if (!parse_common_opts(argc, argv, &opts))
+      return CLI_EXIT_BAD_ARGS;
+
+   n_pos = collect_positional(argc, argv, positional, 4);
+   if (n_pos < 1)
+   {
+      fprintf(stderr,
+         "ds1edit probe: missing path argument\n"
+         "Usage: ds1edit probe <virtual-path>\n"
+         "Example: ds1edit probe \"data\\Global\\AnimData.d2\"\n");
+      return CLI_EXIT_BAD_ARGS;
+   }
+   path = positional[0];
+
+   rc = cli_minimum_init(&opts);
+   if (rc != CLI_EXIT_OK) return rc;
+
+   /* Try the chain. misc_load_mpq_file walks mod_dir then each open
+    * MPQ slot in order; we want to know which slot answered. The
+    * cleanest way is to call it once for the report, then walk slots
+    * manually if the high-level call succeeded so we can identify
+    * which one had it. */
+   {
+      char path_buf[512];
+      strncpy(path_buf, path, sizeof(path_buf) - 1);
+      path_buf[sizeof(path_buf) - 1] = 0;
+
+      if (misc_load_mpq_file(path_buf, &buf, &buf_len, 0) == -1)
+      {
+         printf("not found in chain: %s\n", path);
+         if (buf != NULL) free(buf);
+         return CLI_EXIT_NOTHING;
+      }
+   }
+
+   /* Identify which slot answered. We don't have a direct API for that
+    * (misc_load_mpq_file is fire-and-forget), so we re-probe each
+    * open slot's hash table directly. */
+   for (slot = 0; slot < MAX_MPQ_FILE; slot++)
+   {
+      extern GLB_MPQ_S *glb_mpq;
+      extern DWORD test_tell_entry(char *filename);
+      char path_buf[512];
+      DWORD entry;
+
+      if (!glb_mpq_struct[slot].is_open) continue;
+
+      strncpy(path_buf, path, sizeof(path_buf) - 1);
+      path_buf[sizeof(path_buf) - 1] = 0;
+
+      glb_mpq = &glb_mpq_struct[slot];
+      entry = test_tell_entry(path_buf);
+      if (entry != (DWORD) -1)
+      {
+         found_slot = slot;
+         break;
+      }
+   }
+
+   printf("found: %s\n", path);
+   printf("  size:    %ld bytes\n", buf_len);
+   if (found_slot >= 0)
+      printf("  slot:    %d (%s) -- %s\n",
+             found_slot, slot_label(found_slot),
+             glb_config.mpq_file[found_slot] != NULL
+                ? glb_config.mpq_file[found_slot] : "?");
+   else
+      printf("  source:  mod_dir overlay\n");
+
+   if (buf != NULL) free(buf);
+   return CLI_EXIT_OK;
+}
+
+/* ---- probe-cof ------------------------------------------------------- */
+
+static int verb_probe_cof(int argc, char **argv)
+{
+   CLI_COMMON_OPTS_S opts;
+   const char *positional[5];
+   int n_pos;
+   COMPOSE_CATEGORY_E category;
+   const char *token, *mode, *wclass;
+   char path[512];
+   const char *base;
+   char *buf = NULL;
+   long buf_len = 0;
+   COMPOSE_COF_S cof;
+   int rc;
+
+   if (!parse_common_opts(argc, argv, &opts))
+      return CLI_EXIT_BAD_ARGS;
+
+   n_pos = collect_positional(argc, argv, positional, 5);
+   if (n_pos < 3)
+   {
+      fprintf(stderr,
+         "ds1edit probe-cof: too few arguments\n"
+         "Usage: ds1edit probe-cof <category> <token> <mode> [<weapon>]\n"
+         "  category: chars / monsters / npcs / objects\n"
+         "Examples:\n"
+         "  ds1edit probe-cof chars NE WL HTH\n"
+         "  ds1edit probe-cof monsters AN NU\n");
+      return CLI_EXIT_BAD_ARGS;
+   }
+
+   category = parse_category(positional[0]);
+   if (category == COMPOSE_CATEGORY_NONE)
+   {
+      fprintf(stderr,
+         "ds1edit probe-cof: unknown category '%s'\n"
+         "  expected one of: chars / monsters / npcs / objects\n",
+         positional[0]);
+      return CLI_EXIT_BAD_ARGS;
+   }
+   token  = positional[1];
+   mode   = positional[2];
+   wclass = (n_pos >= 4) ? positional[3] : "";
+   if (wclass != NULL && (strcmp(wclass, "-") == 0
+                          || strcasecmp(wclass, "none") == 0))
+      wclass = "";
+
+   rc = cli_minimum_init(&opts);
+   if (rc != CLI_EXIT_OK) return rc;
+
+   base = compose_iter_category_base(category);
+   if (base == NULL)
+   {
+      fprintf(stderr,
+         "ds1edit probe-cof: no base path for that category (internal)\n");
+      return CLI_EXIT_BAD_ARGS;
+   }
+
+   if (!compose_cof_path_build(path, (int) sizeof(path),
+                               base, token, mode,
+                               wclass != NULL ? wclass : ""))
+   {
+      fprintf(stderr,
+         "ds1edit probe-cof: failed to build COF path "
+         "(token/mode/weapon too long?)\n");
+      return CLI_EXIT_BAD_ARGS;
+   }
+
+   printf("path: %s\n", path);
+
+   if (misc_load_mpq_file(path, &buf, &buf_len, 0) == -1)
+   {
+      printf("not found in chain.\n");
+      if (buf != NULL) free(buf);
+      return CLI_EXIT_NOTHING;
+   }
+
+   memset(&cof, 0, sizeof(cof));
+   if (!compose_cof_parse(buf, buf_len, &cof))
+   {
+      printf("found (%ld bytes) but failed to parse as COF.\n", buf_len);
+      free(buf);
+      return CLI_EXIT_PARTIAL;
+   }
+
+   printf("loaded + parsed.\n");
+   printf("  size:            %ld bytes\n", buf_len);
+   printf("  layer_count:     %d\n", cof.layer_count);
+   printf("  frames_per_dir:  %d\n", cof.frames_per_dir);
+   printf("  direction_count: %d\n", cof.direction_count);
+   printf("  version:         %d\n", cof.version);
+   if (opts.verbose >= 1)
+   {
+      int i;
+      printf("  layers:\n");
+      for (i = 0; i < cof.layer_count; i++)
+      {
+         printf("    [%d] composit=%d weapon_class=\"%s\"\n",
+                i,
+                cof.layers[i].composit_index,
+                cof.layers[i].weapon_class);
+      }
+   }
+
+   compose_cof_free(&cof);
+   free(buf);
    return CLI_EXIT_OK;
 }
 

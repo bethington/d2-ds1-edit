@@ -19,7 +19,13 @@ int compose_cof_parse(const void *bytes, long len, COMPOSE_COF_S *out)
 {
    const unsigned char *p;
    long pos = 0;
-   long header_size = 4 + 25;
+   /* Header layout: 4 bytes (layers, fpd, dirs, version) followed by
+    * 24 bytes of padding/bounds/anim_speed that we don't need. Total
+    * header is 28 bytes -- matches the working anim_load_cof in
+    * core/cof.c which reads 3 bytes + skips 25 = 28. Earlier this
+    * was 4+25=29 (off by one), which misaligned the per-layer reads
+    * and made every COF parse fail. */
+   long header_size = 4 + 24;
    long per_layer = 9;
    long required;
    int i;
