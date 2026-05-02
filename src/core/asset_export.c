@@ -889,6 +889,29 @@ static void collect_internal_listfile_assets(GLB_MPQ_S *mpq,
       return;
    }
 
+   /* Detect uninitialised-buffer pattern (0xCD CD CD CD ... in MSVC
+    * Debug builds; 0xBE BA AD F0 in Release): the in-MPQ ExtractToMem
+    * has a known bug for files with flag 0x80030200 (encrypted +
+    * adjusted-key + compressed multi-block), specifically d2exp.mpq's
+    * (listfile) on real D2 installs. Bail out so we don't feed
+    * 421 KB of garbage into the line scanner. */
+   {
+      const unsigned char *bs = (const unsigned char *) buffer;
+      if (buf_len >= 16
+          && (bs[0] == 0xCD || bs[0] == 0xBE)
+          && bs[0] == bs[1] && bs[1] == bs[2] && bs[2] == bs[3]
+          && bs[3] == bs[4] && bs[4] == bs[5] && bs[5] == bs[6])
+      {
+         fprintf(stderr,
+            "asset_export: (listfile) in %s came back uninitialised "
+            "(MPQ ExtractToMem bug). Skipping; supply --listfile=<path> "
+            "or set [export_defaults] listfile= to work around.\n",
+            mpq->file_name);
+         free(buffer);
+         return;
+      }
+   }
+
    for (i = 0; i < buf_len; i++)
    {
       char ch = ((const char *) buffer)[i];
