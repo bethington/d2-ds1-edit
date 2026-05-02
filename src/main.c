@@ -866,10 +866,18 @@ int main(int argc, char *argv[])
     * any of the GUI-affecting startup machinery (display creation,
     * cursor loading, screen buffers, etc.). The CLI does its own
     * minimal init; we only pre-initialised Allegro itself + the addons
-    * the CLI's MPQ + asset code needs. */
+    * the CLI's MPQ + asset code needs.
+    *
+    * CRITICAL: force memory bitmaps before the verb runs. Default flags
+    * on Windows ask for ALLEGRO_VIDEO_BITMAP, which requires a display.
+    * No display + video bitmap = al_create_bitmap returns NULL, which
+    * silently fails the DCC decode path. The GUI flow sets this flag
+    * a few lines below; we hoist it for CLI mode. */
    if (cli_is_verb(argc, argv))
    {
-      int rc = cli_run(argc, argv);
+      int rc;
+      al_set_new_bitmap_flags(ALLEGRO_MEMORY_BITMAP);
+      rc = cli_run(argc, argv);
       return rc;
    }
 

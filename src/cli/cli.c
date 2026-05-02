@@ -11,6 +11,7 @@
 #include "cli/cli.h"
 #include "config.h"
 #include "structs.h"
+#include "core/compose_apng.h"
 #include "core/compose_cof.h"
 #include "core/compose_cof_path.h"
 #include "core/compose_index.h"
@@ -18,7 +19,10 @@
 #include "core/compose_naming.h"
 #include "core/compose_palette.h"
 #include "core/compose_presets.h"
+#include "core/compose_render.h"
 #include "core/d2install.h"
+
+extern void ds1edit_load_palettes(void);
 
 extern void ds1edit_open_all_mpq(void);
 extern int  misc_load_mpq_file(char *filename, char **buffer, long *buf_len, int output);
@@ -42,12 +46,13 @@ typedef struct CLI_VERB_S
 
 /* Forward declarations of per-verb entry points. As we add Phase N
  * verbs we register them here. */
-static int verb_list_mpqs   (int argc, char **argv);
-static int verb_probe       (int argc, char **argv);
-static int verb_probe_cof   (int argc, char **argv);
-static int verb_list_tokens (int argc, char **argv);
-static int verb_list_presets(int argc, char **argv);
-static int verb_help        (int argc, char **argv);
+static int verb_list_mpqs     (int argc, char **argv);
+static int verb_probe         (int argc, char **argv);
+static int verb_probe_cof     (int argc, char **argv);
+static int verb_list_tokens   (int argc, char **argv);
+static int verb_list_presets  (int argc, char **argv);
+static int verb_export_compose(int argc, char **argv);
+static int verb_help          (int argc, char **argv);
 
 static const CLI_VERB_S s_verbs[] = {
    { "list-mpqs",    verb_list_mpqs,
@@ -60,6 +65,10 @@ static const CLI_VERB_S s_verbs[] = {
      "Dump tokens compose_index discovered in <category> (chars/monsters/npcs/objects)." },
    { "list-presets", verb_list_presets,
      "Dump parsed [char_mode_presets] and [char_weapon_presets] from Ds1edit.ini." },
+   { "export",         verb_export_compose,
+     "Compose-mode APNG export. Alias for export-compose." },
+   { "export-compose", verb_export_compose,
+     "Compose layered DCC files into APNG animations for one or more tuples." },
    { "help",         verb_help,
      "Show this help text." },
    { "--help",       verb_help, NULL },
@@ -680,6 +689,550 @@ static int verb_list_presets(int argc, char **argv)
                      compose_weapon_presets_count,
                      compose_weapon_presets_at);
    return CLI_EXIT_OK;
+}
+
+/* ---- export-compose -------------------------------------------------- */
+
+/* Find a flag of the form "--name=<value>" in argv; return the value
+ * (pointer into argv[i]) or NULL if not present. */
+static const char *find_flag_value(int argc, char **argv, const char *name)
+{
+   size_t nlen = strlen(name);
+   int i;
+   for (i = 2; i < argc; i++)
+   {
+      const char *a = argv[i];
+      if (a == NULL || a[0] != '-' || a[1] != '-') continue;
+      if (strncmp(a + 2, name, nlen) == 0 && a[2 + nlen] == '=')
+         return a + 2 + nlen + 1;
+   }
+   return NULL;
+}
+
+/* A list of code strings parsed from "all" / "NU,WL" / "NU". */
+#define TUPLE_LIST_MAX 32
+
+typedef struct TUPLE_LIST_S
+{
+   int  use_all;     /* 1 = use the default list provided by caller */
+   int  count;
+   char codes[TUPLE_LIST_MAX][16];
+} TUPLE_LIST_S;
+
+static int parse_tuple_list(const char *raw, TUPLE_LIST_S *out)
+{
+   const char *p, *start;
+   int n;
+   memset(out, 0, sizeof(*out));
+   if (raw == NULL || raw[0] == 0
+       || strcasecmp(raw, "all") == 0
+       || strcasecmp(raw, "*") == 0)
+   {
+      out->use_all = 1;
+      return 1;
+   }
+   p = raw;
+   while (*p != 0 && out->count < TUPLE_LIST_MAX)
+   {
+      while (*p == ' ' || *p == ',') p++;
+      if (*p == 0) break;
+      start = p;
+      while (*p != 0 && *p != ',') p++;
+      n = (int) (p - start);
+      while (n > 0 && (start[n-1] == ' ')) n--;
+      if (n <= 0) continue;
+      if (n > 15) n = 15;
+      memcpy(out->codes[out->count], start, (size_t) n);
+      out->codes[out->count][n] = 0;
+      out->count++;
+   }
+   return out->count > 0;
+}
+
+/* Direction selector: "all" / "N" / "N,M" / "N-M". The output is a
+ * fixed-size array of int directions; count==-1 sentinel means "all
+ * directions, decided per-tuple from the COF probe". */
+#define DIR_LIST_MAX 64
+
+typedef struct DIR_LIST_S
+{
+   int use_all;
+   int count;
+   int dirs[DIR_LIST_MAX];
+} DIR_LIST_S;
+
+static int parse_dir_list(const char *raw, DIR_LIST_S *out)
+{
+   const char *p;
+   memset(out, 0, sizeof(*out));
+   if (raw == NULL || raw[0] == 0 || strcasecmp(raw, "all") == 0)
+   {
+      out->use_all = 1;
+      return 1;
+   }
+   /* Range "N-M" */
+   p = strchr(raw, '-');
+   if (p != NULL && p > raw)
+   {
+      int a = atoi(raw);
+      int b = atoi(p + 1);
+      int i;
+      if (b < a) { int t = a; a = b; b = t; }
+      for (i = a; i <= b && out->count < DIR_LIST_MAX; i++)
+         out->dirs[out->count++] = i;
+      return out->count > 0;
+   }
+   /* Comma list (or single int) */
+   {
+      const char *q = raw;
+      while (*q != 0 && out->count < DIR_LIST_MAX)
+      {
+         while (*q == ' ' || *q == ',') q++;
+         if (*q == 0) break;
+         out->dirs[out->count++] = atoi(q);
+         while (*q != 0 && *q != ',') q++;
+      }
+   }
+   return out->count > 0;
+}
+
+/* Resolve the leading token of an "A/B[/C]" --target= shorthand to a
+ * compose category. Player class codes win; otherwise we look in
+ * compose_index (which must already be built) for a unique match. */
+static int resolve_target_token_category(const char *token,
+                                         COMPOSE_CATEGORY_E *out_cat,
+                                         char *full_name, int full_name_cap)
+{
+   int i, hits = 0;
+   COMPOSE_CATEGORY_E cat = COMPOSE_CATEGORY_NONE;
+   const char *name = NULL;
+
+   if (token == NULL || token[0] == 0) return 0;
+   if (full_name != NULL && full_name_cap > 0) full_name[0] = 0;
+
+   if (compose_naming_class_name(token) != NULL)
+   {
+      *out_cat = COMPOSE_CATEGORY_PLAYER_CHAR;
+      name = compose_naming_class_name(token);
+      if (full_name != NULL && name != NULL)
+      {
+         strncpy(full_name, name, (size_t) full_name_cap - 1);
+         full_name[full_name_cap - 1] = 0;
+      }
+      return 1;
+   }
+
+   for (i = 0; i < compose_index_monster_count(); i++)
+   {
+      const COMPOSE_TOKEN_S *t = compose_index_monster_at(i);
+      if (t != NULL && strcasecmp(t->code, token) == 0)
+      {
+         cat = COMPOSE_CATEGORY_MONSTER; name = t->name; hits++;
+         break;
+      }
+   }
+   if (hits == 0)
+   {
+      for (i = 0; i < compose_index_npc_count(); i++)
+      {
+         const COMPOSE_TOKEN_S *t = compose_index_npc_at(i);
+         if (t != NULL && strcasecmp(t->code, token) == 0)
+         {
+            cat = COMPOSE_CATEGORY_NPC; name = t->name; hits++;
+            break;
+         }
+      }
+   }
+   if (hits == 0)
+   {
+      for (i = 0; i < compose_index_object_count(); i++)
+      {
+         const COMPOSE_TOKEN_S *t = compose_index_object_at(i);
+         if (t != NULL && strcasecmp(t->code, token) == 0)
+         {
+            cat = COMPOSE_CATEGORY_OBJECT; name = t->name; hits++;
+            break;
+         }
+      }
+   }
+   if (hits == 0) return 0;
+
+   *out_cat = cat;
+   if (full_name != NULL && name != NULL)
+   {
+      strncpy(full_name, name, (size_t) full_name_cap - 1);
+      full_name[full_name_cap - 1] = 0;
+   }
+   return 1;
+}
+
+/* Bring the editor up to the point where compose_apng_export works:
+ * MPQ chain open, palettes loaded, a5_current_palette set. Caller has
+ * already done cli_minimum_init. */
+static int compose_runtime_init(void)
+{
+   ds1edit_load_palettes();
+   a5_current_palette = &glb_ds1edit.vga_pal[0];
+   /* compose_index is needed for monsters / NPCs / objects; idempotent
+    * for player-chars-only runs. */
+   (void) compose_index_build();
+   return CLI_EXIT_OK;
+}
+
+typedef struct EXPORT_RUN_S
+{
+   int success;
+   int failure;
+   int skipped;
+   int verbose;
+   const char *out_root;
+   char first_failure[256];
+} EXPORT_RUN_S;
+
+/* Iterate the (mode, weapon, direction) sub-cube for one (category,
+ * token) pair. Modes/weapons drive the COF path; direction drives the
+ * APNG. The mode/weapon lists are TUPLE_LIST_S so a count==0 +
+ * use_all=1 falls back to the hardcoded compose_iter defaults. */
+static void run_one_token(COMPOSE_CATEGORY_E category,
+                          const char *token,
+                          const char *token_name,
+                          const TUPLE_LIST_S *modes,
+                          const TUPLE_LIST_S *weapons,
+                          const DIR_LIST_S *dirs,
+                          EXPORT_RUN_S *r)
+{
+   int n_modes = modes->use_all
+                 ? compose_iter_default_mode_count()
+                 : modes->count;
+   int n_weapons;
+   const char *base = compose_iter_category_base(category);
+   const char *skin = compose_iter_category_skin(category);
+   COMPOSE_RENDER_PARAMS_S p;
+   char path_buf[1024];
+   char dir_buf[1024];
+   int m, w;
+
+   if (base == NULL) return;
+
+   /* Player chars iterate the weapon list; everything else has a
+    * single empty weapon class. */
+   if (category == COMPOSE_CATEGORY_PLAYER_CHAR)
+      n_weapons = weapons->use_all
+                  ? compose_iter_default_weapon_count()
+                  : weapons->count;
+   else
+      n_weapons = 1;
+
+   for (m = 0; m < n_modes; m++)
+   {
+      const char *mode = modes->use_all
+                         ? compose_iter_default_mode_at(m)
+                         : modes->codes[m];
+      if (mode == NULL || mode[0] == 0) continue;
+
+      for (w = 0; w < n_weapons; w++)
+      {
+         const char *wclass;
+         int dir_count, d, di;
+
+         if (category == COMPOSE_CATEGORY_PLAYER_CHAR)
+            wclass = weapons->use_all
+                     ? compose_iter_default_weapon_at(w)
+                     : weapons->codes[w];
+         else
+            wclass = "";
+         if (wclass == NULL) wclass = "";
+
+         dir_count = compose_iter_probe_direction_count(category, token,
+                                                        mode, wclass);
+         if (dir_count <= 0)
+         {
+            r->skipped++;
+            if (r->verbose >= 2)
+               printf("skip: %s %s %s (no COF)\n",
+                      token, mode, wclass[0] ? wclass : "-");
+            continue;
+         }
+
+         if (compose_iter_build_output_dir(dir_buf, (int) sizeof(dir_buf),
+                                           r->out_root, category, token,
+                                           token_name))
+            compose_iter_ensure_dir(dir_buf);
+
+         memset(&p, 0, sizeof(p));
+         p.base   = base;
+         p.token  = token;
+         p.mode   = mode;
+         p.wclass = wclass;
+         p.skin   = skin;
+
+         /* Iterate either an explicit dir list or the full set the
+          * COF advertises. */
+         {
+            int loop_count = dirs->use_all ? dir_count : dirs->count;
+            for (di = 0; di < loop_count; di++)
+            {
+               int ok;
+               d = dirs->use_all ? di : dirs->dirs[di];
+               if (d < 0 || d >= dir_count)
+               {
+                  r->skipped++;
+                  if (r->verbose >= 2)
+                     printf("skip: %s %s %s dir %d (out of range, COF has %d)\n",
+                            token, mode, wclass[0] ? wclass : "-",
+                            d, dir_count);
+                  continue;
+               }
+
+               p.direction = d;
+               if (!compose_iter_build_output_path(
+                      path_buf, (int) sizeof(path_buf),
+                      r->out_root, category, token, token_name,
+                      mode, wclass, d))
+               {
+                  r->failure++;
+                  fprintf(stderr,
+                     "fail: %s %s %s dir %d (output path build)\n",
+                     token, mode, wclass[0] ? wclass : "-", d);
+                  continue;
+               }
+
+               ok = compose_apng_export(&p, path_buf);
+               if (ok)
+               {
+                  r->success++;
+                  if (r->verbose >= 1)
+                     printf("ok: %s\n", path_buf);
+               }
+               else
+               {
+                  r->failure++;
+                  fprintf(stderr,
+                     "fail: %s %s %s dir %d -> %s\n",
+                     token, mode, wclass[0] ? wclass : "-", d, path_buf);
+                  if (r->first_failure[0] == 0)
+                  {
+                     strncpy(r->first_failure, path_buf,
+                             sizeof(r->first_failure) - 1);
+                     r->first_failure[sizeof(r->first_failure) - 1] = 0;
+                  }
+               }
+            }
+         }
+      }
+   }
+}
+
+static int verb_export_compose(int argc, char **argv)
+{
+   CLI_COMMON_OPTS_S opts;
+   const char *target_str;
+   const char *category_str;
+   const char *token_str;
+   const char *mode_str;
+   const char *weapon_str;
+   const char *dir_str;
+   const char *out_str;
+   int rc;
+   COMPOSE_CATEGORY_E category = COMPOSE_CATEGORY_NONE;
+   TUPLE_LIST_S modes, weapons;
+   DIR_LIST_S  dirs;
+   EXPORT_RUN_S run;
+
+   if (!parse_common_opts(argc, argv, &opts))
+      return CLI_EXIT_BAD_ARGS;
+
+   target_str   = find_flag_value(argc, argv, "target");
+   category_str = find_flag_value(argc, argv, "category");
+   token_str    = find_flag_value(argc, argv, "token");
+   mode_str     = find_flag_value(argc, argv, "mode");
+   weapon_str   = find_flag_value(argc, argv, "weapon");
+   dir_str      = find_flag_value(argc, argv, "direction");
+   out_str      = find_flag_value(argc, argv, "out");
+
+   if (out_str == NULL || out_str[0] == 0)
+   {
+      fprintf(stderr,
+         "ds1edit export-compose: --out=<dir> is required.\n"
+         "(default-output config support lands in a follow-up phase)\n");
+      return CLI_EXIT_BAD_ARGS;
+   }
+
+   rc = cli_minimum_init(&opts);
+   if (rc != CLI_EXIT_OK) return rc;
+   compose_runtime_init();
+
+   /* Resolve category. --category= wins; otherwise inferred from
+    * --target= or --token=. */
+   if (category_str != NULL)
+   {
+      category = parse_category(category_str);
+      if (category == COMPOSE_CATEGORY_NONE)
+      {
+         fprintf(stderr,
+            "ds1edit export-compose: unknown category '%s'\n", category_str);
+         return CLI_EXIT_BAD_ARGS;
+      }
+   }
+
+   memset(&modes,   0, sizeof(modes));
+   memset(&weapons, 0, sizeof(weapons));
+   memset(&dirs,    0, sizeof(dirs));
+   memset(&run,     0, sizeof(run));
+   run.verbose = opts.verbose;
+   run.out_root = out_str;
+
+   /* --target=A/B[/C] short form -- splits into token + mode + weapon.
+    * Locks the relevant axes to count=1, ignoring --token / --mode /
+    * --weapon when --target is present. */
+   if (target_str != NULL && target_str[0] != 0)
+   {
+      char tok_buf[16], mode_buf[16], wclass_buf[16];
+      char full_name[64];
+      const char *p1, *p2;
+      int n;
+
+      p1 = strchr(target_str, '/');
+      if (p1 == NULL)
+      {
+         fprintf(stderr,
+            "ds1edit export-compose: --target=%s expected form "
+            "TOKEN/MODE[/WEAPON]\n", target_str);
+         return CLI_EXIT_BAD_ARGS;
+      }
+      n = (int) (p1 - target_str);
+      if (n <= 0 || n >= (int) sizeof(tok_buf)) return CLI_EXIT_BAD_ARGS;
+      memcpy(tok_buf, target_str, (size_t) n);
+      tok_buf[n] = 0;
+
+      p2 = strchr(p1 + 1, '/');
+      if (p2 == NULL)
+      {
+         strncpy(mode_buf, p1 + 1, sizeof(mode_buf) - 1);
+         mode_buf[sizeof(mode_buf) - 1] = 0;
+         wclass_buf[0] = 0;
+      }
+      else
+      {
+         n = (int) (p2 - (p1 + 1));
+         if (n < 0 || n >= (int) sizeof(mode_buf)) return CLI_EXIT_BAD_ARGS;
+         memcpy(mode_buf, p1 + 1, (size_t) n);
+         mode_buf[n] = 0;
+         strncpy(wclass_buf, p2 + 1, sizeof(wclass_buf) - 1);
+         wclass_buf[sizeof(wclass_buf) - 1] = 0;
+         if (strcmp(wclass_buf, "-") == 0) wclass_buf[0] = 0;
+      }
+
+      if (category == COMPOSE_CATEGORY_NONE)
+      {
+         if (!resolve_target_token_category(tok_buf, &category,
+                                            full_name, sizeof(full_name)))
+         {
+            fprintf(stderr,
+               "ds1edit export-compose: cannot resolve category for token "
+               "'%s'. Pass --category=<chars|monsters|npcs|objects>.\n",
+               tok_buf);
+            return CLI_EXIT_BAD_ARGS;
+         }
+      }
+      else
+         full_name[0] = 0;
+
+      /* Build single-element selector lists. */
+      modes.count = 1;
+      strncpy(modes.codes[0], mode_buf, sizeof(modes.codes[0]) - 1);
+      weapons.count = 1;
+      strncpy(weapons.codes[0], wclass_buf, sizeof(weapons.codes[0]) - 1);
+
+      if (!parse_dir_list(dir_str, &dirs))
+      {
+         fprintf(stderr,
+            "ds1edit export-compose: --direction=%s could not be parsed\n",
+            dir_str);
+         return CLI_EXIT_BAD_ARGS;
+      }
+
+      run_one_token(category, tok_buf, full_name,
+                    &modes, &weapons, &dirs, &run);
+   }
+   else
+   {
+      /* Bulk mode: no --target. Walk the categories selected (default
+       * all four), apply --token/--mode/--weapon filters. */
+      if (!parse_tuple_list(mode_str,   &modes))   modes.use_all   = 1;
+      if (!parse_tuple_list(weapon_str, &weapons)) weapons.use_all = 1;
+      if (!parse_dir_list(dir_str,      &dirs))    dirs.use_all    = 1;
+
+      {
+         COMPOSE_CATEGORY_E cats[4];
+         int n_cats, ci, ti, n_tokens;
+
+         if (category == COMPOSE_CATEGORY_NONE)
+         {
+            cats[0] = COMPOSE_CATEGORY_PLAYER_CHAR;
+            cats[1] = COMPOSE_CATEGORY_MONSTER;
+            cats[2] = COMPOSE_CATEGORY_NPC;
+            cats[3] = COMPOSE_CATEGORY_OBJECT;
+            n_cats = 4;
+         }
+         else
+         {
+            cats[0] = category;
+            n_cats = 1;
+         }
+
+         for (ci = 0; ci < n_cats; ci++)
+         {
+            COMPOSE_CATEGORY_E cat = cats[ci];
+            n_tokens = (cat == COMPOSE_CATEGORY_PLAYER_CHAR)
+                       ? compose_iter_player_class_count()
+                       : (cat == COMPOSE_CATEGORY_MONSTER) ? compose_index_monster_count()
+                       : (cat == COMPOSE_CATEGORY_NPC)     ? compose_index_npc_count()
+                       :                                     compose_index_object_count();
+            for (ti = 0; ti < n_tokens; ti++)
+            {
+               const char *tok_code; const char *tok_name;
+               if (cat == COMPOSE_CATEGORY_PLAYER_CHAR)
+               {
+                  tok_code = compose_iter_player_class_at(ti);
+                  tok_name = compose_naming_class_name(tok_code);
+                  if (tok_name == NULL) tok_name = "";
+               }
+               else
+               {
+                  const COMPOSE_TOKEN_S *t = (cat == COMPOSE_CATEGORY_MONSTER)
+                                              ? compose_index_monster_at(ti)
+                                              : (cat == COMPOSE_CATEGORY_NPC)
+                                                ? compose_index_npc_at(ti)
+                                                : compose_index_object_at(ti);
+                  if (t == NULL) continue;
+                  tok_code = t->code;
+                  tok_name = t->name;
+               }
+               if (tok_code == NULL || tok_code[0] == 0) continue;
+
+               /* --token= is a per-token filter (case-insensitive). */
+               if (token_str != NULL && token_str[0] != 0
+                   && strcasecmp(tok_code, token_str) != 0)
+                  continue;
+
+               run_one_token(cat, tok_code, tok_name,
+                             &modes, &weapons, &dirs, &run);
+            }
+         }
+      }
+   }
+
+   /* Summary line + exit code. */
+   printf("\n");
+   printf("exported=%d failed=%d skipped=%d  out=%s\n",
+          run.success, run.failure, run.skipped, run.out_root);
+
+   if (run.success > 0 && run.failure == 0)
+      return CLI_EXIT_OK;
+   if (run.success > 0 && run.failure > 0)
+      return CLI_EXIT_PARTIAL;
+   return CLI_EXIT_NOTHING;
 }
 
 /* ---- help ------------------------------------------------------------ */

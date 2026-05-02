@@ -97,13 +97,15 @@ static int load_layer_for_direction(const char *dcc_path,
    if (dcc == NULL)
       return 0;
 
-   if (direction < 0 || direction >= dcc->header.directions)
+   /* dcc_mem_load only copies bytes; the header is parsed inside
+    * dcc_decode. Decode FIRST, then validate the direction. */
+   if (dcc_decode(dcc, 1L << direction))
    {
       dcc_destroy(dcc);
       return 0;
    }
 
-   if (dcc_decode(dcc, 1L << direction))
+   if (direction < 0 || direction >= dcc->header.directions)
    {
       dcc_destroy(dcc);
       return 0;
