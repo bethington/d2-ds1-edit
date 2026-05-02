@@ -74,6 +74,12 @@ int  export_progress_cancel_requested(void);
 // remote stages are skipped (native-only export), weights renormalize.
 int  export_progress_percent(int include_remote_stages);
 
+// Tells the dialog whether to use the remote weight set (PACKAGE_UPLOAD
+// + REMOTE_PROCESSING + DOWNLOAD + EXTRACT) or the local one
+// (LOCAL_UPSCALE in their place). Caller picks once before starting the
+// task; default is local-only.
+void export_progress_set_show_remote_stages(int yes);
+
 // Cooperative pump: call from inner loops between items. Drains Allegro
 // events (so the OS doesn't think we froze), repaints the dialog if it
 // is showing, and checks for cancellation. Returns 1 if the user has
