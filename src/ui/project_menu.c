@@ -19,6 +19,7 @@
 #include "ui/win_folder_picker.h"
 
 #include "core/asset_export.h"
+#include "core/export_progress.h"
 #include "core/palette.h"
 #include "core/project.h"
 #include "core/preferences.h"
@@ -420,6 +421,14 @@ static void action_export_unified(void)
    char asset_prefix[PROJECT_PATH_MAX];
    int exported_count;
    int upscale_mode;
+
+   /* Defensive guard against re-entry. Should never fire under the
+    * current flow (export runs synchronously on the main thread, so a
+    * second Ctrl+Shift+A can't arrive mid-export), but keeps us safe
+    * if a future scripted invocation or worker-thread driver ever
+    * lands. */
+   if (export_task_is_active())
+      return;
 
    if (glb_config.mod_dir[0] == NULL || glb_config.mod_dir[0][0] == 0)
    {
