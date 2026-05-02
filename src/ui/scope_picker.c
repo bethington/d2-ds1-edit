@@ -147,8 +147,8 @@ static void build_entries(SCOPE_PICKER_S *p, const char *type_filter,
             continue;
 
          p->entries[p->entry_count].kind = ENTRY_PRESET;
-         p->entries[p->entry_count].label = pr->name;
-         p->entries[p->entry_count].secondary = pr->pattern;
+         p->entries[p->entry_count].label = pr->pattern;
+         p->entries[p->entry_count].secondary = NULL;
          p->entries[p->entry_count].enabled = 1;
          p->entries[p->entry_count].preset = pr;
          p->entry_count++;
