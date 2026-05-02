@@ -49,6 +49,7 @@ set(SOURCES
     src/core/compose_index.c
     src/core/compose_index_build.c
     src/core/compose_naming.c
+    src/core/compose_palette.c
     src/core/compose_presets.c
     src/core/compose_render.c
     src/core/area_browser.c
@@ -96,6 +97,8 @@ set(SOURCES
     src/ui/project_menu.c
     src/ui/export_type_picker.c
     src/ui/upscale_mode_picker.c
+    src/ui/compose_mode_modal.c
+    src/ui/multi_select_picker.c
     src/ui/preset_picker.c
     src/ui/scope_picker.c
     src/ui/text_input_modal.c
