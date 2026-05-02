@@ -105,6 +105,14 @@ target_include_directories(test_compose_cof_path PRIVATE
 )
 add_test(NAME compose_cof_path COMMAND test_compose_cof_path)
 
+# Compose canvas/bbox calculator (pure math)
+add_executable(test_compose_bbox test_compose_bbox.c ../src/core/compose_bbox.c)
+target_link_libraries(test_compose_bbox PRIVATE unity)
+target_include_directories(test_compose_bbox PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
+add_test(NAME compose_bbox COMMAND test_compose_bbox)
+
 add_executable(test_asset_export_smoke
     test_asset_export_smoke.c
     test_asset_export_stubs.c
