@@ -27,6 +27,14 @@ mod_dir  =
 upscale_enabled     = NO
 upscale_service_url =
 
+; PNG export filter. When YES (default), multi-frame DC6 files (animations,
+; multi-direction sprites) are skipped during export. Multi-frame export to
+; a dedicated animation format is a planned future feature; for now PNG
+; output is single-frame only. Flip to NO to fall back to the prior behavior
+; (export every frame of multi-frame DC6 alongside single-frame icons).
+; ==========================================================================
+export_dc6_single_frame_only = YES
+
 ; Examples of explicit configuration:
 ; d2_install = C:\Diablo2
 ; d2exp      = D:\custom\d2exp.mpq
@@ -146,3 +154,22 @@ lower_speed_zoom_out = NO
 ; enable the workspace feature ?
 ; ------------------------------
 workspace_enable = YES
+
+
+; Export presets shown in the unified Ctrl+Shift+A export action's scope
+; picker. Each entry is "name = type | pattern" where type is one of
+; all/dt1/dc6/dcc and pattern is a glob matched against virtual asset
+; paths under the mod overlay. Order in this section is the order in the
+; picker. Wildcard syntax: * (any chars except \), ? (one char except \),
+; ** (any number of subfolders, including zero).
+; ===========================================================================
+[export_presets]
+items_all     = dc6 | data\global\items\*.dc6
+items_inv     = dc6 | data\global\items\inv*.dc6
+items_potions = dc6 | data\global\items\pot*.dc6
+tiles_all     = dt1 | data\global\tiles\**\*.dt1
+tiles_act1    = dt1 | data\global\tiles\ACT1\**\*.dt1
+tiles_act2    = dt1 | data\global\tiles\ACT2\**\*.dt1
+tiles_act3    = dt1 | data\global\tiles\ACT3\**\*.dt1
+tiles_act4    = dt1 | data\global\tiles\ACT4\**\*.dt1
+tiles_act5    = dt1 | data\global\tiles\ACT5\**\*.dt1

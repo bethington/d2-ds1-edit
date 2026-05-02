@@ -171,7 +171,26 @@ void ini_create(char *ininame)
        "\n"
        "; enable the workspace feature ?\n"
        "; ------------------------------\n"
-       "workspace_enable = YES\n",
+       "workspace_enable = YES\n"
+       "\n"
+       "\n"
+       "; Export presets shown in the unified Ctrl+Shift+A export action's\n"
+       "; scope picker. Each entry is \"name = type | pattern\" where type is\n"
+       "; one of all/dt1/dc6/dcc and pattern is a glob matched against\n"
+       "; virtual asset paths under the mod overlay. Order in this section\n"
+       "; is the order in the picker. Wildcard syntax: * (any chars except\n"
+       "; \\), ? (one char except \\), ** (any number of subfolders).\n"
+       "; ==================================================================\n"
+       "[export_presets]\n"
+       "items_all     = dc6 | data\\global\\items\\*.dc6\n"
+       "items_inv     = dc6 | data\\global\\items\\inv*.dc6\n"
+       "items_potions = dc6 | data\\global\\items\\pot*.dc6\n"
+       "tiles_all     = dt1 | data\\global\\tiles\\**\\*.dt1\n"
+       "tiles_act1    = dt1 | data\\global\\tiles\\ACT1\\**\\*.dt1\n"
+       "tiles_act2    = dt1 | data\\global\\tiles\\ACT2\\**\\*.dt1\n"
+       "tiles_act3    = dt1 | data\\global\\tiles\\ACT3\\**\\*.dt1\n"
+       "tiles_act4    = dt1 | data\\global\\tiles\\ACT4\\**\\*.dt1\n"
+       "tiles_act5    = dt1 | data\\global\\tiles\\ACT5\\**\\*.dt1\n",
        out);
 
    fclose(out);
