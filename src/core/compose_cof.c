@@ -71,6 +71,16 @@ int compose_cof_parse(const void *bytes, long len, COMPOSE_COF_S *out)
          return 0;
       lay = &out->layers[idx];
 
+      /* Some boss COFs (Baal Throne, Mephisto, ...) declare the same
+       * composit_index more than once -- typically a back layer + a
+       * front layer of the same body part with different z-order in
+       * the priority table. Our per-layer storage is keyed by
+       * composit_index, so duplicates would otherwise stomp the
+       * first entry's metadata. Keep first-wins: if this slot
+       * already has a non-empty weapon_class, skip overwriting. */
+      if (lay->weapon_class[0] != 0)
+         continue;
+
       lay->composit_index = idx;
       lay->shadow_a       = q[1];
       lay->shadow_b       = q[2];

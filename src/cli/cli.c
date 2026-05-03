@@ -57,6 +57,7 @@ static int verb_list_presets  (int argc, char **argv);
 static int verb_export_compose(int argc, char **argv);
 static int verb_export_raw    (int argc, char **argv);
 static int verb_dump_txt_row  (int argc, char **argv);
+static int verb_dump_listfile (int argc, char **argv);
 static int verb_help          (int argc, char **argv);
 
 static const CLI_VERB_S s_verbs[] = {
@@ -78,6 +79,8 @@ static const CLI_VERB_S s_verbs[] = {
      "Raw-frame export (DCC/DC6/DT1) -> per-frame PNG, mirrors the GUI flow." },
    { "dump-txt-row",   verb_dump_txt_row,
      "Load <txt-path>, find row matching <id> in column 0, dump column=value pairs." },
+   { "dump-listfile",  verb_dump_listfile,
+     "Print the in-MPQ (listfile) for each open slot to stdout (paths only)." },
    { "help",         verb_help,
      "Show this help text." },
    { "--help",       verb_help, NULL },
@@ -1833,6 +1836,50 @@ static int verb_dump_txt_row(int argc, char **argv)
    }
 
    free(buf);
+   return CLI_EXIT_OK;
+}
+
+/* ---- dump-listfile --------------------------------------------------- */
+
+static int verb_dump_listfile(int argc, char **argv)
+{
+   CLI_COMMON_OPTS_S opts;
+   int rc, slot;
+   GLB_MPQ_S *saved_mpq;
+   extern GLB_MPQ_S *glb_mpq;
+   extern int mpq_batch_load_in_mem(char *filename, void **buffer,
+                                    long *buf_len, int output);
+
+   if (!parse_common_opts(argc, argv, &opts))
+      return CLI_EXIT_BAD_ARGS;
+
+   rc = cli_minimum_init(&opts);
+   if (rc != CLI_EXIT_OK) return rc;
+
+   saved_mpq = glb_mpq;
+   for (slot = 0; slot < MAX_MPQ_FILE; slot++)
+   {
+      void *buf = NULL;
+      long buf_len = 0;
+      int n;
+
+      if (!glb_mpq_struct[slot].is_open) continue;
+      glb_mpq = &glb_mpq_struct[slot];
+      n = mpq_batch_load_in_mem("(listfile)", &buf, &buf_len, 0);
+      if (n == -1 || buf == NULL || buf_len <= 0)
+      {
+         fprintf(stderr, "slot %d (%s): no listfile\n",
+                 slot, slot_label(slot));
+         if (buf != NULL) free(buf);
+         continue;
+      }
+      printf(";;; ===== slot %d (%s) -- %ld bytes =====\n",
+             slot, slot_label(slot), buf_len);
+      fwrite(buf, 1, (size_t) buf_len, stdout);
+      printf("\n");
+      free(buf);
+   }
+   glb_mpq = saved_mpq;
    return CLI_EXIT_OK;
 }
 

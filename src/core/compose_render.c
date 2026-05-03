@@ -6,12 +6,15 @@
 
 #include "structs.h"
 #include "core/dcc.h"
+#include "core/dc6.h"
 #include "core/compose_bbox.h"
 #include "core/compose_blit.h"
 #include "core/compose_cof.h"
 #include "core/compose_cof_path.h"
 #include "core/compose_dcc_path.h"
 #include "core/compose_render.h"
+
+extern RGBA_PALETTE *a5_current_palette;
 
 extern int misc_load_mpq_file(char *filename, char **buffer, long *buf_len, int output);
 
@@ -65,6 +68,126 @@ static int copy_bitmap_to_rgba(ALLEGRO_BITMAP *bmp, int w, int h,
    }
 
    al_unlock_bitmap(bmp);
+   return 1;
+}
+
+/* Load one layer's DC6 for the given direction. Returns 1 on success,
+ * 0 on failure (file missing, decode error, allocation). DC6 stores
+ * frames as a flat array sized direction_count * frames_per_dir;
+ * direction d's frames are at offsets [d*fpd .. d*fpd+fpd-1]. Each
+ * frame has its own bounding box and RLE-compressed pixel data. */
+static int load_dc6_layer_for_direction(const char *dc6_path,
+                                        int direction,
+                                        LAYER_DATA_S *lay)
+{
+   char *buf = NULL;
+   long buf_len = 0;
+   long *lp;
+   long dc6_ver, dc6_unk1, dc6_unk2, dc6_dir, dc6_fpd, *dc6_fptr;
+   int box_x1, box_y1, box_x2, box_y2;
+   int box_w, box_h;
+   int f;
+
+   if (lay == NULL) return 0;
+   memset(lay, 0, sizeof(*lay));
+
+   if (misc_load_mpq_file((char *) dc6_path, &buf, &buf_len, 0) == -1)
+      return 0;
+   if (buf == NULL || buf_len < 24) { if (buf) free(buf); return 0; }
+
+   lp = (long *) buf;
+   dc6_ver  = lp[0];
+   dc6_unk1 = lp[1];
+   dc6_unk2 = lp[2];
+   /* lp[3] unknown */
+   dc6_dir  = lp[4];
+   dc6_fpd  = lp[5];
+   dc6_fptr = &lp[6];
+
+   if (dc6_ver != 6 || dc6_unk1 != 1 || dc6_unk2 != 0
+       || dc6_dir <= 0 || dc6_fpd <= 0
+       || direction < 0 || direction >= dc6_dir)
+   {
+      free(buf);
+      return 0;
+   }
+
+   /* Bounding box across all frames in the requested direction. */
+   box_x1 = box_y1 = 0x7FFFFFFF;
+   box_x2 = box_y2 = -0x7FFFFFFF;
+   for (f = 0; f < dc6_fpd; f++)
+   {
+      long off = dc6_fptr[direction * dc6_fpd + f];
+      long *fh;
+      long fw, fh_, fox, foy, fx1, fy1, fx2, fy2;
+      if (off < 0 || off >= buf_len - 24) { free(buf); return 0; }
+      fh = (long *) (buf + off);
+      fw  = fh[1]; fh_ = fh[2]; fox = fh[3]; foy = fh[4];
+      fx1 = fox; fx2 = fx1 + fw - 1;
+      fy2 = foy; fy1 = fy2 - fh_ + 1;
+      if (fx1 < box_x1) box_x1 = (int) fx1;
+      if (fx2 > box_x2) box_x2 = (int) fx2;
+      if (fy1 < box_y1) box_y1 = (int) fy1;
+      if (fy2 > box_y2) box_y2 = (int) fy2;
+   }
+   box_w = box_x2 - box_x1 + 1;
+   box_h = box_y2 - box_y1 + 1;
+   if (box_w <= 0 || box_h <= 0) { free(buf); return 0; }
+
+   lay->frames = (unsigned char **) calloc((size_t) dc6_fpd,
+                                            sizeof(unsigned char *));
+   if (lay->frames == NULL) { free(buf); return 0; }
+
+   for (f = 0; f < dc6_fpd; f++)
+   {
+      long off = dc6_fptr[direction * dc6_fpd + f];
+      long *fh = (long *) (buf + off);
+      long fw  = fh[1], fh_ = fh[2], fox = fh[3], foy = fh[4];
+      long flen = fh[7];  /* RLE-compressed length */
+      unsigned char *fdata = (unsigned char *) (buf + off + 8 * sizeof(long));
+      ALLEGRO_BITMAP *frame_bmp;
+      ALLEGRO_LOCKED_REGION *lock;
+      int x0, y0, y;
+
+      lay->frames[f] = (unsigned char *) calloc((size_t) box_w * box_h * 4, 1);
+      if (lay->frames[f] == NULL) { layer_data_free(lay); free(buf); return 0; }
+
+      frame_bmp = al_create_bitmap(box_w, box_h);
+      if (frame_bmp == NULL) continue;
+      a5_clear(frame_bmp);
+
+      /* Decode RLE into the bitmap at the frame's offset within the
+       * layer's bounding box. dc6_decomp_norm starts at (x0, y0) and
+       * decodes downward (D2's bottom-up coordinate convention). */
+      x0 = (int) (fox - box_x1);
+      y0 = (int) (foy - box_y1);
+      dc6_decomp_norm(fdata, frame_bmp, flen, x0, y0);
+
+      /* Copy bitmap pixels into RGBA. */
+      lock = al_lock_bitmap(frame_bmp,
+                            ALLEGRO_PIXEL_FORMAT_ABGR_8888_LE,
+                            ALLEGRO_LOCK_READONLY);
+      if (lock != NULL)
+      {
+         for (y = 0; y < box_h; y++)
+         {
+            unsigned char *src = (unsigned char *) lock->data + y * lock->pitch;
+            unsigned char *dst = lay->frames[f] + (size_t) y * box_w * 4;
+            memcpy(dst, src, (size_t) box_w * 4);
+         }
+         al_unlock_bitmap(frame_bmp);
+      }
+      al_destroy_bitmap(frame_bmp);
+   }
+
+   lay->loaded      = 1;
+   lay->width       = box_w;
+   lay->height      = box_h;
+   lay->off_x       = box_x1;
+   lay->off_y       = box_y1;
+   lay->frame_count = (int) dc6_fpd;
+
+   free(buf);
    return 1;
 }
 
@@ -216,23 +339,60 @@ int compose_render(const COMPOSE_RENDER_PARAMS_S *params,
       return 0;
    }
 
-   /* 2. For each composit slot 0..15, attempt to load its DCC for the
-    *    requested direction. Slots without a DCC file (the common case
-    *    for many mode/weapon combos) silently skip. */
+   /* 2. For each composit slot 0..15, attempt to load its sprite for
+    *    the requested direction. Slots without a sprite file (the
+    *    common case for many mode/weapon combos) silently skip.
+    *
+    *    Layer wclass: when the COF declares an empty per-layer
+    *    weapon_class, fall back to the COF filename's wclass
+    *    (params->wclass). The actual file on disk uses the latter --
+    *    e.g. Andariel's COF says layer wclass="" but the file is
+    *    ANTRLITNUHTH.dcc with HTH from the COF filename.
+    *
+    *    DCC -> DC6 fallback: some bosses (Mephisto, ...) ship their
+    *    layers as DC6 instead of DCC. The working anim_load_cof in
+    *    core/cof.c does the same fallback. */
    for (slot = 0; slot < COMPOSE_COF_MAX_LAYERS; slot++)
    {
       const char *layer_skin = params->skin;
+      const char *layer_wclass;
+      char dc6_path[COMPOSE_PATH_BUF];
+      int loaded;
+
       if (slot < COMPOSE_RENDER_LAYER_COUNT
           && params->skin_per_layer[slot][0] != 0)
          layer_skin = params->skin_per_layer[slot];
 
+      layer_wclass = cof.layers[slot].weapon_class;
+      if (layer_wclass == NULL || layer_wclass[0] == 0)
+         layer_wclass = params->wclass != NULL ? params->wclass : "";
+
       if (!compose_dcc_path_build(dcc_path, sizeof(dcc_path),
                                   params->base, params->token, slot,
                                   layer_skin, params->mode,
-                                  cof.layers[slot].weapon_class))
+                                  layer_wclass))
          continue;
 
-      if (load_layer_for_direction(dcc_path, params->direction, &layers[slot]))
+      loaded = load_layer_for_direction(dcc_path, params->direction,
+                                        &layers[slot]);
+      if (!loaded)
+      {
+         /* Try .dc6 sibling. Some bosses (Mephisto, ...) ship their
+          * layers as DC6. Replace the trailing 'c' of .dcc with '6'
+          * so we don't recompute the whole path. */
+         size_t n = strlen(dcc_path);
+         if (n >= 4 && (dcc_path[n-3]=='d'||dcc_path[n-3]=='D')
+             && (dcc_path[n-2]=='c'||dcc_path[n-2]=='C')
+             && (dcc_path[n-1]=='c'||dcc_path[n-1]=='C'))
+         {
+            memcpy(dc6_path, dcc_path, n + 1);
+            dc6_path[n-1] = '6';
+            loaded = load_dc6_layer_for_direction(dc6_path, params->direction,
+                                                  &layers[slot]);
+         }
+      }
+
+      if (loaded)
       {
          loaded_any = 1;
          rects[slot].offset_x = layers[slot].off_x;

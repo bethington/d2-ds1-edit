@@ -14,7 +14,10 @@
 #define ms2_strnicmp strncasecmp
 #endif
 
-#define MONSTATS2_MAX_ROWS  512
+/* Real D2/LOD MonStats2.txt has ~270 rows, but the parser also keeps
+ * malformed/sentinel rows in the count when scanning -- and we want
+ * headroom for mod content too. 1024 is plenty without being wasteful. */
+#define MONSTATS2_MAX_ROWS  1024
 
 /* ------------------------------------------------------------------ */
 /* In-memory index. Identical pattern to compose_index_storage_*.     */
