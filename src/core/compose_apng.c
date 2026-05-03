@@ -254,16 +254,18 @@ int compose_apng_export_scaled(const COMPOSE_RENDER_PARAMS_S *params,
    }
    else if (try_remote_upscale(&result, scale, &scaled))
    {
-      /* Remote ML pipeline (Real-ESRGAN by default) succeeded. Same
+      /* Remote ML pipeline (Real-ESRGAN by default) succeeded -- same
        * service raw export uses; produces much higher quality output
-       * than local nearest-neighbour, especially for the antialiased
-       * boss portraits. */
+       * than local NN, especially for the antialiased boss portraits. */
       to_write = &scaled;
    }
    else
    {
       /* Remote upscale not configured or failed -- fall back to
-       * pixel-perfect integer NN. */
+       * pixel-perfect integer NN so the export still produces output
+       * at the requested dimensions. NN is chunky but every source
+       * pixel is preserved exactly; useful for verifying the compose
+       * pipeline before the docker service is reachable. */
       scaled.width       = result.width  * scale;
       scaled.height      = result.height * scale;
       scaled.frame_count = result.frame_count;

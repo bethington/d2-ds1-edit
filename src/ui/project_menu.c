@@ -380,34 +380,20 @@ static int run_upscale_pipeline(const char *title,
                                 "realesrgan", error, sizeof(error)))
       return 1;
 
-   rc = al_show_native_message_box(a5_display,
-      title,
-      "Remote upscale failed.",
-      "Would you like to fall back to the built-in local 2x/4x upscaler?",
-      error[0] ? error : NULL,
-      ALLEGRO_MESSAGEBOX_YES_NO | ALLEGRO_MESSAGEBOX_WARN);
-   if (rc != 1)
-      return 0;
-
-   /* Falling back to local upscale -- restore local-stage weights. */
-   if (export_task_is_active())
-   {
-      export_progress_set_show_remote_stages(0);
-      export_progress_set_stage(EXPORT_STAGE_LOCAL_UPSCALE,
-                                (scale == 4) ? "Upscaling 4x (local)..."
-                                             : "Upscaling 2x (local)...",
-                                0);
-   }
-
-   error[0] = 0;
-   if (upscale_directory_local(staging_path, output_path, scale,
-                               error, sizeof(error)))
-      return 1;
+   /* Remote pipeline is the only supported 2x/4x path. No silent
+    * fallback to local -- the user explicitly asked for the docker
+    * service's quality, so a failure should surface, not get
+    * downgraded. The native error message box below carries the
+    * detail; rc here just controls flow. */
+   (void) rc;
 
    al_show_native_message_box(a5_display,
       title,
       "Upscale failed.",
-      error[0] ? error : "The local fallback upscaler was unable to generate output.",
+      error[0] ? error
+               : "The remote upscale service did not return a result. "
+                 "Check that upscale_service_url is reachable and the "
+                 "docker server is running.",
       NULL,
       ALLEGRO_MESSAGEBOX_ERROR);
    return 0;

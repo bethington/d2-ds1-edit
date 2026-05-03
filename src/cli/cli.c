@@ -27,6 +27,7 @@
 #include "core/monstats2.h"
 
 extern void ds1edit_load_palettes(void);
+extern void misc_read_gamma(void);
 
 extern void ds1edit_open_all_mpq(void);
 extern int  misc_load_mpq_file(char *filename, char **buffer, long *buf_len, int output);
@@ -927,9 +928,54 @@ static void cli_alloc_global_buffers(void)
    }
 }
 
+/* Load Data/gamma.dat into glb_ds1edit.gamma_table, falling back to
+ * identity gamma (color -> same color) if the file is missing. The
+ * GUI's misc_read_gamma fatal-exits on a missing file -- which is
+ * fine when the editor is run from its install dir but breaks the
+ * cli_smoke test (and any out-of-tree CLI invocation) where the
+ * working directory has no Data/. Identity gamma produces slightly
+ * less colour-corrected output than the real table, but it's a
+ * working fallback rather than a hard crash. */
+static void cli_load_gamma_with_fallback(void)
+{
+   char gamma_path[160];
+   FILE *fp;
+   int gt, i;
+
+   snprintf(gamma_path, sizeof(gamma_path), "%sgamma.dat",
+            glb_ds1edit_data_dir);
+   fp = fopen(gamma_path, "rb");
+   if (fp != NULL)
+   {
+      for (gt = 0; gt < GC_MAX; gt++)
+         for (i = 0; i < 256; i++)
+            glb_ds1edit.gamma_table[gt][i] = (UBYTE) fgetc(fp);
+      fclose(fp);
+      return;
+   }
+   /* Fallback: identity gamma. */
+   for (gt = 0; gt < GC_MAX; gt++)
+      for (i = 0; i < 256; i++)
+         glb_ds1edit.gamma_table[gt][i] = (UBYTE) i;
+}
+
 static int compose_runtime_init(void)
 {
    cli_alloc_global_buffers();
+   /* Gamma correction has to be loaded BEFORE ds1edit_load_palettes
+    * because palette_d2_to_rgba feeds every palette byte through
+    * gamma_table[cur_gamma]. Without this the table is all zeros and
+    * every D2 palette index resolves to RGB(0,0,0) -- compose output
+    * would be a pure-black silhouette instead of the actual sprite.
+    *
+    * cur_gamma defaults to GC_130 (1.30) -- matches the editor's
+    * default and what the GUI flow uses when ini_read sets it from
+    * the [gamma_correction] key. */
+   if (glb_ds1edit.cur_gamma == 0 && glb_config.gamma == 0)
+      glb_ds1edit.cur_gamma = GC_130;
+   else if (glb_ds1edit.cur_gamma == 0)
+      glb_ds1edit.cur_gamma = glb_config.gamma;
+   cli_load_gamma_with_fallback();
    ds1edit_load_palettes();
    a5_current_palette = &glb_ds1edit.vga_pal[0];
    /* compose_index is needed for monsters / NPCs / objects; idempotent
@@ -1495,6 +1541,33 @@ static const EXPORT_PRESET_S *find_export_preset(const char *name)
    return NULL;
 }
 
+/* Run the same Real-ESRGAN remote upscale that the GUI raw export +
+ * compose-mode use, but with CLI-friendly error reporting. The
+ * staging dir already contains native-export PNGs (single files or a
+ * tree, the upscale walks recursively). On success the upscaled PNGs
+ * land in `dst_dir` mirroring the staging tree. */
+static int cli_run_remote_upscale(const char *staging_dir,
+                                  const char *dst_dir, int scale)
+{
+   char err[512];
+   if (!upscale_is_remote_configured())
+   {
+      fprintf(stderr,
+         "ds1edit export-raw: --upscale=%d requires the remote service. "
+         "Set upscale_enabled = YES and upscale_service_url = <url> in "
+         "Ds1edit.ini.\n", scale);
+      return 0;
+   }
+   err[0] = 0;
+   if (upscale_directory_remote(staging_dir, dst_dir, scale,
+                                "realesrgan", err, sizeof(err)))
+      return 1;
+   fprintf(stderr,
+      "ds1edit export-raw: remote upscale failed: %s\n",
+      err[0] ? err : "no detail");
+   return 0;
+}
+
 static int verb_export_raw(int argc, char **argv)
 {
    CLI_COMMON_OPTS_S opts;
@@ -1506,6 +1579,10 @@ static int verb_export_raw(int argc, char **argv)
    const char *pattern_str;
    const char *out_str;
    const char *listfile_str;
+   const char *upscale_str;
+   int upscale_factor = 1;
+   const char *export_dst;   /* final or staging dir, depending on upscale */
+   char staging_dir[512];
    int rc;
    ASSET_EXPORT_PLAN_S plan;
    int planned_ok = 0;
@@ -1522,6 +1599,29 @@ static int verb_export_raw(int argc, char **argv)
    pattern_str  = find_flag_value(argc, argv, "pattern");
    out_str      = find_flag_value(argc, argv, "out");
    listfile_str = find_flag_value(argc, argv, "listfile");
+   upscale_str  = find_flag_value(argc, argv, "upscale");
+
+   if (upscale_str != NULL)
+   {
+      if (strcasecmp(upscale_str, "1") == 0
+          || strcasecmp(upscale_str, "1x") == 0
+          || strcasecmp(upscale_str, "none") == 0)
+         upscale_factor = 1;
+      else if (strcasecmp(upscale_str, "2") == 0
+               || strcasecmp(upscale_str, "2x") == 0)
+         upscale_factor = 2;
+      else if (strcasecmp(upscale_str, "4") == 0
+               || strcasecmp(upscale_str, "4x") == 0)
+         upscale_factor = 4;
+      else
+      {
+         fprintf(stderr,
+            "ds1edit export-raw: --upscale=%s expected 1 / 2 / 4\n",
+            upscale_str);
+         return CLI_EXIT_BAD_ARGS;
+      }
+   }
+   staging_dir[0] = 0;
 
    /* Mutually-exclusive selectors: --target / --preset / --pattern /
     * --scope drive different code paths. We allow exactly one; if the
@@ -1569,23 +1669,40 @@ static int verb_export_raw(int argc, char **argv)
       return CLI_EXIT_BAD_ARGS;
    }
 
+   /* When upscaling, native PNGs go into a temp staging dir first;
+    * the remote service then reads them, upscales each, and writes
+    * the upscaled tree to out_str. Without upscale, native export
+    * writes directly to out_str. */
+   if (upscale_factor != 1)
+   {
+      if (!upscale_create_temp_dir(staging_dir, sizeof(staging_dir)))
+      {
+         fprintf(stderr,
+            "ds1edit export-raw: failed to create staging dir for upscale.\n");
+         return CLI_EXIT_BAD_ARGS;
+      }
+      export_dst = staging_dir;
+   }
+   else
+   {
+      export_dst = out_str;
+   }
+
    /* Fast path: --target= without any glob metacharacters is an exact
-    * file path. Skip the plan-builder + listfile enumeration entirely
-    * and call asset_export_png directly. This is also the only fully-
-    * working raw-export path right now -- the listfile-based
-    * enumeration relies on the MPQ's compressed (listfile) being
-    * decompressed correctly, and on real D2 MPQs ExtractToMem leaves
-    * the (listfile) buffer uninitialised (filled with 0xCD in Debug
-    * builds), so plan_for_pattern / plan_for_prefix produce zero
-    * candidates against real installs. Ship the fast path now; fix
-    * the underlying MPQ bug separately. */
+    * file path. */
    if (target_str != NULL && target_str[0] != 0
        && strpbrk(target_str, "*?") == NULL)
    {
-      compose_iter_ensure_dir(out_str);
+      int single_ok;
+      compose_iter_ensure_dir(export_dst);
       if (opts.verbose >= 1)
-         printf("export (single): %s -> %s\n", target_str, out_str);
-      if (asset_export_png(target_str, out_str) > 0)
+         printf("export (single): %s -> %s%s\n", target_str, export_dst,
+                upscale_factor != 1 ? " (then upscale)" : "");
+      single_ok = (asset_export_png(target_str, export_dst) > 0);
+      if (single_ok && upscale_factor != 1)
+         single_ok = cli_run_remote_upscale(staging_dir, out_str, upscale_factor);
+      if (staging_dir[0] != 0) upscale_remove_tree(staging_dir);
+      if (single_ok)
       {
          printf("\nexported=1 failed=0 candidates=1  out=%s\n", out_str);
          return CLI_EXIT_OK;
@@ -1703,10 +1820,31 @@ static int verb_export_raw(int argc, char **argv)
       return CLI_EXIT_NOTHING;
    }
 
-   /* mkdir the output root once before writing. */
-   compose_iter_ensure_dir(out_str);
+   /* mkdir the destination once before writing (staging or final). */
+   compose_iter_ensure_dir(export_dst);
 
-   exported = asset_export_run_plan(&plan, out_str);
+   exported = asset_export_run_plan(&plan, export_dst);
+
+   /* Upscale stage: pack the staging tree, POST to the remote
+    * Real-ESRGAN service, unpack into out_str. Skip cleanly if the
+    * native pass produced nothing. */
+   if (upscale_factor != 1 && exported > 0)
+   {
+      compose_iter_ensure_dir(out_str);
+      if (!cli_run_remote_upscale(staging_dir, out_str, upscale_factor))
+      {
+         /* Failure already reported on stderr. Treat the run as
+          * partial: the native PNGs are in the staging dir, just
+          * not upscaled. We don't auto-rescue them; the user gets
+          * a clean failure mode. */
+         upscale_remove_tree(staging_dir);
+         asset_export_plan_free(&plan);
+         printf("\nexported=0 failed=%d candidates=%d  out=%s\n",
+                plan.count, plan.total_candidates, out_str);
+         return CLI_EXIT_PARTIAL;
+      }
+   }
+   if (staging_dir[0] != 0) upscale_remove_tree(staging_dir);
 
    {
       int failed = plan.count - exported;
