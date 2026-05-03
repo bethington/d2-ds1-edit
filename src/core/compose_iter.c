@@ -94,6 +94,12 @@ const char *compose_iter_category_skin(COMPOSE_CATEGORY_E category)
    switch (category)
    {
       case COMPOSE_CATEGORY_PLAYER_CHAR: return "LIT";
+      /* Animated objects (TownPortal, urns, chests, ...) use a uniform
+       * "lit" skin code in their layer DCC paths -- e.g.
+       * data\global\objects\25\s1\25s1litnuhth.dcc. There's no
+       * MonStats2 equivalent for objects so we default the skin here
+       * rather than per-layer. */
+      case COMPOSE_CATEGORY_OBJECT:      return "lit";
       default: return "";
    }
 }

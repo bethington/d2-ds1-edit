@@ -90,8 +90,12 @@ static void test_category_skin(void)
 {
    TEST_ASSERT_EQUAL_STRING("LIT",
       compose_iter_category_skin(COMPOSE_CATEGORY_PLAYER_CHAR));
+   /* Monsters get per-layer skin from MonStats2, default empty. */
    TEST_ASSERT_EQUAL_STRING("",
       compose_iter_category_skin(COMPOSE_CATEGORY_MONSTER));
+   /* Objects use a uniform "lit" everywhere. */
+   TEST_ASSERT_EQUAL_STRING("lit",
+      compose_iter_category_skin(COMPOSE_CATEGORY_OBJECT));
 }
 
 static void test_category_folder(void)
