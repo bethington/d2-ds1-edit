@@ -55,6 +55,7 @@ set(SOURCES
     src/core/compose_iter_probe.c
     src/core/compose_naming.c
     src/core/compose_palette.c
+    src/core/compose_palette_index.c
     src/core/compose_presets.c
     src/core/compose_render.c
     src/core/compose_scale.c

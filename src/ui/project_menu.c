@@ -28,6 +28,7 @@
 #include "core/compose_iter.h"
 #include "core/compose_naming.h"
 #include "core/compose_palette.h"
+#include "core/compose_palette_index.h"
 #include "core/compose_render.h"
 #include "core/export_progress.h"
 #include "core/monstats2.h"
@@ -675,8 +676,16 @@ static int compose_run_token(const char *root,
    COMPOSE_RENDER_PARAMS_S params;
    char path_buf[PROJECT_PATH_MAX];
    char dir_buf[PROJECT_PATH_MAX];
+   /* Per-token palette switch (palette v2). Save + restore so palette
+    * state never leaks to the next token. */
+   RGBA_PALETTE *saved_palette = a5_current_palette;
+   {
+      int act = compose_palette_resolve_act(category, token);
+      if (act < 1 || act > ACT_MAX) act = 1;
+      a5_current_palette = &glb_ds1edit.vga_pal[act - 1];
+   }
 
-   if (base == NULL) return 0;
+   if (base == NULL) { a5_current_palette = saved_palette; return 0; }
 
    for (m = 0; m < n_modes; m++)
    {
@@ -821,11 +830,15 @@ static int compose_run_token(const char *root,
 
             export_progress_advance(1);
             if (export_progress_pump())
+            {
+               a5_current_palette = saved_palette;
                return 1;
+            }
          }
       }
    }
 
+   a5_current_palette = saved_palette;
    return 0;
 }
 
@@ -925,6 +938,8 @@ static void action_export_compose(void)
    {
       (void) compose_index_build();
       (void) monstats2_build();
+      /* Per-monster Act resolution from Levels.txt (palette v2). */
+      (void) compose_palette_index_build();
    }
 
    /* Drive the run via the export_progress dialog. We don't know the

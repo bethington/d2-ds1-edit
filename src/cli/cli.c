@@ -19,6 +19,7 @@
 #include "core/compose_iter.h"
 #include "core/compose_naming.h"
 #include "core/compose_palette.h"
+#include "core/compose_palette_index.h"
 #include "core/compose_presets.h"
 #include "core/compose_render.h"
 #include "core/d2install.h"
@@ -938,6 +939,10 @@ static int compose_runtime_init(void)
     * skin variants, layer-used flags). Without this the COF probe and
     * DCC paths for monsters point at files that don't exist. */
    (void) monstats2_build();
+   /* Levels.txt drives per-monster Act resolution so each composed
+    * sprite renders against the right act palette. Optional -- the
+    * compose pipeline falls back to Act 1 when this isn't built. */
+   (void) compose_palette_index_build();
    return CLI_EXIT_OK;
 }
 
@@ -975,8 +980,18 @@ static void run_one_token(COMPOSE_CATEGORY_E category,
    char dir_buf[1024];
    char resolved_wclass_buf[16];
    int m, w;
+   /* Per-token palette: monsters render against their natural act's
+    * palette (per the locked Q10 + v2 follow-up). All other categories
+    * default to Act 1. The save/restore wraps the inner loop so
+    * palette state never leaks to the next token. */
+   RGBA_PALETTE *saved_palette = a5_current_palette;
+   {
+      int act = compose_palette_resolve_act(category, token);
+      if (act < 1 || act > ACT_MAX) act = 1;
+      a5_current_palette = &glb_ds1edit.vga_pal[act - 1];
+   }
 
-   if (base == NULL) return;
+   if (base == NULL) { a5_current_palette = saved_palette; return; }
 
    /* Player chars iterate the weapon list; everything else has a
     * single empty weapon class. */
@@ -1125,6 +1140,9 @@ static void run_one_token(COMPOSE_CATEGORY_E category,
          }
       }
    }
+   /* Restore the saved palette so the next token starts from a clean
+    * baseline rather than inheriting this token's act. */
+   a5_current_palette = saved_palette;
 }
 
 static int verb_export_compose(int argc, char **argv)

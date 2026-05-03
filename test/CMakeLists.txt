@@ -121,8 +121,25 @@ target_include_directories(test_compose_blit PRIVATE
 )
 add_test(NAME compose_blit COMMAND test_compose_blit)
 
-# Compose palette resolution (v1: returns Act 1)
-add_executable(test_compose_palette test_compose_palette.c ../src/core/compose_palette.c)
+# Compose palette resolution. v2 joins via compose_index (for the
+# Code -> MonStatsEx mapping) and compose_palette_index (for the
+# MonStatsEx -> Act mapping from Levels.txt). The MPQ-loading glue
+# in compose_index_build / compose_palette_index_build pulls in
+# misc_load_mpq_file which we don't link for unit tests; the parser
+# code in compose_index.c / compose_palette_index.c is fine to link
+# directly because it doesn't reach for MPQs at file scope.
+#
+# However compose_palette_index.c DOES define compose_palette_index_build
+# inline (calling extern misc_load_mpq_file) -- but the build fn isn't
+# called by any test path, so the linker sees it as referenced only
+# if dead-code-elimination is off. To keep this clean, the test stubs
+# misc_load_mpq_file with a no-op below.
+add_executable(test_compose_palette
+    test_compose_palette.c
+    ../src/core/compose_palette.c
+    ../src/core/compose_palette_index.c
+    ../src/core/compose_index.c
+)
 target_link_libraries(test_compose_palette PRIVATE unity)
 target_include_directories(test_compose_palette PRIVATE
     ${CMAKE_SOURCE_DIR}/src
