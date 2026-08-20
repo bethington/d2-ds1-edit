@@ -729,14 +729,27 @@ char *misc_search_name(char *tmp)
 // is the "no more DrTester hunting" path: running `ds1edit foo.ds1` with no
 // other args now resolves to the correct tileset + palette automatically,
 // provided foo.ds1 is referenced by LvlPrest.txt.
+/* Where time goes while opening maps. Reset by the caller, reported after a
+   group finishes; see area_browser_open_group. */
+DS1_OPEN_PROFILE_S glb_open_profile;
+
+static double open_now_ms(void)
+{
+   return al_get_time() * 1000.0;
+}
+
 void misc_open_1_ds1(int ds1_idx, char *name, int type, int def,
                      int new_width, int new_height)
 {
+   double t0;
+
    // ds1
    printf("\nreading ds1 : %s\n", name);
    fflush(stdout);
    fprintf(stderr, "reading %s...", name);
+   t0 = open_now_ms();
    ds1_read(name, ds1_idx, new_width, new_height);
+   glb_open_profile.ds1_read_ms += open_now_ms() - t0;
    fprintf(stderr, "done\n");
 
    // Auto-resolve missing LvlPrest.Def / LvlTypes.Id from the preset index.
@@ -768,11 +781,15 @@ void misc_open_1_ds1(int ds1_idx, char *name, int type, int def,
 
    // lvl*.txt (and loading dt1 from mpq)
    fprintf(stderr, "searching Dt1Mask...");
+   t0 = open_now_ms();
    read_lvlprest_txt(ds1_idx, def);
+   glb_open_profile.lvlprest_ms += open_now_ms() - t0;
    fprintf(stderr, "done\n");
 
    printf("\nloading dt1 from mpq...\n");
+   t0 = open_now_ms();
    glb_ds1[ds1_idx].txt_act = read_lvltypes_txt(ds1_idx, type);
+   glb_open_profile.lvltypes_dt1_ms += open_now_ms() - t0;
    printf("\ndone\n");
    printf("txt_act = %i\n", glb_ds1[ds1_idx].txt_act);
    if (glb_ds1edit.cmd_line.debug_mode == TRUE)
@@ -789,10 +806,14 @@ void misc_open_1_ds1(int ds1_idx, char *name, int type, int def,
    }
 
    // make the block_table of this ds1
+   t0 = open_now_ms();
    misc_make_block_table(ds1_idx);
 
    // prop to index in block table
    ds1_make_prop_2_block(ds1_idx);
+   glb_open_profile.block_table_ms += open_now_ms() - t0;
+
+   glb_open_profile.maps++;
 }
 
 // ==========================================================================

@@ -515,6 +515,18 @@ typedef struct CMD_LINE_S
    char * export_prefix_output_dir;
 } CMD_LINE_S;
 
+/* Cost breakdown for opening maps, filled in by misc_open_1_ds1. */
+typedef struct DS1_OPEN_PROFILE_S
+{
+   double ds1_read_ms;      /* fetch + parse the .ds1 itself        */
+   double lvlprest_ms;      /* LvlPrest join for the tileset mask   */
+   double lvltypes_dt1_ms;  /* LvlTypes join AND the DT1 loads      */
+   double block_table_ms;   /* block table + prop mapping           */
+   long   maps;
+} DS1_OPEN_PROFILE_S;
+
+extern DS1_OPEN_PROFILE_S glb_open_profile;
+
 /* ---- Area Browser data structures ---- */
 
 typedef struct AREA_DS1_ENTRY_S

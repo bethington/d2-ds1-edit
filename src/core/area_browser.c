@@ -901,6 +901,7 @@ int area_browser_switch_area(int group_idx)
 int area_browser_switch_single(int group_idx, int entry_idx)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   double switch_start_ms;
 
    if (group_idx < 0 || group_idx >= ab->group_count)
       return -1;
@@ -1645,6 +1646,7 @@ int area_browser_open_group(int group_idx)
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
    AREA_GROUP_S * g;
    int i, ds1_idx = 0, opened = 0;
+   double group_open_start_ms;
 
    if (group_idx < 0 || group_idx >= ab->group_count)
       return -1;
@@ -1654,6 +1656,9 @@ int area_browser_open_group(int group_idx)
       printf("Opening area: Act %d - %s (%d maps)\n", g->act, g->name, g->entry_count);
    else
       printf("Opening area: %s (%d maps)\n", g->name, g->entry_count);
+
+   memset(&glb_open_profile, 0, sizeof(glb_open_profile));
+   group_open_start_ms = al_get_time() * 1000.0;
 
    /* find the first free ds1 slot */
    for (ds1_idx = 0; ds1_idx < DS1_MAX; ds1_idx++)
@@ -1676,7 +1681,24 @@ int area_browser_open_group(int group_idx)
    if (opened > 1)
       glb_ds1edit.show_2nd_row = TRUE;
 
-   printf("Opened %d maps\n", opened);
+   {
+      double total = al_get_time() * 1000.0 - group_open_start_ms;
+      double acc = glb_open_profile.ds1_read_ms + glb_open_profile.lvlprest_ms
+                 + glb_open_profile.lvltypes_dt1_ms + glb_open_profile.block_table_ms;
+
+      printf("Opened %d maps in %.0f ms  (%.1f ms/map)\n",
+             opened, total, opened > 0 ? total / opened : 0.0);
+      printf("  ds1_read        %8.0f ms  %5.1f%%\n",
+             glb_open_profile.ds1_read_ms, total > 0 ? 100.0 * glb_open_profile.ds1_read_ms / total : 0.0);
+      printf("  lvlprest join   %8.0f ms  %5.1f%%\n",
+             glb_open_profile.lvlprest_ms, total > 0 ? 100.0 * glb_open_profile.lvlprest_ms / total : 0.0);
+      printf("  lvltypes + dt1  %8.0f ms  %5.1f%%\n",
+             glb_open_profile.lvltypes_dt1_ms, total > 0 ? 100.0 * glb_open_profile.lvltypes_dt1_ms / total : 0.0);
+      printf("  block table     %8.0f ms  %5.1f%%\n",
+             glb_open_profile.block_table_ms, total > 0 ? 100.0 * glb_open_profile.block_table_ms / total : 0.0);
+      printf("  unattributed    %8.0f ms  %5.1f%%\n",
+             total - acc, total > 0 ? 100.0 * (total - acc) / total : 0.0);
+   }
    fflush(stdout);
    return opened;
 }
