@@ -603,7 +603,13 @@ void wedit_read_pcx(void)
       sprintf(filename, UI_FRAME_PREVIEW "%s.png", frame_name[i]);
       pcx[i] = al_load_bitmap(filename);
       if (pcx[i] == NULL)
-         fprintf(stderr, "\nWARNING: can't load %s\n", filename);
+      {
+         /* Every one of these is indexed unconditionally below, so a warning
+          * here only bought a fault a few lines later. */
+         char err[256];
+         sprintf(err, "wedit_read_pcx(): can't load %s", filename);
+         ds1edit_error(err);
+      }
    }
    my_border = 8;
    x0 = my_border;
@@ -612,6 +618,15 @@ void wedit_read_pcx(void)
    h = glb_config.screen.height - y0 - my_border;
 
    tmp_bmp = al_create_bitmap(w, h);
+   if (tmp_bmp == NULL)
+   {
+      char err[192];
+      sprintf(err,
+              "wedit_read_pcx(): can't create the %ix%i preview window.\n"
+              "screen_width/screen_height in Ds1edit.ini are %ix%i.",
+              w, h, glb_config.screen.width, glb_config.screen.height);
+      ds1edit_error(err);
+   }
 
    a5_clear(tmp_bmp);
 
@@ -663,6 +678,15 @@ void wedit_read_pcx(void)
    w = glb_config.screen.width - x0 - my_border;
    h = glb_config.screen.height - y0 - my_border;
    tmp_bmp = al_create_bitmap(w, h);
+   if (tmp_bmp == NULL)
+   {
+      char err[192];
+      sprintf(err,
+              "wedit_read_pcx(): can't create the %ix%i tile window.\n"
+              "screen_width/screen_height in Ds1edit.ini are %ix%i.",
+              w, h, glb_config.screen.width, glb_config.screen.height);
+      ds1edit_error(err);
+   }
    a5_clear(tmp_bmp);
 
    for (x = 0; x < w; x += al_get_bitmap_width(pcx[1]))

@@ -2,6 +2,9 @@
  * See NOTICE at the repository root for attribution and license status. */
 
 #include <stdio.h>
+
+/* Smallest window the editor chrome can be laid out in. */
+#define MIN_SCREEN_DIM 320
 #include <string.h>
 #include "structs.h"
 #include "error.h"
@@ -228,6 +231,36 @@ void ini_create(char *ininame)
 }
 
 // ==========================================================================
+/* A screen size of zero is not a preference, it is a broken config.
+ *
+ * The window geometry is derived by subtracting margins from these, so a 0
+ * here becomes a negative bitmap dimension, al_create_bitmap returns NULL,
+ * and the first unchecked use of it faults -- with nothing on screen to
+ * explain why. Clamp to the documented defaults and name the problem. */
+static void config_sanity_check_screen(void)
+{
+   const int def_w = 800, def_h = 600;
+
+   if (glb_config.screen.width < MIN_SCREEN_DIM)
+   {
+      fprintf(stderr,
+              "config: screen_width is %d, which cannot work; using %d. "
+              "Check screen_width in your Ds1edit.ini.\n",
+              glb_config.screen.width, def_w);
+      glb_config.screen.width = def_w;
+   }
+   if (glb_config.screen.height < MIN_SCREEN_DIM)
+   {
+      fprintf(stderr,
+              "config: screen_height is %d, which cannot work; using %d. "
+              "Check screen_height in your Ds1edit.ini.\n",
+              glb_config.screen.height, def_h);
+      glb_config.screen.height = def_h;
+   }
+   if (glb_config.screen.refresh < 0)
+      glb_config.screen.refresh = 0;
+}
+
 void ini_read(char *ininame)
 {
    typedef enum
@@ -565,4 +598,7 @@ void ini_read(char *ininame)
 
    // MPQ slot resolution runs later in main() — after preferences are loaded
    // so last_d2_install can supply a fallback before we hit the registry.
+
+   /* Last thing before callers start deriving geometry from these. */
+   config_sanity_check_screen();
 }
