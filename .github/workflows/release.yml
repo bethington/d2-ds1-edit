@@ -21,9 +21,9 @@ jobs:
         with:
           ref: ${{ github.event.inputs.tag || github.ref }}
 
-      - name: Install Allegro 5 via vcpkg
-        run: vcpkg install allegro5[core,image,font,primitives]:x86-windows
-
+      # Dependencies come from vcpkg.json (manifest mode); the CMake toolchain
+      # installs them during configure. An explicit `vcpkg install <pkg>` is
+      # rejected in manifest mode.
       - name: Configure
         run: cmake --preset ci
 
@@ -33,16 +33,21 @@ jobs:
       - name: Run tests
         run: ctest --preset ci
 
+      # Use the generator's PACKAGE target rather than bare `cpack` -- the
+      # runner has Chocolatey on PATH, whose own cpack.exe shadows CMake's.
       - name: Package
-        run: cpack --config build/CPackConfig.cmake -G ZIP -B dist
+        run: cmake --build build --config Release --target PACKAGE
 
       - name: Rename artifact
         shell: pwsh
         run: |
           $tag = "${{ github.event.inputs.tag }}"
           if (-not $tag) { $tag = "${{ github.ref_name }}" }
-          $zip = Get-ChildItem dist -Filter *.zip | Select-Object -First 1
+          New-Item -ItemType Directory -Force dist | Out-Null
+          $zip = Get-ChildItem build -Filter 'DS1Edit-*.zip' | Select-Object -First 1
+          if (-not $zip) { throw "CPack produced no ZIP in build/" }
           Move-Item $zip.FullName "dist/ds1edit-$tag-win32.zip"
+          Get-ChildItem dist
 
       - name: Upload to release
         uses: softprops/action-gh-release@v2

@@ -13,9 +13,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Allegro 5 via vcpkg
-        run: vcpkg install allegro5[core,image,font,primitives]:x86-windows
-
+      # Dependencies come from vcpkg.json (manifest mode); the CMake
+      # toolchain installs them during configure. An explicit
+      # `vcpkg install <pkg>` is rejected in manifest mode.
       - name: Configure
         run: cmake --preset ci
 
