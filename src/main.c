@@ -261,8 +261,10 @@ DT1_S *glb_dt1 = NULL;                  // dt1 datas
    translation unit saw [30]/[80]/[80] and wrote accordingly -- which glibc
    FORTIFY catches as a buffer overflow and aborts on. */
 char glb_tiles_path[30] = "Data\\Global\\Tiles\\";  /* MPQ virtual path: backslash everywhere */
-char glb_ds1edit_data_dir[80] = "Data" DS1_SEP_STR;
-char glb_ds1edit_tmp_dir[80] = "Tmp" DS1_SEP_STR;
+char glb_ds1edit_data_dir[80] = "assets" DS1_SEP_STR "editor" DS1_SEP_STR;
+/* Scratch root for undo buffers. Deliberately not under the asset tree:
+   assets/ is read-only content, this is churn. */
+char glb_ds1edit_tmp_dir[80] = "tmp" DS1_SEP_STR;
 
 // debug files
 char *glb_path_lvltypes_mem = "Debug\\Editor.lvltypes.memory.bin";
@@ -920,11 +922,11 @@ int main(int argc, char *argv[])
    printf("\n");
 
    // check data\tmp directory
-   sprintf(tmp, "%s%s" DS1_SEP_STR ".", glb_ds1edit_data_dir, glb_ds1edit_tmp_dir);
+   sprintf(tmp, "%s" DS1_SEP_STR ".", glb_ds1edit_tmp_dir);
    if (a5_file_exists(tmp) == 0)
    {
       // create tmp directory
-      sprintf(tmp, "%s%s", glb_ds1edit_data_dir, glb_ds1edit_tmp_dir);
+      sprintf(tmp, "%s", glb_ds1edit_tmp_dir);
       if (strlen(tmp))
          tmp[strlen(tmp) - 1] = 0;
       if (DS1_MKDIR(tmp) != 0)
@@ -933,8 +935,8 @@ int main(int argc, char *argv[])
          sprintf(
              tmp,
              "main(), error.\n"
-             "Can't create directory \"%s%s\".",
-             glb_ds1edit_data_dir, glb_ds1edit_tmp_dir);
+             "Can't create directory \"%s\".",
+             glb_ds1edit_tmp_dir);
          tmp[strlen(tmp) - 1] = 0;
          ds1edit_error(tmp);
       }

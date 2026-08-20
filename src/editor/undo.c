@@ -47,7 +47,7 @@ void undo_exit(void)
       }
    }
       
-   sprintf(tmp, "%s%sundo*.bin", glb_ds1edit_data_dir, glb_ds1edit_tmp_dir);
+   sprintf(tmp, "%sundo*.bin", glb_ds1edit_tmp_dir);
    printf("\nremoving tmp undo buffers (%s)...", tmp);
    fprintf(stderr, "      . removing tmp undo buffers (%s)...", tmp);
    fflush(stderr);
@@ -56,7 +56,7 @@ void undo_exit(void)
       /* Use Allegro 5 filesystem to find and remove undo files */
       char dir_path[150];
       ALLEGRO_FS_ENTRY *dir_entry;
-      sprintf(dir_path, "%s%s", glb_ds1edit_data_dir, glb_ds1edit_tmp_dir);
+      sprintf(dir_path, "%s", glb_ds1edit_tmp_dir);
       dir_entry = al_create_fs_entry(dir_path);
       if (dir_entry && al_open_directory(dir_entry))
       {
@@ -105,7 +105,7 @@ void undo_new_tile_buffer(int ds1_idx)
       // delete "old" undo buffer
       for (i = u->cur_buf_num + 1; i < u->buf_num; i++)
       {
-         sprintf(tmp, "%s%sundo%itile%li.bin", glb_ds1edit_data_dir,
+         sprintf(tmp, "%sundo%itile%li.bin",
             glb_ds1edit_tmp_dir, ds1_idx, i);
          remove(tmp);
       }
@@ -115,7 +115,7 @@ void undo_new_tile_buffer(int ds1_idx)
    }
    
    // writing the file
-   sprintf(u->name, "%s%sundo%itile%li.bin", glb_ds1edit_data_dir,
+   sprintf(u->name, "%sundo%itile%li.bin",
       glb_ds1edit_tmp_dir, ds1_idx, u->buf_num);
    u->fptr = fopen(u->name, "wb");
    if (u->fptr == NULL)
@@ -428,7 +428,7 @@ void undo_apply_tile_buffer(int ds1_idx)
    if ((u->buf_num <= 0) || (u->cur_buf_num < 0))
       return;
 
-   sprintf(undo_file, "%s%sundo%itile%li.bin", glb_ds1edit_data_dir,
+   sprintf(undo_file, "%sundo%itile%li.bin",
       glb_ds1edit_tmp_dir, ds1_idx, u->cur_buf_num);
    in = fopen(undo_file, "rb");
    if (in == NULL)

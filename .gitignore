@@ -79,7 +79,10 @@ data/version
 # cmap*.bin are colormaps the editor computes from those palettes.
 # assets/excel/*.txt are Blizzard's data tables; the editor reads them from the
 # MPQ chain and only falls back to these if a local copy happens to exist.
-data/pal*.bin
-data/cmap*.bin
-data/gamma.dat
+assets/editor/pal*.bin
+assets/editor/cmap*.bin
+assets/editor/gamma.dat
 assets/excel/*.txt
+
+# Undo scratch, created at runtime.
+/tmp/

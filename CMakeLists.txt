@@ -339,10 +339,13 @@ add_custom_target(clean-bin
 
 # Copy runtime data files to bin/ at build time
 add_custom_command(TARGET ds1edit POST_BUILD
+    # Only the subtrees the editor loads. Copying all of assets/ also mirrors
+    # assets/tiles/ -- the user's extracted game data -- into bin/ on every
+    # build, which is most of why bin/ grows to several GB.
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_SOURCE_DIR}/data" "${CMAKE_SOURCE_DIR}/bin/data"
+        "${CMAKE_SOURCE_DIR}/assets/ui" "${CMAKE_SOURCE_DIR}/bin/assets/ui"
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_SOURCE_DIR}/assets" "${CMAKE_SOURCE_DIR}/bin/assets"
+        "${CMAKE_SOURCE_DIR}/assets/editor" "${CMAKE_SOURCE_DIR}/bin/assets/editor"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_SOURCE_DIR}/Ds1edit.ini.sample" "${CMAKE_SOURCE_DIR}/bin/Ds1edit.ini.sample"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -351,7 +354,7 @@ add_custom_command(TARGET ds1edit POST_BUILD
         -DSRC=${CMAKE_SOURCE_DIR}/Ds1edit.ini.sample
         -DDST=${CMAKE_SOURCE_DIR}/bin/Ds1edit.ini
         -P ${CMAKE_SOURCE_DIR}/cmake/copy-if-missing.cmake
-    COMMENT "Copying data and assets to bin/"
+    COMMENT "Copying assets to bin/"
 )
 
 # Copy required DLLs to output directory (vcpkg puts them next to the libs)
@@ -392,25 +395,21 @@ endif()
 if(NOT WIN32)
     install(TARGETS ds1edit RUNTIME DESTINATION .)
 endif()
-# data/ minus the game-derived and generated caches. pal*.bin are verbatim
-# Blizzard palettes the editor extracts from the user's own MPQs at runtime,
-# cmap*.bin are computed from them, and gamma.dat is now generated in code --
-# none of the three belong in a redistributable package.
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/data/
-    DESTINATION data
-    PATTERN "pal*.bin"  EXCLUDE
-    PATTERN "cmap*.bin" EXCLUDE
-    PATTERN "gamma.dat" EXCLUDE
-    PATTERN "Tmp"       EXCLUDE
-)
-# Area configs plus the editor's own interface images (assets/ui/). The .ini
-# filter used to be the whole rule, back when the UI images lived in pcx/ and
-# had an install rule of their own.
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets/
-    DESTINATION assets
-    FILES_MATCHING
-        PATTERN "*.ini"
-        PATTERN "*.png"
+# assets/ also holds the user's extracted game tiles (assets/tiles/, hundreds
+# of MB, gitignored) and any local assets/excel/ copies. CPack does not read
+# .gitignore, so a FILES_MATCHING glob over the whole tree happily sweeps both
+# into the package -- a *.dt1 pattern here briefly produced a 234 MB ZIP full
+# of Blizzard tiles. Name the three subtrees that should ship instead.
+file(GLOB DS1EDIT_AREA_INIS "${CMAKE_SOURCE_DIR}/assets/*.ini")
+install(FILES ${DS1EDIT_AREA_INIS} DESTINATION assets)
+
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets/ui/ DESTINATION assets/ui)
+
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets/editor/
+    DESTINATION assets/editor
+    PATTERN "pal*.bin"  EXCLUDE   # extracted from the user's MPQs at runtime
+    PATTERN "cmap*.bin" EXCLUDE   # computed from those palettes
+    PATTERN "gamma.dat" EXCLUDE   # generated in code
 )
 install(FILES ${CMAKE_SOURCE_DIR}/Ds1edit.ini.sample DESTINATION .)
 install(FILES ${CMAKE_SOURCE_DIR}/LICENSE DESTINATION .)
