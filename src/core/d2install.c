@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "platform.h"
 #include "structs.h"
 #include "core/d2install.h"
 
@@ -34,7 +35,7 @@ static int dir_has_d2_mpq(const char *dir)
 
    for (i = 0; i < (int)(sizeof(probes) / sizeof(probes[0])); i++)
    {
-      snprintf(path, sizeof(path), "%s\\%s", dir, probes[i]);
+      snprintf(path, sizeof(path), "%s%s%s", dir, DS1_SEP_STR, probes[i]);
       fp = fopen(path, "rb");
       if (fp != NULL) { fclose(fp); return 1; }
    }

@@ -7,14 +7,29 @@
 #define _MPQTYPES_H_
 
 #include <stdio.h>
+#include <stdint.h>
 
-#define UInt8	unsigned char
-#define UInt16	unsigned short int
-#define SInt16	short int
-#define UInt32	unsigned long
-#define SInt32	long
+/* The MPQ format is 32-bit on disk everywhere, so say so explicitly rather
+ * than borrowing the host's `long`. The original code defined these as
+ * `unsigned long`, which is only 32-bit under the Windows data model; on LP64
+ * hosts (macOS, Linux) it is 64-bit, which doubles the width of every field in
+ * the header and both tables. The header scan uses sizeof(DWORD) against
+ * 4-byte constants, so a perfectly valid archive is rejected as "not a valid
+ * MPQ archive" before anything else gets a chance to go wrong. */
+typedef uint8_t  UInt8;
+typedef uint16_t UInt16;
+typedef int16_t  SInt16;
+typedef uint32_t UInt32;
+typedef int32_t  SInt32;
 
-#define DWORD unsigned long
+#if defined(_WIN32)
+/* Match the Windows SDK's own DWORD exactly. It is already 32-bit there, and
+ * using the identical type avoids a redefinition clash in any translation unit
+ * that also pulls in windows.h. */
+typedef unsigned long DWORD;
+#else
+typedef uint32_t DWORD;
+#endif
 
 #define MPQTYPES_MAX_PATH   256
 

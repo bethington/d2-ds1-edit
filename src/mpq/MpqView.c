@@ -22,6 +22,22 @@ extern UInt32 ExtWavUnp1 (UInt32,UInt32,UInt32,UInt32); // Call for metod: 0x01
 extern UInt32 ExtWavUnp2 (UInt32,UInt32,UInt32,UInt32); // Call for metod: 0x40
 extern UInt32 ExtWavUnp3 (UInt32,UInt32,UInt32,UInt32); // Call for metod: 0x80
 
+/* The WAVE decompressors carry addresses in UInt32 (see src/mpq/Wav_unp.c),
+ * so they can only run where a pointer is four bytes wide. Extracting a WAVE
+ * member on a 64-bit build would truncate the buffer addresses and corrupt the
+ * heap, so refuse instead. ds1edit itself never requests one -- it reads DS1,
+ * DT1, DC6, DCC, PAL and TXT. */
+#define MPQ_WAV_UNP_USABLE  (sizeof(void *) == sizeof(UInt32))
+
+static void mpq_wav_unsupported(const char *which)
+{
+   fprintf(stderr,
+           "MPQ: %s (WAVE) decompression needs 32-bit pointers; "
+           "skipping this file on a 64-bit build.\n", which);
+   fflush(stderr);
+}
+
+
 //  declaration of functions
 int    test_prepare_archive (void);
 DWORD  test_tell_entry      (char * filename);
@@ -655,17 +671,22 @@ int ExtractTo(FILE *fp_new,DWORD entry)
 					}
 				}
 				if(metod&0x01) {
-					lenght_read=ExtWavUnp1((UInt32)read_buffer,(UInt32)lenght_read,(UInt32)write_buffer,0x1000);
+					if (!MPQ_WAV_UNP_USABLE) { mpq_wav_unsupported("ExtWavUnp1"); return -1; }
+					lenght_read=ExtWavUnp1((UInt32)(uintptr_t)read_buffer,(UInt32)lenght_read,(UInt32)(uintptr_t)write_buffer,0x1000);
 					iteration--;
 					if(iteration) {
 						read_buffer=write_buffer;
 						write_buffer=glb_mpq->read_buffer_start;
 					}
 				}
-				if(metod&0x40)
-					lenght_read=ExtWavUnp2((UInt32)read_buffer,(UInt32)lenght_read,(UInt32)write_buffer,0x1000);
-				if(metod&0x80)
-					lenght_read=ExtWavUnp3((UInt32)read_buffer,(UInt32)lenght_read,(UInt32)write_buffer,0x1000);
+				if(metod&0x40) {
+					if (!MPQ_WAV_UNP_USABLE) { mpq_wav_unsupported("ExtWavUnp2"); return -1; }
+					lenght_read=ExtWavUnp2((UInt32)(uintptr_t)read_buffer,(UInt32)lenght_read,(UInt32)(uintptr_t)write_buffer,0x1000);
+				}
+				if(metod&0x80) {
+					if (!MPQ_WAV_UNP_USABLE) { mpq_wav_unsupported("ExtWavUnp3"); return -1; }
+					lenght_read=ExtWavUnp3((UInt32)(uintptr_t)read_buffer,(UInt32)lenght_read,(UInt32)(uintptr_t)write_buffer,0x1000);
+				}
 //
 				fwrite(write_buffer,1,lenght_read,fp_new);
 				read_buffer=glb_mpq->read_buffer_start;
@@ -858,17 +879,22 @@ int ExtractToMem(void * mp_new, DWORD entry)
 					}
 				}
 				if(metod&0x01) {
-					lenght_read=ExtWavUnp1((UInt32)read_buffer,(UInt32)lenght_read,(UInt32)write_buffer,0x1000);
+					if (!MPQ_WAV_UNP_USABLE) { mpq_wav_unsupported("ExtWavUnp1"); return -1; }
+					lenght_read=ExtWavUnp1((UInt32)(uintptr_t)read_buffer,(UInt32)lenght_read,(UInt32)(uintptr_t)write_buffer,0x1000);
 					iteration--;
 					if(iteration) {
 						read_buffer=write_buffer;
 						write_buffer=glb_mpq->read_buffer_start;
 					}
 				}
-				if(metod&0x40)
-					lenght_read=ExtWavUnp2((UInt32)read_buffer,(UInt32)lenght_read,(UInt32)write_buffer,0x1000);
-				if(metod&0x80)
-					lenght_read=ExtWavUnp3((UInt32)read_buffer,(UInt32)lenght_read,(UInt32)write_buffer,0x1000);
+				if(metod&0x40) {
+					if (!MPQ_WAV_UNP_USABLE) { mpq_wav_unsupported("ExtWavUnp2"); return -1; }
+					lenght_read=ExtWavUnp2((UInt32)(uintptr_t)read_buffer,(UInt32)lenght_read,(UInt32)(uintptr_t)write_buffer,0x1000);
+				}
+				if(metod&0x80) {
+					if (!MPQ_WAV_UNP_USABLE) { mpq_wav_unsupported("ExtWavUnp3"); return -1; }
+					lenght_read=ExtWavUnp3((UInt32)(uintptr_t)read_buffer,(UInt32)lenght_read,(UInt32)(uintptr_t)write_buffer,0x1000);
+				}
 //
 //				fwrite(write_buffer,1,lenght_read,fp_new);
 				memcpy(buff_ptr, write_buffer, lenght_read);

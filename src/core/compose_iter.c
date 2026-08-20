@@ -12,6 +12,7 @@
 #define COMPOSE_MKDIR(p) mkdir((p), 0755)
 #endif
 
+#include "platform.h"
 #include "core/compose_iter.h"
 #include "core/compose_naming.h"
 
@@ -172,8 +173,9 @@ int compose_iter_build_output_dir(char *out_buf, int out_cap,
                        (int) sizeof(token_folder));
    if (token_folder[0] == 0) return 0;
 
-   written = snprintf(out_buf, (size_t) out_cap, "%s\\%s\\%s",
-                      root, cat_folder, token_folder);
+   written = snprintf(out_buf, (size_t) out_cap, "%s%s%s%s%s",
+                      root, DS1_SEP_STR, cat_folder, DS1_SEP_STR,
+                      token_folder);
    if (written < 0 || written >= out_cap)
    {
       out_buf[0] = 0;
@@ -211,13 +213,14 @@ int compose_iter_build_output_path(char *out_buf, int out_cap,
 
    if (wclass_safe[0] != 0)
       written = snprintf(out_buf, (size_t) out_cap,
-                         "%s\\%s%s%s_dir%d.png",
-                         dir_buf, token, mode_safe, wclass_safe,
-                         direction);
+                         "%s%s%s%s%s_dir%d.png",
+                         dir_buf, DS1_SEP_STR, token, mode_safe,
+                         wclass_safe, direction);
    else
       written = snprintf(out_buf, (size_t) out_cap,
-                         "%s\\%s%s_dir%d.png",
-                         dir_buf, token, mode_safe, direction);
+                         "%s%s%s%s_dir%d.png",
+                         dir_buf, DS1_SEP_STR, token, mode_safe,
+                         direction);
 
    if (written < 0 || written >= out_cap)
    {

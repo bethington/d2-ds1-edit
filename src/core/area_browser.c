@@ -707,6 +707,7 @@ int area_browser_open_by_file(const char * ds1_path)
             {
                FILE * test;
                sprintf(full_path, "%s\\Global\\Tiles\\%s", glb_config.mod_dir[0], e->ds1_path);
+               ds1_path_normalize(full_path);
                test = fopen(full_path, "rb");
                if (test != NULL)
                {

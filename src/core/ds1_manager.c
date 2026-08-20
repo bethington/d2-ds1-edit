@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "platform.h"
 #include "structs.h"
 #include "error.h"
 #include "misc.h"
@@ -39,6 +40,7 @@ static char * lvlprest_read_raw(long * out_len)
    if (glb_config.mod_dir[0] != NULL)
    {
       sprintf(path, "%s\\Global\\Excel\\LvlPrest.txt", glb_config.mod_dir[0]);
+      ds1_path_normalize(path);
       in = fopen(path, "rb");
       if (in != NULL)
       {
@@ -93,11 +95,14 @@ static int lvlprest_write_raw(const char * buf, long len)
 
    /* Ensure directory exists */
    sprintf(dir, "%s\\Global", glb_config.mod_dir[0]);
+   ds1_path_normalize(dir);
    MKDIR(dir);
    sprintf(dir, "%s\\Global\\Excel", glb_config.mod_dir[0]);
+   ds1_path_normalize(dir);
    MKDIR(dir);
 
    sprintf(path, "%s\\Global\\Excel\\LvlPrest.txt", glb_config.mod_dir[0]);
+   ds1_path_normalize(path);
    out = fopen(path, "wb");
    if (out == NULL)
    {
@@ -418,6 +423,7 @@ int ds1_manager_delete(int group_idx, int entry_idx)
       sprintf(src_path, "%s\\Global\\Tiles\\%s", glb_config.mod_dir[0], e->ds1_path);
    else
       sprintf(src_path, "assets/tiles/%s", e->ds1_path);
+   ds1_path_normalize(src_path);
 
    if (remove(src_path) == 0)
       printf("ds1_manager_delete: removed %s\n", src_path);
@@ -554,6 +560,7 @@ int ds1_manager_backup(int group_idx, int entry_idx)
       sprintf(src_path, "%s\\Global\\Tiles\\%s", glb_config.mod_dir[0], e->ds1_path);
    else
       sprintf(src_path, "assets/tiles/%s", e->ds1_path);
+   ds1_path_normalize(src_path);
 
    /* Copy DS1 to backup */
    sprintf(dst_ds1, "%s/%s", backup_subdir, fname);
@@ -702,6 +709,7 @@ int ds1_manager_create_empty(int group_idx, int entry_idx, int width, int height
       sprintf(rel_path, "%.*s/%s", dir_len, first_path, filename);
       sprintf(full_path, "%s\\Global\\Tiles\\%.*s\\%s",
               glb_config.mod_dir[0], dir_len, first_path, filename);
+      ds1_path_normalize(full_path);
    }
 
    /* Ensure directory exists */
@@ -797,6 +805,7 @@ int ds1_manager_clone(int src_ds1_idx, int group_idx, int entry_idx)
       sprintf(rel_path, "%.*s/%s", dir_len, first_path, filename);
       sprintf(dst_path, "%s\\Global\\Tiles\\%.*s\\%s",
               glb_config.mod_dir[0], dir_len, first_path, filename);
+      ds1_path_normalize(dst_path);
    }
 
    /* Copy the file */
@@ -870,6 +879,7 @@ static char * txt_read_raw_by_type(RQ_ENUM txt_type, long * out_len)
          sprintf(path, "%s\\%s", glb_config.mod_dir[0], fname);
       else
          sprintf(path, "%s\\Global\\Excel\\%s", glb_config.mod_dir[0], fname);
+      ds1_path_normalize(path);
       in = fopen(path, "rb");
       if (in != NULL)
       {
@@ -914,14 +924,17 @@ static int txt_write_raw_by_type(RQ_ENUM txt_type, const char * buf, long len)
    if (txt_type >= RQ_MAX) return -1;
 
    sprintf(dir, "%s\\Global", glb_config.mod_dir[0]);
+   ds1_path_normalize(dir);
    MKDIR(dir);
    sprintf(dir, "%s\\Global\\Excel", glb_config.mod_dir[0]);
+   ds1_path_normalize(dir);
    MKDIR(dir);
 
    if (txt_type == RQ_OBJ)
       sprintf(path, "%s\\%s", glb_config.mod_dir[0], filenames[txt_type]);
    else
       sprintf(path, "%s\\Global\\Excel\\%s", glb_config.mod_dir[0], filenames[txt_type]);
+   ds1_path_normalize(path);
 
    out = fopen(path, "wb");
    if (out == NULL) return -1;
@@ -1165,6 +1178,7 @@ int ds1_manager_restore(int group_idx, int entry_idx)
       sprintf(dst_path, "%s\\Global\\Tiles\\%s", glb_config.mod_dir[0], original_path);
    else
       sprintf(dst_path, "assets/tiles/%s", original_path);
+   ds1_path_normalize(dst_path);
 
    /* Copy DS1 back to original location */
    {

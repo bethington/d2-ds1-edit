@@ -868,7 +868,22 @@ void ds1edit_load_palettes(void)
 
 // ==========================================================================
 // as expected, the start of the prog
+//
+// On macOS the real body runs under al_run_main() so that Allegro owns the
+// application thread; see the note in docs/MACOS_HANDOFF.md. Everywhere else
+// this is an ordinary main().
+#ifdef __APPLE__
+static int ds1edit_main(int argc, char *argv[]);
+
 int main(int argc, char *argv[])
+{
+   return al_run_main(argc, argv, ds1edit_main);
+}
+
+static int ds1edit_main(int argc, char *argv[])
+#else
+int main(int argc, char *argv[])
+#endif
 {
    int i, mpq_num = 0, mod_num = 0, ds1_idx = 0;
    char *ininame = "ds1edit.ini";

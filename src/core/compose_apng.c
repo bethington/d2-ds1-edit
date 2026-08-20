@@ -10,6 +10,7 @@
 
 #include <allegro5/allegro.h>
 
+#include "platform.h"
 #include "structs.h"
 #include "core/animdata.h"
 #include "core/apng_writer.h"
@@ -190,7 +191,8 @@ static int try_remote_upscale(const COMPOSE_RENDER_RESULT_S *src,
    for (i = 0; i < src->frame_count; i++)
    {
       char path[768];
-      snprintf(path, sizeof(path), "%s\\frame_%03d.png", in_dir, i);
+      snprintf(path, sizeof(path), "%s%sframe_%03d.png",
+               in_dir, DS1_SEP_STR, i);
       if (src->frames[i] == NULL) goto cleanup;
       if (!save_rgba_as_png(src->frames[i], src->width, src->height, path))
          goto cleanup;
@@ -216,7 +218,8 @@ static int try_remote_upscale(const COMPOSE_RENDER_RESULT_S *src,
    {
       char path[768];
       int w, h;
-      snprintf(path, sizeof(path), "%s\\frame_%03d.png", out_dir, i);
+      snprintf(path, sizeof(path), "%s%sframe_%03d.png",
+               out_dir, DS1_SEP_STR, i);
       out->frames[i] = load_png_as_rgba(path, &w, &h);
       if (out->frames[i] == NULL) goto cleanup;
       if (out->width == 0)  { out->width  = w; out->height = h; }
@@ -267,7 +270,8 @@ static int try_scale2x_upscale(const COMPOSE_RENDER_RESULT_S *src,
    for (i = 0; i < src->frame_count; i++)
    {
       char path[768];
-      snprintf(path, sizeof(path), "%s\\frame_%03d.png", in_dir, i);
+      snprintf(path, sizeof(path), "%s%sframe_%03d.png",
+               in_dir, DS1_SEP_STR, i);
       if (src->frames[i] == NULL) goto cleanup;
       if (!save_rgba_as_png(src->frames[i], src->width, src->height, path))
          goto cleanup;
@@ -285,7 +289,8 @@ static int try_scale2x_upscale(const COMPOSE_RENDER_RESULT_S *src,
    {
       char path[768];
       int w, h;
-      snprintf(path, sizeof(path), "%s\\frame_%03d.png", out_dir, i);
+      snprintf(path, sizeof(path), "%s%sframe_%03d.png",
+               out_dir, DS1_SEP_STR, i);
       out->frames[i] = load_png_as_rgba(path, &w, &h);
       if (out->frames[i] == NULL) goto cleanup;
       if (out->width == 0)  { out->width  = w; out->height = h; }
