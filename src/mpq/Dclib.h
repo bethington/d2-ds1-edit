@@ -32,7 +32,8 @@ extern  UInt32 explode (read_data_proc  read_data,
                         write_data_proc write_data,
                         void            * param);
                         
-extern  UInt32 crc32   (UInt8  * buffer,
-                        UInt32 size,
-                        UInt32 old_crc);
+/* The PKWARE DCL reference headers declared a crc32 here, but this tree
+   never defined or called it -- and its signature collides with zlib's,
+   which MpqView.c needs for the deflate path. Removed rather than
+   renamed: there is nothing to rename it for. */
 
