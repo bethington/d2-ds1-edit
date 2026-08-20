@@ -794,6 +794,13 @@ static int area_browser_open_entry_into_slot(int group_idx, int entry_idx, int d
    fflush(stdout);
 
    misc_open_1_ds1(ds1_idx, ds1_path, e->lvltype_id, e->lvlprest_def, 0, 0);
+
+   /* Unlisted maps have no LvlTypes row, so read_lvltypes_txt reported an
+    * unknown Act. The group's Act was derived from the folder; stamp it on so
+    * palette_resolve_act picks the right palette instead of falling to 1. */
+   if (e->lvltype_id < 0 && g->act >= 1 && g->act <= 5)
+      glb_ds1[ds1_idx].txt_act = g->act;
+
    return 0;
 }
 
@@ -1153,6 +1160,122 @@ static int unlisted_already_known(AREA_BROWSER_S * ab, const char * rel)
    return 0;
 }
 
+/* Length of the directory part of a tiles-relative path, separator excluded. */
+static size_t unlisted_dir_len(const char * rel)
+{
+   size_t n = 0, last = 0;
+   const char * p;
+
+   for (p = rel; *p != 0; p++, n++)
+   {
+      if (*p == '/' || *p == '\\')
+         last = n;
+   }
+   return last;
+}
+
+/* Do two tiles-relative paths share a directory? */
+static int unlisted_same_dir(const char * a, const char * b)
+{
+   size_t la = unlisted_dir_len(a);
+   size_t lb = unlisted_dir_len(b);
+   size_t i;
+
+   if (la == 0 || la != lb) return 0;
+
+   for (i = 0; i < la; i++)
+   {
+      char ca = a[i], cb = b[i];
+      if (ca == '/') ca = '\\';
+      if (cb == '/') cb = '\\';
+      if (ca >= 'A' && ca <= 'Z') ca = (char) (ca - 'A' + 'a');
+      if (cb >= 'A' && cb <= 'Z') cb = (char) (cb - 'A' + 'a');
+      if (ca != cb) return 0;
+   }
+   return 1;
+}
+
+/* LvlType of whichever real group already owns this map's folder.
+ *
+ * A DS1 carries tile indices, not DT1 names, so without a LvlTypes row it has
+ * no tileset and renders empty. Neighbouring listed maps are the best guide we
+ * have: same folder, same tileset. *act_out receives that group's Act.
+ * Returns -1 when nothing matches. */
+static int unlisted_lvltype_for_dir(AREA_BROWSER_S * ab, const char * rel,
+                                    int * act_out)
+{
+   int g, e;
+
+   for (g = 0; g < ab->group_count; g++)
+   {
+      AREA_GROUP_S * grp = &ab->groups[g];
+
+      if (grp->is_backup) continue;
+      if (grp->lvltype_id < 0) continue;      /* skip other Unlisted groups */
+
+      for (e = 0; e < grp->entry_count; e++)
+      {
+         if (unlisted_same_dir(grp->entries[e].ds1_path, rel))
+         {
+            if (act_out != NULL) *act_out = grp->act;
+            return grp->lvltype_id;
+         }
+      }
+   }
+   return -1;
+}
+
+/* Leaf directory of a tiles-relative path ("ACT3\\Kurast\\x.ds1" -> "Kurast"). */
+static void unlisted_leaf_dir(const char * rel, char * out, size_t cap)
+{
+   const char * last = NULL;
+   const char * prev = NULL;
+   const char * p;
+   size_t n = 0;
+
+   if (out == NULL || cap == 0) return;
+   out[0] = 0;
+
+   for (p = rel; *p != 0; p++)
+   {
+      if (*p == '/' || *p == '\\') { prev = last; last = p; }
+   }
+   if (last == NULL) return;
+
+   p = (prev != NULL) ? prev + 1 : rel;
+   while (p < last && n + 1 < cap)
+      out[n++] = *p++;
+   out[n] = 0;
+}
+
+/* A group whose name matches this map's folder.
+ *
+ * Covers the case the neighbour scan cannot: a LvlTypes row that exists but
+ * that LvlPrest never references, so the group is present with zero entries
+ * and the whole folder looks unlisted. */
+static int unlisted_lvltype_by_name(AREA_BROWSER_S * ab, const char * rel,
+                                    int * act_out)
+{
+   char leaf[80];
+   int g;
+
+   unlisted_leaf_dir(rel, leaf, sizeof(leaf));
+   if (leaf[0] == 0) return -1;
+
+   for (g = 0; g < ab->group_count; g++)
+   {
+      AREA_GROUP_S * grp = &ab->groups[g];
+
+      if (grp->is_backup) continue;
+      if (grp->lvltype_id < 0) continue;
+      if (stricmp(grp->name, leaf) != 0) continue;
+
+      if (act_out != NULL) *act_out = grp->act;
+      return grp->lvltype_id;
+   }
+   return -1;
+}
+
 /* Find (or create) the per-Act "Unlisted" group. Uses a negative lvltype id
  * so it cannot collide with a real LvlTypes row, and sits apart from the
  * backup groups' -1-act ids. */
@@ -1230,13 +1353,27 @@ static int unlisted_scan_slot(AREA_BROWSER_S * ab, int slot)
          if (rel[0] == '\0') continue;
          if (unlisted_already_known(ab, rel)) continue;
 
-         act = unlisted_act_from_path(rel);
          {
-            AREA_GROUP_S * g = unlisted_group_for_act(ab, act);
+            int nbr_act = 0;
+            int lvltype = unlisted_lvltype_for_dir(ab, rel, &nbr_act);
+            AREA_GROUP_S * g;
+
+            /* No listed neighbour: try a group whose name is this folder. */
+            if (lvltype < 0)
+               lvltype = unlisted_lvltype_by_name(ab, rel, &nbr_act);
+
+            /* Prefer the Act of the group that owns this folder; fall back to
+             * the one implied by the folder name itself. */
+            act = (nbr_act >= 1 && nbr_act <= 5)
+                  ? nbr_act
+                  : unlisted_act_from_path(rel);
+
+            g = unlisted_group_for_act(ab, act);
             if (g == NULL) continue;
-            /* lvltype -1 means "no tileset row"; misc_open_1_ds1 then falls
-               back to the DT1s the DS1 itself references. */
-            area_group_add_entry(g, -1, -1, rel);
+
+            /* Def stays -1: there is no LvlPrest row, so no tileset mask.
+             * lvltype is what supplies the DT1 set. */
+            area_group_add_entry(g, lvltype, -1, rel);
             added++;
          }
       }

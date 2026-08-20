@@ -731,6 +731,17 @@ int read_lvltypes_txt(int ds1_idx, int type)
          return act;
       }
    }
+
+   /* type == -1 means the caller had no LvlTypes row to point at -- an
+    * Unlisted map. The row only supplies the palette Act, and the caller
+    * knows that from the folder, so report "unknown" rather than dying. */
+   if (type == -1)
+   {
+      printf("no LvlTypes row for this map; Act comes from the caller\n");
+      fflush(stdout);
+      return 0;
+   }
+
    sprintf(tmp, "couldn't find the ID %i in LvlTypes.txt\n", type);
    ds1edit_error(tmp);
    return -1;
@@ -865,6 +876,20 @@ int read_lvlprest_txt(int ds1_idx, int def)
                     glb_ds1[ds1_idx].filename,
                     found_nb);
             ds1edit_error(tmp);
+         }
+         else if (def == -1)
+         {
+            /* Caller had no Def to give -- an Unlisted map, i.e. one the
+             * tables never named. Not an error: without a LvlPrest row there
+             * is simply no tileset mask, so unmask every slot and let the
+             * DS1's own DT1 references decide what loads. */
+            int b;
+            printf("no LvlPrest row for \"%s\"; using the DS1's own DT1 list\n",
+                   glb_ds1[ds1_idx].filename);
+            fflush(stdout);
+            for (b = 0; b < 33; b++)
+               glb_ds1[ds1_idx].dt1_mask[b] = TRUE;
+            return 0;
          }
          else
          {
