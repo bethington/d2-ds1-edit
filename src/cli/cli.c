@@ -25,6 +25,7 @@
 #include "core/d2install.h"
 #include "core/export_presets.h"
 #include "core/monstats2.h"
+#include "core/upscale.h"
 
 extern void ds1edit_load_palettes(void);
 extern void misc_read_gamma(void);

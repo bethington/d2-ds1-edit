@@ -31,7 +31,7 @@ October 30 2011 :
 
 #include "structs.h"
 #include "error.h"
-#include "mpq/mpqview.h"
+#include "mpq/MpqView.h"
 #include "core/dt1.h"
 #include "core/ds1.h"
 #include "core/cof.h"
@@ -52,6 +52,7 @@ October 30 2011 :
 #include "ui/interface.h"
 #include "render/preview.h"
 #include "cli/cli.h"
+#include "platform.h"
 
 WRKSPC_DATAS_S glb_wrkspc_datas[WRKSPC_MAX] = // workspace datas saved in .ds1
     {
@@ -251,7 +252,7 @@ GLB_MPQ_S glb_mpq_struct[MAX_MPQ_FILE]; // global data of 1 mpq
 DS1_S *glb_ds1 = NULL;                  // ds1 datas
 DT1_S *glb_dt1 = NULL;                  // dt1 datas
 char glb_tiles_path[] = "Data\\Global\\Tiles\\";
-char glb_ds1edit_data_dir[] = "Data\\";
+char glb_ds1edit_data_dir[] = "Data" DS1_SEP_STR;
 char glb_ds1edit_tmp_dir[] = "Tmp\\";
 
 // debug files
@@ -899,14 +900,14 @@ int main(int argc, char *argv[])
    printf("\n");
 
    // check data\tmp directory
-   sprintf(tmp, "%s%s\\.", glb_ds1edit_data_dir, glb_ds1edit_tmp_dir);
+   sprintf(tmp, "%s%s" DS1_SEP_STR ".", glb_ds1edit_data_dir, glb_ds1edit_tmp_dir);
    if (a5_file_exists(tmp) == 0)
    {
       // create tmp directory
       sprintf(tmp, "%s%s", glb_ds1edit_data_dir, glb_ds1edit_tmp_dir);
       if (strlen(tmp))
          tmp[strlen(tmp) - 1] = 0;
-      if (mkdir(tmp) != 0)
+      if (DS1_MKDIR(tmp) != 0)
       {
          // re-use the tmp var for a different string
          sprintf(
@@ -982,7 +983,7 @@ int main(int argc, char *argv[])
             int len = strlen(glb_ds1edit_data_dir);
             if (len > 0 && glb_ds1edit_data_dir[len - 1] != '\\' && glb_ds1edit_data_dir[len - 1] != '/')
             {
-               glb_ds1edit_data_dir[len] = '\\';
+               glb_ds1edit_data_dir[len] = DS1_SEP;
                glb_ds1edit_data_dir[len + 1] = '\0';
             }
          }
@@ -1104,7 +1105,7 @@ int main(int argc, char *argv[])
 
    // create debug directory if necessary
    if (glb_ds1edit.cmd_line.debug_mode == TRUE)
-      mkdir("Debug");
+      DS1_MKDIR("Debug");
 
    // objects.txt
    fprintf(stderr, "reading objects.txt...");

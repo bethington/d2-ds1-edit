@@ -6,7 +6,7 @@
 #include "core/dt1.h"
 #include "core/palette.h"
 #include "core/mpq_index.h"
-#include "mpq/mpqview.h"
+#include "mpq/MpqView.h"
 #include "core/area_browser.h"
 #include "ui/props_panel.h"
 #include "misc.h"

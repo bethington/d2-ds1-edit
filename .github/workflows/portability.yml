@@ -22,7 +22,7 @@ jobs:
       - name: Configure
         run: cmake --preset linux
       - name: Build
-        run: cmake --build --preset linux 2>&1 | tail -200
+        run: cmake --build --preset linux
 
   macos:
     runs-on: macos-latest
@@ -33,4 +33,4 @@ jobs:
       - name: Configure
         run: cmake --preset macos
       - name: Build
-        run: cmake --build --preset macos 2>&1 | tail -200
+        run: cmake --build --preset macos

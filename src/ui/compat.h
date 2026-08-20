@@ -389,9 +389,25 @@ extern ALLEGRO_CONFIG *a5_config;
 
 
 
-/* stricmp is MSVC-specific, may be needed on other platforms */
-#ifndef stricmp
-#define stricmp _stricmp
+/* Case-insensitive compare: MSVC spells it _stricmp, POSIX strcasecmp.
+   Map whichever names the code uses onto the one the platform provides. */
+#ifdef WIN32
+   #ifndef stricmp
+   #define stricmp  _stricmp
+   #endif
+   #ifndef strcasecmp
+   #define strcasecmp  _stricmp
+   #endif
+   #ifndef strncasecmp
+   #define strncasecmp _strnicmp
+   #endif
+#else
+   #include <strings.h>
+   #ifndef stricmp
+   #define stricmp   strcasecmp
+   #endif
+   #define _stricmp  strcasecmp
+   #define _strnicmp strncasecmp
 #endif
 
 /* file_exists - wraps al_filename_exists */

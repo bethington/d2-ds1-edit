@@ -70,6 +70,7 @@ set(SOURCES
     src/config.c
     src/error.c
     src/misc.c
+    src/platform.c
     # cli/
     src/cli/cli.c
     # core/
