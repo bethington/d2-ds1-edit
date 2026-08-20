@@ -778,25 +778,13 @@ static int area_browser_open_entry_into_slot(int group_idx, int entry_idx, int d
       return 0;
    }
 
-   {
-      int found_mod = 0;
-      if (glb_config.mod_dir[0] != NULL)
-      {
-         char mod_path[512];
-         FILE * test;
-         sprintf(mod_path, "%s\\Global\\Tiles\\%s", glb_config.mod_dir[0], e->ds1_path);
-         test = fopen(mod_path, "rb");
-         if (test != NULL)
-         {
-            fclose(test);
-            strncpy(ds1_path, mod_path, sizeof(ds1_path) - 1);
-            ds1_path[sizeof(ds1_path) - 1] = '\0';
-            found_mod = 1;
-         }
-      }
-      if (!found_mod)
-         sprintf(ds1_path, "assets/tiles/%s", e->ds1_path);
-   }
+   /* Hand the tiles-relative path straight down: ds1_read resolves it
+    * through the mod_dir overlay, then the MPQ chain, then local disk.
+    * This used to probe mod_dir by hand and otherwise hardcode
+    * "assets/tiles/<entry>", which meant the browser only worked for
+    * someone who had already extracted the tileset. */
+   strncpy(ds1_path, e->ds1_path, sizeof(ds1_path) - 1);
+   ds1_path[sizeof(ds1_path) - 1] = '\0';
 
    printf("  [%d] lvltype=%d def=%d %s\n", entry_idx, e->lvltype_id, e->lvlprest_def, ds1_path);
    fflush(stdout);

@@ -323,34 +323,6 @@ else
 //    init some var, to prepare its display (zoom, center, layer mask...)
 // if new_width OR new_height is <= 0, then no change to the size of the ds1, else
 // it'll crop or add necessary Tiles 
-/* True when `name` is relative to the tiles root and still needs the
- * Data\Global\Tiles\ prefix to become an MPQ virtual path.
- *
- * False for names that already contain the tiles root, and for anything that
- * looks like a local path (a drive letter, or a leading separator) -- those
- * are handed to the archive as-is and will simply miss, falling through to
- * the disk branch. */
-static int ds1_name_is_tiles_relative(const char *name)
-{
-   const char *p;
-
-   if (name == NULL || name[0] == 0)
-      return 0;
-
-   if (name[1] == ':')                    /* C:\... */
-      return 0;
-   if (name[0] == '/' || name[0] == '\\') /* rooted */
-      return 0;
-
-   for (p = name; *p != 0; p++)
-   {
-      if ((*p == 'g' || *p == 'G')
-          && strnicmp(p, "global", 6) == 0)
-         return 0;                        /* already names the tiles root */
-   }
-   return 1;
-}
-
 int ds1_read(const char * ds1name, int ds1_idx, int new_width, int new_height)
 {
    FILE        * in;
@@ -464,15 +436,21 @@ int ds1_read(const char * ds1name, int ds1_idx, int new_width, int new_height)
       char *mpq_buff = NULL;
       int   entry;
 
-      // An MPQ virtual path is rooted at Data\Global\Tiles\. Browser entries
-      // arrive relative to that ("ACT1\TOWN\townE1.ds1"); anything that
-      // already names the tiles root is passed through untouched.
-      if (ds1_name_is_tiles_relative(ds1name))
-         snprintf(mpq_name, sizeof(mpq_name), "%s%s", glb_tiles_path, ds1name);
-      else
-         snprintf(mpq_name, sizeof(mpq_name), "%s", ds1name);
-
+      // Try the name exactly as given -- that covers full virtual paths and
+      // anything already rooted at the tiles directory. If it misses, try it
+      // again with the Data\Global\Tiles\ prefix, which is the form browser
+      // entries arrive in ("ACT1\TOWN\townE1.ds1"). Trying both beats
+      // guessing which one a given caller meant.
+      snprintf(mpq_name, sizeof(mpq_name), "%s", ds1name);
       entry = misc_load_mpq_file(mpq_name, &mpq_buff, &mpq_len, TRUE);
+
+      if (entry == -1 || mpq_buff == NULL)
+      {
+         if (mpq_buff != NULL) { free(mpq_buff); mpq_buff = NULL; }
+         mpq_len = 0;
+         snprintf(mpq_name, sizeof(mpq_name), "%s%s", glb_tiles_path, ds1name);
+         entry = misc_load_mpq_file(mpq_name, &mpq_buff, &mpq_len, TRUE);
+      }
       if (entry != -1 && mpq_buff != NULL && mpq_len > 0)
       {
          ds1_buff = (void *) mpq_buff;
