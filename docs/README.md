@@ -10,19 +10,19 @@ DS1Edit is a level editor for Diablo II, allowing creation and modification of g
 - **[Project Structure](../PROJECT_STRUCTURE.md)** - Directory layout and architecture
 
 ### User Guides (by Paul Siramy)
-- **[Getting Started](01-Getting-Started/)** - First steps with DS1Edit
-- **[Basic Tutorials](02-Tutorials/)** - Step-by-step map editing guide
-- **[Advanced Guides](03-Advanced-Guides/)** - Adding monsters, objects, and more
+- **[Getting Started](getting-started/)** - First steps with DS1Edit
+- **[Basic Tutorials](tutorials/)** - Step-by-step map editing guide
+- **[Advanced Guides](guides/)** - Adding monsters, objects, and more
 - **[Examples](04-Examples/)** - Sample projects and maps
 
 ### Technical Reference
-- **[API Reference](API_REFERENCE.md)** - Command-line and configuration reference
-- **[DS1/Maze Format](d2_maze_ds1_docs.md)** - File format specifications and maze generation
-- **[Troubleshooting](TROUBLESHOOTING.md)** - Common issues and solutions
+- **[API Reference](reference/API_REFERENCE.md)** - Command-line and configuration reference
+- **[DS1/Maze Format](reference/d2_maze_ds1_docs.md)** - File format specifications and maze generation
+- **[Troubleshooting](reference/TROUBLESHOOTING.md)** - Common issues and solutions
 - **[COF Pipeline](guides/PD2_S12_COF_PIPELINE.md)** - COF animation pipeline details
 
 ### Project Reports
-- Reports in [project_reports/](project_reports/) document historical analysis
+- Reports in [internal/](internal/) document historical analysis
   and migration work (Allegro integration, data analysis, etc.)
 
 ## Quick Reference
