@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -82,8 +83,10 @@ static int load_dc6_layer_for_direction(const char *dc6_path,
 {
    char *buf = NULL;
    long buf_len = 0;
-   long *lp;
-   long dc6_ver, dc6_unk1, dc6_unk2, dc6_dir, dc6_fpd, *dc6_fptr;
+   /* 32-bit on-disk fields: `long` is 64-bit under LP64. */
+   const int32_t *lp;
+   long dc6_ver, dc6_unk1, dc6_unk2, dc6_dir, dc6_fpd;
+   const int32_t *dc6_fptr;
    int box_x1, box_y1, box_x2, box_y2;
    int box_w, box_h;
    int f;
@@ -95,7 +98,7 @@ static int load_dc6_layer_for_direction(const char *dc6_path,
       return 0;
    if (buf == NULL || buf_len < 24) { if (buf) free(buf); return 0; }
 
-   lp = (long *) buf;
+   lp = (const int32_t *) buf;
    dc6_ver  = lp[0];
    dc6_unk1 = lp[1];
    dc6_unk2 = lp[2];
@@ -118,10 +121,10 @@ static int load_dc6_layer_for_direction(const char *dc6_path,
    for (f = 0; f < dc6_fpd; f++)
    {
       long off = dc6_fptr[direction * dc6_fpd + f];
-      long *fh;
+      const int32_t *fh;
       long fw, fh_, fox, foy, fx1, fy1, fx2, fy2;
       if (off < 0 || off >= buf_len - 24) { free(buf); return 0; }
-      fh = (long *) (buf + off);
+      fh = (const int32_t *) (buf + off);
       fw  = fh[1]; fh_ = fh[2]; fox = fh[3]; foy = fh[4];
       fx1 = fox; fx2 = fx1 + fw - 1;
       fy2 = foy; fy1 = fy2 - fh_ + 1;
@@ -141,7 +144,7 @@ static int load_dc6_layer_for_direction(const char *dc6_path,
    for (f = 0; f < dc6_fpd; f++)
    {
       long off = dc6_fptr[direction * dc6_fpd + f];
-      long *fh = (long *) (buf + off);
+      long *fh = (const int32_t *) (buf + off);
       long fw  = fh[1], fh_ = fh[2], fox = fh[3], foy = fh[4];
       long flen = fh[7];  /* RLE-compressed length */
       unsigned char *fdata = (unsigned char *) (buf + off + 8 * sizeof(long));

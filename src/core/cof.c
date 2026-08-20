@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include "structs.h"
 #include "core/dcc.h"
@@ -196,7 +197,9 @@ COF_S * anim_load_cof(char * base, char * tok, char * mod, char * clas,
    COF_S * cof;
    char  * buff, * bptr, * sptr, * pal_name, * pal_buff;
    char  animdata_name[80];
-   long  * lptr, pal_idx=0, pal_len, id, line, animdata_fpd, animdata_speed, len;
+   long  pal_idx=0, pal_len, id, line, animdata_fpd, animdata_speed, len;
+   /* 32-bit on-disk fields: `long` is 64-bit under LP64. */
+   const int32_t * lptr;
    int   i, size, entry, idx, done, mode;
    char  comp_str[COMPOSIT_NB][3] = {
             {"HD"}, {"TR"}, {"LG"}, {"RA"}, {"LA"}, {"RH"}, {"LH"}, {"SH"},
@@ -216,7 +219,7 @@ COF_S * anim_load_cof(char * base, char * tok, char * mod, char * clas,
                  txt->col[misc_get_txt_column_num(RQ_OBJ, "Colormap")].offset;
       sptr     = txt->data + (obj_line * txt->line_size) +
                  txt->col[misc_get_txt_column_num(RQ_OBJ, "Index")].offset;
-      pal_idx = * ((long *) sptr);
+      pal_idx = * ((const int32_t *) sptr);
       if (pal_name[0] && pal_idx)
       {
          if (progress)
@@ -397,7 +400,7 @@ COF_S * anim_load_cof(char * base, char * tok, char * mod, char * clas,
    sptr = txt->data +
           (obj_line * txt->line_size) +
           txt->col[glb_ds1edit.col_obj_id].offset;
-   lptr = (long *) sptr;
+   lptr = (const int32_t *) sptr;
    id   = * lptr;
    printf("object %s ID = %li\n", name, id);
 
@@ -441,7 +444,7 @@ COF_S * anim_load_cof(char * base, char * tok, char * mod, char * clas,
          sptr = txt2->data +
                 (i * txt2->line_size) +
                 txt2->col[glb_ds1edit.col_objects_id].offset;
-         lptr = (long *) sptr;
+         lptr = (const int32_t *) sptr;
          if ( (* lptr) == id)
          {
             done = TRUE;
@@ -467,7 +470,7 @@ COF_S * anim_load_cof(char * base, char * tok, char * mod, char * clas,
          txt2->data +
          (line * txt2->line_size) +
          txt2->col[glb_ds1edit.col_frame_delta[mode]].offset;
-      lptr = (long *) sptr;
+      lptr = (const int32_t *) sptr;
       cof->spd_mul = (* lptr) == 0 ? 256 : (* lptr);
    
       // speed divisor
@@ -478,14 +481,14 @@ COF_S * anim_load_cof(char * base, char * tok, char * mod, char * clas,
       {
          sptr = txt2->data + (line * txt2->line_size) +
                 txt2->col[misc_get_txt_column_num(RQ_OBJECTS, "Xoffset")].offset;
-         lptr = (long *) sptr;
+         lptr = (const int32_t *) sptr;
          cof->xoffset = * lptr;
       }
       if (txt2->col[misc_get_txt_column_num(RQ_OBJECTS, "Yoffset")].size)
       {
          sptr = txt2->data + (line * txt2->line_size) +
                 txt2->col[misc_get_txt_column_num(RQ_OBJECTS, "Yoffset")].offset;
-         lptr = (long *) sptr;
+         lptr = (const int32_t *) sptr;
          cof->yoffset = * lptr;
       }
 
@@ -496,7 +499,7 @@ COF_S * anim_load_cof(char * base, char * tok, char * mod, char * clas,
             txt2->data +
             (line * txt2->line_size) +
             txt2->col[glb_ds1edit.col_orderflag[mode]].offset;
-         lptr = (long *) sptr;
+         lptr = (const int32_t *) sptr;
          cof->orderflag = * lptr;
 
          // if 0, check NU
@@ -509,7 +512,7 @@ COF_S * anim_load_cof(char * base, char * tok, char * mod, char * clas,
                   txt2->data +
                   (line * txt2->line_size) +
                   txt2->col[glb_ds1edit.col_orderflag[0]].offset;
-               lptr = (long *) sptr;
+               lptr = (const int32_t *) sptr;
                cof->orderflag = * lptr;
             }
          }
@@ -532,7 +535,9 @@ COF_S * anim_load_desc_gfx(int i, int progress)
    TXT_S * txt = glb_ds1edit.obj_buff;
    COF_S * cof = NULL;
    char  * base, * tok, * mod, * clas, *sptr;
-   long  * dirptr, dir;
+   long  dir;
+   /* 32-bit on-disk fields: `long` is 64-bit under LP64. */
+   const int32_t * dirptr;
 
 
    if (txt == NULL)
@@ -543,7 +548,7 @@ COF_S * anim_load_desc_gfx(int i, int progress)
    mod    = txt->data + (i * txt->line_size) + txt->col[misc_get_txt_column_num(RQ_OBJ, "Mode")].offset;
    clas   = txt->data + (i * txt->line_size) + txt->col[misc_get_txt_column_num(RQ_OBJ, "Class")].offset;
    sptr   = txt->data + (i * txt->line_size) + txt->col[misc_get_txt_column_num(RQ_OBJ, "Direction")].offset;
-   dirptr = (long *) sptr;
+   dirptr = (const int32_t *) sptr;
 
    dir = 0;
    if (txt->col[misc_get_txt_column_num(RQ_OBJ, "Direction")].size)

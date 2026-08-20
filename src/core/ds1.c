@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdint.h>
 #include "structs.h"
 #include "core/dt1.h"
 #include "core/project.h"
@@ -330,7 +331,9 @@ int ds1_read(const char * ds1name, int ds1_idx, int new_width, int new_height)
    OBJ_LABEL_S * label;
    int         o, x, y, nb_layer, size, n, p, ds1_len, done, cx, cy, dx, dy,
                current_valid_obj_idx=0, max_subtile_width, max_subtile_height;
-   long        w_num, f_num, s_num, t_num, * ptr, npc, path;
+   long        w_num, f_num, s_num, t_num, npc, path;
+   /* 32-bit on-disk fields: `long` is 64-bit under LP64. */
+   const int32_t * ptr;
    int         lay_stream[14],
                dir_lookup[25] = {
                   0x00, 0x01, 0x02, 0x01, 0x02, 0x03, 0x03, 0x05, 0x05, 0x06,
@@ -444,7 +447,7 @@ int ds1_read(const char * ds1name, int ds1_idx, int new_width, int new_height)
    f_num = 0; // # of floor layer
    s_num = 1; // # of shadow layer, always here
    t_num = 0; // # of tag layer
-   ptr   = (long *) ds1_buff;
+   ptr   = (const int32_t *) ds1_buff;
 
 
    // copy datas from buffer into ds1 struct :
@@ -521,7 +524,7 @@ int ds1_read(const char * ds1name, int ds1_idx, int new_width, int new_height)
       }
       glb_ds1[ds1_idx].file_len = n;
       memcpy(glb_ds1[ds1_idx].file_buff, ptr, n);
-      ptr = (long *) (((char *) ptr) + n);
+      ptr = (const int32_t *) (((const char *) ptr) + n);
    }
    else
       printf("no filenames\n");
@@ -852,7 +855,7 @@ int ds1_read(const char * ds1name, int ds1_idx, int new_width, int new_height)
    glb_ds1[ds1_idx].height = new_height;
 
    //now we're on the objects data
-   ptr = (long *) bptr;
+   ptr = (const int32_t *) bptr;
    
    glb_ds1[ds1_idx].obj_num = 0;
    if (glb_ds1[ds1_idx].version >= 2)

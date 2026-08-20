@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -1257,7 +1258,7 @@ static int export_dcc_png(const char *asset_path, const char *output_dir)
 int asset_export_dc6_buffer_png(const char *asset_path, const void *buffer,
                                 long len, const char *output_dir)
 {
-   long *lptr, *dc6_fptr;
+   const int32_t *lptr, *dc6_fptr;
    long offset;
    long dc6_ver, dc6_unk1, dc6_unk2, dc6_dir, dc6_fpd;
    long f_w, f_h, f_offx, f_offy, f_x1, f_x2, f_y1, f_y2, f_len;
@@ -1270,7 +1271,7 @@ int asset_export_dc6_buffer_png(const char *asset_path, const void *buffer,
    if (asset_path == NULL || buffer == NULL || output_dir == NULL || len <= 0)
       return 0;
 
-   lptr     = (long *) buffer;
+   lptr     = (const int32_t *) buffer;
    dc6_ver  = lptr[0];
    dc6_unk1 = lptr[1];
    dc6_unk2 = lptr[2];
@@ -1290,7 +1291,7 @@ int asset_export_dc6_buffer_png(const char *asset_path, const void *buffer,
          if (offset >= len)
             continue;
 
-         lptr = (long *) (((UBYTE *) buffer) + offset);
+         lptr = (const int32_t *) (((const UBYTE *) buffer) + offset);
          f_w    = lptr[1];
          f_h    = lptr[2];
          f_offx = lptr[3];
@@ -1317,7 +1318,7 @@ int asset_export_dc6_buffer_png(const char *asset_path, const void *buffer,
          if (offset >= len)
             continue;
 
-         lptr = (long *) (((UBYTE *) buffer) + offset);
+         lptr = (const int32_t *) (((const UBYTE *) buffer) + offset);
          f_offx = lptr[3];
          f_offy = lptr[4];
          f_len  = lptr[7];

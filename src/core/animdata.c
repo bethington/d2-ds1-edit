@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdint.h>
 #include <ctype.h>
 #include "structs.h"
 #include "misc.h"
@@ -27,7 +28,9 @@ void animdata_load(void)
 {
    char               * name = "Data\\Global\\AnimData.d2", animdata_name[10];
    int                entry, done = FALSE, curr_block = 0;
-   long               * lptr, nb_rec;
+   long               nb_rec;
+   /* 32-bit on-disk fields: `long` is 64-bit under LP64. */
+   const int32_t      * lptr;
    ANIM_DATA_RECORD_S * rec_ptr = NULL;
    UBYTE              hash;
 
@@ -53,7 +56,7 @@ void animdata_load(void)
       printf("ok, <%s> found\n", name);
 
    // read all blocks and update pointers
-   lptr = ((long *) glb_ds1edit.anim_data.buffer);
+   lptr = ((const int32_t *) glb_ds1edit.anim_data.buffer);
    while ( ! done)
    {
       nb_rec = * lptr;

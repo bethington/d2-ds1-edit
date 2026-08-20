@@ -1,4 +1,5 @@
 #include "structs.h"
+#include <stdint.h>
 #include "misc.h"
 #include "core/dc6.h"
 #include "core/cof.h"
@@ -79,10 +80,14 @@ int anim_load_dc6(char * name, COF_S * cof, int lay_idx, long user_dir,
    LAY_INF_S  * lay;
    int        entry, i, size, w, h, x1, y1, x2, y2;
    char       * buff;
-   long       dir = 0, * lptr, offset, len;
-   long       dc6_ver, dc6_unk1, dc6_unk2, dc6_dir, dc6_fpd, * dc6_fptr,
+   long       dir = 0, offset, len;
+   long       dc6_ver, dc6_unk1, dc6_unk2, dc6_dir, dc6_fpd,
               f_w, f_h, f_offx, f_offy, f_x1, f_x2, f_y1, f_y2,
               f_len;
+   /* DC6 stores 32-bit fields; `long` is 64-bit under LP64, which would
+      make lptr[n] straddle two of them. */
+   const int32_t * lptr;
+   const int32_t * dc6_fptr;
    UBYTE      * f_data;
    
 
@@ -96,7 +101,7 @@ int anim_load_dc6(char * name, COF_S * cof, int lay_idx, long user_dir,
       return 1;
 
    // decode dc6 header datas
-   lptr     = (long *) buff;
+   lptr     = (const int32_t *) buff;
    dc6_ver  = lptr[0];
    dc6_unk1 = lptr[1];
    dc6_unk2 = lptr[2];
@@ -140,7 +145,7 @@ int anim_load_dc6(char * name, COF_S * cof, int lay_idx, long user_dir,
          free(buff);
          return 1;
       }
-      lptr = (long *) (buff + offset);
+      lptr = (const int32_t *) (buff + offset);
 
       // update the box limits
       f_w    = lptr[1];
@@ -200,7 +205,7 @@ int anim_load_dc6(char * name, COF_S * cof, int lay_idx, long user_dir,
          free(buff);
          return 1;
       }
-      lptr = (long *) (buff + offset);
+      lptr = (const int32_t *) (buff + offset);
 
       // get frame datas
       f_w    = lptr[1];

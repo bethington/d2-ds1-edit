@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include "structs.h"
 #include "error.h"
@@ -118,24 +119,24 @@ void dt1_bh_update(int i)
    ptr = (UBYTE *)glb_dt1[i].buffer + glb_dt1[i].bh_start;
    for (b = 0; b < glb_dt1[i].block_num; b++)
    {
-      bh_ptr->direction = *(long *)ptr;
+      bh_ptr->direction = *(const int32_t *)ptr;
       bh_ptr->roof_y = *(WORD *)(ptr + 4);
       bh_ptr->sound = *(UBYTE *)(ptr + 6);
       bh_ptr->animated = *(UBYTE *)(ptr + 7);
-      bh_ptr->size_y = *(long *)(ptr + 8);
-      bh_ptr->size_x = *(long *)(ptr + 12);
+      bh_ptr->size_y = *(const int32_t *)(ptr + 8);
+      bh_ptr->size_x = *(const int32_t *)(ptr + 12);
       // skip 4 bytes : zeros1
-      bh_ptr->orientation = *(long *)(ptr + 20);
-      bh_ptr->main_index = *(long *)(ptr + 24);
-      bh_ptr->sub_index = *(long *)(ptr + 28);
-      bh_ptr->rarity = *(long *)(ptr + 32);
+      bh_ptr->orientation = *(const int32_t *)(ptr + 20);
+      bh_ptr->main_index = *(const int32_t *)(ptr + 24);
+      bh_ptr->sub_index = *(const int32_t *)(ptr + 28);
+      bh_ptr->rarity = *(const int32_t *)(ptr + 32);
       // skip 4 bytes : unknown_a thru unknown_d
       for (t = 0; t < 25; t++)
          bh_ptr->sub_tiles_flags[idxtable[t]] = *(UBYTE *)(ptr + 40 + t);
       // skip 7 bytes : zeros2
-      bh_ptr->tiles_ptr = *(long *)(ptr + 72);
-      bh_ptr->tiles_length = *(long *)(ptr + 76);
-      bh_ptr->tiles_number = *(long *)(ptr + 80);
+      bh_ptr->tiles_ptr = *(const int32_t *)(ptr + 72);
+      bh_ptr->tiles_length = *(const int32_t *)(ptr + 76);
+      bh_ptr->tiles_number = *(const int32_t *)(ptr + 80);
       // skip 12 bytes : zeros3
 
       // next block header
@@ -187,9 +188,9 @@ void dt1_fill_subt(SUB_TILE_S *ptr, int i, long tiles_ptr, int s)
    ptr->x_grid = *(UBYTE *)(st_ptr + 6);
    ptr->y_grid = *(UBYTE *)(st_ptr + 7);
    ptr->format = *(WORD *)(st_ptr + 8);
-   ptr->length = *(long *)(st_ptr + 10);
+   ptr->length = *(const int32_t *)(st_ptr + 10);
    // skip 2 bytes : unknown2
-   ptr->data_offset = *(long *)((UBYTE *)st_ptr + 16);
+   ptr->data_offset = *(const int32_t *)((UBYTE *)st_ptr + 16);
 }
 
 // ==========================================================================
@@ -490,10 +491,10 @@ int dt1_struct_update(int i)
       return FALSE;
    }
 
-   glb_dt1[i].x1 = *(long *)ptr;
-   glb_dt1[i].x2 = *(long *)((UBYTE *)ptr + 4);
-   glb_dt1[i].block_num = *(long *)((UBYTE *)ptr + 268);
-   glb_dt1[i].bh_start = *(long *)((UBYTE *)ptr + 272);
+   glb_dt1[i].x1 = *(const int32_t *)ptr;
+   glb_dt1[i].x2 = *(const int32_t *)((UBYTE *)ptr + 4);
+   glb_dt1[i].block_num = *(const int32_t *)((UBYTE *)ptr + 268);
+   glb_dt1[i].bh_start = *(const int32_t *)((UBYTE *)ptr + 272);
 
    if (!dt1_headers_are_valid(i))
    {
