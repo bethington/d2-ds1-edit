@@ -27,6 +27,7 @@
 #include "core/monstats2.h"
 #include "core/upscale.h"
 #include "core/area_browser.h"
+#include "misc.h"
 
 extern void ds1edit_load_palettes(void);
 extern void misc_read_gamma(void);
