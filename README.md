@@ -1,10 +1,35 @@
 # DS1Edit - Diablo II Level Editor
 
-A level editor for Diablo II that allows creation and modification of game maps (.ds1 files). Built with Allegro 5 for GPU-accelerated rendering at 60+ FPS.
+A level editor for Diablo II that allows creation and modification of game maps (.ds1 files). Built with Allegro 5 for GPU-accelerated rendering at 60+ FPS. Runs on Windows, Linux, and macOS.
 
 ## Download
 
-**[Download the latest release](https://github.com/bethington/d2-ds1-edit/releases/latest)** — grab `DS1Edit-<version>-win32.zip`, unzip anywhere, and run `ds1edit.exe`. Allegro 5 DLLs are bundled; no installer, no runtime to chase down.
+**[Download the latest release](https://github.com/bethington/d2-ds1-edit/releases/latest)** — Windows, Linux, and macOS builds are published for every tag.
+
+| Platform | Package | Runtime dependency |
+|----------|---------|--------------------|
+| Windows (x86) | `ds1edit-<ver>-windows-x86.zip` | none — Allegro 5 DLLs are bundled |
+| Linux (x86_64) | `ds1edit-<ver>-linux-x86_64.tar.gz` | system Allegro 5 (see below) |
+| macOS (arm64) | `ds1edit-<ver>-macos-arm64.tar.gz` | `brew install allegro` |
+
+Unpack anywhere and run `ds1edit` (`ds1edit.exe` on Windows). There is no installer.
+
+**Linux** needs Allegro 5 from your package manager:
+
+```bash
+# Debian / Ubuntu
+sudo apt install liballegro5.2 liballegro-image5.2 liballegro-ttf5.2 liballegro-dialog5.2
+
+# Fedora
+sudo dnf install allegro5 allegro5-addon-image allegro5-addon-ttf
+```
+
+**macOS** builds are not code-signed, so Gatekeeper will refuse the first launch.
+Either right-click the binary and choose Open, or clear the quarantine flag:
+
+```bash
+xattr -dr com.apple.quarantine ds1edit
+```
 
 You need your own copy of Diablo II (Classic or LoD) — the editor reads tiles and sprites straight out of your MPQs and ships no game assets.
 
@@ -39,12 +64,19 @@ bin\ds1edit.exe assets\act5_town.ini
 
 ## Building
 
-Requires [vcpkg](https://vcpkg.io/) with Allegro 5 and Visual Studio 2019+.
-
 ```bash
+# Windows -- vcpkg + Visual Studio
 cmake --preset default           # Configure (uses vcpkg toolchain)
 cmake --build --preset dev       # Dev build (optimized + debug symbols)
 cmake --build --preset release   # Release build (full optimization + LTCG)
+
+# Linux -- Ninja + system Allegro 5
+sudo apt install build-essential ninja-build cmake pkg-config zlib1g-dev      liballegro5-dev liballegro-image5-dev liballegro-ttf5-dev liballegro-dialog5-dev
+cmake --preset linux && cmake --build --preset linux
+
+# macOS -- Ninja + Homebrew Allegro 5
+brew install allegro ninja pkg-config
+cmake --preset macos && cmake --build --preset macos
 ```
 
 ### Build Presets
