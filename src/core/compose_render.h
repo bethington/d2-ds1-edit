@@ -21,14 +21,27 @@
 // ALLEGRO_BITMAPs internally) and the MPQ chain + a5_current_palette
 // to be set up. Must therefore run on the editor's main thread.
 
+/* Layer skin codes are short -- "lit", "med", "hvy", "nil", "axe",
+ * etc. -- and fit in 8 chars including NUL. */
+#define COMPOSE_RENDER_SKIN_MAX  8
+#define COMPOSE_RENDER_LAYER_COUNT  16
+
 typedef struct COMPOSE_RENDER_PARAMS_S
 {
    const char *base;       /* "data\\global\\chars" or "...\\monsters" etc. */
    const char *token;      /* "NE", "AN", "TownPortal" */
    const char *mode;       /* "WL", "NU", "A1" */
    const char *wclass;     /* "HTH", "1HS", "" for monsters with no weapon */
-   const char *skin;       /* "LIT" for chars, NULL/"" for monsters */
+   const char *skin;       /* "LIT" for chars; default for layers when the
+                            * per-layer override below is empty. */
    int         direction;  /* 0..N-1 (no remapping in v1) */
+
+   /* Optional per-layer skin override, indexed by COF composit_index
+    * (HD=0, TR=1, ..., S8=15). For monsters, each layer can have a
+    * different skin variant ("lit" for HD, "axe" for RH, "nil" for
+    * SH, etc.) per MonStats2. Empty string means "fall back to
+    * params->skin". Player chars leave this empty -> uniform LIT. */
+   char skin_per_layer[COMPOSE_RENDER_LAYER_COUNT][COMPOSE_RENDER_SKIN_MAX];
 } COMPOSE_RENDER_PARAMS_S;
 
 typedef struct COMPOSE_RENDER_RESULT_S

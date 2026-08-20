@@ -167,12 +167,13 @@ int compose_index_parse_monstats(const char *txt_text,
    int pos = 0;
    LINE_S header_line;
    LINE_S row;
-   int col_code, col_id, col_npc, col_namestr;
+   int col_code, col_id, col_npc, col_namestr, col_mon_stats_ex;
    int monster_n = 0, npc_n = 0;
    static const char *code_names[]    = { "Code", NULL };
    static const char *id_names[]      = { "Id", "ID", NULL };
    static const char *npc_names[]     = { "npc", "Npc", "NPC", NULL };
    static const char *namestr_names[] = { "NameStr", "namestr", NULL };
+   static const char *mse_names[]     = { "MonStatsEx", "monstatsex", NULL };
 
    if (txt_text == NULL || monster_count_out == NULL || npc_count_out == NULL)
       return 0;
@@ -183,10 +184,11 @@ int compose_index_parse_monstats(const char *txt_text,
    if (!next_line(txt_text, len, &pos, &header_line))
       return 0;
 
-   col_code    = find_column(header_line.start, header_line.length, code_names);
-   col_id      = find_column(header_line.start, header_line.length, id_names);
-   col_npc     = find_column(header_line.start, header_line.length, npc_names);
-   col_namestr = find_column(header_line.start, header_line.length, namestr_names);
+   col_code         = find_column(header_line.start, header_line.length, code_names);
+   col_id           = find_column(header_line.start, header_line.length, id_names);
+   col_npc          = find_column(header_line.start, header_line.length, npc_names);
+   col_namestr      = find_column(header_line.start, header_line.length, namestr_names);
+   col_mon_stats_ex = find_column(header_line.start, header_line.length, mse_names);
 
    if (col_code < 0 || col_id < 0)
       return 0;
@@ -209,6 +211,13 @@ int compose_index_parse_monstats(const char *txt_text,
        * starts with "Expansion" in some columns; skip if Code is
        * non-alphanumeric. */
       if (!isalnum((unsigned char) code_buf[0])) continue;
+      /* Code "xx" (case-insensitive) is D2's placeholder for unused /
+       * deleted MonStats rows -- they have no sprite and would just
+       * spam the iterator with hundreds of failed COF probes. */
+      if ((code_buf[0] == 'x' || code_buf[0] == 'X')
+          && (code_buf[1] == 'x' || code_buf[1] == 'X')
+          && code_buf[2] == 0)
+         continue;
 
       if (!field_at(row.start, row.length, col_id, id_buf, sizeof(id_buf)))
          id_buf[0] = 0;
@@ -228,6 +237,35 @@ int compose_index_parse_monstats(const char *txt_text,
          strncpy(tok.name, id_buf, sizeof(tok.name) - 1);
       else
          strncpy(tok.name, code_buf, sizeof(tok.name) - 1);
+
+      /* MonStatsEx is the join key into MonStats2.txt; empty if the
+       * column isn't present (graceful) or the row has nothing. */
+      if (col_mon_stats_ex >= 0)
+      {
+         char mse_buf[COMPOSE_TOKEN_NAME_MAX];
+         if (field_at(row.start, row.length, col_mon_stats_ex,
+                      mse_buf, sizeof(mse_buf)))
+         {
+            strip_ws(mse_buf);
+            strncpy(tok.mon_stats_ex, mse_buf, sizeof(tok.mon_stats_ex) - 1);
+         }
+      }
+
+      /* Dedupe by Code. Many MonStats rows share the same Code
+       * (skeleton1 / skeleton2 / skeleton3 all -> "SK") and they all
+       * point at the same sprite folder, so iterating each one is
+       * pure waste. Keep the first row that introduces a Code. */
+      {
+         COMPOSE_TOKEN_S *target_arr = is_npc ? npc_out : monster_out;
+         int target_n = is_npc ? npc_n : monster_n;
+         int dup;
+         for (dup = 0; dup < target_n; dup++)
+         {
+            if (cidx_stricmp(target_arr[dup].code, tok.code) == 0)
+               break;
+         }
+         if (dup < target_n) continue;  /* already have this Code */
+      }
 
       if (is_npc)
       {

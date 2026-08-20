@@ -17,6 +17,10 @@ typedef struct COMPOSE_TOKEN_S
 {
    char code[COMPOSE_TOKEN_CODE_MAX];
    char name[COMPOSE_TOKEN_NAME_MAX];
+   /* MonStats.MonStatsEx -- the join key into MonStats2 (e.g. for
+    * Code="SK" this is "skeleton1"). Empty for tokens that don't
+    * come from MonStats (objects, NPCs without sprite info). */
+   char mon_stats_ex[COMPOSE_TOKEN_NAME_MAX];
 } COMPOSE_TOKEN_S;
 
 // Build the in-memory index from the open MPQ chain + mod overlay.

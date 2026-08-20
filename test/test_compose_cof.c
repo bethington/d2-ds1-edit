@@ -16,9 +16,14 @@ void tearDown(void) {}
  *   trans_a/b varied per layer so we can verify layer struct
  *   priority table = simple 1, 2, 0 ordering for every (dir, frame). */
 
+/* COF header is 28 bytes: 4 bytes (lay/fpd/dirs/version) + 24 bytes
+ * of bounds + anim_speed that we don't parse. Earlier this fixture
+ * (and the parser) used 29 here, off by one, which silently accepted
+ * synthetic data but rejected real D2 COFs. The size matches the
+ * working anim_load_cof in core/cof.c. */
 static unsigned char *build_synthetic_cof(int *out_len)
 {
-   long header = 4 + 25;
+   long header = 4 + 24;
    long per_layer = 9;
    int layers = 3;
    int fpd = 2;
@@ -194,9 +199,45 @@ static void test_parse_rejects_bad_composit_index(void)
    buf[0] = 1;
    buf[1] = 1;
    buf[2] = 1;
-   /* layer block at offset 29: composit_index = 99 (out of range) */
-   buf[29] = 99;
+   /* layer block at offset 28 (header size): composit_index = 99
+    * (out of range). */
+   buf[28] = 99;
    TEST_ASSERT_EQUAL_INT(0, compose_cof_parse(buf, sizeof(buf), &cof));
+}
+
+/* Regression: real D2 COFs (e.g. NEWLHTH.cof) have 9 layers, fpd 8,
+ * 16 directions. With the buggy 29-byte header parser, layer reads
+ * were misaligned and the parse always failed. This test asserts that
+ * a real-shaped header parses cleanly. */
+static void test_parse_real_d2_dimensions(void)
+{
+   COMPOSE_COF_S cof;
+   long header = 4 + 24;
+   long per_layer = 9;
+   int layers = 9;
+   int fpd = 8;
+   int dirs = 16;
+   long prio = (long) dirs * fpd * layers;
+   long total = header + per_layer * layers + fpd + prio;
+   unsigned char *buf = (unsigned char *) calloc((size_t) total, 1);
+   int i;
+   TEST_ASSERT_NOT_NULL(buf);
+
+   buf[0] = (unsigned char) layers;
+   buf[1] = (unsigned char) fpd;
+   buf[2] = (unsigned char) dirs;
+   buf[3] = 20;
+   /* layer composit indices 0..8 (HD, TR, LG, RA, LA, RH, LH, SH, S1) */
+   for (i = 0; i < layers; i++)
+      buf[header + (long) i * per_layer] = (unsigned char) i;
+
+   TEST_ASSERT_EQUAL_INT(1, compose_cof_parse(buf, (long) total, &cof));
+   TEST_ASSERT_EQUAL_INT(layers, cof.layer_count);
+   TEST_ASSERT_EQUAL_INT(fpd,    cof.frames_per_dir);
+   TEST_ASSERT_EQUAL_INT(dirs,   cof.direction_count);
+
+   compose_cof_free(&cof);
+   free(buf);
 }
 
 static void test_parse_rejects_null_inputs(void)
@@ -219,5 +260,6 @@ int main(void)
    RUN_TEST(test_parse_rejects_absurd_dimensions);
    RUN_TEST(test_parse_rejects_bad_composit_index);
    RUN_TEST(test_parse_rejects_null_inputs);
+   RUN_TEST(test_parse_real_d2_dimensions);
    return UNITY_END();
 }

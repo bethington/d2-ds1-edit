@@ -438,6 +438,13 @@ void ini_read(char *ininame)
    // [export_presets] section — user-defined wildcard scope presets shown
    // in the unified export action's scope picker.
    export_presets_reset();
+   /* Allegro's al_get_first_config_entry returns comment lines (";")
+    * as if they were keys. Skip those silently rather than warning --
+    * they're not malformed entries, they're documentation. The actual
+    * malformed-value warning still fires for non-comment keys whose
+    * value doesn't parse. */
+#define KEY_IS_COMMENT(k) ((k) != NULL && ((k)[0] == ';' || (k)[0] == '#'))
+
    {
       ALLEGRO_CONFIG_ENTRY *ent_iter = NULL;
       const char *key = al_get_first_config_entry(a5_config,
@@ -448,7 +455,9 @@ void ini_read(char *ininame)
          const char *value = al_get_config_value(a5_config,
                                                  "export_presets", key);
          EXPORT_PRESET_S preset;
-         if (value != NULL && export_preset_parse(key, value, &preset))
+         if (KEY_IS_COMMENT(key))
+            ; /* skip */
+         else if (value != NULL && export_preset_parse(key, value, &preset))
             export_presets_add(&preset);
          else
             fprintf(stderr,
@@ -471,7 +480,9 @@ void ini_read(char *ininame)
          const char *value = al_get_config_value(a5_config,
                                                  "char_mode_presets", key);
          COMPOSE_PRESET_S preset;
-         if (value != NULL && compose_preset_parse(key, value, &preset))
+         if (KEY_IS_COMMENT(key))
+            ; /* skip */
+         else if (value != NULL && compose_preset_parse(key, value, &preset))
             compose_mode_presets_add(&preset);
          else
             fprintf(stderr,
@@ -494,7 +505,9 @@ void ini_read(char *ininame)
          const char *value = al_get_config_value(a5_config,
                                                  "char_weapon_presets", key);
          COMPOSE_PRESET_S preset;
-         if (value != NULL && compose_preset_parse(key, value, &preset))
+         if (KEY_IS_COMMENT(key))
+            ; /* skip */
+         else if (value != NULL && compose_preset_parse(key, value, &preset))
             compose_weapon_presets_add(&preset);
          else
             fprintf(stderr,
@@ -502,6 +515,49 @@ void ini_read(char *ininame)
                     key);
          key = al_get_next_config_entry(&ent_iter);
       }
+   }
+#undef KEY_IS_COMMENT
+
+   // [export_defaults] section -- output roots and a couple of CLI
+   // defaults so common runs are short. Direct lookups by known key
+   // (rather than the iterate-all-entries pattern used above) so
+   // commented `; ...` lines inside the section don't get treated as
+   // bogus keys -- the iteration-based readers above all suffer from
+   // that and emit spurious "ignored malformed entry" warnings.
+   {
+      static const struct
+      {
+         const char *key;
+         char      **target;
+      } str_keys[] = {
+         { "compose_output",          &glb_config.export_default_compose_output },
+         { "raw_dcc_output",          &glb_config.export_default_raw_dcc_output },
+         { "raw_dc6_output",          &glb_config.export_default_raw_dc6_output },
+         { "raw_dt1_output",          &glb_config.export_default_raw_dt1_output },
+         { "compose_modes_preset",    &glb_config.export_default_compose_modes_preset },
+         { "compose_weapons_preset",  &glb_config.export_default_compose_weapons_preset },
+         { "listfile",                &glb_config.export_default_listfile },
+         { NULL, NULL }
+      };
+      int k;
+      const char *v;
+      for (k = 0; str_keys[k].key != NULL; k++)
+      {
+         v = al_get_config_value(a5_config, "export_defaults", str_keys[k].key);
+         if (v != NULL && v[0] != 0)
+         {
+            size_t n = strlen(v);
+            char *buf = (char *) malloc(n + 1);
+            if (buf != NULL)
+            {
+               memcpy(buf, v, n + 1);
+               *(str_keys[k].target) = buf;
+            }
+         }
+      }
+      v = al_get_config_value(a5_config, "export_defaults", "verbose");
+      if (v != NULL && (v[0] == 'Y' || v[0] == 'y' || v[0] == '1'))
+         glb_config.export_default_verbose = 1;
    }
 
    // MPQ slot resolution runs later in main() — after preferences are loaded

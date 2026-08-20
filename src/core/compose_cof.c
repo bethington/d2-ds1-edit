@@ -19,7 +19,13 @@ int compose_cof_parse(const void *bytes, long len, COMPOSE_COF_S *out)
 {
    const unsigned char *p;
    long pos = 0;
-   long header_size = 4 + 25;
+   /* Header layout: 4 bytes (layers, fpd, dirs, version) followed by
+    * 24 bytes of padding/bounds/anim_speed that we don't need. Total
+    * header is 28 bytes -- matches the working anim_load_cof in
+    * core/cof.c which reads 3 bytes + skips 25 = 28. Earlier this
+    * was 4+25=29 (off by one), which misaligned the per-layer reads
+    * and made every COF parse fail. */
+   long header_size = 4 + 24;
    long per_layer = 9;
    long required;
    int i;
@@ -64,6 +70,16 @@ int compose_cof_parse(const void *bytes, long len, COMPOSE_COF_S *out)
       if (idx >= COMPOSE_COF_MAX_LAYERS)
          return 0;
       lay = &out->layers[idx];
+
+      /* Some boss COFs (Baal Throne, Mephisto, ...) declare the same
+       * composit_index more than once -- typically a back layer + a
+       * front layer of the same body part with different z-order in
+       * the priority table. Our per-layer storage is keyed by
+       * composit_index, so duplicates would otherwise stomp the
+       * first entry's metadata. Keep first-wins: if this slot
+       * already has a non-empty weapon_class, skip overwriting. */
+      if (lay->weapon_class[0] != 0)
+         continue;
 
       lay->composit_index = idx;
       lay->shadow_a       = q[1];

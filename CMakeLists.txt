@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(d2-ds1-edit VERSION 1.0.0 LANGUAGES C)
+project(d2-ds1-edit VERSION 2.0.0 LANGUAGES C)
 
 # Pass version to source code
 add_compile_definitions(
@@ -38,6 +38,8 @@ set(SOURCES
     src/config.c
     src/error.c
     src/misc.c
+    # cli/
+    src/cli/cli.c
     # core/
     src/core/apng_writer.c
     src/core/compose_apng.c
@@ -48,10 +50,17 @@ set(SOURCES
     src/core/compose_dcc_path.c
     src/core/compose_index.c
     src/core/compose_index_build.c
+    src/core/compose_iter.c
+    src/core/compose_iter_config.c
+    src/core/compose_iter_probe.c
     src/core/compose_naming.c
     src/core/compose_palette.c
+    src/core/compose_palette_index.c
     src/core/compose_presets.c
     src/core/compose_render.c
+    src/core/compose_scale.c
+    src/core/monstats2.c
+    src/core/monstats2_build.c
     src/core/area_browser.c
     src/core/area_metadata.c
     src/core/d2install.c

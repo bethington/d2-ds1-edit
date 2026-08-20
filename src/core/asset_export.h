@@ -67,4 +67,22 @@ int asset_export_guess_palette_act(const char *asset_path);
 int asset_export_filter_matches_prefix(const char *asset_path, const char *asset_prefix);
 int asset_export_filter_matches_type(const char *asset_path, const char *type_filter);
 
+// Pre-populate each open MPQ's filename_table by hash-looking-up every
+// path in the supplied text file (one path per line; '#' / ';' lines
+// and blank lines are skipped). After this runs, the existing
+// collect_known_mpq_assets / asset_export_plan_for_pattern paths can
+// walk those entries.
+//
+// Workaround for a pre-existing bug in this codebase's MPQ
+// implementation: ExtractToMem leaves the buffer uninitialised when
+// reading the encrypted-and-compressed (listfile) file out of real D2
+// MPQs (flag 0x80030200 in d2exp.mpq). Small / single-block files
+// decompress fine, which is why probe + compose-mode work, but the
+// in-MPQ listfile is unreadable. With a user-supplied listfile, the
+// bulk path lights up without touching the MPQ code.
+//
+// Returns the number of paths that resolved to a hash entry in some
+// open MPQ. Returns 0 on file open failure or when no paths matched.
+int asset_export_seed_listfile_from_file(const char *file_path);
+
 #endif

@@ -165,6 +165,27 @@ typedef struct CONFIG_S
    int      minimize_ds1;
    int      lower_speed_zoom_out;
    int      workspace_enable;
+
+   // [export_defaults] section -- per-type output roots used when the
+   // CLI's --out= flag is omitted, and also pre-populate the GUI
+   // folder-picker dialogs. Each defaults to "" (no default; --out=
+   // becomes required).
+   char    *export_default_compose_output;
+   char    *export_default_raw_dcc_output;
+   char    *export_default_raw_dc6_output;
+   char    *export_default_raw_dt1_output;
+   // Optional named presets to apply by default in compose-mode export.
+   // Empty / unset means "All". CLI uses this when --mode / --weapon
+   // are omitted; GUI ignores (the picker has its own All-on default).
+   char    *export_default_compose_modes_preset;
+   char    *export_default_compose_weapons_preset;
+   int      export_default_verbose;  // YES = always run CLI exports with -v
+
+   // Path to an external listfile (text, one path per line). When
+   // set, asset_export pre-populates the MPQ filename_table from it
+   // before running bulk exports. Workaround for the in-MPQ
+   // (listfile) decompression bug (flag 0x80030200 in d2exp.mpq).
+   char    *export_default_listfile;
 } CONFIG_S;
 
 extern CONFIG_S glb_config;

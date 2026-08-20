@@ -121,13 +121,76 @@ target_include_directories(test_compose_blit PRIVATE
 )
 add_test(NAME compose_blit COMMAND test_compose_blit)
 
-# Compose palette resolution (v1: returns Act 1)
-add_executable(test_compose_palette test_compose_palette.c ../src/core/compose_palette.c)
+# Compose palette resolution. v2 joins via compose_index (for the
+# Code -> MonStatsEx mapping) and compose_palette_index (for the
+# MonStatsEx -> Act mapping from Levels.txt). The MPQ-loading glue
+# in compose_index_build / compose_palette_index_build pulls in
+# misc_load_mpq_file which we don't link for unit tests; the parser
+# code in compose_index.c / compose_palette_index.c is fine to link
+# directly because it doesn't reach for MPQs at file scope.
+#
+# However compose_palette_index.c DOES define compose_palette_index_build
+# inline (calling extern misc_load_mpq_file) -- but the build fn isn't
+# called by any test path, so the linker sees it as referenced only
+# if dead-code-elimination is off. To keep this clean, the test stubs
+# misc_load_mpq_file with a no-op below.
+add_executable(test_compose_palette
+    test_compose_palette.c
+    ../src/core/compose_palette.c
+    ../src/core/compose_palette_index.c
+    ../src/core/compose_index.c
+)
 target_link_libraries(test_compose_palette PRIVATE unity)
 target_include_directories(test_compose_palette PRIVATE
     ${CMAKE_SOURCE_DIR}/src
 )
 add_test(NAME compose_palette COMMAND test_compose_palette)
+
+# Compose iteration helpers: default lists + output path builder. The
+# pure helpers live in compose_iter.c; the MPQ/COF probe lives in
+# compose_iter_probe.c and is intentionally not linked here.
+add_executable(test_compose_iter
+    test_compose_iter.c
+    ../src/core/compose_iter.c
+    ../src/core/compose_naming.c
+)
+target_link_libraries(test_compose_iter PRIVATE unity)
+target_include_directories(test_compose_iter PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/mpq
+)
+add_test(NAME compose_iter COMMAND test_compose_iter)
+
+# MonStats2 parser: pure logic tested against synthetic fixtures; the
+# MPQ-loading glue lives in monstats2_build.c and is not linked here.
+add_executable(test_monstats2 test_monstats2.c ../src/core/monstats2.c)
+target_link_libraries(test_monstats2 PRIVATE unity)
+target_include_directories(test_monstats2 PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
+add_test(NAME monstats2 COMMAND test_monstats2)
+
+# Compose nearest-neighbour RGBA scaler: pure pixel ops, no externals.
+add_executable(test_compose_scale test_compose_scale.c ../src/core/compose_scale.c)
+target_link_libraries(test_compose_scale PRIVATE unity)
+target_include_directories(test_compose_scale PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
+add_test(NAME compose_scale COMMAND test_compose_scale)
+
+# CLI dispatcher smoke test. Shells out to the built ds1edit.exe and
+# validates exit codes + help output for the verbs that don't need an
+# MPQ chain. Depends on the main ds1edit target being built first.
+add_executable(test_cli_smoke test_cli_smoke.c)
+target_link_libraries(test_cli_smoke PRIVATE unity)
+target_include_directories(test_cli_smoke PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
+target_compile_definitions(test_cli_smoke PRIVATE
+    DS1EDIT_BIN_EXE="${CMAKE_SOURCE_DIR}/bin/ds1edit.exe"
+)
+add_dependencies(test_cli_smoke ds1edit)
+add_test(NAME cli_smoke COMMAND test_cli_smoke)
 
 add_executable(test_asset_export_smoke
     test_asset_export_smoke.c
