@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)  # RUNTIME_DEPENDENCY_SET
-project(d2-ds1-edit VERSION 2.0.0 LANGUAGES C)
+project(d2-ds1-edit VERSION 2.1.0 LANGUAGES C)
 
 # Pass version to source code
 add_compile_definitions(

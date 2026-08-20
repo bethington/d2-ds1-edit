@@ -1,6 +1,6 @@
 {
     "name": "d2-ds1-edit",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "description": "Diablo II DS1 map editor",
     "dependencies": [
         "allegro5"
