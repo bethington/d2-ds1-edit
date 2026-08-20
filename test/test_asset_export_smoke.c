@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <direct.h>
+#include "platform.h"
 
 #include "unity.h"
 
@@ -15,7 +15,11 @@
 #endif
 
 #ifndef DS1EDIT_BIN_EXE
+#ifdef WIN32
 #define DS1EDIT_BIN_EXE "bin\\ds1edit.exe"
+#else
+#define DS1EDIT_BIN_EXE "bin/ds1edit"
+#endif
 #endif
 
 void test_asset_export_stub_reset(void);
@@ -83,7 +87,7 @@ static int file_exists_nonempty(const char *path)
 
 static void ensure_dir(const char *path)
 {
-   _mkdir(path);
+   DS1_MKDIR(path);
 }
 
 static void init_allegro_once(void)

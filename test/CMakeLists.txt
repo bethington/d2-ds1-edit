@@ -187,7 +187,7 @@ target_include_directories(test_cli_smoke PRIVATE
     ${CMAKE_SOURCE_DIR}/src
 )
 target_compile_definitions(test_cli_smoke PRIVATE
-    DS1EDIT_BIN_EXE="${CMAKE_SOURCE_DIR}/bin/ds1edit.exe"
+    DS1EDIT_BIN_EXE="$<TARGET_FILE:ds1edit>"
 )
 add_dependencies(test_cli_smoke ds1edit)
 add_test(NAME cli_smoke COMMAND test_cli_smoke)
@@ -208,7 +208,7 @@ target_include_directories(test_asset_export_smoke PRIVATE
 )
 target_compile_definitions(test_asset_export_smoke PRIVATE
     TEST_BUILD_DIR="$<TARGET_FILE_DIR:test_asset_export_smoke>"
-    DS1EDIT_BIN_EXE="${CMAKE_SOURCE_DIR}/bin/ds1edit.exe"
+    DS1EDIT_BIN_EXE="$<TARGET_FILE:ds1edit>"
 )
 add_test(NAME asset_export_smoke COMMAND test_asset_export_smoke)
 

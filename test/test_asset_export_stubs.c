@@ -1,5 +1,5 @@
 #include <errno.h>
-#include <direct.h>
+#include "platform.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -102,14 +102,14 @@ static int ensure_dir_recursive(const char *path)
             if (i > 0 && tmp[i - 1] != ':')
             {
                 tmp[i] = 0;
-                if (_mkdir(tmp) != 0 && errno != EEXIST)
+                if (DS1_MKDIR(tmp) != 0 && errno != EEXIST)
                     return 0;
             }
             tmp[i] = saved;
         }
     }
 
-    if (_mkdir(tmp) != 0 && errno != EEXIST)
+    if (DS1_MKDIR(tmp) != 0 && errno != EEXIST)
         return 0;
     return 1;
 }
