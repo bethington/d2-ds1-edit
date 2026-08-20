@@ -1535,6 +1535,15 @@ int misc_cmd_line_parse(int argc, char **argv)
             return -1;
          }
       }
+      else if (strnicmp(argv[i], "--selftest", 10) == 0
+               || strnicmp(argv[i], "-selftest", 9) == 0)
+      {
+         /* Render a few frames through the real GUI path, then exit.
+            Optional "=N"; 30 is enough to prove the loop runs. */
+         const char *eq = strchr(argv[i], '=');
+         int n = (eq != NULL) ? atoi(eq + 1) : 0;
+         glb_ds1edit.cmd_line.selftest_frames = (n > 0) ? n : 30;
+      }
       else if (stricmp(argv[i], "--headless") == 0)
       {
          // --headless <output.png> : render one frame and save, then exit

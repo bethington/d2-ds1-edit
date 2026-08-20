@@ -63,6 +63,27 @@ The editor needs Diablo II tile data to function. Place your DS1/DT1 files under
 
 ## Testing
 
+### GUI smoke test
+
+```bash
+cd bin
+ds1edit assets/act5_town.ini --selftest        # 30 frames, then exit 0
+ds1edit --area "Act 1 - Town" --selftest=120   # or pick the frame count
+```
+
+`--selftest` takes the ordinary GUI path -- create the display, load assets,
+load the map, run the event loop -- renders N frames and exits 0. It cannot
+tell you the picture is *correct*, but it catches a window that opens and
+never paints.
+
+Worth running before any release: nothing else in the project exercises the
+display. The unit tests are headless, `--headless` never creates a display,
+and the golden screenshots do not run in CI. A startup change that hung the
+editor once shipped precisely because it was a no-op in every test that
+existed.
+
+
+
 ```bash
 # Unit tests
 ctest --preset default

@@ -486,6 +486,7 @@ typedef struct CMD_LINE_S
    // --headless : render one frame and save to file, then exit (no display)
    int    headless_mode;
    char * headless_output; // output filename, NULL if not used
+   int           selftest_frames;  /* >0: render this many frames, then exit */
 
    // --area : load area by name from Excel data instead of INI file
    char * area_name; // NULL if not used

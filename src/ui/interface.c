@@ -115,6 +115,7 @@ void interfac_user_handler(int start_ds1_idx)
    int group_changed, old_group, found;
    ALLEGRO_BITMAP *old_screen_buff = NULL;
    double frame_start_ms, section_start_ms;
+   int selftest_rendered = 0;
 
    // init
    tmp_sel.x1 = tmp_sel.x2 = tmp_sel.y1 = tmp_sel.y2 = 0;
@@ -2242,6 +2243,20 @@ void interfac_user_handler(int start_ds1_idx)
       glb_perf_stats.frames++;
       if (glb_perf_stats.frames >= 30)
          perf_print_summary();
+
+      /* --selftest: the frame counter is the whole point -- if we get here
+         the display exists, the assets loaded and the loop is running. */
+      if (glb_ds1edit.cmd_line.selftest_frames > 0)
+      {
+         selftest_rendered++;
+         if (selftest_rendered >= glb_ds1edit.cmd_line.selftest_frames)
+         {
+            fprintf(stdout, "selftest: rendered %d frame(s), exiting\n",
+                    selftest_rendered);
+            fflush(stdout);
+            done = TRUE;
+         }
+      }
    }
 
    perf_print_summary();

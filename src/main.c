@@ -449,6 +449,7 @@ void ds1edit_init(void)
    glb_ds1edit.cmd_line.no_check_act = FALSE;
    glb_ds1edit.cmd_line.dt1_list_num = -1;
    glb_ds1edit.cmd_line.headless_mode = FALSE;
+   glb_ds1edit.cmd_line.selftest_frames = 0;
    glb_ds1edit.cmd_line.headless_output = NULL;
    glb_ds1edit.cmd_line.area_name = NULL;
    glb_ds1edit.cmd_line.list_areas = FALSE;
@@ -1362,10 +1363,14 @@ int main(int argc, char *argv[])
 
    // syntaxe of the command line
    printf("============================================================\n");
-   if (argc >= 4) // at least 3 arguments (ds1 name + ID + DEF + options)
+   /* This gate used to test argc rather than what the parse produced, so an
+      .ini plus any flag ("ds1edit act5_town.ini --selftest") counted three
+      arguments, matched neither the >=4 nor the ==2 case, and was rejected as
+      a syntax error. Ask the parser what it found instead. */
+   if (glb_ds1edit.cmd_line.ds1_filename != NULL || argc >= 4)
    {
    }
-   else if (argc == 2) // 1 argument (assume it's a .ini file)
+   else if (glb_ds1edit.cmd_line.ini_filename != NULL)
    {
    }
    else if (glb_ds1edit.cmd_line.area_name != NULL ||
