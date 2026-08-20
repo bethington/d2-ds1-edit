@@ -13,52 +13,132 @@ permissions:
   contents: write
 
 jobs:
-  release-windows:
+  windows:
     runs-on: windows-latest
-
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.tag || github.ref }}
 
-      # Dependencies come from vcpkg.json (manifest mode); the CMake toolchain
-      # installs them during configure. An explicit `vcpkg install <pkg>` is
-      # rejected in manifest mode.
-      # GitHub runners expose vcpkg as VCPKG_INSTALLATION_ROOT; the ci preset
-      # reads VCPKG_ROOT, so bridge the two before configuring.
+      # Ninja + the MSVC env rather than a Visual Studio generator: hosted
+      # runners rotate VS versions, and a pinned generator breaks on each bump.
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x86
+
       - name: Point VCPKG_ROOT at the runner's vcpkg
         shell: pwsh
         run: echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
 
       - name: Configure
         run: cmake --preset ci
-
-      - name: Build Release
+      - name: Build
         run: cmake --build --preset ci-release
-
-      - name: Run tests
+      - name: Test
         run: ctest --preset ci
-
-      # Use the generator's PACKAGE target rather than bare `cpack` -- the
-      # runner has Chocolatey on PATH, whose own cpack.exe shadows CMake's.
       - name: Package
-        run: cmake --build build --config Release --target PACKAGE
+        run: cmake --build build --target package
 
-      - name: Rename artifact
+      - name: Stage artifact
         shell: pwsh
         run: |
           $tag = "${{ github.event.inputs.tag }}"
           if (-not $tag) { $tag = "${{ github.ref_name }}" }
           New-Item -ItemType Directory -Force dist | Out-Null
-          $zip = Get-ChildItem build -Filter 'DS1Edit-*.zip' | Select-Object -First 1
-          if (-not $zip) { throw "CPack produced no ZIP in build/" }
-          Move-Item $zip.FullName "dist/ds1edit-$tag-win32.zip"
+          $pkg = Get-ChildItem build -Filter 'DS1Edit-*.zip' | Select-Object -First 1
+          if (-not $pkg) { throw "CPack produced no ZIP in build/" }
+          Move-Item $pkg.FullName "dist/ds1edit-$tag-windows-x86.zip"
           Get-ChildItem dist
 
-      - name: Upload to release
-        uses: softprops/action-gh-release@v2
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pkg-windows
+          path: dist/*
+
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Install deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            build-essential ninja-build cmake pkg-config zlib1g-dev \
+            liballegro5-dev liballegro-image5-dev liballegro-ttf5-dev \
+            liballegro-dialog5-dev liballegro-acodec5-dev
+
+      - name: Configure
+        run: cmake --preset linux
+      - name: Build
+        run: cmake --build --preset linux
+      - name: Test
+        run: ctest --preset linux
+      - name: Package
+        run: cmake --build build --target package
+
+      - name: Stage artifact
+        run: |
+          set -euo pipefail
+          tag="${{ github.event.inputs.tag || github.ref_name }}"
+          mkdir -p dist
+          pkg=$(ls build/DS1Edit-*.tar.gz | head -1)
+          mv "$pkg" "dist/ds1edit-$tag-linux-x86_64.tar.gz"
+          ls -la dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pkg-linux
+          path: dist/*
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Install deps
+        run: brew install allegro ninja pkg-config
+
+      - name: Configure
+        run: cmake --preset macos
+      - name: Build
+        run: cmake --build --preset macos
+      - name: Test
+        run: ctest --preset macos
+      - name: Package
+        run: cmake --build build --target package
+
+      - name: Stage artifact
+        run: |
+          set -euo pipefail
+          tag="${{ github.event.inputs.tag || github.ref_name }}"
+          mkdir -p dist
+          pkg=$(ls build/DS1Edit-*.tar.gz | head -1)
+          mv "$pkg" "dist/ds1edit-$tag-macos-arm64.tar.gz"
+          ls -la dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pkg-macos
+          path: dist/*
+
+  publish:
+    needs: [windows, linux, macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - run: ls -la dist
+
+      - uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.tag || github.ref_name }}
-          files: dist/*.zip
+          files: dist/*
           draft: true
           generate_release_notes: false
