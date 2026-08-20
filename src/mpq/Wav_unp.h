@@ -1,6 +1,6 @@
 /* WAVE decompression table */
 
-#include "mpqTypes.h"
+#include "mpqtypes.h"
 
 UInt8 wav_table[2512] =
 {	0x0A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,

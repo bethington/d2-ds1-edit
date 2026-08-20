@@ -5,7 +5,7 @@
 
 /* WAVE decompressor */
 
-#include "mpqTypes.h"
+#include "mpqtypes.h"
 #include "Wav_unp.h"
 #include <stdlib.h>
 

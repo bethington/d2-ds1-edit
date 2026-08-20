@@ -222,7 +222,8 @@ void editpath_enter_action(int ds1_idx, long * paction)
    tx2 = tx1 + tw - 1;
    ty2 = ty1 + th - 1;
 
-   nb_char = strlen(ltoa(lvalue, svalue, 10));
+   snprintf(svalue, sizeof(svalue), "%ld", lvalue);
+   nb_char = strlen(svalue);
    
    // copy background
    bmp = al_create_bitmap(w, h);
@@ -365,7 +366,8 @@ void editpath_enter_action(int ds1_idx, long * paction)
       }
 
       // draw user input field
-      nb_char = strlen(ltoa(lvalue, svalue, 10));
+      snprintf(svalue, sizeof(svalue), "%ld", lvalue);
+      nb_char = strlen(svalue);
       add_x = 2 + (11 - nb_char) * 8;
       a5_rectfill(glb_ds1edit.screen_buff, tx1, ty1, tx2, ty2, pwin->c_darkgray);
       a5_textprintf(glb_ds1edit.screen_buff, font,

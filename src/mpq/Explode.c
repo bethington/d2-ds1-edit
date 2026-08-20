@@ -6,7 +6,7 @@
 /* DCL Explode */
 
 #include <stdio.h>
-#include "DCLib.h"
+#include "Dclib.h"
 
 static UInt16 __explode_1 (UInt8 *buf);
 static UInt16 __explode_2 (UInt8 *buf);

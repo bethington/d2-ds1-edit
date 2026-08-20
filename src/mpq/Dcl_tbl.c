@@ -1,6 +1,6 @@
 /* DCL decompression table */
 
-#include "DCLib.h"
+#include "Dclib.h"
 
 const UInt8 dcl_table[] =
 {	0x02, 0x04, 0x04, 0x05, 0x05, 0x05, 0x05, 0x06,

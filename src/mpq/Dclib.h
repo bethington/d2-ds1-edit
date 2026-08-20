@@ -1,6 +1,6 @@
 /* Header for Data Compression Library */
 
-#include "mpqTypes.h"
+#include "mpqtypes.h"
 
 #define CMP_BUFFER_SIZE 36312L	/* Work buffer size for imploding */
 #define EXP_BUFFER_SIZE 12596L	/* Work buffer size for exploding */
