@@ -404,32 +404,17 @@ install(FILES ${CMAKE_SOURCE_DIR}/Ds1edit.ini.sample DESTINATION .)
 install(FILES ${CMAKE_SOURCE_DIR}/LICENSE DESTINATION .)
 install(FILES ${CMAKE_SOURCE_DIR}/README.md DESTINATION .)
 
-# Install required DLLs
+# Install the runtime DLLs.
+#
+# This used to install a hand-maintained list plus a few globs, which silently
+# missed vcpkg transitives (zlib, jpeg62, freetype, brotli, bz2 ...) whose names
+# did not match the patterns -- the packaged exe then died at startup with
+# "cannot open shared object file" while the local build worked, because the
+# post-build step below copies *.dll wholesale. Install exactly what that step
+# copies, so the package and a working local bin/ cannot drift apart.
 if(WIN32 AND EXISTS "${ALLEGRO5_BIN_DIR}")
-    # Only install the DLLs we actually need
-    set(REQUIRED_DLLS
-        allegro-5.2.dll
-        allegro_image-5.2.dll
-        allegro_font-5.2.dll
-        allegro_primitives-5.2.dll
-        allegro_main-5.2.dll
-        allegro_dialog-5.2.dll
-    )
-    foreach(DLL_NAME ${REQUIRED_DLLS})
-        if(EXISTS "${ALLEGRO5_BIN_DIR}/${DLL_NAME}")
-            install(FILES "${ALLEGRO5_BIN_DIR}/${DLL_NAME}" DESTINATION .)
-        endif()
-    endforeach()
-    # Image format dependencies
-    file(GLOB IMAGE_DLLS
-        "${ALLEGRO5_BIN_DIR}/libpng*.dll"
-        "${ALLEGRO5_BIN_DIR}/zlib*.dll"
-        "${ALLEGRO5_BIN_DIR}/libjpeg*.dll"
-        "${ALLEGRO5_BIN_DIR}/libwebp*.dll"
-        "${ALLEGRO5_BIN_DIR}/libsharpyuv*.dll"
-        "${ALLEGRO5_BIN_DIR}/turbojpeg*.dll"
-    )
-    install(FILES ${IMAGE_DLLS} DESTINATION .)
+    file(GLOB ALLEGRO5_RUNTIME_DLLS "${ALLEGRO5_BIN_DIR}/*.dll")
+    install(FILES ${ALLEGRO5_RUNTIME_DLLS} DESTINATION .)
 endif()
 
 include(CPack)
