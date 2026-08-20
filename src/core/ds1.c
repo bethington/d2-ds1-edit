@@ -323,6 +323,34 @@ else
 //    init some var, to prepare its display (zoom, center, layer mask...)
 // if new_width OR new_height is <= 0, then no change to the size of the ds1, else
 // it'll crop or add necessary Tiles 
+/* True when `name` is relative to the tiles root and still needs the
+ * Data\Global\Tiles\ prefix to become an MPQ virtual path.
+ *
+ * False for names that already contain the tiles root, and for anything that
+ * looks like a local path (a drive letter, or a leading separator) -- those
+ * are handed to the archive as-is and will simply miss, falling through to
+ * the disk branch. */
+static int ds1_name_is_tiles_relative(const char *name)
+{
+   const char *p;
+
+   if (name == NULL || name[0] == 0)
+      return 0;
+
+   if (name[1] == ':')                    /* C:\... */
+      return 0;
+   if (name[0] == '/' || name[0] == '\\') /* rooted */
+      return 0;
+
+   for (p = name; *p != 0; p++)
+   {
+      if ((*p == 'g' || *p == 'G')
+          && strnicmp(p, "global", 6) == 0)
+         return 0;                        /* already names the tiles root */
+   }
+   return 1;
+}
+
 int ds1_read(const char * ds1name, int ds1_idx, int new_width, int new_height)
 {
    FILE        * in;
@@ -425,25 +453,58 @@ int ds1_read(const char * ds1name, int ds1_idx, int new_width, int new_height)
    glb_ds1[ds1_idx].animations_layer_mask = 1;
    glb_ds1[ds1_idx].special_layer_mask    = 0;
    
-   // load from disk into memory
-   in = fopen(ds1name, "rb");
-   if (in == NULL)
+   // Resolve the map: mod_dir overlay, then the MPQ chain, then local disk.
+   //
+   // misc_load_mpq_file() covers the first two. The disk fallback is last so
+   // that explicit paths -- the command line, assets/*.ini, and files saved
+   // into a project directory -- keep behaving exactly as they did.
    {
-      sprintf(tmp, "can't open %s\n", ds1name);
-      ds1edit_error(tmp);
+      char  mpq_name[512];
+      long  mpq_len = 0;
+      char *mpq_buff = NULL;
+      int   entry;
+
+      // An MPQ virtual path is rooted at Data\Global\Tiles\. Browser entries
+      // arrive relative to that ("ACT1\TOWN\townE1.ds1"); anything that
+      // already names the tiles root is passed through untouched.
+      if (ds1_name_is_tiles_relative(ds1name))
+         snprintf(mpq_name, sizeof(mpq_name), "%s%s", glb_tiles_path, ds1name);
+      else
+         snprintf(mpq_name, sizeof(mpq_name), "%s", ds1name);
+
+      entry = misc_load_mpq_file(mpq_name, &mpq_buff, &mpq_len, TRUE);
+      if (entry != -1 && mpq_buff != NULL && mpq_len > 0)
+      {
+         ds1_buff = (void *) mpq_buff;
+         ds1_len  = (int) mpq_len;
+      }
+      else
+      {
+         if (mpq_buff != NULL) { free(mpq_buff); mpq_buff = NULL; }
+
+         in = fopen(ds1name, "rb");
+         if (in == NULL)
+         {
+            sprintf(tmp,
+                    "can't open %s\n"
+                    "(not found in the mod directory, the MPQ chain, or on disk)\n",
+                    ds1name);
+            ds1edit_error(tmp);
+         }
+         fseek(in, 0, SEEK_END);
+         ds1_len = ftell(in);
+         fseek(in, 0, SEEK_SET);
+         ds1_buff = (void *) malloc(ds1_len);
+         if (ds1_buff == NULL)
+         {
+            fclose(in);
+            sprintf(tmp, "not enough mem (%i bytes) for %s\n", ds1_len, ds1name);
+            ds1edit_error(tmp);
+         }
+         fread(ds1_buff, ds1_len, 1, in);
+         fclose(in);
+      }
    }
-   fseek(in, 0, SEEK_END);
-   ds1_len = ftell(in);
-   fseek(in, 0, SEEK_SET);
-   ds1_buff = (void *) malloc(ds1_len);
-   if (ds1_buff == NULL)
-   {
-      fclose(in);
-      sprintf(tmp, "not enough mem (%i bytes) for %s\n", ds1_len, ds1name);
-      ds1edit_error(tmp);
-   }
-   fread(ds1_buff, ds1_len, 1, in);
-   fclose(in);
 
    // inits
    w_num = 0; // # of wall & orientation layers

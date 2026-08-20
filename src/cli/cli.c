@@ -119,9 +119,22 @@ int cli_is_verb(int argc, char **argv)
    if (argc < 2 || argv == NULL || argv[1] == NULL) return 0;
    a = argv[1];
    if (a[0] == 0) return 0;
-   /* Anything starting with '-' is a CLI flag (--help, -h, etc.) and
-    * counts as a CLI attempt; let cli_run validate it. */
-   if (a[0] == '-') return 1;
+   /* A '-'-prefixed argv[1] only belongs to the CLI when it actually names
+    * a verb (or is a help flag). Claiming every dashed argument is what made
+    * --list-areas, --area, --file and friends answer 'unknown verb': they
+    * never reached misc_cmd_line_parse. Anything we do not recognise is left
+    * to the legacy parser, which is what owns those flags. */
+   if (a[0] == '-')
+   {
+      const char *bare = a;
+      while (*bare == '-') bare++;
+      if (*bare == 0) return 0;
+      if (strcasecmp(bare, "help") == 0 || strcasecmp(bare, "h") == 0)
+         return 1;
+      if (strcasecmp(bare, "list-areas-ext") == 0)
+         return 1;
+      return find_verb(bare) != NULL;
+   }
    /* A path-shaped argv[1] (e.g. drag-and-drop a .ds1 file onto the
     * exe) is a GUI invocation, not a verb. Heuristic: contains a
     * path separator, a colon, or ends in a known file extension. */
@@ -2122,7 +2135,10 @@ static int verb_list_areas(int argc, char **argv)
    int rc = cli_area_browser_ready(argc, argv);
    if (rc != CLI_EXIT_OK) return rc;
 
-   if (cli_has_flag(argc, argv, "ext"))
+   /* Either "list-areas --ext" or the legacy "--list-areas-ext" spelling,
+    * which arrives as argv[1] rather than as a flag. */
+   if (cli_has_flag(argc, argv, "ext")
+       || (argc > 1 && argv[1] != NULL && strstr(argv[1], "list-areas-ext") != NULL))
       area_browser_list_ext();
    else
       area_browser_list();
