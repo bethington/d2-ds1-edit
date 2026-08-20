@@ -63,6 +63,43 @@ else()
     endif()
 endif()
 
+# Normalised Allegro handle. Discovery populates two different variable
+# families (pkg-config's *_LIBRARIES vs find_library's *_LIB), and the test
+# targets need the same set the main binary gets, so wrap it once here.
+add_library(ds1edit_allegro INTERFACE)
+if(ALLEGRO5_FOUND)
+    target_include_directories(ds1edit_allegro INTERFACE
+        ${ALLEGRO5_INCLUDE_DIRS}
+        ${ALLEGRO5_IMAGE_INCLUDE_DIRS}
+        ${ALLEGRO5_FONT_INCLUDE_DIRS}
+        ${ALLEGRO5_PRIMITIVES_INCLUDE_DIRS}
+        ${ALLEGRO5_DIALOG_INCLUDE_DIRS})
+    target_link_directories(ds1edit_allegro INTERFACE
+        ${ALLEGRO5_LIBRARY_DIRS}
+        ${ALLEGRO5_IMAGE_LIBRARY_DIRS}
+        ${ALLEGRO5_FONT_LIBRARY_DIRS}
+        ${ALLEGRO5_PRIMITIVES_LIBRARY_DIRS}
+        ${ALLEGRO5_DIALOG_LIBRARY_DIRS})
+    target_link_libraries(ds1edit_allegro INTERFACE
+        ${ALLEGRO5_LIBRARIES}
+        ${ALLEGRO5_IMAGE_LIBRARIES}
+        ${ALLEGRO5_FONT_LIBRARIES}
+        ${ALLEGRO5_PRIMITIVES_LIBRARIES}
+        ${ALLEGRO5_DIALOG_LIBRARIES}
+        ${ALLEGRO5_MAIN_LIBRARIES})
+else()
+    target_include_directories(ds1edit_allegro INTERFACE ${ALLEGRO5_INCLUDE_DIR})
+    target_link_libraries(ds1edit_allegro INTERFACE
+        ${ALLEGRO5_LIB}
+        ${ALLEGRO5_IMAGE_LIB}
+        ${ALLEGRO5_FONT_LIB}
+        ${ALLEGRO5_PRIMITIVES_LIB}
+        ${ALLEGRO5_DIALOG_LIB})
+    if(ALLEGRO5_MAIN_LIB)
+        target_link_libraries(ds1edit_allegro INTERFACE ${ALLEGRO5_MAIN_LIB})
+    endif()
+endif()
+
 # Source files
 set(SOURCES
     src/main.c

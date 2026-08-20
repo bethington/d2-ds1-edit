@@ -200,7 +200,7 @@ add_executable(test_asset_export_smoke
     ../src/core/glob_match.c
     ../src/platform.c
 )
-target_link_libraries(test_asset_export_smoke PRIVATE unity ${ALLEGRO5_LIB} ${ALLEGRO5_IMAGE_LIB})
+target_link_libraries(test_asset_export_smoke PRIVATE unity ds1edit_allegro)
 target_include_directories(test_asset_export_smoke PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/src/mpq
@@ -230,7 +230,7 @@ add_test(NAME area_metadata COMMAND test_area_metadata)
 
 # Phase 1: RGBA cache tests (needs Allegro 5 for cache_tile_to_a5_bitmap)
 add_executable(test_rgba_cache test_rgba_cache.c ../src/core/rgba_cache.c)
-target_link_libraries(test_rgba_cache PRIVATE unity ${ALLEGRO5_LIB})
+target_link_libraries(test_rgba_cache PRIVATE unity ds1edit_allegro)
 target_include_directories(test_rgba_cache PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/src/mpq
@@ -282,7 +282,7 @@ add_executable(test_project
     ../src/core/preferences.c
     ../src/core/project.c
 )
-target_link_libraries(test_project PRIVATE unity ${ALLEGRO5_LIB})
+target_link_libraries(test_project PRIVATE unity ds1edit_allegro)
 target_include_directories(test_project PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/src/mpq

@@ -5,6 +5,7 @@
  * messages for the canonical smoke commands). */
 
 #include <stdio.h>
+#include "platform.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -27,7 +28,7 @@ static int run_capture(const char *cmd, char *out_buf, int cap)
    if (out_buf == NULL || cap <= 0) return -1;
    out_buf[0] = 0;
 
-   fp = _popen(cmd, "r");
+   fp = DS1_POPEN(cmd, "r");
    if (fp == NULL) return -1;
 
    while (n < cap - 1)
@@ -38,7 +39,7 @@ static int run_capture(const char *cmd, char *out_buf, int cap)
    }
    out_buf[n] = 0;
 
-   rc = _pclose(fp);
+   rc = DS1_PCLOSE(fp);
    return rc;
 }
 

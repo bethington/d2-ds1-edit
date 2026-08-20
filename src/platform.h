@@ -23,6 +23,7 @@
 #define DS1EDIT_PLATFORM_H
 
 #include <stddef.h>
+#include <stdio.h>
 
 #ifdef WIN32
    #include <direct.h>
@@ -54,6 +55,16 @@
    #define DS1_MKDIR(path) _mkdir(path)
 #else
    #define DS1_MKDIR(path) mkdir((path), 0755)
+#endif
+
+/* ---- process pipes ---------------------------------------------------- */
+/* MSVC prefixes these with an underscore; POSIX does not. */
+#ifdef WIN32
+   #define DS1_POPEN(cmd, mode)  _popen((cmd), (mode))
+   #define DS1_PCLOSE(fp)        _pclose(fp)
+#else
+   #define DS1_POPEN(cmd, mode)  popen((cmd), (mode))
+   #define DS1_PCLOSE(fp)        pclose(fp)
 #endif
 
 /* ---- path separators -------------------------------------------------- */
