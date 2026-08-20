@@ -6,6 +6,7 @@
 /* Smallest window the editor chrome can be laid out in. */
 #define MIN_SCREEN_DIM 320
 #include <string.h>
+#include "platform.h"
 #include "structs.h"
 #include "error.h"
 #include "config.h"
@@ -363,6 +364,9 @@ void ini_read(char *ininame)
             else
             {
                strcpy(buf, str);
+               /* An .ini may be written on either platform; make the
+                  separators match this host before anything opens it. */
+               ds1_path_normalize(buf);
                tmpptr = datas[i].data_ptr;
                *tmpptr = buf;
             }
@@ -416,7 +420,8 @@ void ini_read(char *ininame)
             else
             {
                strcpy(buf, str);
-               if ((buf[strlen(buf) - 1] == '\\') || (buf[strlen(buf) - 1] == '/'))
+               ds1_path_normalize(buf);
+               if (DS1_IS_SEP(buf[strlen(buf) - 1]))
                   buf[strlen(buf) - 1] = 0;
                tmpptr = datas[i].data_ptr;
                *tmpptr = buf;

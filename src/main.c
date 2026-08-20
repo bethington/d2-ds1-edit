@@ -867,6 +867,44 @@ void ds1edit_load_palettes(void)
 }
 
 // ==========================================================================
+// Create the display, settling for less if the preferred mode is refused.
+//
+// A single attempt was fatal, which is harsh when a host simply declines one
+// fullscreen mode or refresh rate -- macOS most of all. Try what the config
+// asked for, then a plain resizable window, then a fixed one.
+static ALLEGRO_DISPLAY * ds1edit_try_create_display(void)
+{
+   ALLEGRO_DISPLAY *d = NULL;
+   int w = glb_config.screen.width;
+   int h = glb_config.screen.height;
+
+   if (glb_config.fullscreen == TRUE)
+   {
+      al_set_new_display_flags(ALLEGRO_FULLSCREEN);
+      if (glb_config.screen.refresh > 0)
+         al_set_new_display_refresh_rate(glb_config.screen.refresh);
+      d = al_create_display(w, h);
+      if (d != NULL)
+         return d;
+      fprintf(stderr, "display: fullscreen %ix%i refused, trying a window\n", w, h);
+   }
+
+   /* Drop any refresh-rate demand along with fullscreen -- it is the other
+      half of a mode the host has already turned down. */
+   al_set_new_display_refresh_rate(0);
+
+   al_set_new_display_flags(ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE);
+   d = al_create_display(w, h);
+   if (d != NULL)
+      return d;
+   fprintf(stderr, "display: resizable %ix%i refused, trying a fixed window\n", w, h);
+
+   al_set_new_display_flags(ALLEGRO_WINDOWED);
+   return al_create_display(w, h);
+}
+
+
+// ==========================================================================
 // as expected, the start of the prog
 //
 // On macOS the real body runs under al_run_main() so that Allegro owns the
@@ -1498,15 +1536,7 @@ int main(int argc, char *argv[])
    // display setup (skip if already created by the area browser)
    if (a5_display == NULL)
    {
-      if (glb_config.fullscreen == TRUE)
-         al_set_new_display_flags(ALLEGRO_FULLSCREEN);
-      else
-         al_set_new_display_flags(ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE);
-
-      if (glb_config.screen.refresh > 0)
-         al_set_new_display_refresh_rate(glb_config.screen.refresh);
-
-      a5_display = al_create_display(glb_config.screen.width, glb_config.screen.height);
+      a5_display = ds1edit_try_create_display();
       if (a5_display == NULL)
       {
          sprintf(
