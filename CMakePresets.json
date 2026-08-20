@@ -41,6 +41,36 @@
             },
             "generator": "Visual Studio 17 2022",
             "binaryDir": "${sourceDir}/build"
+        },
+        {
+            "name": "linux",
+            "displayName": "Linux (Ninja, system Allegro 5)",
+            "description": "Uses pkg-config against liballegro5-dev",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            }
+        },
+        {
+            "name": "macos",
+            "displayName": "macOS (Ninja, Homebrew Allegro 5)",
+            "description": "Uses pkg-config against `brew install allegro`",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            }
         }
     ],
     "buildPresets": [
@@ -67,6 +97,16 @@
             "displayName": "CI Release",
             "configurePreset": "ci",
             "configuration": "Release"
+        },
+        {
+            "name": "linux",
+            "displayName": "Linux Release",
+            "configurePreset": "linux"
+        },
+        {
+            "name": "macos",
+            "displayName": "macOS Release",
+            "configurePreset": "macos"
         }
     ],
     "testPresets": [
@@ -84,6 +124,22 @@
             "displayName": "CI Tests",
             "configurePreset": "ci",
             "configuration": "Release",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "linux",
+            "displayName": "Linux Tests",
+            "configurePreset": "linux",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "macos",
+            "displayName": "macOS Tests",
+            "configurePreset": "macos",
             "output": {
                 "outputOnFailure": true
             }

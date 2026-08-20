@@ -13,22 +13,54 @@ add_compile_definitions(
 option(USE_SOFTWARE_RENDERER "Force software rendering (no GPU)" OFF)
 option(DS1EDIT_PERF_LOG "Enable per-frame perf logging to stderr and perf_log.csv" OFF)
 
-# Find Allegro 5 (installed via vcpkg or system)
-# vcpkg toolchain is set via CMakePresets.json or -DCMAKE_TOOLCHAIN_FILE
-find_path(ALLEGRO5_INCLUDE_DIR allegro5/allegro.h)
-find_library(ALLEGRO5_LIB allegro)
-find_library(ALLEGRO5_IMAGE_LIB allegro_image)
-find_library(ALLEGRO5_FONT_LIB allegro_font)
-find_library(ALLEGRO5_PRIMITIVES_LIB allegro_primitives)
-find_library(ALLEGRO5_MAIN_LIB allegro_main)
-find_library(ALLEGRO5_DIALOG_LIB allegro_dialog)
+# Find Allegro 5.
+# Windows: vcpkg (toolchain set via CMakePresets.json or -DCMAKE_TOOLCHAIN_FILE).
+# Linux/macOS: pkg-config against the distro / Homebrew packages, falling back
+# to a bare find_library sweep if the .pc files are missing.
+if(NOT WIN32)
+    find_package(PkgConfig QUIET)
+endif()
 
-if(NOT ALLEGRO5_INCLUDE_DIR OR NOT ALLEGRO5_LIB)
-    message(FATAL_ERROR
-        "Allegro 5 not found. Install via vcpkg:\n"
-        "  vcpkg install allegro5[core,image,font,primitives]:x86-windows\n"
-        "Then configure with:\n"
-        "  cmake --preset default")
+if(PKG_CONFIG_FOUND AND NOT WIN32)
+    pkg_check_modules(ALLEGRO5 QUIET allegro-5)
+    pkg_check_modules(ALLEGRO5_IMAGE QUIET allegro_image-5)
+    pkg_check_modules(ALLEGRO5_FONT QUIET allegro_font-5)
+    pkg_check_modules(ALLEGRO5_PRIMITIVES QUIET allegro_primitives-5)
+    pkg_check_modules(ALLEGRO5_DIALOG QUIET allegro_dialog-5)
+    pkg_check_modules(ALLEGRO5_MAIN QUIET allegro_main-5)
+endif()
+
+if(ALLEGRO5_FOUND)
+    # pkg-config path: carry its -I / -L / -l sets straight through.
+    set(ALLEGRO5_INCLUDE_DIR ${ALLEGRO5_INCLUDE_DIRS})
+else()
+    find_path(ALLEGRO5_INCLUDE_DIR allegro5/allegro.h)
+    find_library(ALLEGRO5_LIB allegro)
+    find_library(ALLEGRO5_IMAGE_LIB allegro_image)
+    find_library(ALLEGRO5_FONT_LIB allegro_font)
+    find_library(ALLEGRO5_PRIMITIVES_LIB allegro_primitives)
+    find_library(ALLEGRO5_DIALOG_LIB allegro_dialog)
+    # allegro_main exists on Windows and macOS but not on Linux.
+    find_library(ALLEGRO5_MAIN_LIB allegro_main)
+
+    if(NOT ALLEGRO5_INCLUDE_DIR OR NOT ALLEGRO5_LIB)
+        if(WIN32)
+            message(FATAL_ERROR
+                "Allegro 5 not found. Install via vcpkg, then configure with:\n"
+                "  cmake --preset default")
+        elseif(APPLE)
+            message(FATAL_ERROR
+                "Allegro 5 not found. Install via Homebrew:\n"
+                "  brew install allegro pkg-config\n"
+                "Then configure with:  cmake --preset macos")
+        else()
+            message(FATAL_ERROR
+                "Allegro 5 not found. On Debian/Ubuntu:\n"
+                "  sudo apt install liballegro5-dev liballegro-image5-dev "
+                "liballegro-ttf5-dev liballegro-dialog5-dev zlib1g-dev\n"
+                "Then configure with:  cmake --preset linux")
+        endif()
+    endif()
 endif()
 
 # Source files
@@ -159,6 +191,62 @@ if(WIN32)
         $<$<CONFIG:Release>:/LTCG>
         $<$<CONFIG:RelWithDebInfo>:/LTCG>
     )
+else()
+    # POSIX. The WIN32 define is deliberately absent -- it is what every
+    # #ifdef WIN32 in src/ keys off, so leaving it unset selects the POSIX
+    # branches throughout.
+    target_compile_definitions(ds1edit PRIVATE USE_CONSOLE _GNU_SOURCE)
+
+    if(ALLEGRO5_FOUND)
+        # pkg-config gave us full -l / -L sets for each addon.
+        target_include_directories(ds1edit PRIVATE
+            ${ALLEGRO5_INCLUDE_DIRS}
+            ${ALLEGRO5_IMAGE_INCLUDE_DIRS}
+            ${ALLEGRO5_FONT_INCLUDE_DIRS}
+            ${ALLEGRO5_PRIMITIVES_INCLUDE_DIRS}
+            ${ALLEGRO5_DIALOG_INCLUDE_DIRS}
+        )
+        target_link_directories(ds1edit PRIVATE
+            ${ALLEGRO5_LIBRARY_DIRS}
+            ${ALLEGRO5_IMAGE_LIBRARY_DIRS}
+            ${ALLEGRO5_FONT_LIBRARY_DIRS}
+            ${ALLEGRO5_PRIMITIVES_LIBRARY_DIRS}
+            ${ALLEGRO5_DIALOG_LIBRARY_DIRS}
+        )
+        target_link_libraries(ds1edit PRIVATE
+            ${ALLEGRO5_LIBRARIES}
+            ${ALLEGRO5_IMAGE_LIBRARIES}
+            ${ALLEGRO5_FONT_LIBRARIES}
+            ${ALLEGRO5_PRIMITIVES_LIBRARIES}
+            ${ALLEGRO5_DIALOG_LIBRARIES}
+            ${ALLEGRO5_MAIN_LIBRARIES}
+            ZLIB::ZLIB
+            m
+        )
+    else()
+        target_link_libraries(ds1edit PRIVATE
+            ${ALLEGRO5_LIB}
+            ${ALLEGRO5_IMAGE_LIB}
+            ${ALLEGRO5_FONT_LIB}
+            ${ALLEGRO5_PRIMITIVES_LIB}
+            ${ALLEGRO5_DIALOG_LIB}
+            ZLIB::ZLIB
+            m
+        )
+        # Present on macOS, absent on Linux -- link only if it was found.
+        if(ALLEGRO5_MAIN_LIB)
+            target_link_libraries(ds1edit PRIVATE ${ALLEGRO5_MAIN_LIB})
+        endif()
+    endif()
+
+    target_compile_options(ds1edit PRIVATE
+        -Wall
+        # The codebase predates a lot of -W pedantry; keep the build readable
+        # rather than drowning the real errors.
+        -Wno-unused-but-set-variable
+        -Wno-unused-result
+        -Wno-format-truncation
+    )
 endif()
 
 # Debug/Release definitions
@@ -237,7 +325,16 @@ set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Diablo II DS1 Map Editor")
 set(CPACK_PACKAGE_VENDOR "bethington")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
-set(CPACK_GENERATOR "ZIP")
+if(WIN32)
+    set(CPACK_GENERATOR "ZIP")
+    set(CPACK_SYSTEM_NAME "win32")
+elseif(APPLE)
+    set(CPACK_GENERATOR "TGZ")
+    set(CPACK_SYSTEM_NAME "macos-${CMAKE_SYSTEM_PROCESSOR}")
+else()
+    set(CPACK_GENERATOR "TGZ")
+    set(CPACK_SYSTEM_NAME "linux-${CMAKE_SYSTEM_PROCESSOR}")
+endif()
 
 # Install rules for packaging
 install(TARGETS ds1edit RUNTIME DESTINATION .)
@@ -249,6 +346,7 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets/
 )
 install(FILES ${CMAKE_SOURCE_DIR}/Ds1edit.ini.sample DESTINATION .)
 install(FILES ${CMAKE_SOURCE_DIR}/LICENSE DESTINATION .)
+install(FILES ${CMAKE_SOURCE_DIR}/README.md DESTINATION .)
 
 # Install required DLLs
 if(WIN32 AND EXISTS "${ALLEGRO5_BIN_DIR}")
