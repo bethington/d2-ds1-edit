@@ -117,6 +117,7 @@ void interfac_user_handler(int start_ds1_idx)
    double frame_start_ms, section_start_ms;
    int selftest_rendered = 0;
    int switchbench_done = 0;
+   int switchbench_exit_in = 0;
 
    // init
    tmp_sel.x1 = tmp_sel.x2 = tmp_sel.y1 = tmp_sel.y2 = 0;
@@ -2266,10 +2267,28 @@ void interfac_user_handler(int start_ds1_idx)
             fflush(stdout);
 
             for (e = 0; e < n; e++)
-               area_browser_switch_single(gi, e);
+            {
+               int new_idx = area_browser_switch_single(gi, e);
+
+               /* Adopt the loaded map the same way a sidebar click does --
+                  without this the benchmark measured the load but left the
+                  view pointing at whatever the .ini opened. */
+               if (new_idx >= 0)
+               {
+                  ds1_idx = new_idx;
+                  tile_picker_on_ds1_change(new_idx);
+               }
+            }
          }
-         done = TRUE;
+
+         /* Draw the map we just loaded before quitting, so what is on screen
+            matches what was measured. Exiting straight from here left the
+            window showing Rogue Encampment for every group benchmarked. */
+         switchbench_exit_in = 3;
       }
+
+      if ((switchbench_exit_in > 0) && (--switchbench_exit_in == 0))
+         done = TRUE;
 
       /* --selftest: the frame counter is the whole point -- if we get here
          the display exists, the assets loaded and the loop is running. */
