@@ -451,6 +451,23 @@ int ds1_read(const char * ds1name, int ds1_idx, int new_width, int new_height)
          snprintf(mpq_name, sizeof(mpq_name), "%s%s", glb_tiles_path, ds1name);
          entry = misc_load_mpq_file(mpq_name, &mpq_buff, &mpq_len, TRUE);
       }
+
+      /* Still nothing: the name may carry a disk prefix from the days when
+       * tiles had to be extracted, as the shipped area INIs do
+       * ("assets/tiles/expansion/Town/townWest.ds1"). Everything after the
+       * last "/tiles/" is the form the archives are keyed on. */
+      if (entry == -1 || mpq_buff == NULL)
+      {
+         const char *suffix = find_tiles_suffix(ds1name);
+
+         if (suffix != NULL && suffix[0] != 0)
+         {
+            if (mpq_buff != NULL) { free(mpq_buff); mpq_buff = NULL; }
+            mpq_len = 0;
+            snprintf(mpq_name, sizeof(mpq_name), "%s%s", glb_tiles_path, suffix);
+            entry = misc_load_mpq_file(mpq_name, &mpq_buff, &mpq_len, TRUE);
+         }
+      }
       if (entry != -1 && mpq_buff != NULL && mpq_len > 0)
       {
          ds1_buff = (void *) mpq_buff;

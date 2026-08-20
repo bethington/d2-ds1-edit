@@ -261,7 +261,7 @@ int project_ensure_parent_dirs(const char *path)
 
 // Find the tail after the last "/tiles/" or "\tiles\" segment in `path`,
 // case-insensitive. Returns NULL if no such segment exists.
-static const char *find_tiles_suffix(const char *path)
+const char *find_tiles_suffix(const char *path)
 {
    int len, i;
    if (path == NULL) return NULL;

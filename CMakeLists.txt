@@ -337,6 +337,13 @@ add_custom_target(clean-bin
     COMMENT "Removing bin/ contents except Ds1edit.ini"
 )
 
+# The asset set the editor loads at runtime, named once so the post-build copy
+# to bin/ and the install rules below cannot drift apart. They already did:
+# making the copy explicit (to stop it mirroring the user's assets/tiles/ into
+# bin/) dropped the area .ini files, which the install rule still had -- so
+# packages worked and `ds1edit assets/act5_town.ini` from bin/ did not.
+file(GLOB DS1EDIT_AREA_INIS "${CMAKE_SOURCE_DIR}/assets/*.ini")
+
 # Copy runtime data files to bin/ at build time
 add_custom_command(TARGET ds1edit POST_BUILD
     # Only the subtrees the editor loads. Copying all of assets/ also mirrors
@@ -346,6 +353,9 @@ add_custom_command(TARGET ds1edit POST_BUILD
         "${CMAKE_SOURCE_DIR}/assets/ui" "${CMAKE_SOURCE_DIR}/bin/assets/ui"
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_SOURCE_DIR}/assets/editor" "${CMAKE_SOURCE_DIR}/bin/assets/editor"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_SOURCE_DIR}/bin/assets"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${DS1EDIT_AREA_INIS} "${CMAKE_SOURCE_DIR}/bin/assets"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_SOURCE_DIR}/Ds1edit.ini.sample" "${CMAKE_SOURCE_DIR}/bin/Ds1edit.ini.sample"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -400,7 +410,6 @@ endif()
 # .gitignore, so a FILES_MATCHING glob over the whole tree happily sweeps both
 # into the package -- a *.dt1 pattern here briefly produced a 234 MB ZIP full
 # of Blizzard tiles. Name the three subtrees that should ship instead.
-file(GLOB DS1EDIT_AREA_INIS "${CMAKE_SOURCE_DIR}/assets/*.ini")
 install(FILES ${DS1EDIT_AREA_INIS} DESTINATION assets)
 
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets/ui/ DESTINATION assets/ui)

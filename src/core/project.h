@@ -61,4 +61,9 @@ int  project_ensure_parent_dirs(const char *path);
 // inside the project, or no recognisable tiles segment to rewrite from).
 int  project_redirect_ds1_save_path(const char *src, char *dst, int dst_cap);
 
+/* Everything after the last "/tiles/" in a path, i.e. the form MPQ
+ * virtual paths under Data\\Global\\Tiles\\ are keyed on.
+ * NULL if the path has no tiles component. */
+const char *find_tiles_suffix(const char *path);
+
 #endif
