@@ -160,41 +160,18 @@ int mpq_index_build(void)
 
    // Prefer the globally-cached TXT_S if one is already loaded (e.g. if a
    // DS1 was opened first and warmed the cache). Otherwise load from MPQ.
-   if (glb_ds1edit.lvlprest_buff != NULL)
-      lvlprest = glb_ds1edit.lvlprest_buff;
-   else
-   {
-      buff = (char *) txt_read_in_mem("Data\\Global\\Excel\\LvlPrest.txt");
-      if (buff == NULL) goto fail;
-      lvlprest = txt_load(buff, RQ_LVLPREST, "Data\\Global\\Excel\\LvlPrest.txt");
-      free(buff); buff = NULL;
-      if (lvlprest == NULL) goto fail;
-      glb_ds1edit.lvlprest_buff = lvlprest;
-   }
+   /* Route through the shared loaders rather than repeating the
+    * read-then-parse dance three times. They cache into the same globals and
+    * carry the archive fallback, so a mod shipping a trimmed table no longer
+    * takes the preset index down with it. */
+   if (txt_ensure_lvlprest() != 0) goto fail;
+   lvlprest = glb_ds1edit.lvlprest_buff;
 
-   if (glb_ds1edit.lvltypes_buff != NULL)
-      lvltypes = glb_ds1edit.lvltypes_buff;
-   else
-   {
-      buff = (char *) txt_read_in_mem("Data\\Global\\Excel\\LvlTypes.txt");
-      if (buff == NULL) goto fail;
-      lvltypes = txt_load(buff, RQ_LVLTYPE, "Data\\Global\\Excel\\LvlTypes.txt");
-      free(buff); buff = NULL;
-      if (lvltypes == NULL) goto fail;
-      glb_ds1edit.lvltypes_buff = lvltypes;
-   }
+   if (txt_ensure_lvltypes() != 0) goto fail;
+   lvltypes = glb_ds1edit.lvltypes_buff;
 
-   if (glb_ds1edit.levels_buff != NULL)
-      levels = glb_ds1edit.levels_buff;
-   else
-   {
-      buff = (char *) txt_read_in_mem("Data\\Global\\Excel\\Levels.txt");
-      if (buff == NULL) goto fail;
-      levels = txt_load(buff, RQ_LEVELS, "Data\\Global\\Excel\\Levels.txt");
-      free(buff); buff = NULL;
-      if (levels == NULL) goto fail;
-      glb_ds1edit.levels_buff = levels;
-   }
+   if (read_levels_txt() != 0) goto fail;
+   levels = glb_ds1edit.levels_buff;
 
    // Build a tiny Levels.id -> (act, level_type) lookup.
    levels_rows = (LEVELS_ROW_S *) calloc(levels->line_num, sizeof(LEVELS_ROW_S));

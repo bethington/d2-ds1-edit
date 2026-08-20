@@ -411,9 +411,14 @@ TXT_S *txt_load(char *mem, RQ_ENUM enum_txt, char *filename)
 
    if (all_col_ok != TRUE)
    {
+      /* Report rather than exit. The caller may have taken this copy from a
+       * mod directory and can retry against the archives; only when that
+       * also fails is it genuinely fatal. */
       txt = txt_destroy(txt);
-      sprintf(tmp, "txt_load() : not all columns have been found");
-      ds1edit_error(tmp);
+      fprintf(stderr,
+              "txt_load(): %s is missing required columns\n",
+              (filename != NULL) ? filename : "(unnamed)");
+      return NULL;
    }
 
    // stage 2, search max size of all string columns except header
@@ -456,6 +461,54 @@ TXT_S *txt_load(char *mem, RQ_ENUM enum_txt, char *filename)
 }
 
 // ==========================================================================
+// Load a .txt from the MPQ chain only, ignoring the mod_dir overlay.
+//
+// Used as a fallback: a mod that ships a trimmed table (Projectd2's Levels.txt
+// has no umon8..umon10, for instance) would otherwise take precedence and stop
+// the editor from starting. Returns NULL rather than exiting, so the caller
+// decides whether the failure is fatal.
+void *txt_read_in_mem_mpq_only(char *txtname)
+{
+   void *buff = NULL, *new_buff;
+   int   entry;
+   long  len = 0;
+   int   saved_mod_count;
+   char *saved_mod[MAX_MOD_DIR];
+   int   i;
+
+   /* misc_load_mpq_file always checks mod_dir first. Hide it for the call. */
+   saved_mod_count = 0;
+   for (i = 0; i < MAX_MOD_DIR; i++)
+   {
+      saved_mod[i] = glb_config.mod_dir[i];
+      glb_config.mod_dir[i] = NULL;
+      saved_mod_count++;
+   }
+
+   entry = misc_load_mpq_file(txtname, (char **)&buff, &len, TRUE);
+
+   for (i = 0; i < saved_mod_count; i++)
+      glb_config.mod_dir[i] = saved_mod[i];
+
+   if ((entry == -1) || (buff == NULL) || (len <= 0))
+   {
+      if (buff != NULL) free(buff);
+      return NULL;
+   }
+
+   len++;
+   new_buff = realloc(buff, len);
+   if (new_buff == NULL)
+   {
+      free(buff);
+      return NULL;
+   }
+   buff = new_buff;
+   ((char *) buff)[len - 1] = 0;
+   return buff;
+}
+
+// ==========================================================================
 // load a .txt from a mpq (or mod dir) into mem
 void *txt_read_in_mem(char *txtname)
 {
@@ -472,36 +525,6 @@ void *txt_read_in_mem(char *txtname)
       ds1edit_error(tmp);
    }
 
-   /* Check if a local assets copy has more data (PD2 mod entries).
-    * Use the larger file to ensure all entries are available. */
-   {
-      char local_path[256];
-      FILE *local_file;
-      sprintf(local_path, "assets/excel/%s", strrchr(txtname, '\\') ? strrchr(txtname, '\\') + 1 : txtname);
-      local_file = fopen(local_path, "rb");
-      if (local_file != NULL)
-      {
-         long local_len;
-         fseek(local_file, 0, SEEK_END);
-         local_len = ftell(local_file);
-         if (local_len > len)
-         {
-            void *local_buff;
-            fseek(local_file, 0, SEEK_SET);
-            local_buff = malloc(local_len + 1);
-            if (local_buff != NULL)
-            {
-               fread(local_buff, 1, local_len, local_file);
-               printf("  using local %s (%ld bytes > mpq %ld bytes)\n",
-                      local_path, local_len, len);
-               free(buff);
-               buff = local_buff;
-               len = local_len;
-            }
-         }
-         fclose(local_file);
-      }
-   }
 
    len++;
    new_buff = realloc(buff, len);
@@ -578,6 +601,38 @@ void txt_debug(char *file_path_mem, char *file_path_def, TXT_S *txt)
 
 // ==========================================================================
 // load lvlTypes.txt in mem, then load each dt1 for a 1 ds1
+// ==========================================================================
+// Parse a table, falling back to the archives if the overlay's copy does not
+// satisfy the column requirements. Returns NULL only when both fail.
+static TXT_S *txt_load_with_mpq_fallback(char *txtname, RQ_ENUM req)
+{
+   char  *buff;
+   TXT_S *txt;
+
+   buff = txt_read_in_mem(txtname);
+   if (buff == NULL)
+      return NULL;
+
+   txt = txt_load(buff, req, txtname);
+   free(buff);
+   if (txt != NULL)
+      return txt;
+
+   /* The copy we got -- most likely from mod_dir -- is unusable. Try the
+    * base game's before giving up. */
+   fprintf(stderr,
+           "txt: retrying %s from the MPQ chain, ignoring the mod overlay\n",
+           txtname);
+
+   buff = txt_read_in_mem_mpq_only(txtname);
+   if (buff == NULL)
+      return NULL;
+
+   txt = txt_load(buff, req, txtname);
+   free(buff);
+   return txt;
+}
+
 /* Parse and cache LvlTypes.txt without touching any DS1 slot.
  *
  * read_lvltypes_txt(idx, type) also resolves a row and loads that level's
@@ -592,12 +647,7 @@ int txt_ensure_lvltypes(void)
    if (glb_ds1edit.lvltypes_buff != NULL)
       return 0;
 
-   buff = txt_read_in_mem(lvltypes);
-   if (buff == NULL)
-      return -1;
-
-   txt = txt_load(buff, RQ_LVLTYPE, lvltypes);
-   free(buff);
+   txt = txt_load_with_mpq_fallback(lvltypes, RQ_LVLTYPE);
    if (txt == NULL)
       return -1;
 
@@ -615,12 +665,7 @@ int txt_ensure_lvlprest(void)
    if (glb_ds1edit.lvlprest_buff != NULL)
       return 0;
 
-   buff = txt_read_in_mem(lvlprest);
-   if (buff == NULL)
-      return -1;
-
-   txt = txt_load(buff, RQ_LVLPREST, lvlprest);
-   free(buff);
+   txt = txt_load_with_mpq_fallback(lvlprest, RQ_LVLPREST);
    if (txt == NULL)
       return -1;
 
@@ -1082,15 +1127,10 @@ int read_levels_txt(void)
 
    if (glb_ds1edit.levels_buff == NULL)
    {
-      buff = txt_read_in_mem(levels);
-      if (buff == NULL)
-         return -1;
-
-      txt = txt_load(buff, RQ_LEVELS, levels);
-      glb_ds1edit.levels_buff = txt;
-      free(buff);
+      txt = txt_load_with_mpq_fallback(levels, RQ_LEVELS);
       if (txt == NULL)
          return -1;
+      glb_ds1edit.levels_buff = txt;
    }
    return 0;
 }
