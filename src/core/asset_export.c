@@ -19,6 +19,9 @@
 #include "core/glob_match.h"
 #include "core/asset_export.h"
 
+/* Defined further down, but called before that point. */
+static int export_path_list_add(EXPORT_PATH_LIST_S *list, const char *asset_path);
+
 #ifdef WIN32
 #define PATH_SEP '\\'
 #else

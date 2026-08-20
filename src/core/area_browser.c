@@ -9,6 +9,8 @@
 #include "core/palette.h"
 #include "core/txtread.h"
 #include "core/cof.h"
+#include "core/animdata.h"
+#include "core/dt1.h"
 #include "render/preview.h"
 #include "core/area_browser.h"
 #include "ui/props_panel.h"

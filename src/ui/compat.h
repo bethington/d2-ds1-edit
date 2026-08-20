@@ -401,10 +401,16 @@ extern ALLEGRO_CONFIG *a5_config;
    #ifndef strncasecmp
    #define strncasecmp _strnicmp
    #endif
+   #ifndef strnicmp
+   #define strnicmp    _strnicmp
+   #endif
 #else
    #include <strings.h>
    #ifndef stricmp
    #define stricmp   strcasecmp
+   #endif
+   #ifndef strnicmp
+   #define strnicmp  strncasecmp
    #endif
    #define _stricmp  strcasecmp
    #define _strnicmp strncasecmp
