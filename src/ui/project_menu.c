@@ -36,6 +36,7 @@
 #include "core/project.h"
 #include "core/preferences.h"
 #include "core/upscale.h"
+#include "platform.h"
 
 // Shortcut debounce helper: wait until all given keys are released.
 static void wait_release(int k1, int k2, int k3)
@@ -298,33 +299,19 @@ static int ensure_export_palette_ready(void)
 
 static int directory_has_entries(const char *path)
 {
-#ifdef WIN32
-   WIN32_FIND_DATAA fd;
-   HANDLE hFind;
-   char search[PROJECT_PATH_MAX + 8];
+   DS1_DIR d;
+   int     found;
 
    if (path == NULL || path[0] == 0)
       return 0;
 
-   snprintf(search, sizeof(search), "%s\\*", path);
-   hFind = FindFirstFileA(search, &fd);
-   if (hFind == INVALID_HANDLE_VALUE)
+   if (!ds1_dir_open(&d, path))
       return 0;
 
-   do
-   {
-      if (strcmp(fd.cFileName, ".") != 0 && strcmp(fd.cFileName, "..") != 0)
-      {
-         FindClose(hFind);
-         return 1;
-      }
-   } while (FindNextFileA(hFind, &fd));
-
-   FindClose(hFind);
-#else
-   (void) path;
-#endif
-   return 0;
+   /* ds1_dir_next already skips "." and "..", so any entry at all counts. */
+   found = ds1_dir_next(&d) ? 1 : 0;
+   ds1_dir_close(&d);
+   return found;
 }
 
 static int confirm_overwrite_output(const char *title, const char *output_path)

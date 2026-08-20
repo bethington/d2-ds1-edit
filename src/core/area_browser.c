@@ -14,6 +14,7 @@
 #include "render/preview.h"
 #include "core/area_browser.h"
 #include "ui/props_panel.h"
+#include "platform.h"
 
 #define AREA_INIT_GROUPS    64
 #define AREA_INIT_ENTRIES   32
@@ -1108,149 +1109,129 @@ int area_browser_nav_end(void)
  * as "Backup" sub-groups under each Act. */
 void area_browser_scan_backups(void)
 {
-#ifdef WIN32
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
-   WIN32_FIND_DATAA fd;
-   HANDLE hFind;
-   char search_path[512];
+   DS1_DIR dir;
 
-   sprintf(search_path, "backup\\*");
-   hFind = FindFirstFileA(search_path, &fd);
-   if (hFind == INVALID_HANDLE_VALUE)
+   if (!ds1_dir_open(&dir, "backup"))
       return;
 
-   do {
-      if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-      {
-         char json_search[512];
-         WIN32_FIND_DATAA jfd;
-         HANDLE jFind;
+   while (ds1_dir_next(&dir))
+   {
+      char    sub_path[512];
+      DS1_DIR jdir;
 
-         if (fd.cFileName[0] == '.')
+      if (!dir.is_dir || dir.name[0] == '.')
+         continue;
+
+      snprintf(sub_path, sizeof(sub_path), "backup" DS1_SEP_STR "%s", dir.name);
+      if (!ds1_dir_open(&jdir, sub_path))
+         continue;
+
+      while (ds1_dir_next(&jdir))
+      {
+         /* Parse the JSON to get the act and area info */
+         char json_path[512], ds1_path[512];
+         FILE * jf;
+         int act = 0;
+         int backup_def = 0, backup_lvltype = 0;
+         int nlen;
+
+         /* FindFirstFile filtered on "*.json"; do it by hand instead. */
+         nlen = (int) strlen(jdir.name);
+         if (jdir.is_dir || nlen <= 5 || stricmp(jdir.name + nlen - 5, ".json") != 0)
             continue;
 
-         /* Search for .json files in this backup subdirectory */
-         sprintf(json_search, "backup\\%s\\*.json", fd.cFileName);
-         jFind = FindFirstFileA(json_search, &jfd);
-         if (jFind != INVALID_HANDLE_VALUE)
+         snprintf(json_path, sizeof(json_path), "%s" DS1_SEP_STR "%s",
+                  sub_path, jdir.name);
+         jf = fopen(json_path, "rt");
+         if (jf != NULL)
          {
-            do {
-               /* Parse the JSON to get the act and area info */
-               char json_path[512], ds1_path[512];
-               FILE * jf;
-               int act = 0;
-               int backup_def = 0, backup_lvltype = 0;
-               char area_name[80] = "Backup";
-
-               sprintf(json_path, "backup\\%s\\%s", fd.cFileName, jfd.cFileName);
-               jf = fopen(json_path, "rt");
-               if (jf != NULL)
+            char line[512];
+            while (fgets(line, sizeof(line), jf) != NULL)
+            {
+               /* Simple JSON parsing - find "area" and extract act number */
+               if (strstr(line, "\"area\"") != NULL)
                {
-                  char line[512];
-                  while (fgets(line, sizeof(line), jf) != NULL)
-                  {
-                     /* Simple JSON parsing — find "area" and extract act number */
-                     if (strstr(line, "\"area\"") != NULL)
-                     {
-                        char * p = strstr(line, "Act ");
-                        if (p != NULL)
-                           act = p[4] - '0';
-                     }
-                     if (strstr(line, "\"original_path\"") != NULL)
-                     {
-                        char * p = strchr(line, ':');
-                        if (p != NULL)
-                        {
-                           p++; while (*p == ' ' || *p == '"') p++;
-                           {
-                              char * end = strchr(p, '"');
-                              if (end) *end = '\0';
-                              strncpy(ds1_path, p, sizeof(ds1_path) - 1);
-                              ds1_path[sizeof(ds1_path) - 1] = '\0';
-                           }
-                        }
-                     }
-                     /* Parse def and lvltype_id for restore */
-                     if (strstr(line, "\"def\"") != NULL)
-                     {
-                        char * p = strchr(line, ':');
-                        if (p != NULL)
-                           backup_def = atoi(p + 1);
-                     }
-                     if (strstr(line, "\"lvltype_id\"") != NULL)
-                     {
-                        char * p = strchr(line, ':');
-                        if (p != NULL)
-                           backup_lvltype = atoi(p + 1);
-                     }
-                  }
-                  fclose(jf);
+                  char * p = strstr(line, "Act ");
+                  if (p != NULL)
+                     act = p[4] - '0';
                }
-
-               /* Find or create the backup group for this act */
+               if (strstr(line, "\"original_path\"") != NULL)
                {
-                  AREA_GROUP_S * bgrp = NULL;
-                  int gi;
-                  char backup_name[80];
-
-                  if (act >= 1 && act <= 5)
-                     sprintf(backup_name, "Backup");
-                  else
-                     sprintf(backup_name, "Backup");
-
-                  /* Search for existing backup group with this act */
-                  for (gi = 0; gi < ab->group_count; gi++)
+                  char * p = strchr(line, ':');
+                  if (p != NULL)
                   {
-                     if (ab->groups[gi].is_backup && ab->groups[gi].act == act)
+                     p++; while (*p == ' ' || *p == '"') p++;
                      {
-                        bgrp = &ab->groups[gi];
-                        break;
+                        char * end_q = strchr(p, '"');
+                        if (end_q) *end_q = '\0';
+                        strncpy(ds1_path, p, sizeof(ds1_path) - 1);
+                        ds1_path[sizeof(ds1_path) - 1] = '\0';
                      }
-                  }
-
-                  /* Create if not found */
-                  if (bgrp == NULL)
-                  {
-                     bgrp = area_find_or_create_group(ab, -1 - act, backup_name, act);
-                     if (bgrp != NULL)
-                     {
-                        bgrp->act = act;
-                        bgrp->name_act = 0;
-                        bgrp->is_backup = TRUE;
-                     }
-                  }
-
-                  /* Add the DS1 file as an entry */
-                  if (bgrp != NULL)
-                  {
-                     char full_backup_path[512];
-                     char * ds1_name;
-
-                     /* Build path to the backed-up DS1 file */
-                     ds1_name = jfd.cFileName;
-                     {
-                        int nlen = (int)strlen(ds1_name);
-                        if (nlen > 5 && stricmp(ds1_name + nlen - 5, ".json") == 0)
-                        {
-                           /* Replace .json with .ds1 */
-                           strncpy(full_backup_path, ds1_name, nlen - 5);
-                           strcpy(full_backup_path + nlen - 5, ".ds1");
-                        }
-                        else
-                        {
-                           strcpy(full_backup_path, ds1_name);
-                        }
-                     }
-                     sprintf(ds1_path, "backup/%s/%s", fd.cFileName, full_backup_path);
-                     area_group_add_entry(bgrp, backup_lvltype, backup_def, ds1_path);
                   }
                }
-            } while (FindNextFileA(jFind, &jfd));
-            FindClose(jFind);
+               /* Parse def and lvltype_id for restore */
+               if (strstr(line, "\"def\"") != NULL)
+               {
+                  char * p = strchr(line, ':');
+                  if (p != NULL)
+                     backup_def = atoi(p + 1);
+               }
+               if (strstr(line, "\"lvltype_id\"") != NULL)
+               {
+                  char * p = strchr(line, ':');
+                  if (p != NULL)
+                     backup_lvltype = atoi(p + 1);
+               }
+            }
+            fclose(jf);
+         }
+
+         /* Find or create the backup group for this act */
+         {
+            AREA_GROUP_S * bgrp = NULL;
+            int gi;
+
+            /* Search for existing backup group with this act */
+            for (gi = 0; gi < ab->group_count; gi++)
+            {
+               if (ab->groups[gi].is_backup && ab->groups[gi].act == act)
+               {
+                  bgrp = &ab->groups[gi];
+                  break;
+               }
+            }
+
+            /* Create if not found */
+            if (bgrp == NULL)
+            {
+               bgrp = area_find_or_create_group(ab, -1 - act, "Backup", act);
+               if (bgrp != NULL)
+               {
+                  bgrp->act = act;
+                  bgrp->name_act = 0;
+                  bgrp->is_backup = TRUE;
+               }
+            }
+
+            /* Add the DS1 file as an entry */
+            if (bgrp != NULL)
+            {
+               char full_backup_path[512];
+
+               /* Same basename with .json swapped for .ds1 */
+               strncpy(full_backup_path, jdir.name, nlen - 5);
+               strcpy(full_backup_path + nlen - 5, ".ds1");
+
+               snprintf(ds1_path, sizeof(ds1_path), "backup" DS1_SEP_STR
+                        "%s" DS1_SEP_STR "%s", dir.name, full_backup_path);
+               area_group_add_entry(bgrp, backup_lvltype, backup_def, ds1_path);
+            }
          }
       }
-   } while (FindNextFileA(hFind, &fd));
-   FindClose(hFind);
+      ds1_dir_close(&jdir);
+   }
+   ds1_dir_close(&dir);
 
    /* Re-sort groups so backup groups appear after their act's regular groups */
    if (ab->group_count > 1)
@@ -1258,7 +1239,6 @@ void area_browser_scan_backups(void)
 
    printf("[area browser] scanned backups, %d groups total\n", ab->group_count);
    fflush(stdout);
-#endif
 }
 
 void area_browser_destroy(void)

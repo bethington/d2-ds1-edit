@@ -18,9 +18,8 @@
 #include "core/export_progress.h"
 #include "core/glob_match.h"
 #include "core/asset_export.h"
-
-/* Defined further down, but called before that point. */
-static int export_path_list_add(EXPORT_PATH_LIST_S *list, const char *asset_path);
+#include "core/txtread.h"
+#include "platform.h"
 
 #ifdef WIN32
 #define PATH_SEP '\\'
@@ -233,6 +232,9 @@ static void make_anim_leaf(const char *asset_path, char *out, int out_cap, int d
 // version adding `total_candidates` for diagnostic accounting. Internal
 // helpers below operate on the public type directly.
 typedef ASSET_EXPORT_PLAN_S EXPORT_PATH_LIST_S;
+
+/* Defined below, but called from functions that appear above it. */
+static int export_path_list_add(EXPORT_PATH_LIST_S *list, const char *asset_path);
 
 // Per-discovery-pass set of every path the candidate-consideration
 // helper has decided about, regardless of whether the path was
@@ -726,7 +728,6 @@ static void dt1_discovery_cache_store(const char *asset_path, int is_valid)
    g_dt1_discovery_cache.count++;
 }
 
-#ifdef WIN32
 // `type_filter` is consulted when `pattern` is NULL; otherwise pattern
 // matching takes over and type_filter is ignored.
 static void collect_overlay_assets_recursive(const char *root_dir,
@@ -735,57 +736,59 @@ static void collect_overlay_assets_recursive(const char *root_dir,
                                              const char *pattern,
                                              EXPORT_PATH_LIST_S *out_paths)
 {
-   WIN32_FIND_DATAA fd;
-   HANDLE hFind;
-   char search_path[1024];
+   DS1_DIR d;
 
-   snprintf(search_path, sizeof(search_path), "%s\\*", current_dir);
-   hFind = FindFirstFileA(search_path, &fd);
-   if (hFind == INVALID_HANDLE_VALUE)
+   if (!ds1_dir_open(&d, current_dir))
       return;
 
-   do
+   while (ds1_dir_next(&d))
    {
       char disk_path[1024];
 
-      if (strcmp(fd.cFileName, ".") == 0 || strcmp(fd.cFileName, "..") == 0)
-         continue;
+      snprintf(disk_path, sizeof(disk_path), "%s" DS1_SEP_STR "%s",
+               current_dir, d.name);
 
-      snprintf(disk_path, sizeof(disk_path), "%s\\%s", current_dir, fd.cFileName);
-      if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+      if (d.is_dir)
       {
          collect_overlay_assets_recursive(root_dir, disk_path,
                                           type_filter, pattern, out_paths);
       }
       else
       {
-         char virtual_path[1024];
+         char        virtual_path[1024];
+         char       *p;
          const char *relative = disk_path + strlen(root_dir);
 
-         if (*relative == '\\')
+         if (DS1_IS_SEP(*relative))
             relative++;
          snprintf(virtual_path, sizeof(virtual_path), "Data\\%s", relative);
+
+         /* An MPQ virtual path is backslash-separated on every platform --
+            it is hashed by the archive, not resolved by the OS. The disk
+            path we just built used the native separator, so fold it back. */
+         for (p = virtual_path; *p != '\0'; p++)
+         {
+            if (*p == '/')
+               *p = '\\';
+         }
 
          if (pattern != NULL)
             consider_candidate_for_pattern(virtual_path, pattern, out_paths);
          else
             consider_candidate_for_plan(virtual_path, type_filter, out_paths);
       }
-   } while (FindNextFileA(hFind, &fd));
+   }
 
-   FindClose(hFind);
+   ds1_dir_close(&d);
 }
-#endif
 
 static void collect_overlay_assets_for_prefix(const char *asset_prefix,
                                               const char *type_filter,
                                               EXPORT_PATH_LIST_S *out_paths)
 {
-#ifdef WIN32
-   char prefix_norm[512];
-   char disk_prefix[1024];
+   char        prefix_norm[512];
+   char        disk_prefix[1024];
    const char *relative_prefix;
-   DWORD attrs;
 
    if (glb_config.mod_dir[0] == NULL || asset_prefix == NULL || out_paths == NULL)
       return;
@@ -800,40 +803,33 @@ static void collect_overlay_assets_for_prefix(const char *asset_prefix,
       relative_prefix += 5;
 
    if (relative_prefix[0] == 0)
+   {
       snprintf(disk_prefix, sizeof(disk_prefix), "%s", glb_config.mod_dir[0]);
+   }
    else
-      snprintf(disk_prefix, sizeof(disk_prefix), "%s\\%s", glb_config.mod_dir[0], relative_prefix);
+   {
+      snprintf(disk_prefix, sizeof(disk_prefix), "%s" DS1_SEP_STR "%s",
+               glb_config.mod_dir[0], relative_prefix);
+      /* relative_prefix came out of a virtual path, so it is backslashed. */
+      ds1_path_normalize(disk_prefix);
+   }
 
-   attrs = GetFileAttributesA(disk_prefix);
-   if (attrs == INVALID_FILE_ATTRIBUTES)
-      return;
-
-   if ((attrs & FILE_ATTRIBUTE_DIRECTORY) != 0)
+   if (ds1_dir_exists(disk_prefix))
       collect_overlay_assets_recursive(glb_config.mod_dir[0], disk_prefix,
                                        type_filter, NULL, out_paths);
-   else
+   else if (ds1_file_exists(disk_prefix))
       consider_candidate_for_plan(prefix_norm, type_filter, out_paths);
-#else
-   (void) asset_prefix;
-   (void) type_filter;
-   (void) out_paths;
-#endif
 }
 
 static void collect_overlay_assets_for_pattern(const char *pattern,
                                                EXPORT_PATH_LIST_S *out_paths)
 {
-#ifdef WIN32
    if (glb_config.mod_dir[0] == NULL || pattern == NULL || out_paths == NULL)
       return;
 
    collect_overlay_assets_recursive(glb_config.mod_dir[0],
                                     glb_config.mod_dir[0],
                                     NULL, pattern, out_paths);
-#else
-   (void) pattern;
-   (void) out_paths;
-#endif
 }
 
 static void trim_listfile_line(char *line)

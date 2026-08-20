@@ -14,6 +14,8 @@
 #include "core/export_progress.h"
 #include "core/project.h"
 #include "core/upscale.h"
+#include "platform.h"
+#include <errno.h>
 
 #ifndef PATH_MAX
 #define PATH_MAX 1024
@@ -187,17 +189,9 @@ static ALLEGRO_BITMAP *upscale_bitmap_local(ALLEGRO_BITMAP *src, int scale)
    return cur;
 }
 
-#ifdef WIN32
 static int directory_exists(const char *path)
 {
-   DWORD attrs;
-
-   if (path == NULL || path[0] == 0)
-      return 0;
-
-   attrs = GetFileAttributesA(path);
-   return (attrs != INVALID_FILE_ATTRIBUTES) &&
-          ((attrs & FILE_ATTRIBUTE_DIRECTORY) != 0);
+   return ds1_dir_exists(path);
 }
 
 static int upscale_directory_local_recursive(const char *src_dir,
@@ -206,44 +200,37 @@ static int upscale_directory_local_recursive(const char *src_dir,
                                              char *error,
                                              int error_cap)
 {
-   WIN32_FIND_DATAA fd;
-   HANDLE hFind;
-   char search_path[PATH_MAX];
+   DS1_DIR d;
 
-   snprintf(search_path, sizeof(search_path), "%s\\*", src_dir);
-   hFind = FindFirstFileA(search_path, &fd);
-   if (hFind == INVALID_HANDLE_VALUE)
+   if (!ds1_dir_open(&d, src_dir))
    {
       set_error_text(error, error_cap, "Unable to enumerate staged PNGs for local upscale.");
       return 0;
    }
 
-   do
+   while (ds1_dir_next(&d))
    {
       char src_path[PATH_MAX];
       char dst_path[PATH_MAX];
 
-      if (strcmp(fd.cFileName, ".") == 0 || strcmp(fd.cFileName, "..") == 0)
-         continue;
+      snprintf(src_path, sizeof(src_path), "%s" DS1_SEP_STR "%s", src_dir, d.name);
+      snprintf(dst_path, sizeof(dst_path), "%s" DS1_SEP_STR "%s", dst_dir, d.name);
 
-      snprintf(src_path, sizeof(src_path), "%s\\%s", src_dir, fd.cFileName);
-      snprintf(dst_path, sizeof(dst_path), "%s\\%s", dst_dir, fd.cFileName);
-
-      if ((fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
+      if (d.is_dir)
       {
-         if (!CreateDirectoryA(dst_path, NULL) && GetLastError() != ERROR_ALREADY_EXISTS)
+         if (DS1_MKDIR(dst_path) != 0 && errno != EEXIST)
          {
             set_error_text(error, error_cap, "Unable to create output directory for local upscale.");
-            FindClose(hFind);
+            ds1_dir_close(&d);
             return 0;
          }
          if (!upscale_directory_local_recursive(src_path, dst_path, scale, error, error_cap))
          {
-            FindClose(hFind);
+            ds1_dir_close(&d);
             return 0;
          }
       }
-      else if (ends_with_png(fd.cFileName))
+      else if (ends_with_png(d.name))
       {
          ALLEGRO_BITMAP *src_bmp;
          ALLEGRO_BITMAP *scaled_bmp;
@@ -255,7 +242,7 @@ static int upscale_directory_local_recursive(const char *src_dir,
             if (export_progress_pump())
             {
                set_error_text(error, error_cap, "Upscale canceled by user.");
-               FindClose(hFind);
+               ds1_dir_close(&d);
                return 0;
             }
          }
@@ -266,7 +253,7 @@ static int upscale_directory_local_recursive(const char *src_dir,
          if (src_bmp == NULL)
          {
             set_error_text(error, error_cap, "Failed to load staged PNG for local upscale.");
-            FindClose(hFind);
+            ds1_dir_close(&d);
             return 0;
          }
 
@@ -275,7 +262,7 @@ static int upscale_directory_local_recursive(const char *src_dir,
          if (scaled_bmp == NULL)
          {
             set_error_text(error, error_cap, "Local upscale failed while processing a PNG.");
-            FindClose(hFind);
+            ds1_dir_close(&d);
             return 0;
          }
 
@@ -283,7 +270,7 @@ static int upscale_directory_local_recursive(const char *src_dir,
          {
             al_destroy_bitmap(scaled_bmp);
             set_error_text(error, error_cap, "Failed to save local upscaled PNG.");
-            FindClose(hFind);
+            ds1_dir_close(&d);
             return 0;
          }
 
@@ -292,9 +279,9 @@ static int upscale_directory_local_recursive(const char *src_dir,
          if (export_task_is_active())
             export_progress_advance(1);
       }
-   } while (FindNextFileA(hFind, &fd));
+   }
 
-   FindClose(hFind);
+   ds1_dir_close(&d);
    return 1;
 }
 
@@ -308,7 +295,6 @@ static int run_command(const char *command)
    rc = system(command);
    return rc == 0;
 }
-#endif
 
 int upscale_is_remote_configured(void)
 {
@@ -339,53 +325,60 @@ int upscale_create_temp_dir(char *out, int out_cap)
    out[out_cap - 1] = 0;
    return 1;
 #else
-   (void) out;
-   (void) out_cap;
-   return 0;
+   /* mkdtemp creates the directory atomically with 0700, which avoids the
+      create-then-race that GetTempFileName needs DeleteFile to work around. */
+   const char *tmp;
+   char        templ[PATH_MAX];
+
+   if (out == NULL || out_cap <= 0)
+      return 0;
+
+   tmp = getenv("TMPDIR");
+   if (tmp == NULL || tmp[0] == 0)
+      tmp = "/tmp";
+
+   snprintf(templ, sizeof(templ), "%s/d2u-XXXXXX", tmp);
+   if (mkdtemp(templ) == NULL)
+      return 0;
+
+   strncpy(out, templ, out_cap - 1);
+   out[out_cap - 1] = 0;
+   return 1;
 #endif
 }
 
 int upscale_remove_tree(const char *path)
 {
-#ifdef WIN32
-   WIN32_FIND_DATAA fd;
-   HANDLE hFind;
-   char search_path[PATH_MAX];
+   DS1_DIR d;
 
-   if (path == NULL || path[0] == 0 || !directory_exists(path))
+   if (path == NULL || path[0] == 0 || !ds1_dir_exists(path))
       return 1;
 
-   snprintf(search_path, sizeof(search_path), "%s\\*", path);
-   hFind = FindFirstFileA(search_path, &fd);
-   if (hFind == INVALID_HANDLE_VALUE)
-      return RemoveDirectoryA(path);
-
-   do
+   if (ds1_dir_open(&d, path))
    {
-      char child[PATH_MAX];
+      while (ds1_dir_next(&d))
+      {
+         char child[PATH_MAX];
 
-      if (strcmp(fd.cFileName, ".") == 0 || strcmp(fd.cFileName, "..") == 0)
-         continue;
+         snprintf(child, sizeof(child), "%s" DS1_SEP_STR "%s", path, d.name);
+         if (d.is_dir)
+            upscale_remove_tree(child);
+         else
+            remove(child);
+      }
+      ds1_dir_close(&d);
+   }
 
-      snprintf(child, sizeof(child), "%s\\%s", path, fd.cFileName);
-      if ((fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
-         upscale_remove_tree(child);
-      else
-         DeleteFileA(child);
-   } while (FindNextFileA(hFind, &fd));
-
-   FindClose(hFind);
+#ifdef WIN32
    return RemoveDirectoryA(path) || GetLastError() == ERROR_PATH_NOT_FOUND;
 #else
-   (void) path;
-   return 0;
+   return (rmdir(path) == 0) || (errno == ENOENT);
 #endif
 }
 
 int upscale_directory_local(const char *src_dir, const char *dst_dir,
                             int scale, char *error, int error_cap)
 {
-#ifdef WIN32
    if (src_dir == NULL || dst_dir == NULL)
    {
       set_error_text(error, error_cap, "Local upscale paths were not provided.");
@@ -396,20 +389,13 @@ int upscale_directory_local(const char *src_dir, const char *dst_dir,
       set_error_text(error, error_cap, "Local upscale only supports 2x or 4x.");
       return 0;
    }
-   if (!CreateDirectoryA(dst_dir, NULL) && GetLastError() != ERROR_ALREADY_EXISTS)
+   if (DS1_MKDIR(dst_dir) != 0 && errno != EEXIST)
    {
       set_error_text(error, error_cap, "Unable to create local upscale output directory.");
       return 0;
    }
 
    return upscale_directory_local_recursive(src_dir, dst_dir, scale, error, error_cap);
-#else
-   (void) src_dir;
-   (void) dst_dir;
-   (void) scale;
-   set_error_text(error, error_cap, "Local upscale is only implemented on Windows builds.");
-   return 0;
-#endif
 }
 
 int upscale_directory_remote(const char *src_dir, const char *dst_dir,
