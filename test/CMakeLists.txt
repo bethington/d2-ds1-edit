@@ -198,6 +198,7 @@ add_executable(test_asset_export_smoke
     ../src/core/asset_export.c
     ../src/core/dc6_header.c
     ../src/core/glob_match.c
+    ../src/platform.c
 )
 target_link_libraries(test_asset_export_smoke PRIVATE unity ${ALLEGRO5_LIB} ${ALLEGRO5_IMAGE_LIB})
 target_include_directories(test_asset_export_smoke PRIVATE
