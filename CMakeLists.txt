@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.21)  # RUNTIME_DEPENDENCY_SET
 project(d2-ds1-edit VERSION 2.0.0 LANGUAGES C)
 
 # Pass version to source code
@@ -393,8 +393,20 @@ else()
 endif()
 
 # Install rules for packaging
-install(TARGETS ds1edit RUNTIME DESTINATION .)
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/data/ DESTINATION data)
+if(NOT WIN32)
+    install(TARGETS ds1edit RUNTIME DESTINATION .)
+endif()
+# data/ minus the game-derived and generated caches. pal*.bin are verbatim
+# Blizzard palettes the editor extracts from the user's own MPQs at runtime,
+# cmap*.bin are computed from them, and gamma.dat is now generated in code --
+# none of the three belong in a redistributable package.
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/data/
+    DESTINATION data
+    PATTERN "pal*.bin"  EXCLUDE
+    PATTERN "cmap*.bin" EXCLUDE
+    PATTERN "gamma.dat" EXCLUDE
+    PATTERN "Tmp"       EXCLUDE
+)
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/pcx/ DESTINATION pcx)
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets/
     DESTINATION assets
@@ -406,15 +418,25 @@ install(FILES ${CMAKE_SOURCE_DIR}/README.md DESTINATION .)
 
 # Install the runtime DLLs.
 #
-# This used to install a hand-maintained list plus a few globs, which silently
-# missed vcpkg transitives (zlib, jpeg62, freetype, brotli, bz2 ...) whose names
-# did not match the patterns -- the packaged exe then died at startup with
-# "cannot open shared object file" while the local build worked, because the
-# post-build step below copies *.dll wholesale. Install exactly what that step
-# copies, so the package and a working local bin/ cannot drift apart.
-if(WIN32 AND EXISTS "${ALLEGRO5_BIN_DIR}")
-    file(GLOB ALLEGRO5_RUNTIME_DLLS "${ALLEGRO5_BIN_DIR}/*.dll")
-    install(FILES ${ALLEGRO5_RUNTIME_DLLS} DESTINATION .)
+# History: this was a hand-maintained list plus a few globs, which silently
+# missed vcpkg transitives and shipped a package that would not start. The fix
+# for that globbed *.dll instead, which worked but dragged in 32 libraries the
+# editor never loads -- FLAC, OpenAL, Theora, Vorbis and friends -- roughly
+# 7 MB of dead weight.
+#
+# Let CMake walk the actual import tables instead, so the package carries the
+# real closure and stays correct when the dependency set changes.
+if(WIN32)
+    # RUNTIME_DEPENDENCY_SET has to precede the artifact options.
+    install(TARGETS ds1edit
+        RUNTIME_DEPENDENCY_SET ds1edit_deps
+        RUNTIME DESTINATION .)
+
+    install(RUNTIME_DEPENDENCY_SET ds1edit_deps
+        DIRECTORIES "${ALLEGRO5_BIN_DIR}"
+        PRE_EXCLUDE_REGEXES  "api-ms-win-.*" "ext-ms-.*"
+        POST_EXCLUDE_REGEXES ".*[Ss]ystem32.*" ".*[Ww]indows.*"
+        DESTINATION .)
 endif()
 
 include(CPack)

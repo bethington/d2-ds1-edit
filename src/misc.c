@@ -1,4 +1,5 @@
 #include <string.h>
+#include <math.h>
 #include "structs.h"
 #include "error.h"
 #include "core/ds1.h"
@@ -419,30 +420,45 @@ void misc_make_block_table(int ds1_idx)
 }
 
 // ==========================================================================
-// read the gamma correction file
+// The gamma value behind each GC_* enumerator: 0.60 .. 1.00 in 0.02 steps,
+// then 1.10 .. 3.00 in 0.10 steps. 41 curves, matching GC_MAX.
+double misc_gamma_value(int gt)
+{
+   if (gt < 0)   gt = 0;
+   if (gt >= GC_MAX) gt = GC_MAX - 1;
+
+   if (gt <= 20)                       // GC_060 .. GC_100
+      return 0.60 + (0.02 * (double) gt);
+   return 1.10 + (0.10 * (double) (gt - 21));   // GC_110 .. GC_300
+}
+
+// ==========================================================================
+// Build the gamma correction tables.
+//
+// This used to read data/gamma.dat and fatal-exit if it was missing. That
+// file is 41 x 256 bytes of round(255 * (i/255)^(1/g)) and nothing else --
+// verified byte-identical against the generated values for all 41 curves --
+// so computing it removes a required data file rather than reproducing one.
 void misc_read_gamma(void)
 {
-   FILE *in;
-   int gt, i, v;
-   char tmp[150], gamma_path[100];
+   int gt, i;
 
-   sprintf(gamma_path, "%s%s", glb_ds1edit_data_dir, "gamma.dat");
-   fprintf(stderr, "read gamma correction table (%s)\n", gamma_path);
-   in = fopen(gamma_path, "rb");
-   if (in == NULL)
-   {
-      sprintf(tmp, "misc_read_gamma() : can't open %s", gamma_path);
-      ds1edit_error(tmp);
-   }
+   fprintf(stderr, "building gamma correction tables\n");
+
    for (gt = GC_060; gt < GC_MAX; gt++)
    {
-      for (i = 0; i < 256; i++)
+      double inv = 1.0 / misc_gamma_value(gt);
+
+      glb_ds1edit.gamma_table[gt][0] = 0;
+      for (i = 1; i < 256; i++)
       {
-         v = fgetc(in);
-         glb_ds1edit.gamma_table[gt][i] = v;
+         double v = 255.0 * pow((double) i / 255.0, inv);
+         int    n = (int) (v + 0.5);
+         if (n < 0)   n = 0;
+         if (n > 255) n = 255;
+         glb_ds1edit.gamma_table[gt][i] = (UBYTE) n;
       }
    }
-   fclose(in);
 }
 
 // ==========================================================================

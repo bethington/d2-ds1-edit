@@ -929,35 +929,14 @@ static void cli_alloc_global_buffers(void)
    }
 }
 
-/* Load Data/gamma.dat into glb_ds1edit.gamma_table, falling back to
- * identity gamma (color -> same color) if the file is missing. The
- * GUI's misc_read_gamma fatal-exits on a missing file -- which is
- * fine when the editor is run from its install dir but breaks the
- * cli_smoke test (and any out-of-tree CLI invocation) where the
- * working directory has no Data/. Identity gamma produces slightly
- * less colour-corrected output than the real table, but it's a
- * working fallback rather than a hard crash. */
+/* Build the gamma tables. This used to read Data/gamma.dat and fall back to
+ * identity gamma when the file was absent -- which quietly produced
+ * under-corrected output for any out-of-tree CLI run. misc_read_gamma now
+ * computes the same curves the file held, so there is nothing to miss and no
+ * fallback to be wrong about. */
 static void cli_load_gamma_with_fallback(void)
 {
-   char gamma_path[160];
-   FILE *fp;
-   int gt, i;
-
-   snprintf(gamma_path, sizeof(gamma_path), "%sgamma.dat",
-            glb_ds1edit_data_dir);
-   fp = fopen(gamma_path, "rb");
-   if (fp != NULL)
-   {
-      for (gt = 0; gt < GC_MAX; gt++)
-         for (i = 0; i < 256; i++)
-            glb_ds1edit.gamma_table[gt][i] = (UBYTE) fgetc(fp);
-      fclose(fp);
-      return;
-   }
-   /* Fallback: identity gamma. */
-   for (gt = 0; gt < GC_MAX; gt++)
-      for (i = 0; i < 256; i++)
-         glb_ds1edit.gamma_table[gt][i] = (UBYTE) i;
+   misc_read_gamma();
 }
 
 static int compose_runtime_init(void)
