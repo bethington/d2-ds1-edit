@@ -2,6 +2,12 @@
 
 A level editor for Diablo II that allows creation and modification of game maps (.ds1 files). Built with Allegro 5 for GPU-accelerated rendering at 60+ FPS.
 
+## Download
+
+**[Download the latest release](https://github.com/bethington/d2-ds1-edit/releases/latest)** — grab `DS1Edit-<version>-win32.zip`, unzip anywhere, and run `ds1edit.exe`. Allegro 5 DLLs are bundled; no installer, no runtime to chase down.
+
+You need your own copy of Diablo II (Classic or LoD) — the editor reads tiles and sprites straight out of your MPQs and ships no game assets.
+
 ## Quick Start
 
 ```bash
@@ -153,6 +159,17 @@ COF layer transparency (`trans_b` field) mapped to Allegro 5 blender states:
 
 ## Acknowledgments
 
-- Original DS1Edit by Paul Siramy
-- Built with [Allegro 5](https://liballeg.org/) game programming library
+This project stands entirely on **Paul Siramy's** original `win_ds1edit` — the DS1
+map editor that the Diablo II modding community has relied on since 2003. Paul
+wrote the DS1/DT1/DCC/DC6 format handling, the WYSIWYG editing model, and the
+25,000+ lines this codebase grew out of, and released the source publicly.
+Everything here is a continuation of that work, not a replacement for it.
+
+- **Original DS1Edit / win_ds1edit by Paul Siramy** —
+  [download page](http://paul.siramy.free.fr/_divers/ds1/dl_ds1edit.html) ·
+  [documentation](http://paul.siramy.free.fr/_divers/ds1/doc/index.html)
+- GUI Loader by Mark Nevill ('DarthDevilous')
+- The [Phrozen Keep](http://d2mods.com/forum/) community, for two decades of
+  file-format documentation
+- Built with the [Allegro 5](https://liballeg.org/) game programming library
 - D2 blend mode formulas reverse-engineered from D2CMP.dll via Ghidra

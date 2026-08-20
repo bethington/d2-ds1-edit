@@ -69,3 +69,6 @@ all_dc6_log.txt
 
 # Generated version file
 data/version
+
+# Release packaging output
+/dist/
