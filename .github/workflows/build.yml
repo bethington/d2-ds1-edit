@@ -2,43 +2,63 @@ name: Build & Test
 
 on:
   push:
-    branches: [main, fix-interactive-rendering]
+    branches: [main]
   pull_request:
     branches: [main]
 
 jobs:
-  build-windows:
+  windows:
     runs-on: windows-latest
-
     steps:
       - uses: actions/checkout@v4
 
-      # Dependencies come from vcpkg.json (manifest mode); the CMake
-      # toolchain installs them during configure. An explicit
-      # `vcpkg install <pkg>` is rejected in manifest mode.
-      # GitHub runners expose vcpkg as VCPKG_INSTALLATION_ROOT; the ci preset
-      # reads VCPKG_ROOT, so bridge the two before configuring.
+      # Ninja + the MSVC env rather than a Visual Studio generator: hosted
+      # runners rotate VS versions, and a pinned generator breaks on each bump.
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x86
+
+      # Runners expose vcpkg as VCPKG_INSTALLATION_ROOT; the ci preset reads
+      # VCPKG_ROOT. Dependencies come from vcpkg.json in manifest mode, so the
+      # toolchain installs them during configure.
       - name: Point VCPKG_ROOT at the runner's vcpkg
         shell: pwsh
         run: echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
 
       - name: Configure
         run: cmake --preset ci
-
-      - name: Build Release
+      - name: Build
         run: cmake --build --preset ci-release
-
-      - name: Run tests
+      - name: Test
         run: ctest --preset ci
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ds1edit-windows
-          path: |
-            bin/ds1edit.exe
-            data/
-            pcx/
-            assets/*.ini
-            Ds1edit.ini.sample
-          retention-days: 30
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            build-essential ninja-build cmake pkg-config zlib1g-dev \
+            liballegro5-dev liballegro-image5-dev liballegro-ttf5-dev \
+            liballegro-dialog5-dev liballegro-acodec5-dev
+      - name: Configure
+        run: cmake --preset linux
+      - name: Build
+        run: cmake --build --preset linux
+      - name: Test
+        run: ctest --preset linux
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: brew install allegro ninja pkg-config
+      - name: Configure
+        run: cmake --preset macos
+      - name: Build
+        run: cmake --build --preset macos
+      - name: Test
+        run: ctest --preset macos
