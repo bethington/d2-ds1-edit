@@ -1071,61 +1071,6 @@ int main(int argc, char *argv[])
    glb_ds1edit.win_preview.w = glb_config.screen.width;
    glb_ds1edit.win_preview.h = glb_config.screen.height;
 
-   /* Parsed here rather than after the bitmap work below, because the display
-    * decision needs to know whether this is a headless run and everything
-    * from wedit_read_pcx() onward wants to allocate GPU bitmaps. */
-   // parse the command line
-   if (misc_cmd_line_parse(argc, argv))
-      ds1edit_error("main(), error.\nProblem in the command line.");
-
-   /* Create the display before anything allocates a bitmap.
-    *
-    * Allegro decides at creation time whether a bitmap lives in video or
-    * system memory, and a video bitmap needs a display to exist. Creating the
-    * display late meant every sprite, tile and piece of chrome was built on
-    * the CPU and the hot ones cloned across afterwards -- paying for each
-    * twice and leaving the rest stranded.
-    *
-    * Headless rendering has no display and must stay on memory bitmaps; it
-    * draws into an ordinary bitmap and saves it, so it never touches the GPU. */
-   if (glb_ds1edit.cmd_line.headless_mode != TRUE)
-   {
-      if (glb_config.fullscreen == TRUE)
-         al_set_new_display_flags(ALLEGRO_FULLSCREEN);
-      else
-         al_set_new_display_flags(ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE);
-
-      if (glb_config.screen.refresh > 0)
-         al_set_new_display_refresh_rate(glb_config.screen.refresh);
-
-      a5_display = al_create_display(glb_config.screen.width,
-                                     glb_config.screen.height);
-      if (a5_display == NULL)
-      {
-         sprintf(tmp,
-                 "main(), error.\nCan't create display (%i*%i %s).",
-                 glb_config.screen.width,
-                 glb_config.screen.height,
-                 glb_config.fullscreen ? "Fullscreen" : "Windowed");
-         ds1edit_error(tmp);
-      }
-
-      /* From here on bitmaps are born on the GPU. */
-      al_set_new_bitmap_flags(ALLEGRO_VIDEO_BITMAP);
-
-      /* The cursors were loaded by ds1edit_init(), which has to run before
-       * ini_read() because it zeroes glb_config -- so they are the one set
-       * that still predates the display. Convert rather than reload. */
-      {
-         int ci;
-         for (ci = 0; ci < MOD_MAX; ci++)
-         {
-            if (glb_ds1edit.mouse_cursor[ci] != NULL)
-               al_convert_bitmap(glb_ds1edit.mouse_cursor[ci]);
-         }
-      }
-   }
-
    // edit window
    wedit_read_pcx();
    wedit_make_2nd_buttons();
@@ -1175,6 +1120,10 @@ int main(int argc, char *argv[])
    // set default palette for tile rendering (Act 1)
    // this ensures a5_putpixel/pal_color use correct colors during tile loading
    a5_current_palette = &glb_ds1edit.vga_pal[0];
+
+   // parse the command line
+   if (misc_cmd_line_parse(argc, argv))
+      ds1edit_error("main(), error.\nProblem in the command line.");
 
    // create debug directory if necessary
    if (glb_ds1edit.cmd_line.debug_mode == TRUE)
