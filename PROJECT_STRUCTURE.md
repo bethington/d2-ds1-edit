@@ -76,9 +76,7 @@ d2-ds1-edit/
 │   ├── *.ini                  # Area configs (act1_town.ini, etc.)
 │   ├── tiles/                 # DS1 map files organized by Act
 │   ├── excel/                 # Game data tables
-│   └── palette/               # Palette data
 │
-├── examples/                   # Example launch scripts
 │
 ├── test/                       # Unit tests (Unity framework)
 │   ├── CMakeLists.txt         # Test build configuration

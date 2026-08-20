@@ -343,8 +343,6 @@ add_custom_command(TARGET ds1edit POST_BUILD
         "${CMAKE_SOURCE_DIR}/data" "${CMAKE_SOURCE_DIR}/bin/data"
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_SOURCE_DIR}/assets" "${CMAKE_SOURCE_DIR}/bin/assets"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_SOURCE_DIR}/examples" "${CMAKE_SOURCE_DIR}/bin/examples"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_SOURCE_DIR}/Ds1edit.ini.sample" "${CMAKE_SOURCE_DIR}/bin/Ds1edit.ini.sample"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -353,7 +351,7 @@ add_custom_command(TARGET ds1edit POST_BUILD
         -DSRC=${CMAKE_SOURCE_DIR}/Ds1edit.ini.sample
         -DDST=${CMAKE_SOURCE_DIR}/bin/Ds1edit.ini
         -P ${CMAKE_SOURCE_DIR}/cmake/copy-if-missing.cmake
-    COMMENT "Copying data, assets, and examples to bin/"
+    COMMENT "Copying data and assets to bin/"
 )
 
 # Copy required DLLs to output directory (vcpkg puts them next to the libs)
