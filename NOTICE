@@ -65,6 +65,28 @@ Files not listed (src/cli/, src/core/compose_*, src/core/mpq_index*,
 src/core/palette.c, src/core/rgba_cache.c, most of src/ui/, the tests and the
 CMake build) are new to this project.
 
+The editor's own artwork and data are his as well, and ship inside every
+release package:
+
+    assets/ui/         <- pcx/       the interface graphics: buttons, window
+                                     frames, sub-tile and walkable-info
+                                     overlays. Converted from PCX to PNG for
+                                     the Allegro 5 port; the images are
+                                     unchanged.
+    assets/editor/ds1edit.dt1        the editor's own tileset, drawn over
+                                     Diablo II's special tiles to label them.
+    assets/editor/obj.txt            his table mapping Diablo II object and
+                                     monster ids to the tokens, modes and
+                                     classes the preview needs in order to
+                                     draw them.
+    assets/*.ini                     his per-area preset lists, naming the
+                                     DS1 files that make up each area.
+
+No Diablo II file is redistributed. Palettes, colormaps and tilesets are read
+from the archives of the player's own installation at run time, and the
+palette and colormap caches under assets/editor (pal*.bin, cmap*.bin) are
+generated on the machine that runs the editor rather than shipped.
+
 The user guides under docs/01-Getting-Started, docs/02-Tutorials,
 docs/03-Advanced-Guides and docs/04-Examples are Paul's original documentation
 and tutorials (http://paul.siramy.free.fr/_divers/ds1/doc/index.html),
