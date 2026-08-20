@@ -2,7 +2,12 @@
 
 #include "unity/unity.h"
 
+#include "platform.h"
 #include "core/compose_iter.h"
+
+/* The builder joins output paths with the host separator, so the
+ * expectations below have to be built the same way. */
+#define SEP DS1_SEP_STR
 #include "core/compose_palette.h"
 
 /* Production code reads glb_config.compose_use_full_folder_names via
@@ -123,7 +128,7 @@ static void test_output_path_codes_only(void)
       "WL", "HTH", 3);
    TEST_ASSERT_EQUAL_INT(1, ok);
    TEST_ASSERT_EQUAL_STRING(
-      "C:\\out\\Player_Characters\\NE\\NEWLHTH_dir3.png", buf);
+      "C:\\out" SEP "Player_Characters" SEP "NE" SEP "NEWLHTH_dir3.png", buf);
 }
 
 static void test_output_path_full_folder_names(void)
@@ -137,7 +142,7 @@ static void test_output_path_full_folder_names(void)
       "WL", "HTH", 3);
    TEST_ASSERT_EQUAL_INT(1, ok);
    TEST_ASSERT_EQUAL_STRING(
-      "C:\\out\\Player_Characters\\Necromancer\\NEWLHTH_dir3.png", buf);
+      "C:\\out" SEP "Player_Characters" SEP "Necromancer" SEP "NEWLHTH_dir3.png", buf);
 }
 
 static void test_output_path_no_wclass(void)
@@ -151,7 +156,7 @@ static void test_output_path_no_wclass(void)
       "NU", "", 0);
    TEST_ASSERT_EQUAL_INT(1, ok);
    TEST_ASSERT_EQUAL_STRING(
-      "C:\\out\\Monsters\\AN\\ANNU_dir0.png", buf);
+      "C:\\out" SEP "Monsters" SEP "AN" SEP "ANNU_dir0.png", buf);
 }
 
 static void test_output_path_full_name_with_unsafe_chars(void)
@@ -168,7 +173,7 @@ static void test_output_path_full_name_with_unsafe_chars(void)
    TEST_ASSERT_EQUAL_INT(1, ok);
    /* "Deckard Cain" -> "Deckard_Cain" */
    TEST_ASSERT_EQUAL_STRING(
-      "C:\\out\\NPCs\\Deckard_Cain\\CainNU_dir0.png", buf);
+      "C:\\out" SEP "NPCs" SEP "Deckard_Cain" SEP "CainNU_dir0.png", buf);
 }
 
 static void test_output_path_falls_back_to_code_when_full_missing(void)
@@ -182,7 +187,7 @@ static void test_output_path_falls_back_to_code_when_full_missing(void)
       "NU", "", 0);
    TEST_ASSERT_EQUAL_INT(1, ok);
    TEST_ASSERT_EQUAL_STRING(
-      "C:\\out\\Objects\\TownPortal\\TownPortalNU_dir0.png", buf);
+      "C:\\out" SEP "Objects" SEP "TownPortal" SEP "TownPortalNU_dir0.png", buf);
 }
 
 static void test_output_path_rejects_bad_args(void)
@@ -224,7 +229,7 @@ static void test_output_dir_omits_filename(void)
       "C:\\out", COMPOSE_CATEGORY_PLAYER_CHAR,
       "NE", "Necromancer");
    TEST_ASSERT_EQUAL_INT(1, ok);
-   TEST_ASSERT_EQUAL_STRING("C:\\out\\Player_Characters\\NE", buf);
+   TEST_ASSERT_EQUAL_STRING("C:\\out" SEP "Player_Characters" SEP "NE", buf);
 }
 
 int main(void)
