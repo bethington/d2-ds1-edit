@@ -997,70 +997,65 @@ void misc_walkable_tile_info_pcx(void)
       al_destroy_bitmap(tmpbmp);
    }
 
-   // walkable tile infos combinations
-   // TODO: Creates 32,000 bitmaps — extremely slow with A5 memory bitmaps.
-   // Skipped until GPU bitmap path is implemented.
-   fprintf(stderr, "\nwalkable tile infos combinations (skipped - slow with A5)");
+   /* The per-combination bitmaps (256 masks x ZM_MAX zooms x 25 subtiles =
+    * 38,400) used to be built here and were disabled because that was far too
+    * slow. They are now built on first use by misc_walkable_combination(),
+    * so subtile_flag[] stays alive as the source and nothing is destroyed
+    * here -- the old teardown ran even with the build disabled, which is what
+    * left the overlay dereferencing NULL. */
+   fprintf(stderr, "\nwalkable tile infos ready (combinations built on demand)");
    fflush(stderr);
-#if 0
-   for (i=0; i<25; i++)
-   {
-      fprintf(stderr, ".");
-      fflush(stderr);
-      for (z=0; z<ZM_MAX; z++)
-      {
-         w = al_get_bitmap_width(glb_ds1edit.subtile_flag[0][z][i]);
-         h = al_get_bitmap_height(glb_ds1edit.subtile_flag[0][z][i]);
-
-         for (loop=0; loop<256; loop++)
-         {
-            subtile2 = al_create_bitmap(w, h);
-            if (subtile2 == NULL)
-            {
-               sprintf(tmp, "misc_walkable_tile_info_pcx(), can't create "
-                  "the (%i - %i) bitmap at zoom %i", loop, i, z);
-               ds1edit_error(tmp);
-            }
-            a5_clear(subtile2);
-
-            a5_draw_sprite(subtile2, glb_ds1edit.subtile_flag[0][z][i], 0, 0);
-            for (b=0; b < 8; b++)
-            {
-               if (loop & (1 << b))
-               {
-                  a5_draw_sprite(
-                     subtile2,
-                     glb_ds1edit.subtile_flag[b+1][z][i],
-                     0, 0
-                  );
-               }
-            }
-
-            glb_ds1edit.subtile_flag_combination[loop][z][i] = subtile2;
-         }
-      }
-   }
-
-#endif
-
-   // we don't need the non-combination bitmaps anymore
-   for (b = 0; b < 9; b++)
-   {
-      for (z = 0; z < ZM_MAX; z++)
-      {
-         for (i = 0; i < 25; i++)
-         {
-            if (glb_ds1edit.subtile_flag[b][z][i] != NULL)
-            {
-               al_destroy_bitmap(glb_ds1edit.subtile_flag[b][z][i]);
-               glb_ds1edit.subtile_flag[b][z][i] = NULL;
-            }
-         }
-      }
-   }
 
    fprintf(stderr, "\n");
    fflush(stderr);
+}
+
+// ==========================================================================
+// One walkable-info overlay bitmap: the base subtile plus whichever of the
+// eight flag layers `mask` selects.
+//
+// Built on first request and cached. Building all 38,400 upfront cost more
+// than it saved -- a session touches a few dozen distinct (mask, zoom,
+// subtile) triples. Returns NULL if the sources are missing, which the caller
+// must tolerate.
+ALLEGRO_BITMAP *misc_walkable_combination(int mask, int z, int i)
+{
+   ALLEGRO_BITMAP *base, *out;
+   int b, w, h;
+
+   if (mask < 0 || mask > 255) return NULL;
+   if (z < 0 || z >= ZM_MAX)   return NULL;
+   if (i < 0 || i >= 25)       return NULL;
+
+   out = glb_ds1edit.subtile_flag_combination[mask][z][i];
+   if (out != NULL)
+      return out;
+
+   base = glb_ds1edit.subtile_flag[0][z][i];
+   if (base == NULL)
+      return NULL;
+
+   w = al_get_bitmap_width(base);
+   h = al_get_bitmap_height(base);
+   out = al_create_bitmap(w, h);
+   if (out == NULL)
+      return NULL;
+
+   a5_clear(out);
+   a5_draw_sprite(out, base, 0, 0);
+
+   for (b = 0; b < 8; b++)
+   {
+      if (mask & (1 << b))
+      {
+         ALLEGRO_BITMAP *layer = glb_ds1edit.subtile_flag[b + 1][z][i];
+         if (layer != NULL)
+            a5_draw_sprite(out, layer, 0, 0);
+      }
+   }
+
+   glb_ds1edit.subtile_flag_combination[mask][z][i] = out;
+   return out;
 }
 
 // ==========================================================================

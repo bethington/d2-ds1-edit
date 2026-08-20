@@ -12,6 +12,7 @@ void   misc_check_tiles_conflicts      (int ds1_idx);
 void   misc_make_block_table           (int ds1_idx);
 double misc_gamma_value                (int gt);
 void   ds1edit_init_txt_requirements   (void);  /* defined in main.c */
+ALLEGRO_BITMAP * misc_walkable_combination(int mask, int z, int i);
 void   misc_read_gamma                 (void);
 void   misc_update_pal_with_gamma      (void);
 void   misc_pcx_put_d2_palette         (char * name, int pal_idx);

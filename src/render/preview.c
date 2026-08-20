@@ -1952,10 +1952,16 @@ void wpreview_draw_wi(int mx, int my, int z, UBYTE *walkinfo)
    {
       if (walkinfo[i])
       {
-         wpreview_draw_bitmap(
-             glb_ds1edit.subtile_flag_combination[walkinfo[i]][z][i],
-             mx - glb_ds1edit.win_preview.x0,
-             my - glb_ds1edit.win_preview.y0);
+         /* Built on demand, and NULL if the source images are missing --
+          * wpreview_draw_bitmap does not check, so this must. */
+         ALLEGRO_BITMAP *wi = misc_walkable_combination(walkinfo[i], z, i);
+         if (wi != NULL)
+         {
+            wpreview_draw_bitmap(
+                wi,
+                mx - glb_ds1edit.win_preview.x0,
+                my - glb_ds1edit.win_preview.y0);
+         }
       }
    }
 }
