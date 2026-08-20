@@ -1128,9 +1128,9 @@ int main(int argc, char *argv[])
    glb_ds1edit.win_preview.h = glb_config.screen.height;
 
    // edit window
-   wedit_read_pcx();
+   wedit_load_window_images();
    wedit_make_2nd_buttons();
-   misc_walkable_tile_info_pcx();
+   misc_walkable_tile_info();
 
    // screen buffer
    // we're making a big buffer, with 300 pixels on each 4 borders,

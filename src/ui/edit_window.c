@@ -503,12 +503,12 @@ void wedit_make_2nd_buttons(void)
 }
 
 // ==========================================================================
-// read all pcx and prepare some windows
-void wedit_read_pcx(void)
+// load the window images and prepare the edit/preview windows
+void wedit_load_window_images(void)
 {
    WIN_ELEMENT_S *w_elm;
    ALLEGRO_BITMAP *tmp_bmp;
-   ALLEGRO_BITMAP *pcx[9];
+   ALLEGRO_BITMAP *img[9];
    BUTTON_S *b;
    static struct
    {
@@ -601,20 +601,20 @@ void wedit_read_pcx(void)
       fprintf(stderr, ".");
       fflush(stderr);
       sprintf(filename, UI_FRAME_PREVIEW "%s.png", frame_name[i]);
-      pcx[i] = al_load_bitmap(filename);
-      if (pcx[i] == NULL)
+      img[i] = al_load_bitmap(filename);
+      if (img[i] == NULL)
       {
          /* Every one of these is indexed unconditionally below, so a warning
           * here only bought a fault a few lines later. */
          char err[256];
-         sprintf(err, "wedit_read_pcx(): can't load %s", filename);
+         sprintf(err, "wedit_load_window_images(): can't load %s", filename);
          ds1edit_error(err);
       }
    }
    my_border = 8;
    x0 = my_border;
    y0 = 38;
-   w = 160 + al_get_bitmap_width(pcx[0]) + al_get_bitmap_width(pcx[2]);
+   w = 160 + al_get_bitmap_width(img[0]) + al_get_bitmap_width(img[2]);
    h = glb_config.screen.height - y0 - my_border;
 
    tmp_bmp = al_create_bitmap(w, h);
@@ -622,7 +622,7 @@ void wedit_read_pcx(void)
    {
       char err[192];
       sprintf(err,
-              "wedit_read_pcx(): can't create the %ix%i preview window.\n"
+              "wedit_load_window_images(): can't create the %ix%i preview window.\n"
               "screen_width/screen_height in Ds1edit.ini are %ix%i.",
               w, h, glb_config.screen.width, glb_config.screen.height);
       ds1edit_error(err);
@@ -630,39 +630,39 @@ void wedit_read_pcx(void)
 
    a5_clear(tmp_bmp);
 
-   for (x = 0; x < w; x += al_get_bitmap_width(pcx[1]))
-      a5_blit(pcx[1], tmp_bmp, 0, 0, x, 0, al_get_bitmap_width(pcx[1]), al_get_bitmap_height(pcx[1]));
+   for (x = 0; x < w; x += al_get_bitmap_width(img[1]))
+      a5_blit(img[1], tmp_bmp, 0, 0, x, 0, al_get_bitmap_width(img[1]), al_get_bitmap_height(img[1]));
 
-   for (x = 0; x < w; x += al_get_bitmap_width(pcx[7]))
-      a5_blit(pcx[7], tmp_bmp, 0, 0, x, h - al_get_bitmap_height(pcx[7]), al_get_bitmap_width(pcx[7]), al_get_bitmap_height(pcx[7]));
+   for (x = 0; x < w; x += al_get_bitmap_width(img[7]))
+      a5_blit(img[7], tmp_bmp, 0, 0, x, h - al_get_bitmap_height(img[7]), al_get_bitmap_width(img[7]), al_get_bitmap_height(img[7]));
 
-   for (y = 0; y < h; y += al_get_bitmap_height(pcx[3]))
-      a5_blit(pcx[3], tmp_bmp, 0, 0, 0, y, al_get_bitmap_width(pcx[3]), al_get_bitmap_height(pcx[3]));
+   for (y = 0; y < h; y += al_get_bitmap_height(img[3]))
+      a5_blit(img[3], tmp_bmp, 0, 0, 0, y, al_get_bitmap_width(img[3]), al_get_bitmap_height(img[3]));
 
-   for (y = 0; y < h; y += al_get_bitmap_height(pcx[5]))
-      a5_blit(pcx[5], tmp_bmp, 0, 0, w - al_get_bitmap_width(pcx[5]), y, al_get_bitmap_width(pcx[5]), al_get_bitmap_height(pcx[5]));
+   for (y = 0; y < h; y += al_get_bitmap_height(img[5]))
+      a5_blit(img[5], tmp_bmp, 0, 0, w - al_get_bitmap_width(img[5]), y, al_get_bitmap_width(img[5]), al_get_bitmap_height(img[5]));
 
-   a5_blit(pcx[0], tmp_bmp, 0, 0, 0, 0, al_get_bitmap_width(pcx[0]), al_get_bitmap_height(pcx[0]));
-   a5_blit(pcx[2], tmp_bmp, 0, 0, w - al_get_bitmap_width(pcx[2]), 0, al_get_bitmap_width(pcx[2]), al_get_bitmap_height(pcx[2]));
-   a5_blit(pcx[6], tmp_bmp, 0, 0, 0, h - al_get_bitmap_height(pcx[6]), al_get_bitmap_width(pcx[6]), al_get_bitmap_height(pcx[6]));
-   a5_blit(pcx[8], tmp_bmp, 0, 0, w - al_get_bitmap_width(pcx[8]), h - al_get_bitmap_height(pcx[8]), al_get_bitmap_width(pcx[8]), al_get_bitmap_height(pcx[8]));
+   a5_blit(img[0], tmp_bmp, 0, 0, 0, 0, al_get_bitmap_width(img[0]), al_get_bitmap_height(img[0]));
+   a5_blit(img[2], tmp_bmp, 0, 0, w - al_get_bitmap_width(img[2]), 0, al_get_bitmap_width(img[2]), al_get_bitmap_height(img[2]));
+   a5_blit(img[6], tmp_bmp, 0, 0, 0, h - al_get_bitmap_height(img[6]), al_get_bitmap_width(img[6]), al_get_bitmap_height(img[6]));
+   a5_blit(img[8], tmp_bmp, 0, 0, w - al_get_bitmap_width(img[8]), h - al_get_bitmap_height(img[8]), al_get_bitmap_width(img[8]), al_get_bitmap_height(img[8]));
 
    w_elm = &glb_ds1edit.win_edit.w_preview;
    w_elm->border = tmp_bmp;
    w_elm->b_x0 = x0;
    w_elm->b_y0 = y0;
 
-   for (y = 0; y < h; y += al_get_bitmap_height(pcx[4]))
-      for (x = 0; x < w; x += al_get_bitmap_width(pcx[4]))
-         a5_blit(pcx[4], tmp_bmp, 0, 0, x, y, al_get_bitmap_width(pcx[4]), al_get_bitmap_height(pcx[4]));
+   for (y = 0; y < h; y += al_get_bitmap_height(img[4]))
+      for (x = 0; x < w; x += al_get_bitmap_width(img[4]))
+         a5_blit(img[4], tmp_bmp, 0, 0, x, y, al_get_bitmap_width(img[4]), al_get_bitmap_height(img[4]));
 
-   w_elm->inside = al_create_bitmap(w - al_get_bitmap_width(pcx[3]) * 2, h - al_get_bitmap_height(pcx[1]) * 2);
-   a5_blit(tmp_bmp, w_elm->inside, al_get_bitmap_width(pcx[3]), al_get_bitmap_height(pcx[1]), 0, 0, w - al_get_bitmap_width(pcx[3]) * 2, h - al_get_bitmap_height(pcx[1]) * 2);
-   w_elm->i_x0 = w_elm->b_x0 + al_get_bitmap_width(pcx[3]);
-   w_elm->i_y0 = w_elm->b_y0 + al_get_bitmap_height(pcx[1]);
+   w_elm->inside = al_create_bitmap(w - al_get_bitmap_width(img[3]) * 2, h - al_get_bitmap_height(img[1]) * 2);
+   a5_blit(tmp_bmp, w_elm->inside, al_get_bitmap_width(img[3]), al_get_bitmap_height(img[1]), 0, 0, w - al_get_bitmap_width(img[3]) * 2, h - al_get_bitmap_height(img[1]) * 2);
+   w_elm->i_x0 = w_elm->b_x0 + al_get_bitmap_width(img[3]);
+   w_elm->i_y0 = w_elm->b_y0 + al_get_bitmap_height(img[1]);
 
    for (i = 0; i < 9; i++)
-      al_destroy_bitmap(pcx[i]);
+      al_destroy_bitmap(img[i]);
    al_destroy_bitmap(tmp_bmp);
 
    // make tiles window
@@ -671,7 +671,7 @@ void wedit_read_pcx(void)
       fprintf(stderr, ".");
       fflush(stderr);
       sprintf(filename, UI_FRAME_TILEWIN "%s.png", frame_name[i]);
-      pcx[i] = al_load_bitmap(filename);
+      img[i] = al_load_bitmap(filename);
    }
    x0 = w_elm->b_x0 + al_get_bitmap_width(w_elm->border) + my_border;
    y0 = 119;
@@ -682,46 +682,46 @@ void wedit_read_pcx(void)
    {
       char err[192];
       sprintf(err,
-              "wedit_read_pcx(): can't create the %ix%i tile window.\n"
+              "wedit_load_window_images(): can't create the %ix%i tile window.\n"
               "screen_width/screen_height in Ds1edit.ini are %ix%i.",
               w, h, glb_config.screen.width, glb_config.screen.height);
       ds1edit_error(err);
    }
    a5_clear(tmp_bmp);
 
-   for (x = 0; x < w; x += al_get_bitmap_width(pcx[1]))
-      a5_blit(pcx[1], tmp_bmp, 0, 0, x, 0, al_get_bitmap_width(pcx[1]), al_get_bitmap_height(pcx[1]));
+   for (x = 0; x < w; x += al_get_bitmap_width(img[1]))
+      a5_blit(img[1], tmp_bmp, 0, 0, x, 0, al_get_bitmap_width(img[1]), al_get_bitmap_height(img[1]));
 
-   for (x = 0; x < w; x += al_get_bitmap_width(pcx[7]))
-      a5_blit(pcx[7], tmp_bmp, 0, 0, x, h - al_get_bitmap_height(pcx[7]), al_get_bitmap_width(pcx[7]), al_get_bitmap_height(pcx[7]));
+   for (x = 0; x < w; x += al_get_bitmap_width(img[7]))
+      a5_blit(img[7], tmp_bmp, 0, 0, x, h - al_get_bitmap_height(img[7]), al_get_bitmap_width(img[7]), al_get_bitmap_height(img[7]));
 
-   for (y = 0; y < h; y += al_get_bitmap_height(pcx[3]))
-      a5_blit(pcx[3], tmp_bmp, 0, 0, 0, y, al_get_bitmap_width(pcx[3]), al_get_bitmap_height(pcx[3]));
+   for (y = 0; y < h; y += al_get_bitmap_height(img[3]))
+      a5_blit(img[3], tmp_bmp, 0, 0, 0, y, al_get_bitmap_width(img[3]), al_get_bitmap_height(img[3]));
 
-   for (y = 0; y < h; y += al_get_bitmap_height(pcx[5]))
-      a5_blit(pcx[5], tmp_bmp, 0, 0, w - al_get_bitmap_width(pcx[5]), y, al_get_bitmap_width(pcx[5]), al_get_bitmap_height(pcx[5]));
+   for (y = 0; y < h; y += al_get_bitmap_height(img[5]))
+      a5_blit(img[5], tmp_bmp, 0, 0, w - al_get_bitmap_width(img[5]), y, al_get_bitmap_width(img[5]), al_get_bitmap_height(img[5]));
 
-   a5_blit(pcx[0], tmp_bmp, 0, 0, 0, 0, al_get_bitmap_width(pcx[0]), al_get_bitmap_height(pcx[0]));
-   a5_blit(pcx[2], tmp_bmp, 0, 0, w - al_get_bitmap_width(pcx[2]), 0, al_get_bitmap_width(pcx[2]), al_get_bitmap_height(pcx[2]));
-   a5_blit(pcx[6], tmp_bmp, 0, 0, 0, h - al_get_bitmap_height(pcx[6]), al_get_bitmap_width(pcx[6]), al_get_bitmap_height(pcx[6]));
-   a5_blit(pcx[8], tmp_bmp, 0, 0, w - al_get_bitmap_width(pcx[8]), h - al_get_bitmap_height(pcx[8]), al_get_bitmap_width(pcx[8]), al_get_bitmap_height(pcx[8]));
+   a5_blit(img[0], tmp_bmp, 0, 0, 0, 0, al_get_bitmap_width(img[0]), al_get_bitmap_height(img[0]));
+   a5_blit(img[2], tmp_bmp, 0, 0, w - al_get_bitmap_width(img[2]), 0, al_get_bitmap_width(img[2]), al_get_bitmap_height(img[2]));
+   a5_blit(img[6], tmp_bmp, 0, 0, 0, h - al_get_bitmap_height(img[6]), al_get_bitmap_width(img[6]), al_get_bitmap_height(img[6]));
+   a5_blit(img[8], tmp_bmp, 0, 0, w - al_get_bitmap_width(img[8]), h - al_get_bitmap_height(img[8]), al_get_bitmap_width(img[8]), al_get_bitmap_height(img[8]));
 
    w_elm = &glb_ds1edit.win_edit.w_tiles;
    w_elm->border = tmp_bmp;
    w_elm->b_x0 = x0;
    w_elm->b_y0 = y0;
 
-   for (y = 0; y < h; y += al_get_bitmap_height(pcx[4]))
-      for (x = 0; x < w; x += al_get_bitmap_width(pcx[4]))
-         a5_blit(pcx[4], tmp_bmp, 0, 0, x, y, al_get_bitmap_width(pcx[4]), al_get_bitmap_height(pcx[4]));
+   for (y = 0; y < h; y += al_get_bitmap_height(img[4]))
+      for (x = 0; x < w; x += al_get_bitmap_width(img[4]))
+         a5_blit(img[4], tmp_bmp, 0, 0, x, y, al_get_bitmap_width(img[4]), al_get_bitmap_height(img[4]));
 
-   w_elm->inside = al_create_bitmap(w - al_get_bitmap_width(pcx[3]) * 2, h - al_get_bitmap_height(pcx[1]) * 2);
-   a5_blit(tmp_bmp, w_elm->inside, al_get_bitmap_width(pcx[3]), al_get_bitmap_height(pcx[1]), 0, 0, w - al_get_bitmap_width(pcx[3]) * 2, h - al_get_bitmap_height(pcx[1]) * 2);
-   w_elm->i_x0 = w_elm->b_x0 + al_get_bitmap_width(pcx[3]);
-   w_elm->i_y0 = w_elm->b_y0 + al_get_bitmap_height(pcx[1]);
+   w_elm->inside = al_create_bitmap(w - al_get_bitmap_width(img[3]) * 2, h - al_get_bitmap_height(img[1]) * 2);
+   a5_blit(tmp_bmp, w_elm->inside, al_get_bitmap_width(img[3]), al_get_bitmap_height(img[1]), 0, 0, w - al_get_bitmap_width(img[3]) * 2, h - al_get_bitmap_height(img[1]) * 2);
+   w_elm->i_x0 = w_elm->b_x0 + al_get_bitmap_width(img[3]);
+   w_elm->i_y0 = w_elm->b_y0 + al_get_bitmap_height(img[1]);
 
    for (i = 0; i < 9; i++)
-      al_destroy_bitmap(pcx[i]);
+      al_destroy_bitmap(img[i]);
    al_destroy_bitmap(tmp_bmp);
 
    fprintf(stderr, "\n");
@@ -1929,7 +1929,6 @@ void wedit_test(int ds1_idx, int tx, int ty)
 
          // save the buffer
          al_save_bitmap(tmp, glb_ds1edit.screen_buff);
-         misc_pcx_put_d2_palette(tmp, glb_ds1[ds1_idx].act - 1);
          glb_ds1edit.screenshot_num++;
          while (key_pressed(KEY_P))
          {

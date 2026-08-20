@@ -15,7 +15,6 @@ void   ds1edit_init_txt_requirements   (void);  /* defined in main.c */
 ALLEGRO_BITMAP * misc_walkable_combination(int mask, int z, int i);
 void   misc_read_gamma                 (void);
 void   misc_update_pal_with_gamma      (void);
-void   misc_pcx_put_d2_palette         (char * name, int pal_idx);
 /* misc_make_cmaps_helper removed — logic moved to palette_build_select_colormap() */
 void   misc_make_cmaps                 (void);
 int    misc_load_pal_from_disk         (int pal_idx);
@@ -24,7 +23,7 @@ int    misc_my_fgets                   (char * dst, int max, FILE * in);
 char * misc_search_name                (char * tmp);
 void   misc_open_1_ds1                 (int ds1_idx, char * name, int type, int def, int new_width, int new_height);
 void   misc_open_several_ds1           (char * filename);
-void   misc_walkable_tile_info_pcx     (void);
+void   misc_walkable_tile_info     (void);
 int    misc_seach_block_or4            (int ds1_idx, BLOCK_TABLE_S * bt_ptr, int b, int m, int s);
 void   misc_search_walk_infos          (int ds1_idx, int x, int y, UBYTE * dsttable);
 int    misc_load_mpq_file              (char * filename, char ** buffer, long * buf_len, int output);

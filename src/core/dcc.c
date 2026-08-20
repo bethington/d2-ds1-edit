@@ -11,7 +11,7 @@
 char dcc_error[512];
 int  dcc_bits_width_table[16];
 
-/* #define DCCINFO_SAVE_PCX */ /* Debug: saves each DCC frame as dXX-fXXX.pcx */
+/* #define DCCINFO_SAVE_PNG */ /* Debug: saves each DCC frame as dXX-fXXX.png */
 
 
 // ==========================================================================
@@ -1044,11 +1044,11 @@ int dcc_save_frame(DCC_S * dcc, int d, int f, ALLEGRO_BITMAP * frm_bmp)
    a5_blit(frm_bmp, fptr->bmp, 0, 0, 0, 0, al_get_bitmap_width(frm_bmp), al_get_bitmap_height(frm_bmp));
 
 
-#ifdef DCCINFO_SAVE_PCX
+#ifdef DCCINFO_SAVE_PNG
    {
       char    tmp[30];
 
-      sprintf(tmp, "d%02i-f%03i.pcx", d, f);
+      sprintf(tmp, "d%02i-f%03i.png", d, f);
       al_save_bitmap(tmp, frm_bmp);
    }
 #endif

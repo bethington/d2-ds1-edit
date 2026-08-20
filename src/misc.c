@@ -476,36 +476,6 @@ void misc_update_pal_with_gamma(void)
 }
 
 // ==========================================================================
-// hexedit the screenshot to have the *exact* original palette
-//    (allegro lost the 2 lowest bits)
-// use the current gamma correction
-void misc_pcx_put_d2_palette(char *name, int pal_idx)
-{
-   FILE *in;
-   int i, r, g, b, ridx;
-
-   in = fopen(name, "rb+");
-   if (in == NULL)
-   {
-      printf("warning : can't modify palette of file %s\n", name);
-      return;
-   }
-
-   fseek(in, -768, SEEK_END);
-   for (i = 0; i < 256; i++)
-   {
-      ridx = 4 * i;
-      r = glb_ds1edit.d2_pal[pal_idx][ridx];
-      g = glb_ds1edit.d2_pal[pal_idx][ridx + 1];
-      b = glb_ds1edit.d2_pal[pal_idx][ridx + 2];
-      fputc(glb_ds1edit.gamma_table[glb_ds1edit.cur_gamma][r], in);
-      fputc(glb_ds1edit.gamma_table[glb_ds1edit.cur_gamma][g], in);
-      fputc(glb_ds1edit.gamma_table[glb_ds1edit.cur_gamma][b], in);
-   }
-   fclose(in);
-}
-
-// ==========================================================================
 // color map helper (no longer called directly; kept for reference)
 // The logic has been moved into palette_build_select_colormap() in palette.c.
 
@@ -908,10 +878,10 @@ void misc_open_several_ds1(char *filename)
 }
 
 // ==========================================================================
-// load several pcx and make all the various tiles pcx for walkable info
-void misc_walkable_tile_info_pcx(void)
+// load the sub-tile images and build the walkable-info overlays
+void misc_walkable_tile_info(void)
 {
-   static char pcxname[11][30] = {
+   static char imgname[11][30] = {
        {UI_DIR "bit0.png"},
        {UI_DIR "bit1.png"},
        {UI_DIR "bit2.png"},
@@ -933,7 +903,7 @@ void misc_walkable_tile_info_pcx(void)
    glb_ds1edit.subtile_help = al_load_bitmap(UI_DIR "st_help.png");
    if (glb_ds1edit.subtile_help == NULL)
    {
-      sprintf(tmp, "misc_walkable_tile_info_pcx(), can't open %s",
+      sprintf(tmp, "misc_walkable_tile_info(), can't open %s",
               UI_DIR "st_help.png");
       ds1edit_error(tmp);
    }
@@ -942,11 +912,11 @@ void misc_walkable_tile_info_pcx(void)
    {
       fprintf(stderr, ".");
       fflush(stderr);
-      tmpbmp = al_load_bitmap(pcxname[loop]);
+      tmpbmp = al_load_bitmap(imgname[loop]);
       if (tmpbmp == NULL)
       {
-         sprintf(tmp, "misc_walkable_tile_info_pcx(), can't open %s",
-                 pcxname[loop]);
+         sprintf(tmp, "misc_walkable_tile_info(), can't open %s",
+                 imgname[loop]);
          ds1edit_error(tmp);
       }
       for (i = 0; i < 25; i++)
@@ -954,7 +924,7 @@ void misc_walkable_tile_info_pcx(void)
          subtile = al_create_bitmap(160, 80);
          if (subtile == NULL)
          {
-            sprintf(tmp, "misc_walkable_tile_info_pcx(), can't create "
+            sprintf(tmp, "misc_walkable_tile_info(), can't create "
                          "the (%i - %i) bitmap ",
                     loop, i);
             ds1edit_error(tmp);
@@ -997,7 +967,7 @@ void misc_walkable_tile_info_pcx(void)
             subtile2 = al_create_bitmap(w, h);
             if (subtile2 == NULL)
             {
-               sprintf(tmp, "misc_walkable_tile_info_pcx(), can't create "
+               sprintf(tmp, "misc_walkable_tile_info(), can't create "
                             "the (%i - %i) bitmap at zoom %i",
                        loop, i, z);
                ds1edit_error(tmp);

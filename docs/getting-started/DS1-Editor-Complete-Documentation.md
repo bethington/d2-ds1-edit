@@ -51,9 +51,9 @@ Data\\
 
 Contains some ressources necessary for the editor
 
-Pcx\\
+assets/ui/
 
-Contains some graphical ressources for the editor
+Contains the editor's own interface images (PNG)
 
  
 

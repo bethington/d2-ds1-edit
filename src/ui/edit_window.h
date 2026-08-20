@@ -11,7 +11,7 @@ void wedit_draw_w             (int ds1_idx, int x, int y, int upper);
 void wedit_draw_r             (int ds1_idx, int x, int y);
 void wedit_draw_sp            (int ds1_idx, int x, int y);
 void wedit_make_2nd_buttons   (void);
-void wedit_read_pcx           (void);
+void wedit_load_window_images           (void);
 void wedit_free               (void);
 void wedit_draw_button        (BUT_TYP_E b_num);
 void wedit_draw_tab           (BLK_TYP_E t_num);
