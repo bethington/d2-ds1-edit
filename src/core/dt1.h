@@ -18,4 +18,10 @@ int dt1_add(char *dt1name);
 int dt1_add_special(char *dt1name);
 void dt1_rebuild_bitmaps_from_cache(const RGBA_PALETTE *pal);
 
+/* Hold every loaded DT1 across a map switch so a shared tileset is not
+ * freed by the teardown and immediately decoded again. Retain before
+ * unloading the old map, release after loading the new one. */
+void dt1_retain_loaded    (void);
+void dt1_release_retained (void);
+
 #endif

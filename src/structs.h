@@ -487,6 +487,8 @@ typedef struct CMD_LINE_S
    int    headless_mode;
    char * headless_output; // output filename, NULL if not used
    int           selftest_frames;  /* >0: render this many frames, then exit */
+   int           switchbench_group;  /* group to switch within, -1 = off   */
+   int           switchbench_count;  /* how many maps to cycle through     */
 
    // --area : load area by name from Excel data instead of INI file
    char * area_name; // NULL if not used

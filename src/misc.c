@@ -1556,6 +1556,24 @@ int misc_cmd_line_parse(int argc, char **argv)
             return -1;
          }
       }
+      else if (strnicmp(argv[i], "--switchbench", 13) == 0
+               || strnicmp(argv[i], "-switchbench", 12) == 0)
+      {
+         /* --switchbench=GROUP[:N] -- cycle the first N maps of GROUP and
+            report what each switch cost. N defaults to 3. */
+         const char *eq = strchr(argv[i], '=');
+         int g = -1, n = 3;
+
+         if (eq != NULL)
+         {
+            const char *colon = strchr(eq + 1, ':');
+            g = atoi(eq + 1);
+            if (colon != NULL)
+               n = atoi(colon + 1);
+         }
+         glb_ds1edit.cmd_line.switchbench_group = g;
+         glb_ds1edit.cmd_line.switchbench_count = (n > 1) ? n : 3;
+      }
       else if (strnicmp(argv[i], "--selftest", 10) == 0
                || strnicmp(argv[i], "-selftest", 9) == 0)
       {

@@ -30,6 +30,7 @@ int  area_browser_nav_pgup      (void);
 int  area_browser_nav_pgdn      (void);
 int  area_browser_nav_home      (void);
 int  area_browser_nav_end       (void);
+void area_browser_show_loading  (const char * what);
 int  area_browser_switch_single (int group_idx, int entry_idx);
 void area_browser_list_files    (const char * filter);
 int  area_browser_open_by_file  (const char * ds1_path);

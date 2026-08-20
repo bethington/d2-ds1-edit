@@ -116,6 +116,7 @@ void interfac_user_handler(int start_ds1_idx)
    ALLEGRO_BITMAP *old_screen_buff = NULL;
    double frame_start_ms, section_start_ms;
    int selftest_rendered = 0;
+   int switchbench_done = 0;
 
    // init
    tmp_sel.x1 = tmp_sel.x2 = tmp_sel.y1 = tmp_sel.y2 = 0;
@@ -329,17 +330,13 @@ void interfac_user_handler(int start_ds1_idx)
             }
             else if (click_result >= 0)
             {
-               /* Group clicked — expand/collapse and lazily load the first entry */
-               if (glb_ds1edit.area_browser.groups[click_result].is_expanded &&
-                   glb_ds1edit.area_browser.groups[click_result].entry_count > 0)
-               {
-                  glb_ds1edit.area_browser.selected_entry = 0;
-                  if (area_browser_switch_single(click_result, 0) >= 0)
-                  {
-                     ds1_idx = 0;
-                     tile_picker_on_ds1_change(0);
-                  }
-               }
+               /* Group clicked: expand or collapse, and nothing else.
+                *
+                * This used to load entry 0 as well, so asking to *see* a
+                * group's list paid for a cold tileset load -- measured at
+                * 59-92% of the cost of opening maps, several hundred ms to a
+                * couple of seconds -- for a map the user had not chosen. The
+                * load now happens on the click that actually wants one. */
             }
 
             while (a5_mouse_b & 1)
@@ -2243,6 +2240,36 @@ void interfac_user_handler(int start_ds1_idx)
       glb_perf_stats.frames++;
       if (glb_perf_stats.frames >= 30)
          perf_print_summary();
+
+      /* --switchbench: cycle maps within one group and report each switch.
+         Runs after a frame has been presented so the display and assets are
+         real, which is what makes the numbers comparable to a live click. */
+      if (!switchbench_done && glb_ds1edit.cmd_line.switchbench_group >= 0)
+      {
+         AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+         int gi = glb_ds1edit.cmd_line.switchbench_group;
+
+         switchbench_done = 1;
+
+         if (gi >= ab->group_count)
+            printf("switchbench: no group %d (have %d)\n", gi, ab->group_count);
+         else
+         {
+            int n = glb_ds1edit.cmd_line.switchbench_count;
+            int e;
+
+            if (n > ab->groups[gi].entry_count)
+               n = ab->groups[gi].entry_count;
+
+            printf("switchbench: group %d \"%s\", %d of %d map(s)\n",
+                   gi, ab->groups[gi].name, n, ab->groups[gi].entry_count);
+            fflush(stdout);
+
+            for (e = 0; e < n; e++)
+               area_browser_switch_single(gi, e);
+         }
+         done = TRUE;
+      }
 
       /* --selftest: the frame counter is the whole point -- if we get here
          the display exists, the assets loaded and the loop is running. */

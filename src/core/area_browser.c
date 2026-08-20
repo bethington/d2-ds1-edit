@@ -898,6 +898,42 @@ int area_browser_switch_area(int group_idx)
 
 /* Switch to a single DS1 file from an expanded group entry.
  * This path is intentionally lazy: it loads only the requested DS1. */
+/* Paint a one-line "Loading ..." over the current frame and show it.
+ *
+ * A cold tileset load takes a few hundred ms to a couple of seconds and runs
+ * on the UI thread, so without this the window just stops responding. One
+ * flip before the work starts is enough to explain the pause; it is not a
+ * progress bar and does not try to be. */
+void area_browser_show_loading(const char * what)
+{
+   ALLEGRO_BITMAP * prev;
+   float w, h, bw, bh, bx, by;
+
+   if (a5_display == NULL || a5_font == NULL)
+      return;
+
+   prev = al_get_target_bitmap();
+   al_set_target_backbuffer(a5_display);
+
+   w  = (float) al_get_display_width(a5_display);
+   h  = (float) al_get_display_height(a5_display);
+   bw = 340.0f;
+   bh = 34.0f;
+   bx = (w - bw) / 2.0f;
+   by = (h - bh) / 2.0f;
+
+   al_draw_filled_rectangle(bx, by, bx + bw, by + bh, al_map_rgba(20, 16, 12, 230));
+   al_draw_rectangle(bx, by, bx + bw, by + bh, al_map_rgb(120, 100, 60), 1.0f);
+   al_draw_textf(a5_font, al_map_rgb(230, 210, 150),
+                 bx + 12.0f, by + 12.0f, 0,
+                 "Loading %s ...", (what != NULL) ? what : "");
+
+   al_flip_display();
+
+   if (prev != NULL)
+      al_set_target_bitmap(prev);
+}
+
 int area_browser_switch_single(int group_idx, int entry_idx)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
@@ -911,12 +947,30 @@ int area_browser_switch_single(int group_idx, int entry_idx)
    printf("Switching to DS1 entry %d in group %d\n", entry_idx, group_idx);
    fflush(stdout);
 
+   /* What a sidebar click actually costs. Say so before blocking. */
+   area_browser_show_loading(ab->groups[group_idx].entries[entry_idx].ds1_path);
+
+   memset(&glb_open_profile, 0, sizeof(glb_open_profile));
+   switch_start_ms = al_get_time() * 1000.0;
+
+   /* Hold the tileset across the switch -- see dt1_retain_loaded(). */
+   dt1_retain_loaded();
+
    area_browser_unload_current();
    if (area_browser_open_entry_into_slot(group_idx, entry_idx, 0) != 0)
    {
+      dt1_release_retained();
       glb_ds1edit.has_loaded_ds1 = FALSE;
       return -1;
    }
+
+   dt1_release_retained();
+
+   printf("switch_single: %.0f ms  (ds1 %.0f / lvlprest %.0f / lvltypes+dt1 %.0f / blocks %.0f)\n",
+          al_get_time() * 1000.0 - switch_start_ms,
+          glb_open_profile.ds1_read_ms, glb_open_profile.lvlprest_ms,
+          glb_open_profile.lvltypes_dt1_ms, glb_open_profile.block_table_ms);
+   fflush(stdout);
 
    area_browser_finish_load(group_idx, 0, 1);
    return 0;
@@ -1656,6 +1710,8 @@ int area_browser_open_group(int group_idx)
       printf("Opening area: Act %d - %s (%d maps)\n", g->act, g->name, g->entry_count);
    else
       printf("Opening area: %s (%d maps)\n", g->name, g->entry_count);
+
+   area_browser_show_loading(g->name);
 
    memset(&glb_open_profile, 0, sizeof(glb_open_profile));
    group_open_start_ms = al_get_time() * 1000.0;
