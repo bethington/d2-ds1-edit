@@ -673,6 +673,62 @@ int txt_ensure_lvlprest(void)
    return 0;
 }
 
+/* If a path begins "ActN' + BS + BS + '" (or "ActN/"), return N, else 0. */
+static int lvltypes_path_act(const char *path)
+{
+   if (path == NULL)
+      return 0;
+   if ((path[0] != 'A') && (path[0] != 'a'))
+      return 0;
+   if ((path[1] != 'C') && (path[1] != 'c'))
+      return 0;
+   if ((path[2] != 'T') && (path[2] != 't'))
+      return 0;
+   if ((path[3] < '1') || (path[3] > '5'))
+      return 0;
+   if ((path[4] != '\\') && (path[4] != '/'))
+      return 0;
+   return path[3] - '0';
+}
+
+/* The Act every tileset on this row agrees on, or 0 if they do not agree.
+ *
+ * A DT1 holds palette indices, so it is only meaningful against the palette it
+ * was drawn for. When a row's tilesets unanimously sit under one ActN folder,
+ * that is stronger evidence of the right palette than the row's Act column --
+ * see the note on the caller. Any tileset outside an ActN folder, or a second
+ * ActN, makes the row inconclusive and we defer to the declared Act. */
+static int lvltypes_row_tileset_act(TXT_S *txt, int row, int file_1_idx)
+{
+   int f, found = 0;
+   char path[256];
+
+   for (f = 0; f < 32; f++)
+   {
+      int col = file_1_idx + f, a;
+      char *sptr = txt->data + (row * txt->line_size) + txt->col[col].offset;
+
+      if (txt->col[col].type != CT_STR)
+         continue;
+
+      strncpy(path, sptr, sizeof(path) - 1);
+      path[sizeof(path) - 1] = '\0';
+      if (path[0] == '\0')
+         continue;
+      if ((path[0] == '0') && (path[1] == '\0'))
+         continue;   /* empty slot */
+
+      a = lvltypes_path_act(path);
+      if (a == 0)
+         return 0;   /* not under an ActN folder -- inconclusive */
+      if (found == 0)
+         found = a;
+      else if (found != a)
+         return 0;   /* spans more than one act -- inconclusive */
+   }
+   return found;
+}
+
 int read_lvltypes_txt(int ds1_idx, int type)
 {
    TXT_S *txt = NULL;
@@ -721,6 +777,27 @@ int read_lvltypes_txt(int ds1_idx, int type)
          sptr = txt->data + (i * txt->line_size) + txt->col[misc_get_txt_column_num(RQ_LVLTYPE, "Act")].offset;
          lptr = (long *)sptr;
          act = *lptr;
+
+         /* Where every tileset on this row lives under one ActN folder and
+            that disagrees with the Act column, believe the artwork. The
+            shipped table has exactly one such row: "Act 5 - Lava" (Id 35)
+            declares Act 5 but reuses the Act 4 lava tiles wholesale, and its
+            DS1s sit at Act4/Expansion/ carrying act=4 themselves. Drawing
+            those indices through the Act 5 palette turns lava green. */
+         {
+            int tileset_act = lvltypes_row_tileset_act(
+                txt, i, misc_get_txt_column_num(RQ_LVLTYPE, "File 1"));
+
+            if ((tileset_act != 0) && (tileset_act != (int) act))
+            {
+               printf("NOTE: LvlTypes.txt row %i says Act %li, but all its tilesets are "
+                      "Act%i art; using the Act%i palette\n",
+                      i + 1, act, tileset_act, tileset_act);
+               fflush(stdout);
+               act = tileset_act;
+            }
+         }
+
          if ((act != glb_ds1[ds1_idx].act) && (glb_ds1edit.cmd_line.no_check_act == FALSE))
          {
             printf("WARNING: read_lvltypes_txt() : Acts from LvlTypes.txt (%li) and the Ds1 (%li) "
