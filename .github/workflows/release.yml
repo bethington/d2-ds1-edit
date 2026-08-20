@@ -1,0 +1,53 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to build (e.g. v2.0.0)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release-windows:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Install Allegro 5 via vcpkg
+        run: vcpkg install allegro5[core,image,font,primitives]:x86-windows
+
+      - name: Configure
+        run: cmake --preset ci
+
+      - name: Build Release
+        run: cmake --build --preset ci-release
+
+      - name: Run tests
+        run: ctest --preset ci
+
+      - name: Package
+        run: cpack --config build/CPackConfig.cmake -G ZIP -B dist
+
+      - name: Rename artifact
+        shell: pwsh
+        run: |
+          $tag = "${{ github.event.inputs.tag }}"
+          if (-not $tag) { $tag = "${{ github.ref_name }}" }
+          $zip = Get-ChildItem dist -Filter *.zip | Select-Object -First 1
+          Move-Item $zip.FullName "dist/ds1edit-$tag-win32.zip"
+
+      - name: Upload to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          files: dist/*.zip
+          draft: true
+          generate_release_notes: false
