@@ -2,6 +2,7 @@
 bin/
 backup/
 build/
+build-*/
 cmake-build/
 *.obj
 *.o
@@ -69,6 +70,7 @@ all_dc6_log.txt
 
 # Generated version file
 data/version
+assets/editor/version
 
 # Release packaging output
 /dist/

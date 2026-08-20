@@ -13,6 +13,7 @@
 #include <zlib.h>
 #include "mpqtypes.h"
 #include "Dclib.h"
+#include "platform.h"
 
 #include "structs.h"
 #include "error.h"
@@ -84,7 +85,8 @@ int mod_load_in_mem(
    // open file
    if (moddir == NULL)
       return -1;
-   sprintf(strtmp, "%s\\%s", moddir, filename);
+   snprintf(strtmp, sizeof(strtmp), "%s%s%s", moddir, DS1_SEP_STR, filename);
+   ds1_path_normalize(strtmp);
    in = fopen(strtmp, "rb");
 
    // Fallback: if filename starts with "Data\" (or "Data/"), the moddir
@@ -95,7 +97,8 @@ int mod_load_in_mem(
        && (strnicmp(filename, "Data\\", 5) == 0
            || strnicmp(filename, "Data/", 5) == 0))
    {
-      sprintf(strtmp, "%s\\%s", moddir, filename + 5);
+      snprintf(strtmp, sizeof(strtmp), "%s%s%s", moddir, DS1_SEP_STR, filename + 5);
+      ds1_path_normalize(strtmp);
       in = fopen(strtmp, "rb");
    }
 

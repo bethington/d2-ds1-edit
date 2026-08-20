@@ -1127,6 +1127,39 @@ int main(int argc, char *argv[])
    glb_ds1edit.win_preview.w = glb_config.screen.width;
    glb_ds1edit.win_preview.h = glb_config.screen.height;
 
+   /* Parse before allocating bitmaps because headless runs must remain on
+      memory bitmaps, while interactive runs want a display first so Allegro
+      can create the editor artwork directly as video bitmaps. */
+   if (misc_cmd_line_parse(argc, argv))
+      ds1edit_error("main(), error.\nProblem in the command line.");
+
+   if (glb_ds1edit.cmd_line.headless_mode != TRUE)
+   {
+      a5_display = ds1edit_try_create_display();
+      if (a5_display == NULL)
+      {
+         sprintf(tmp,
+                 "main(), error.\nCan't create display (%i*%i %s).",
+                 glb_config.screen.width,
+                 glb_config.screen.height,
+                 glb_config.fullscreen ? "Fullscreen" : "Windowed");
+         ds1edit_error(tmp);
+      }
+
+      al_set_new_bitmap_flags(ALLEGRO_VIDEO_BITMAP);
+
+      /* Cursors are loaded before ini_read(), so convert the few bitmaps that
+         necessarily predate the display instead of loading them twice. */
+      {
+         int ci;
+         for (ci = 0; ci < MOD_MAX; ci++)
+         {
+            if (glb_ds1edit.mouse_cursor[ci] != NULL)
+               al_convert_bitmap(glb_ds1edit.mouse_cursor[ci]);
+         }
+      }
+   }
+
    // edit window
    wedit_load_window_images();
    wedit_make_2nd_buttons();
@@ -1176,10 +1209,6 @@ int main(int argc, char *argv[])
    // set default palette for tile rendering (Act 1)
    // this ensures a5_putpixel/pal_color use correct colors during tile loading
    a5_current_palette = &glb_ds1edit.vga_pal[0];
-
-   // parse the command line
-   if (misc_cmd_line_parse(argc, argv))
-      ds1edit_error("main(), error.\nProblem in the command line.");
 
    // create debug directory if necessary
    if (glb_ds1edit.cmd_line.debug_mode == TRUE)
