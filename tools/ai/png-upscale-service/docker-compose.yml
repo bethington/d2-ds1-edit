@@ -7,10 +7,10 @@ services:
     ports:
       - "${PNG_UPSCALE_PORT:-8084}:8080"
     environment:
-      REALESRGAN_MODEL: ${REALESRGAN_MODEL:-RealESRGAN_x4plus}
       REALESRGAN_TILE: ${REALESRGAN_TILE:-0}
       REALESRGAN_HALF: ${REALESRGAN_HALF:-1}
       MODEL_CACHE_DIR: /models
+      HF_HOME: /models/hf
     volumes:
       - ./models:/models
     gpus: all

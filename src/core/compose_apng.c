@@ -2,6 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef _WIN32
+#define strcasecmp _stricmp
+#else
+#include <strings.h>
+#endif
+
 #include <allegro5/allegro.h>
 
 #include "structs.h"
@@ -157,6 +163,7 @@ static unsigned char *load_png_as_rgba(const char *path,
  * failure (caller falls back to local NN). */
 static int try_remote_upscale(const COMPOSE_RENDER_RESULT_S *src,
                               int scale,
+                              const char *method,
                               COMPOSE_RENDER_RESULT_S *out)
 {
    char in_dir[512];
@@ -189,10 +196,13 @@ static int try_remote_upscale(const COMPOSE_RENDER_RESULT_S *src,
          goto cleanup;
    }
 
-   /* One POST upscales the whole batch. method="realesrgan" matches
-    * the raw-export default and what the docker server expects. */
+   /* One POST upscales the whole batch. The server registers method
+    * names (realesrgan / ultrasharp / nmkd-superscale / anime-6b) and
+    * each maps to a distinct ESRGAN-arch model. Caller may pass NULL
+    * to mean "default realesrgan". */
    if (!upscale_directory_remote(in_dir, out_dir, scale,
-                                 "realesrgan", err, sizeof(err)))
+                                 method != NULL ? method : "realesrgan",
+                                 err, sizeof(err)))
       goto cleanup;
 
    /* Read the upscaled frames back. Dimensions come from the first
@@ -226,6 +236,180 @@ cleanup:
    return 1;
 }
 
+/* Scale2x via the existing local upscaler. Stages each compose frame
+ * as a numbered PNG, runs upscale_directory_local (which calls the
+ * Scale2x pixel-art-aware kernel from upscale.c), reads upscaled PNGs
+ * back into a fresh COMPOSE_RENDER_RESULT_S. Same shape as
+ * try_remote_upscale -- drop-in alternate path. */
+static int try_scale2x_upscale(const COMPOSE_RENDER_RESULT_S *src,
+                               int scale,
+                               COMPOSE_RENDER_RESULT_S *out)
+{
+   char in_dir[512];
+   char out_dir[512];
+   char err[256];
+   int i;
+   int ok_so_far = 0;
+
+   if (src == NULL || out == NULL) return 0;
+   if (src->frame_count <= 0) return 0;
+   if (scale != 2 && scale != 4) return 0;
+   memset(out, 0, sizeof(*out));
+   err[0] = 0;
+
+   if (!upscale_create_temp_dir(in_dir, sizeof(in_dir))) return 0;
+   if (!upscale_create_temp_dir(out_dir, sizeof(out_dir)))
+   {
+      upscale_remove_tree(in_dir);
+      return 0;
+   }
+
+   for (i = 0; i < src->frame_count; i++)
+   {
+      char path[768];
+      snprintf(path, sizeof(path), "%s\\frame_%03d.png", in_dir, i);
+      if (src->frames[i] == NULL) goto cleanup;
+      if (!save_rgba_as_png(src->frames[i], src->width, src->height, path))
+         goto cleanup;
+   }
+
+   if (!upscale_directory_local(in_dir, out_dir, scale, err, sizeof(err)))
+      goto cleanup;
+
+   out->frames = (unsigned char **) calloc((size_t) src->frame_count,
+                                            sizeof(unsigned char *));
+   if (out->frames == NULL) goto cleanup;
+   out->frame_count = src->frame_count;
+
+   for (i = 0; i < src->frame_count; i++)
+   {
+      char path[768];
+      int w, h;
+      snprintf(path, sizeof(path), "%s\\frame_%03d.png", out_dir, i);
+      out->frames[i] = load_png_as_rgba(path, &w, &h);
+      if (out->frames[i] == NULL) goto cleanup;
+      if (out->width == 0)  { out->width  = w; out->height = h; }
+      else if (w != out->width || h != out->height) goto cleanup;
+   }
+
+   ok_so_far = 1;
+
+cleanup:
+   upscale_remove_tree(in_dir);
+   upscale_remove_tree(out_dir);
+   if (!ok_so_far)
+   {
+      compose_render_free(out);
+      return 0;
+   }
+   return 1;
+}
+
+/* Local NN scale extracted as a helper so both compose_apng_export_scaled
+ * (auto-fallback) and compose_apng_export_method ("nn" explicit) share
+ * one implementation. Returns 1 on success, 0 on alloc failure. */
+static int do_local_nn(const COMPOSE_RENDER_RESULT_S *src, int scale,
+                       COMPOSE_RENDER_RESULT_S *out)
+{
+   int i;
+   memset(out, 0, sizeof(*out));
+   out->width       = src->width  * scale;
+   out->height      = src->height * scale;
+   out->frame_count = src->frame_count;
+   out->frames      = (unsigned char **) calloc(
+      (size_t) src->frame_count, sizeof(unsigned char *));
+   if (out->frames == NULL) return 0;
+   for (i = 0; i < src->frame_count; i++)
+   {
+      size_t bytes = (size_t) out->width * out->height * 4;
+      if (src->frames[i] == NULL || bytes == 0)
+      {
+         out->frames[i] = NULL;
+         continue;
+      }
+      out->frames[i] = (unsigned char *) calloc(bytes, 1);
+      if (out->frames[i] == NULL)
+      {
+         compose_render_free(out);
+         return 0;
+      }
+      compose_scale_nn_rgba(src->frames[i],
+                            src->width, src->height,
+                            out->frames[i], scale);
+   }
+   return 1;
+}
+
+int compose_apng_export_method(const COMPOSE_RENDER_PARAMS_S *params,
+                               const char *output_path,
+                               int scale,
+                               const char *method)
+{
+   COMPOSE_RENDER_RESULT_S result;
+   COMPOSE_RENDER_RESULT_S scaled = {0};
+   const COMPOSE_RENDER_RESULT_S *to_write;
+   char cof_name[64];
+   int ok = 0;
+
+   if (params == NULL || output_path == NULL) return 0;
+   if (scale != 1 && scale != 2 && scale != 4) return 0;
+
+   if (!compose_render(params, &result)) return 0;
+
+   snprintf(cof_name, sizeof(cof_name), "%s%s%s",
+            params->token  != NULL ? params->token  : "",
+            params->mode   != NULL ? params->mode   : "",
+            params->wclass != NULL ? params->wclass : "");
+
+   if (scale == 1)
+   {
+      to_write = &result;
+   }
+   else if (method != NULL && strcasecmp(method, "scale2x") == 0)
+   {
+      if (!try_scale2x_upscale(&result, scale, &scaled))
+      {
+         compose_render_free(&result);
+         fprintf(stderr,
+            "compose_apng_export_method: Scale2x failed (scale=%d)\n", scale);
+         return 0;
+      }
+      to_write = &scaled;
+   }
+   else if (method != NULL && strcasecmp(method, "nn") == 0)
+   {
+      if (!do_local_nn(&result, scale, &scaled))
+      {
+         compose_render_free(&result);
+         return 0;
+      }
+      to_write = &scaled;
+   }
+   else
+   {
+      /* Any other method name -> remote service. NULL/"realesrgan"
+       * stay on the default model; "ultrasharp" / "nmkd-superscale" /
+       * "anime-6b" pass through to the matching server-side ESRGAN
+       * variant. No fallback when method was explicit; the caller
+       * asked for this one. */
+      if (!try_remote_upscale(&result, scale, method, &scaled))
+      {
+         compose_render_free(&result);
+         fprintf(stderr,
+            "compose_apng_export_method: remote upscale failed "
+            "(method=%s, scale=%d). Check upscale_service_url.\n",
+            method ? method : "realesrgan", scale);
+         return 0;
+      }
+      to_write = &scaled;
+   }
+
+   ok = compose_apng_write(to_write, cof_name, output_path);
+   compose_render_free(&result);
+   compose_render_free(&scaled);
+   return ok;
+}
+
 int compose_apng_export_scaled(const COMPOSE_RENDER_PARAMS_S *params,
                                const char *output_path,
                                int scale)
@@ -252,7 +436,7 @@ int compose_apng_export_scaled(const COMPOSE_RENDER_PARAMS_S *params,
    {
       to_write = &result;
    }
-   else if (try_remote_upscale(&result, scale, &scaled))
+   else if (try_remote_upscale(&result, scale, NULL, &scaled))
    {
       /* Remote ML pipeline (Real-ESRGAN by default) succeeded -- same
        * service raw export uses; produces much higher quality output

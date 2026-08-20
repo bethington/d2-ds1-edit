@@ -45,4 +45,20 @@ int compose_apng_export_scaled(const COMPOSE_RENDER_PARAMS_S *params,
                                const char *output_path,
                                int scale);
 
+// Same as compose_apng_export_scaled but with explicit upscale method
+// selection. Method options:
+//   NULL or "realesrgan"   remote ESRGAN x4 plus (default photo model)
+//   "ultrasharp"           remote 4x-UltraSharp (community, sharper)
+//   "nmkd-superscale"      remote 4x_NMKD-Superscale-SP (community)
+//   "anime-6b"             remote RealESRGAN x4 plus anime 6B (line art)
+//   "scale2x"              local Scale2x (edge-aware pixel-art scaler)
+//   "nn"                   local nearest-neighbour (chunky, exact)
+// Returns 0 on any failure including remote-not-configured for any of
+// the remote methods. Does NOT fall back between methods -- the caller
+// asked for a specific one and gets that one or an error.
+int compose_apng_export_method(const COMPOSE_RENDER_PARAMS_S *params,
+                               const char *output_path,
+                               int scale,
+                               const char *method);
+
 #endif

@@ -998,7 +998,10 @@ typedef struct EXPORT_RUN_S
    int failure;
    int skipped;
    int verbose;
-   int scale;          /* 1, 2, or 4 -- nearest-neighbour APNG scale */
+   int scale;          /* 1, 2, or 4 */
+   const char *upscale_method;  /* NULL = realesrgan; or ultrasharp /
+                                   nmkd-superscale / anime-6b /
+                                   scale2x / nn */
    const char *out_root;
    char first_failure[256];
 } EXPORT_RUN_S;
@@ -1161,8 +1164,9 @@ static void run_one_token(COMPOSE_CATEGORY_E category,
                   continue;
                }
 
-               ok = compose_apng_export_scaled(&p, path_buf,
-                                              r->scale > 0 ? r->scale : 1);
+               ok = compose_apng_export_method(&p, path_buf,
+                                              r->scale > 0 ? r->scale : 1,
+                                              r->upscale_method);
                if (ok)
                {
                   r->success++;
@@ -1320,6 +1324,30 @@ static int verb_export_compose(int argc, char **argv)
    run.verbose = opts.verbose;
    run.out_root = out_str;
    run.scale = 1;
+   run.upscale_method = find_flag_value(argc, argv, "upscale-method");
+   if (run.upscale_method != NULL
+       && strcasecmp(run.upscale_method, "realesrgan")      != 0
+       && strcasecmp(run.upscale_method, "ultrasharp")      != 0
+       && strcasecmp(run.upscale_method, "nmkd-superscale") != 0
+       && strcasecmp(run.upscale_method, "anime-6b")        != 0
+       && strcasecmp(run.upscale_method, "apisr")           != 0
+       && strcasecmp(run.upscale_method, "sd-x4")           != 0
+       && strcasecmp(run.upscale_method, "sdxl-refine")     != 0
+       && strcasecmp(run.upscale_method, "bilinear")        != 0
+       && strcasecmp(run.upscale_method, "bicubic")         != 0
+       && strcasecmp(run.upscale_method, "lanczos")         != 0
+       && strcasecmp(run.upscale_method, "xbrz")            != 0
+       && strcasecmp(run.upscale_method, "scale2x")         != 0
+       && strcasecmp(run.upscale_method, "nn")              != 0)
+   {
+      fprintf(stderr,
+         "ds1edit export-compose: --upscale-method=%s not recognised "
+         "(expected realesrgan / ultrasharp / nmkd-superscale / "
+         "anime-6b / apisr / sd-x4 / sdxl-refine / bilinear / "
+         "bicubic / lanczos / xbrz / scale2x / nn)\n",
+         run.upscale_method);
+      return CLI_EXIT_BAD_ARGS;
+   }
    {
       const char *scale_str = find_flag_value(argc, argv, "upscale");
       if (scale_str != NULL)
