@@ -2,6 +2,8 @@
 
 A level editor for Diablo II that allows creation and modification of game maps (.ds1 files). Built with Allegro 5 for GPU-accelerated rendering at 60+ FPS. Runs on Windows, Linux, and macOS.
 
+DS1Edit is a continuation of [Paul Siramy's `win_ds1edit`](http://paul.siramy.free.fr/_divers/ds1/dl_ds1edit.html), the Diablo II community's DS1 editor since 2002, ported from Allegro 4 to Allegro 5 and extended. See [Acknowledgments](#acknowledgments) and [NOTICE](NOTICE).
+
 ## Download
 
 **[Download the latest release](https://github.com/bethington/d2-ds1-edit/releases/latest)** — Windows, Linux, and macOS builds are published for every tag.
@@ -59,6 +61,7 @@ bin\ds1edit.exe assets\act5_town.ini
 - **D2 Blend Modes** - Correct additive, multiply, and screen blending (reverse-engineered from D2CMP.dll)
 - **Object Animation** - DCC/DC6 sprite rendering with shadow projection
 - **Multi-Zoom** - 7 zoom levels from 1:1 to 1:16
+- **Reads your MPQs directly** - maps, tiles, sprites, palettes and data tables, with a mod-directory overlay; nothing has to be extracted first
 - **Headless Mode** - Command-line screenshot rendering for CI/testing
 - **Performance Profiling** - Optional per-frame and per-section timing (`-DDS1EDIT_PERF_LOG=ON`)
 
@@ -111,18 +114,54 @@ Renders maps in headless mode and compares against reference PNGs in `test/golde
 
 ## Command Line
 
+Run `ds1edit help` for the full verb list. The area-browser verbs:
+
 ```bash
-ds1edit.exe <file.ds1> <ID> <DEF> --headless output.png
-ds1edit.exe --list-areas
-ds1edit.exe --list-files [filter]
-ds1edit.exe --audit-lvltypes
+ds1edit list-areas              # every area, grouped by Act
+ds1edit list-files [filter]     # DS1 files with their LvlType / Def
+ds1edit audit-lvltypes          # LvlTypes rows whose name disagrees with its Act
+ds1edit <file.ds1> <ID> <DEF> --headless out.png
+ds1edit --area "Act 1 - Town" --headless out.png
 ```
 
-`--audit-lvltypes` prints every mismatch between a `LvlTypes.txt` row's `Act X - ...` name prefix and its authoritative `Act` column. Palette selection uses the `Act` column as the source of truth.
+The legacy `--list-areas` / `--list-files` / `--audit-lvltypes` spellings still work.
+
+`audit-lvltypes` prints every mismatch between a `LvlTypes.txt` row's `Act X - ...` name prefix and its authoritative `Act` column.
+
+### How a map picks its palette
+
+`LvlTypes.txt`'s **`Act` column** is the source of truth, not the row name and not the
+DS1. The chain is:
+
+```
+LvlPrest.txt (Def)  ->  Levels.txt (LevelType)  ->  LvlTypes.txt (Act + File 1..32)
+                                                          |            |
+                                                     palette      the DT1 set
+```
+
+`palette_resolve_act()` takes that `Act` when it is 1-5, falls back to the DS1's own
+act, and defaults to 1. The palette index is `act - 1`, selecting `Act1..Act5/Pal.pl2`
+straight from your MPQs.
+
+Maps that no table names -- the maze and room fragments the game assembles
+procedurally -- are grouped per Act as **Unlisted**, with their tileset inferred from
+the folder (its listed neighbours first, then a group whose name matches the folder).
 
 ## Configuration
 
-After building, copy `Ds1edit.ini.sample` from the project root (or `bin/`) to `bin/Ds1edit.ini` and set your Diablo II MPQ paths:
+Copy `Ds1edit.ini.sample` to `Ds1edit.ini` and point it at your Diablo II install:
+
+```ini
+d2_install = C:\Diablo2
+```
+
+That one line fills every MPQ slot. **Nothing needs extracting** -- maps, tiles,
+sprites, palettes and the data tables are all read straight out of the archives, and
+the whole map list appears in the browser. Set `mod_dir` and your mod's loose files
+take priority over the base game without repacking anything.
+
+Individual archives can still be named explicitly if you need to override the
+auto-detected set:
 
 ```ini
 d2char   = C:\Diablo2\d2char.mpq
@@ -187,19 +226,31 @@ COF layer transparency (`trans_b` field) mapped to Allegro 5 blender states:
 
 ## License
 
-[MIT License](LICENSE) - Copyright (c) 2025-2026 Ben Ethington
+[MIT License](LICENSE) - Copyright (c) 2025-2026 Ben Ethington, covering the
+modifications and additions made in this project.
+
+The original `win_ds1edit` code this project grew out of was written by Paul
+Siramy and released publicly with every build from 2002 to 2011, without a
+formal license text; it is used here with attribution, not relicensed. The MPQ
+reader in `src/mpq/` is Tom Amigo's Stormless MPQ sample code. [NOTICE](NOTICE)
+has the full attribution and file-by-file provenance, and ships in every release
+package next to LICENSE.
 
 ## Acknowledgments
 
 This project stands entirely on **Paul Siramy's** original `win_ds1edit` — the DS1
-map editor that the Diablo II modding community has relied on since 2003. Paul
+map editor that the Diablo II modding community has relied on since 2002. Paul
 wrote the DS1/DT1/DCC/DC6 format handling, the WYSIWYG editing model, and the
-25,000+ lines this codebase grew out of, and released the source publicly.
-Everything here is a continuation of that work, not a replacement for it.
+25,000+ lines this codebase grew out of, and released the source publicly
+alongside every build. Everything here is a continuation of that work, not a
+replacement for it. Every source file that descends from `win_ds1edit` carries
+a header saying so; [NOTICE](NOTICE) lists them all.
 
 - **Original DS1Edit / win_ds1edit by Paul Siramy** —
   [download page](http://paul.siramy.free.fr/_divers/ds1/dl_ds1edit.html) ·
   [documentation](http://paul.siramy.free.fr/_divers/ds1/doc/index.html)
+- **MPQ reader** (`src/mpq/`) — Tom Amigo's Stormless MPQ sample code (2000),
+  as adapted by Paul for `win_ds1edit`
 - GUI Loader by Mark Nevill ('DarthDevilous')
 - The [Phrozen Keep](http://d2mods.com/forum/) community, for two decades of
   file-format documentation
