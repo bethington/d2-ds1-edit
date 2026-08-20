@@ -11,12 +11,12 @@
 #define DCC_MAX_PB_ENTRY 85000
 
 
-char dcc_error[512]; // if an error is found while using a function of this
+extern char dcc_error[512]; // if an error is found while using a function of this
                      // dcc "library", this variable contain a string that
                      // explain what happened. You should display it somewhere
                      // to inform the user
 
-int dcc_bits_width_table[16]; // will be initialized by dcc_decode()
+extern int dcc_bits_width_table[16]; // will be initialized by dcc_decode()
 
 typedef struct DCC_BOX_S
 {

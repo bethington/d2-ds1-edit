@@ -4,6 +4,10 @@
 
 #include "core/dcc.h"
 
+/* Definitions for the extern declarations in dcc.h. */
+char dcc_error[512];
+int  dcc_bits_width_table[16];
+
 /* #define DCCINFO_SAVE_PCX */ /* Debug: saves each DCC frame as dXX-fXXX.pcx */
 
 

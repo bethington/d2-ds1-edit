@@ -1,4 +1,5 @@
 #include "unity/unity.h"
+#include <string.h>
 
 #include "core/compose_palette.h"
 #include "core/compose_palette_index.h"
