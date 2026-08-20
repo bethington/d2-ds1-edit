@@ -231,6 +231,17 @@ static void open_fake_project(const char *path)
    glb_project.is_open = 1;
 }
 
+/* project.c joins with the native separator, so the expectations here have to
+   as well -- and a "C:\\mods" root is not a meaningful path off Windows. */
+#ifdef WIN32
+   #define T_ROOT "C:\\mods\\myproject"
+   #define T_SEP  "\\"
+#else
+   #define T_ROOT "/mods/myproject"
+   #define T_SEP  "/"
+#endif
+#define T_PREFIX T_ROOT T_SEP "Global" T_SEP "Tiles" T_SEP
+
 void test_redirect_no_project_returns_zero(void)
 {
    char dst[256];
@@ -249,13 +260,13 @@ void test_redirect_rewrites_into_project(void)
    char dst[256];
    int  redirected;
 
-   open_fake_project("C:\\mods\\myproject");
+   open_fake_project(T_ROOT);
    redirected = project_redirect_ds1_save_path(
       "assets/tiles/ACT1/CAVES/denent.ds1", dst, sizeof(dst));
 
    TEST_ASSERT_EQUAL_INT(1, redirected);
    TEST_ASSERT_EQUAL_STRING(
-      "C:\\mods\\myproject\\Global\\Tiles\\ACT1/CAVES/denent.ds1", dst);
+      T_PREFIX "ACT1/CAVES/denent.ds1", dst);
 }
 
 void test_redirect_already_in_project_passes_through(void)
@@ -263,14 +274,14 @@ void test_redirect_already_in_project_passes_through(void)
    char dst[256];
    int  redirected;
 
-   open_fake_project("C:\\mods\\myproject");
+   open_fake_project(T_ROOT);
    redirected = project_redirect_ds1_save_path(
-      "C:\\mods\\myproject\\Global\\Tiles\\ACT1\\CAVES\\denent.ds1",
+      T_PREFIX "ACT1\\CAVES\\denent.ds1",
       dst, sizeof(dst));
 
    TEST_ASSERT_EQUAL_INT(0, redirected);
    TEST_ASSERT_EQUAL_STRING(
-      "C:\\mods\\myproject\\Global\\Tiles\\ACT1\\CAVES\\denent.ds1", dst);
+      T_PREFIX "ACT1\\CAVES\\denent.ds1", dst);
 }
 
 void test_redirect_handles_mpq_extracted_path(void)
@@ -278,14 +289,14 @@ void test_redirect_handles_mpq_extracted_path(void)
    char dst[256];
    int  redirected;
 
-   open_fake_project("C:\\mods\\myproject");
+   open_fake_project(T_ROOT);
    redirected = project_redirect_ds1_save_path(
       "D:\\d2\\patch\\data\\global\\tiles\\ACT2\\TOWN\\lutn1.ds1",
       dst, sizeof(dst));
 
    TEST_ASSERT_EQUAL_INT(1, redirected);
    TEST_ASSERT_EQUAL_STRING(
-      "C:\\mods\\myproject\\Global\\Tiles\\ACT2\\TOWN\\lutn1.ds1", dst);
+      T_PREFIX "ACT2\\TOWN\\lutn1.ds1", dst);
 }
 
 void test_redirect_case_insensitive_tiles_match(void)

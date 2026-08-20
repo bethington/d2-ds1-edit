@@ -54,6 +54,7 @@ October 30 2011 :
 #include "cli/cli.h"
 #include "platform.h"
 
+
 WRKSPC_DATAS_S glb_wrkspc_datas[WRKSPC_MAX] = // workspace datas saved in .ds1
     {
         {("DS1EDIT_WRKSPC_TILE_X")},

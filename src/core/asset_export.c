@@ -364,16 +364,20 @@ static int dt1_asset_path_is_discoverable(const char *asset_path)
 int asset_export_dt1_header_looks_valid(const void *buffer, long len)
 {
    const UBYTE *bytes = (const UBYTE *) buffer;
-   long x1, x2, block_num, bh_start;
+   int32_t x1, x2, block_num, bh_start;
    long header_bytes;
 
    if (bytes == NULL || len < DT1_HEADER_BYTES)
       return 0;
 
-   x1 = * (const long *) bytes;
-   x2 = * (const long *) (bytes + 4);
-   block_num = * (const long *) (bytes + 268);
-   bh_start = * (const long *) (bytes + 272);
+   /* DT1 stores these as 32-bit fields. Reading them through `long` picked up
+      8 bytes under LP64, so x1 swallowed x2 and no DT1 ever validated on
+      Linux or macOS. memcpy rather than a cast: the offsets are not aligned
+      for a 4-byte load and the cast would also alias. */
+   memcpy(&x1,        bytes,       sizeof(x1));
+   memcpy(&x2,        bytes + 4,   sizeof(x2));
+   memcpy(&block_num, bytes + 268, sizeof(block_num));
+   memcpy(&bh_start,  bytes + 272, sizeof(bh_start));
 
    if (x1 != 7 || x2 != 6)
       return 0;

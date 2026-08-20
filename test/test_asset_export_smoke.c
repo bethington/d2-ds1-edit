@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include "platform.h"
@@ -64,10 +65,10 @@ static const unsigned char invalid_dt1_header_fixture[] = {
 static void build_valid_dt1_header_fixture(void)
 {
    memset(valid_dt1_header_fixture, 0, sizeof(valid_dt1_header_fixture));
-   * (long *) (valid_dt1_header_fixture + 0) = 7;
-   * (long *) (valid_dt1_header_fixture + 4) = 6;
-   * (long *) (valid_dt1_header_fixture + 268) = 1;
-   * (long *) (valid_dt1_header_fixture + 272) = 276;
+   * (int32_t *) (valid_dt1_header_fixture + 0) = 7;
+   * (int32_t *) (valid_dt1_header_fixture + 4) = 6;
+   * (int32_t *) (valid_dt1_header_fixture + 268) = 1;
+   * (int32_t *) (valid_dt1_header_fixture + 272) = 276;
 }
 
 static int file_exists_nonempty(const char *path)
@@ -219,13 +220,13 @@ static void test_dt1_header_bounds_validation(void)
       valid_dt1_header_fixture,
       (long) sizeof(valid_dt1_header_fixture)));
 
-   * (long *) (valid_dt1_header_fixture + 268) = 2;
+   * (int32_t *) (valid_dt1_header_fixture + 268) = 2;
    TEST_ASSERT_FALSE(asset_export_dt1_header_looks_valid(
       valid_dt1_header_fixture,
       (long) sizeof(valid_dt1_header_fixture)));
 
-   * (long *) (valid_dt1_header_fixture + 268) = 1;
-   * (long *) (valid_dt1_header_fixture + 272) = 277;
+   * (int32_t *) (valid_dt1_header_fixture + 268) = 1;
+   * (int32_t *) (valid_dt1_header_fixture + 272) = 277;
    TEST_ASSERT_FALSE(asset_export_dt1_header_looks_valid(
       valid_dt1_header_fixture,
       (long) sizeof(valid_dt1_header_fixture)));
