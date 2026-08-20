@@ -438,6 +438,17 @@ void dt1_all_zoom_make(int i)
       idx_buf = (uint8_t *)calloc(w * h, 1);
 
       // draw sub-tiles in this bitmap (and index buffer)
+      //
+      // Select the target and take the write lock once for the whole block.
+      // draw_sub_tile_* writes through al_put_pixel, so without this each
+      // pixel would switch the target twice and, with a display up, stall the
+      // pipeline every time.
+      { ALLEGRO_BITMAP *prev_target = al_get_target_bitmap();
+        ALLEGRO_LOCKED_REGION *blk_lock;
+        al_set_target_bitmap(tmp_bmp);
+        blk_lock = al_lock_bitmap(tmp_bmp, ALLEGRO_PIXEL_FORMAT_ANY,
+                                  ALLEGRO_LOCK_READWRITE);
+
       for (s = 0; s < b_ptr->tiles_number; s++) // for each sub-tiles
       {
          // get the sub-tile info
@@ -465,6 +476,10 @@ void dt1_all_zoom_make(int i)
                decode_sub_tile_normal(idx_buf, w, h, x0, y0, data, length);
          }
       }
+
+        if (blk_lock != NULL)
+           al_unlock_bitmap(tmp_bmp);
+        al_set_target_bitmap(prev_target); }
 
       // if a game's special tile, draw my own info over it
       if ((glb_ds1edit.cmd_line.no_vis_debug == FALSE) &&
