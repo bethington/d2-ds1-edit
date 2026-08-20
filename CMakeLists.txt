@@ -63,6 +63,18 @@ else()
     endif()
 endif()
 
+# allegro_main on macOS supplies its own main() and calls ours as
+# _al_mangled_main, a rename the headers only apply when magic-main is active.
+# It is not active here, so our binary keeps a plain main() and the wrapper's
+# reference to _al_mangled_main goes unresolved -- dyld then aborts at startup
+# with "symbol not found in flat namespace '__al_mangled_main'". We define
+# main() ourselves and are already on the main thread, so the wrapper has
+# nothing to add: drop it on Apple.
+if(APPLE)
+    set(ALLEGRO5_MAIN_LIBRARIES "")
+    set(ALLEGRO5_MAIN_LIB "")
+endif()
+
 # Normalised Allegro handle. Discovery populates two different variable
 # families (pkg-config's *_LIBRARIES vs find_library's *_LIB), and the test
 # targets need the same set the main binary gets, so wrap it once here.
