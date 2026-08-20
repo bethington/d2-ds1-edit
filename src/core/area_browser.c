@@ -214,6 +214,10 @@ int area_browser_init(void)
    }
 
    area_browser_build();
+
+   /* Everything LvlPrest does not name -- maze and room fragments -- would
+    * otherwise have no way into the browser at all. */
+   area_browser_scan_unlisted();
    return 0;
 }
 
@@ -1091,6 +1095,172 @@ int area_browser_nav_end(void)
 
    ab->selected_entry = ab->groups[gi].entry_count - 1;
    return area_browser_switch_single(gi, ab->selected_entry);
+}
+
+
+/* ---- Unlisted maps (present in the archives, named by no table) ---- */
+
+/* Act implied by a tiles-relative folder, e.g. "act1\caves\cave1.ds1" -> 1.
+ * The expansion tree is Act 5. Returns 0 when nothing can be inferred. */
+static int unlisted_act_from_path(const char * rel)
+{
+   if (rel == NULL) return 0;
+
+   if (strnicmp(rel, "act", 3) == 0 && rel[3] >= '1' && rel[3] <= '5')
+      return rel[3] - '0';
+   if (strnicmp(rel, "expansion", 9) == 0)
+      return 5;
+   return 0;
+}
+
+/* Compare two tiles-relative paths ignoring case AND separator flavour.
+ * LvlPrest paths come back forward-slashed ("Act1/Town/TownN1.ds1") while the
+ * archive listfile is backslashed ("act1\town\townn1.ds1"), so a plain
+ * stricmp matches nothing and every map looks unlisted. */
+static int unlisted_path_equal(const char * a, const char * b)
+{
+   if (a == NULL || b == NULL) return 0;
+
+   for (;; a++, b++)
+   {
+      char ca = *a, cb = *b;
+
+      if (ca == '/') ca = '\\';
+      if (cb == '/') cb = '\\';
+      if (ca >= 'A' && ca <= 'Z') ca = (char) (ca - 'A' + 'a');
+      if (cb >= 'A' && cb <= 'Z') cb = (char) (cb - 'A' + 'a');
+
+      if (ca != cb) return 0;
+      if (ca == '\0') return 1;
+   }
+}
+
+/* Is this tiles-relative path already carried by some group? */
+static int unlisted_already_known(AREA_BROWSER_S * ab, const char * rel)
+{
+   int g, e;
+
+   for (g = 0; g < ab->group_count; g++)
+   {
+      AREA_GROUP_S * grp = &ab->groups[g];
+      if (grp->is_backup) continue;
+      for (e = 0; e < grp->entry_count; e++)
+      {
+         if (unlisted_path_equal(grp->entries[e].ds1_path, rel))
+            return 1;
+      }
+   }
+   return 0;
+}
+
+/* Find (or create) the per-Act "Unlisted" group. Uses a negative lvltype id
+ * so it cannot collide with a real LvlTypes row, and sits apart from the
+ * backup groups' -1-act ids. */
+static AREA_GROUP_S * unlisted_group_for_act(AREA_BROWSER_S * ab, int act)
+{
+   int i;
+   AREA_GROUP_S * g;
+   const int id = -100 - act;
+
+   for (i = 0; i < ab->group_count; i++)
+   {
+      if (ab->groups[i].lvltype_id == id && !ab->groups[i].is_backup)
+         return &ab->groups[i];
+   }
+
+   g = area_find_or_create_group(ab, id, "Unlisted", act);
+   if (g != NULL)
+   {
+      g->act = act;
+      g->name_act = 0;
+   }
+   return g;
+}
+
+/* Walk one archive's (listfile) and add whatever is not already grouped. */
+static int unlisted_scan_slot(AREA_BROWSER_S * ab, int slot)
+{
+   extern GLB_MPQ_S *glb_mpq;
+   extern int mpq_batch_load_in_mem(char *filename, void **buffer,
+                                    long *buf_len, int output);
+   GLB_MPQ_S * saved;
+   void * buf = NULL;
+   long   buf_len = 0;
+   int    n, added = 0;
+   char * p;
+   char * end;
+   const char * prefix = "data\\global\\tiles\\";
+   const size_t prefix_len = 18;   /* strlen("data\\global\\tiles\\") */
+
+   if (!glb_mpq_struct[slot].is_open) return 0;
+
+   saved = glb_mpq;
+   glb_mpq = &glb_mpq_struct[slot];
+   n = mpq_batch_load_in_mem("(listfile)", &buf, &buf_len, 0);
+   glb_mpq = saved;
+
+   if (n == -1 || buf == NULL || buf_len <= 0)
+   {
+      if (buf != NULL) free(buf);
+      return 0;
+   }
+
+   p = (char *) buf;
+   end = p + buf_len;
+   while (p < end)
+   {
+      char * line = p;
+      char * nl = line;
+      size_t len;
+
+      while (nl < end && *nl != '\r' && *nl != '\n') nl++;
+      if (nl < end) *nl = '\0';
+      p = nl + 1;
+
+      len = strlen(line);
+      if (len <= 4 || stricmp(line + len - 4, ".ds1") != 0)
+         continue;
+      if (strnicmp(line, prefix, prefix_len) != 0)
+         continue;
+
+      {
+         const char * rel = line + prefix_len;
+         int act;
+
+         if (rel[0] == '\0') continue;
+         if (unlisted_already_known(ab, rel)) continue;
+
+         act = unlisted_act_from_path(rel);
+         {
+            AREA_GROUP_S * g = unlisted_group_for_act(ab, act);
+            if (g == NULL) continue;
+            /* lvltype -1 means "no tileset row"; misc_open_1_ds1 then falls
+               back to the DT1s the DS1 itself references. */
+            area_group_add_entry(g, -1, -1, rel);
+            added++;
+         }
+      }
+   }
+
+   free(buf);
+   return added;
+}
+
+/* Public entry point: called after the LvlPrest-driven build. */
+void area_browser_scan_unlisted(void)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   int slot, added = 0;
+
+   for (slot = 0; slot < MAX_MPQ_FILE; slot++)
+      added += unlisted_scan_slot(ab, slot);
+
+   if (added > 0)
+   {
+      printf("[area browser] %d map(s) present in the archives but named by "
+             "no table, filed under \"Unlisted\"\n", added);
+      fflush(stdout);
+   }
 }
 
 /* Free all area browser dynamic memory. */
