@@ -241,6 +241,12 @@ static void open_fake_project(const char *path)
    #define T_SEP  "/"
 #endif
 #define T_PREFIX T_ROOT T_SEP "Global" T_SEP "Tiles" T_SEP
+#ifdef WIN32
+   #define T_ROOT2 "C:\\mods\\mp"
+#else
+   #define T_ROOT2 "/mods/mp"
+#endif
+#define T_PREFIX2 T_ROOT2 T_SEP "Global" T_SEP "Tiles" T_SEP
 
 void test_redirect_no_project_returns_zero(void)
 {
@@ -304,13 +310,13 @@ void test_redirect_case_insensitive_tiles_match(void)
    char dst[256];
    int  redirected;
 
-   open_fake_project("C:\\mods\\mp");
+   open_fake_project(T_ROOT2);
    redirected = project_redirect_ds1_save_path(
       "x/y/z/TILES/ACT3/FOO.DS1", dst, sizeof(dst));
 
    TEST_ASSERT_EQUAL_INT(1, redirected);
    TEST_ASSERT_EQUAL_STRING(
-      "C:\\mods\\mp\\Global\\Tiles\\ACT3/FOO.DS1", dst);
+      T_PREFIX2 "ACT3/FOO.DS1", dst);
 }
 
 void test_redirect_no_tiles_segment_returns_zero(void)
@@ -318,7 +324,7 @@ void test_redirect_no_tiles_segment_returns_zero(void)
    char dst[256];
    int  redirected;
 
-   open_fake_project("C:\\mods\\mp");
+   open_fake_project(T_ROOT2);
    redirected = project_redirect_ds1_save_path(
       "C:\\randomplace\\file.ds1", dst, sizeof(dst));
 

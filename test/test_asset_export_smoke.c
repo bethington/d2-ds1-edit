@@ -11,6 +11,14 @@
 
 #include "core/asset_export.h"
 
+/* On-disk paths below use the native separator; the "Data\\Test\\..." asset
+   paths are MPQ virtual paths and stay backslashed on every platform. */
+#ifdef WIN32
+   #define T_SEP "\\"
+#else
+   #define T_SEP "/"
+#endif
+
 #ifndef TEST_BUILD_DIR
 #define TEST_BUILD_DIR "."
 #endif
@@ -120,7 +128,7 @@ static void test_dc6_fixture_exports_png(void)
 
    init_allegro_once();
 
-   snprintf(out_root, sizeof(out_root), "%s\\asset_export_smoke_out", TEST_BUILD_DIR);
+   snprintf(out_root, sizeof(out_root), "%s" T_SEP "asset_export_smoke_out", TEST_BUILD_DIR);
    ensure_dir(out_root);
 
    exported = asset_export_dc6_buffer_png(
@@ -132,7 +140,8 @@ static void test_dc6_fixture_exports_png(void)
 
    TEST_ASSERT_EQUAL_INT(1, exported);
 
-   snprintf(out_path, sizeof(out_path), "%s\\Data\\Test\\tiny.png", out_root);
+   snprintf(out_path, sizeof(out_path),
+            "%s" T_SEP "Data" T_SEP "Test" T_SEP "tiny.png", out_root);
    TEST_ASSERT_TRUE(file_exists_nonempty(out_path));
 }
 
@@ -150,7 +159,7 @@ static void test_dcc_cli_smoke_if_configured(void)
    if (!file_exists_nonempty(DS1EDIT_BIN_EXE))
       TEST_IGNORE_MESSAGE("bin\\ds1edit.exe is not available for the DCC smoke export.");
 
-   snprintf(out_root, sizeof(out_root), "%s\\asset_export_dcc_cli", TEST_BUILD_DIR);
+   snprintf(out_root, sizeof(out_root), "%s" T_SEP "asset_export_dcc_cli", TEST_BUILD_DIR);
    ensure_dir(out_root);
 
    snprintf(command, sizeof(command),
@@ -161,7 +170,8 @@ static void test_dcc_cli_smoke_if_configured(void)
    rc = system(command);
    TEST_ASSERT_EQUAL_INT(0, rc);
 
-   snprintf(out_path, sizeof(out_path), "%s\\%s\\frame_000.png", out_root, asset_path);
+   snprintf(out_path, sizeof(out_path),
+            "%s" T_SEP "%s" T_SEP "frame_000.png", out_root, asset_path);
    TEST_ASSERT_TRUE(file_exists_nonempty(out_path));
 }
 
