@@ -251,9 +251,13 @@ GLB_DS1EDIT_S glb_ds1edit;              // global datas of the editor
 GLB_MPQ_S glb_mpq_struct[MAX_MPQ_FILE]; // global data of 1 mpq
 DS1_S *glb_ds1 = NULL;                  // ds1 datas
 DT1_S *glb_dt1 = NULL;                  // dt1 datas
-char glb_tiles_path[] = "Data\\Global\\Tiles\\";
-char glb_ds1edit_data_dir[] = "Data" DS1_SEP_STR;
-char glb_ds1edit_tmp_dir[] = "Tmp\\";
+/* Sizes must match the extern declarations in structs.h. They were defined
+   here as string-literal-sized arrays (19/6/5 bytes) while every other
+   translation unit saw [30]/[80]/[80] and wrote accordingly -- which glibc
+   FORTIFY catches as a buffer overflow and aborts on. */
+char glb_tiles_path[30] = "Data\\Global\\Tiles\\";  /* MPQ virtual path: backslash everywhere */
+char glb_ds1edit_data_dir[80] = "Data" DS1_SEP_STR;
+char glb_ds1edit_tmp_dir[80] = "Tmp" DS1_SEP_STR;
 
 // debug files
 char *glb_path_lvltypes_mem = "Debug\\Editor.lvltypes.memory.bin";

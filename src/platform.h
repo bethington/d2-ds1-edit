@@ -58,13 +58,30 @@
 #endif
 
 /* ---- process pipes ---------------------------------------------------- */
-/* MSVC prefixes these with an underscore; POSIX does not. */
+/* MSVC prefixes these with an underscore; POSIX does not.
+ *
+ * The return values differ in a way that silently corrupts comparisons:
+ * _pclose gives the child's exit code directly, while POSIX pclose gives a
+ * wait status, where the exit code lives in the high byte (exit 3 -> 768).
+ * DS1_PCLOSE normalises to the exit code, and reports a signal death as
+ * 128 + signum the way a shell does.
+ */
 #ifdef WIN32
    #define DS1_POPEN(cmd, mode)  _popen((cmd), (mode))
    #define DS1_PCLOSE(fp)        _pclose(fp)
 #else
+   #include <sys/wait.h>
    #define DS1_POPEN(cmd, mode)  popen((cmd), (mode))
-   #define DS1_PCLOSE(fp)        pclose(fp)
+   #define DS1_PCLOSE(fp)        ds1_pclose_status(fp)
+
+   static inline int ds1_pclose_status(FILE *fp)
+   {
+      int st = pclose(fp);
+      if (st == -1) return -1;
+      if (WIFEXITED(st))   return WEXITSTATUS(st);
+      if (WIFSIGNALED(st)) return 128 + WTERMSIG(st);
+      return st;
+   }
 #endif
 
 /* ---- path separators -------------------------------------------------- */
