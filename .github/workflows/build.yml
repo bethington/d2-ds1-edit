@@ -16,6 +16,12 @@ jobs:
       # Dependencies come from vcpkg.json (manifest mode); the CMake
       # toolchain installs them during configure. An explicit
       # `vcpkg install <pkg>` is rejected in manifest mode.
+      # GitHub runners expose vcpkg as VCPKG_INSTALLATION_ROOT; the ci preset
+      # reads VCPKG_ROOT, so bridge the two before configuring.
+      - name: Point VCPKG_ROOT at the runner's vcpkg
+        shell: pwsh
+        run: echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
+
       - name: Configure
         run: cmake --preset ci
 

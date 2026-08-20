@@ -1,13 +1,20 @@
 {
     "version": 3,
-    "cmakeMinimumRequired": { "major": 3, "minor": 20, "patch": 0 },
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 20,
+        "patch": 0
+    },
     "configurePresets": [
         {
             "name": "default",
             "displayName": "Default (x86, vcpkg)",
             "description": "Build with vcpkg dependencies, Win32 architecture",
             "generator": "Visual Studio 16 2019",
-            "architecture": { "value": "Win32", "strategy": "set" },
+            "architecture": {
+                "value": "Win32",
+                "strategy": "set"
+            },
             "binaryDir": "${sourceDir}/build",
             "cacheVariables": {
                 "CMAKE_TOOLCHAIN_FILE": {
@@ -31,7 +38,9 @@
                     "type": "FILEPATH",
                     "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
                 }
-            }
+            },
+            "generator": "Visual Studio 17 2022",
+            "binaryDir": "${sourceDir}/build"
         }
     ],
     "buildPresets": [
@@ -66,14 +75,18 @@
             "displayName": "Run Tests",
             "configurePreset": "default",
             "configuration": "Release",
-            "output": { "outputOnFailure": true }
+            "output": {
+                "outputOnFailure": true
+            }
         },
         {
             "name": "ci",
             "displayName": "CI Tests",
             "configurePreset": "ci",
             "configuration": "Release",
-            "output": { "outputOnFailure": true }
+            "output": {
+                "outputOnFailure": true
+            }
         }
     ]
 }
