@@ -63,14 +63,20 @@ else()
     endif()
 endif()
 
-# allegro_main on macOS supplies its own main() and calls ours as
-# _al_mangled_main, a rename the headers only apply when magic-main is active.
-# It is not active here, so our binary keeps a plain main() and the wrapper's
-# reference to _al_mangled_main goes unresolved -- dyld then aborts at startup
-# with "symbol not found in flat namespace '__al_mangled_main'". We define
-# main() ourselves and are already on the main thread, so the wrapper has
-# nothing to add: drop it on Apple.
+# Allegro's "magic main" on macOS: allegro5/platform/alosx.h rewrites our
+# main() to _al_mangled_main and liballegro_main supplies the real main(),
+# which then calls back into ours. That callback is resolved through the flat
+# namespace, and macOS has used a two-level namespace since 10.1 -- so the
+# dylib cannot see the executable's symbol and startup dies with
+#   dyld: symbol not found in flat namespace '__al_mangled_main'
+#
+# Turning the rename off and dropping the wrapper keeps a single ordinary
+# main(), which is what every other platform here already does. This has to be
+# a directory-scope definition so the test targets agree with the main binary:
+# a TU that mangles while the link supplies no wrapper fails with "_main"
+# undefined.
 if(APPLE)
+    add_compile_definitions(ALLEGRO_NO_MAGIC_MAIN)
     set(ALLEGRO5_MAIN_LIBRARIES "")
     set(ALLEGRO5_MAIN_LIB "")
 endif()
