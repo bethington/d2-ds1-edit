@@ -4,6 +4,7 @@
 #include <string.h>
 #include <math.h>
 #include "structs.h"
+#include "ui/ui_assets.h"
 #include "error.h"
 #include "core/ds1.h"
 #include "core/txtread.h"
@@ -890,17 +891,17 @@ void misc_open_several_ds1(char *filename)
 void misc_walkable_tile_info_pcx(void)
 {
    static char pcxname[11][30] = {
-       {"pcx\\bit0.png"},
-       {"pcx\\bit1.png"},
-       {"pcx\\bit2.png"},
-       {"pcx\\bit3.png"},
-       {"pcx\\bit4.png"},
-       {"pcx\\bit5.png"},
-       {"pcx\\bit6.png"},
-       {"pcx\\bit7.png"},
-       {"pcx\\bit8.png"},
-       {"pcx\\st_nowalk.png"},
-       {"pcx\\st_nojump.png"}};
+       {UI_DIR "bit0.png"},
+       {UI_DIR "bit1.png"},
+       {UI_DIR "bit2.png"},
+       {UI_DIR "bit3.png"},
+       {UI_DIR "bit4.png"},
+       {UI_DIR "bit5.png"},
+       {UI_DIR "bit6.png"},
+       {UI_DIR "bit7.png"},
+       {UI_DIR "bit8.png"},
+       {UI_DIR "st_nowalk.png"},
+       {UI_DIR "st_nojump.png"}};
    int loop, i, x0, y0, z, w = 0, h = 0;
    ALLEGRO_BITMAP *tmpbmp, *subtile, *subtile2;
    char tmp[150];
@@ -908,10 +909,11 @@ void misc_walkable_tile_info_pcx(void)
 
    fprintf(stderr, "walkable tile infos");
    fflush(stderr);
-   glb_ds1edit.subtile_help = al_load_bitmap("pcx/st_help.png");
+   glb_ds1edit.subtile_help = al_load_bitmap(UI_DIR "st_help.png");
    if (glb_ds1edit.subtile_help == NULL)
    {
-      sprintf(tmp, "misc_walkable_tile_info_pcx(), can't open pcx/st_help.png");
+      sprintf(tmp, "misc_walkable_tile_info_pcx(), can't open %s",
+              UI_DIR "st_help.png");
       ds1edit_error(tmp);
    }
 

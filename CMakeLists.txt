@@ -342,8 +342,6 @@ add_custom_command(TARGET ds1edit POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_SOURCE_DIR}/data" "${CMAKE_SOURCE_DIR}/bin/data"
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_SOURCE_DIR}/pcx" "${CMAKE_SOURCE_DIR}/bin/pcx"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_SOURCE_DIR}/assets" "${CMAKE_SOURCE_DIR}/bin/assets"
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_SOURCE_DIR}/examples" "${CMAKE_SOURCE_DIR}/bin/examples"
@@ -355,7 +353,7 @@ add_custom_command(TARGET ds1edit POST_BUILD
         -DSRC=${CMAKE_SOURCE_DIR}/Ds1edit.ini.sample
         -DDST=${CMAKE_SOURCE_DIR}/bin/Ds1edit.ini
         -P ${CMAKE_SOURCE_DIR}/cmake/copy-if-missing.cmake
-    COMMENT "Copying data, pcx, assets, and examples to bin/"
+    COMMENT "Copying data, assets, and examples to bin/"
 )
 
 # Copy required DLLs to output directory (vcpkg puts them next to the libs)
@@ -407,10 +405,14 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/data/
     PATTERN "gamma.dat" EXCLUDE
     PATTERN "Tmp"       EXCLUDE
 )
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/pcx/ DESTINATION pcx)
+# Area configs plus the editor's own interface images (assets/ui/). The .ini
+# filter used to be the whole rule, back when the UI images lived in pcx/ and
+# had an install rule of their own.
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets/
     DESTINATION assets
-    FILES_MATCHING PATTERN "*.ini"
+    FILES_MATCHING
+        PATTERN "*.ini"
+        PATTERN "*.png"
 )
 install(FILES ${CMAKE_SOURCE_DIR}/Ds1edit.ini.sample DESTINATION .)
 install(FILES ${CMAKE_SOURCE_DIR}/LICENSE DESTINATION .)

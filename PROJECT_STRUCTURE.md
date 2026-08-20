@@ -66,12 +66,13 @@ d2-ds1-edit/
 │   ├── obj.txt                # Object definitions
 │   └── ds1edit.dt1            # Editor tile set
 │
-├── pcx/                        # UI graphics (copied to bin/ at build time)
 │   ├── *.png                  # Cursors, buttons, tabs, icons
 │   ├── preview/               # Preview direction arrows
 │   └── tiles/                 # Tile selection arrows
 │
-├── assets/                     # Game configuration (copied to bin/ at build time)
+├── assets/                     # Copied to bin/ at build time
+│   ├── *.ini                   # Per-area configs
+│   └── ui/                     # Editor interface images (was pcx/)
 │   ├── *.ini                  # Area configs (act1_town.ini, etc.)
 │   ├── tiles/                 # DS1 map files organized by Act
 │   ├── excel/                 # Game data tables

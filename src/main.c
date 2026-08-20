@@ -56,6 +56,7 @@ October 30 2011 :
 #include "render/preview.h"
 #include "cli/cli.h"
 #include "platform.h"
+#include "ui/ui_assets.h"
 
 
 WRKSPC_DATAS_S glb_wrkspc_datas[WRKSPC_MAX] = // workspace datas saved in .ds1
@@ -298,10 +299,10 @@ void ds1edit_init(void)
       char name[40];
       MODE_E idx;
    } cursor[MOD_MAX] = {
-       {"pcx\\cursor_t.png", MOD_T}, // tiles
-       {"pcx\\cursor_o.png", MOD_O}, // objects
-       {"pcx\\cursor_p.png", MOD_P}, // paths
-       {"pcx\\cursor_l.png", MOD_L}  // lights
+       {UI_DIR "cursor_t.png", MOD_T}, // tiles
+       {UI_DIR "cursor_o.png", MOD_O}, // objects
+       {UI_DIR "cursor_p.png", MOD_P}, // paths
+       {UI_DIR "cursor_l.png", MOD_L}  // lights
    };
    int i, o;
    static int

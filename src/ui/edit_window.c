@@ -2,6 +2,7 @@
  * See NOTICE at the repository root for attribution and license status. */
 
 #include "structs.h"
+#include "ui/ui_assets.h"
 #include "render/preview.h"
 #include "error.h"
 #include "editor/undo.h"
@@ -537,11 +538,11 @@ void wedit_read_pcx(void)
        {"", BU_NULL, BT_NULL, -1, -1} // do not remove
    };
    char filename[80];
-   char pcx_name[9][20] = {
+   char frame_name[9][20] = {
        {"up-left"}, {"up"}, {"up-right"}, {"left"}, {"fill"}, {"right"}, {"down-left"}, {"down"}, {"down-right"}};
    int i = 0, n1, n2, x0, y0, w, h, my_border, x, y;
 
-   fprintf(stderr, "loading pcx");
+   fprintf(stderr, "loading ui images");
    fflush(stderr);
    while (strlen(data[i].file) != 0)
    {
@@ -553,7 +554,7 @@ void wedit_read_pcx(void)
       {
          // button off
          b = &glb_ds1edit.win_edit.button[n1];
-         sprintf(filename, "pcx/%s.png", data[i].file);
+         sprintf(filename, UI_DIR "%s.png", data[i].file);
          b->bmp[0] = al_load_bitmap(filename);
          if (b->bmp[0] == NULL)
          {
@@ -573,7 +574,7 @@ void wedit_read_pcx(void)
       {
          // tab off
          b = &glb_ds1edit.win_edit.tab[n2];
-         sprintf(filename, "pcx/%s_off.png", data[i].file);
+         sprintf(filename, UI_DIR "%s_off.png", data[i].file);
          b->bmp[0] = al_load_bitmap(filename);
          if (b->bmp[0] == NULL)
          {
@@ -588,7 +589,7 @@ void wedit_read_pcx(void)
          }
 
          // tab on
-         sprintf(filename, "pcx/%s.png", data[i].file);
+         sprintf(filename, UI_DIR "%s.png", data[i].file);
          b->bmp[1] = al_load_bitmap(filename);
       }
       i++;
@@ -599,7 +600,7 @@ void wedit_read_pcx(void)
    {
       fprintf(stderr, ".");
       fflush(stderr);
-      sprintf(filename, "pcx/preview/%s.png", pcx_name[i]);
+      sprintf(filename, UI_FRAME_PREVIEW "%s.png", frame_name[i]);
       pcx[i] = al_load_bitmap(filename);
       if (pcx[i] == NULL)
          fprintf(stderr, "\nWARNING: can't load %s\n", filename);
@@ -654,7 +655,7 @@ void wedit_read_pcx(void)
    {
       fprintf(stderr, ".");
       fflush(stderr);
-      sprintf(filename, "pcx/tiles/%s.png", pcx_name[i]);
+      sprintf(filename, UI_FRAME_TILEWIN "%s.png", frame_name[i]);
       pcx[i] = al_load_bitmap(filename);
    }
    x0 = w_elm->b_x0 + al_get_bitmap_width(w_elm->border) + my_border;

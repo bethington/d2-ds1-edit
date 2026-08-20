@@ -178,7 +178,7 @@ See [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for detailed layout.
 
 Key directories:
 - `src/` - C source code organized into `core/`, `render/`, `editor/`, `ui/`, `mpq/`
-- `data/`, `pcx/`, `assets/` - Runtime data (copied to `bin/` at build time)
+- `data/`, `assets/` - Runtime data (copied to `bin/` at build time); `assets/ui/` holds the editor's interface images
 - `test/` - Unit tests (Unity framework)
 - `scripts/` - Golden test scripts (Python)
 - `bin/` - Build output directory (gitignored)

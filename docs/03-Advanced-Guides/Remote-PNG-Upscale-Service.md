@@ -28,6 +28,14 @@ If `2x` or `4x` is selected, DS1Edit:
 
 ## Service Source
 
-The generic Docker service lives in [tools/ai/png-upscale-service](../../tools/ai/png-upscale-service).
+**The reference service is no longer part of this repository.** It was removed as
+scaffolding rather than something users were expected to run.
 
-It is intentionally generic so other local-network projects can reuse it. The API is PNG-based and does not know anything about DT1, DC6, DCC, or DS1Edit-specific asset formats.
+The editor still supports the remote methods (`--upscale-method=realesrgan`,
+`ultrasharp`, `nmkd-superscale`, `anime-6b`, `apisr`, `sd-x4`, `sdxl-refine`), so
+you need to point `upscale_service_url` at a service of your own that implements
+the contract described above: it takes a PNG, returns an upscaled PNG, and knows
+nothing about DT1, DC6, DCC or any DS1Edit-specific format.
+
+If you only want upscaling without running anything, the local methods need no
+service at all: `nn`, `scale2x`, `xbrz`, `bilinear`, `bicubic`, `lanczos`.

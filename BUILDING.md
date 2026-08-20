@@ -31,7 +31,7 @@ cmake --build --preset dev
 ctest --preset default
 ```
 
-The executable is output to `bin/ds1edit.exe`. Allegro 5 DLLs are automatically copied to `bin/`. Runtime data files (`data/`, `pcx/`, `assets/`) are also copied to `bin/` by a post-build step.
+The executable is output to `bin/ds1edit.exe`. Allegro 5 DLLs are automatically copied to `bin/`. Runtime data files (`data/` and `assets/`, which includes the editor's UI images under `assets/ui/`) are also copied to `bin/` by a post-build step.
 
 ## Build Options
 
@@ -84,7 +84,9 @@ src/                C source files
   ui/               User interface (event loop, dialogs, windows)
   mpq/              MPQ archive reader
 data/               Palettes, gamma tables, editor tile data
-pcx/                UI element images
+assets/
+  ui/               Editor interface images (buttons, tabs, cursors,
+                    walkable-info bits, window frames)
 assets/             Area INI configs, excel tables, palette data
   tiles/            Game tile data (gitignored, user-supplied)
 test/
