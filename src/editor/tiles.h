@@ -1,3 +1,6 @@
+/* Derived from win_ds1edit by Paul Siramy (originally edittile.h).
+ * See NOTICE at the repository root for attribution and license status. */
+
 #ifndef _EDITTILE_H_
 
 #define _EDITTILE_H_                                                           

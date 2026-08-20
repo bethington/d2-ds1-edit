@@ -1,3 +1,6 @@
+/* Derived from win_ds1edit by Paul Siramy (originally dccinfo.h).
+ * See NOTICE at the repository root for attribution and license status. */
+
 #ifndef _DCC_INFO_H_
 
 #define _DCC_INFO_H_

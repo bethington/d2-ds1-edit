@@ -188,20 +188,21 @@ int area_browser_init(void)
 {
    int rc;
 
-   /* Load LvlTypes.txt (reuses cache if already loaded) */
-   if (glb_ds1edit.lvltypes_buff == NULL)
+   /* Parse and cache the two tables. This used to call
+    * read_lvltypes_txt(0, 0) on the assumption that 0 "won't match any
+    * row" -- but row 0 is ID 0 ("None"), so it matched and went on to
+    * load DT1s into DS1 slot 0. Harmless in the GUI, fatal from the CLI
+    * where the DT1 machinery is not up yet. */
+   if (txt_ensure_lvltypes() != 0)
    {
-      /* Call with dummy params — we just want it loaded and cached.
-       * read_lvltypes_txt needs ds1_idx and type, but if the buffer
-       * is NULL it loads the file first. We pass 0,0 which won't match
-       * any row, but the file gets cached. */
-      read_lvltypes_txt(0, 0);
+      printf("area_browser_init: failed to load LvlTypes.txt\n");
+      return -1;
    }
 
-   /* Load LvlPrest.txt */
-   if (glb_ds1edit.lvlprest_buff == NULL)
+   if (txt_ensure_lvlprest() != 0)
    {
-      read_lvlprest_txt(0, 0);
+      printf("area_browser_init: failed to load LvlPrest.txt\n");
+      return -1;
    }
 
    /* Load Levels.txt */

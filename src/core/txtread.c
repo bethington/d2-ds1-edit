@@ -1,3 +1,6 @@
+/* Derived from win_ds1edit by Paul Siramy.
+ * See NOTICE at the repository root for attribution and license status. */
+
 #include <string.h>
 #include "structs.h"
 #include "error.h"
@@ -575,6 +578,56 @@ void txt_debug(char *file_path_mem, char *file_path_def, TXT_S *txt)
 
 // ==========================================================================
 // load lvlTypes.txt in mem, then load each dt1 for a 1 ds1
+/* Parse and cache LvlTypes.txt without touching any DS1 slot.
+ *
+ * read_lvltypes_txt(idx, type) also resolves a row and loads that level's
+ * DT1 set, which callers that only need the table parsed do not want -- and
+ * cannot survive before the DT1 machinery is up. Returns 0 on success. */
+int txt_ensure_lvltypes(void)
+{
+   char lvltypes[] = "Data\\Global\\Excel\\LvlTypes.txt";
+   char *buff;
+   TXT_S *txt;
+
+   if (glb_ds1edit.lvltypes_buff != NULL)
+      return 0;
+
+   buff = txt_read_in_mem(lvltypes);
+   if (buff == NULL)
+      return -1;
+
+   txt = txt_load(buff, RQ_LVLTYPE, lvltypes);
+   free(buff);
+   if (txt == NULL)
+      return -1;
+
+   glb_ds1edit.lvltypes_buff = txt;
+   return 0;
+}
+
+/* Same, for LvlPrest.txt. */
+int txt_ensure_lvlprest(void)
+{
+   char lvlprest[] = "Data\\Global\\Excel\\LvlPrest.txt";
+   char *buff;
+   TXT_S *txt;
+
+   if (glb_ds1edit.lvlprest_buff != NULL)
+      return 0;
+
+   buff = txt_read_in_mem(lvlprest);
+   if (buff == NULL)
+      return -1;
+
+   txt = txt_load(buff, RQ_LVLPREST, lvlprest);
+   free(buff);
+   if (txt == NULL)
+      return -1;
+
+   glb_ds1edit.lvlprest_buff = txt;
+   return 0;
+}
+
 int read_lvltypes_txt(int ds1_idx, int type)
 {
    TXT_S *txt = NULL;

@@ -1,3 +1,6 @@
+/* Derived from win_ds1edit by Paul Siramy (originally dc6info.c).
+ * See NOTICE at the repository root for attribution and license status. */
+
 #include "structs.h"
 #include <stdint.h>
 #include "misc.h"

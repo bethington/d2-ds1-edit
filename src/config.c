@@ -1,3 +1,6 @@
+/* Derived from win_ds1edit by Paul Siramy (originally iniread.c and inicreat.c).
+ * See NOTICE at the repository root for attribution and license status. */
+
 #include <stdio.h>
 #include <string.h>
 #include "structs.h"

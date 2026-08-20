@@ -1,3 +1,6 @@
+/* Derived from win_ds1edit by Paul Siramy (originally wBits.h).
+ * See NOTICE at the repository root for attribution and license status. */
+
 #ifndef _WBITS_H_
 
 #define _WBITS_H_

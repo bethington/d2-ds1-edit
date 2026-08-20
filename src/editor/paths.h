@@ -1,3 +1,6 @@
+/* Derived from win_ds1edit by Paul Siramy (originally editpath.h).
+ * See NOTICE at the repository root for attribution and license status. */
+
 #ifndef _EDITPATH_H_
 
 #define _EDITPATH_H_

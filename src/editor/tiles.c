@@ -1,3 +1,6 @@
+/* Derived from win_ds1edit by Paul Siramy (originally edittile.c).
+ * See NOTICE at the repository root for attribution and license status. */
+
 #include "structs.h"
 #include "core/ds1.h"
 #include "editor/undo.h"

@@ -26,6 +26,7 @@
 #include "core/export_presets.h"
 #include "core/monstats2.h"
 #include "core/upscale.h"
+#include "core/area_browser.h"
 
 extern void ds1edit_load_palettes(void);
 extern void misc_read_gamma(void);
@@ -61,6 +62,9 @@ static int verb_export_compose(int argc, char **argv);
 static int verb_export_raw    (int argc, char **argv);
 static int verb_dump_txt_row  (int argc, char **argv);
 static int verb_dump_listfile (int argc, char **argv);
+static int verb_list_areas    (int argc, char **argv);
+static int verb_list_files    (int argc, char **argv);
+static int verb_audit_lvltypes(int argc, char **argv);
 static int verb_help          (int argc, char **argv);
 
 static const CLI_VERB_S s_verbs[] = {
@@ -84,6 +88,12 @@ static const CLI_VERB_S s_verbs[] = {
      "Load <txt-path>, find row matching <id> in column 0, dump column=value pairs." },
    { "dump-listfile",  verb_dump_listfile,
      "Print the in-MPQ (listfile) for each open slot to stdout (paths only)." },
+   { "list-areas",   verb_list_areas,
+     "List every area the browser discovered, grouped by Act." },
+   { "list-files",   verb_list_files,
+     "List DS1 files known to the browser; optional substring filter." },
+   { "audit-lvltypes", verb_audit_lvltypes,
+     "Report LvlTypes.txt rows whose name prefix disagrees with their Act column." },
    { "help",         verb_help,
      "Show this help text." },
    { "--help",       verb_help, NULL },
@@ -2047,6 +2057,101 @@ static int verb_dump_listfile(int argc, char **argv)
    return CLI_EXIT_OK;
 }
 
+/* ---- area browser verbs ---------------------------------------------- */
+
+/* Bare presence of "--name" (no "=value"), which find_flag_value cannot see. */
+static int cli_has_flag(int argc, char **argv, const char *name)
+{
+   int i;
+   for (i = 2; i < argc; i++)
+   {
+      const char *a = argv[i];
+      if (a == NULL) continue;
+      while (*a == '-') a++;
+      if (strcasecmp(a, name) == 0) return 1;
+   }
+   return 0;
+}
+
+/* First argument after the verb that is not a flag. NULL if there is none. */
+static const char *cli_first_positional(int argc, char **argv)
+{
+   int i;
+   for (i = 2; i < argc; i++)
+   {
+      if (argv[i] != NULL && argv[i][0] != '-')
+         return argv[i];
+   }
+   return NULL;
+}
+
+/* Shared prologue: config + MPQ chain, then the LvlTypes/LvlPrest/Levels
+ * join the browser is built from. */
+static int cli_area_browser_ready(int argc, char **argv)
+{
+   CLI_COMMON_OPTS_S opts;
+   int rc;
+
+   if (!parse_common_opts(argc, argv, &opts))
+      return CLI_EXIT_BAD_ARGS;
+
+   rc = cli_minimum_init(&opts);
+   if (rc != CLI_EXIT_OK) return rc;
+
+   /* cli_minimum_init deliberately skips the DS1/DT1 arenas, but the browser
+    * reads glb_ds1[] while resolving each area's palette -- without these it
+    * dereferences NULL partway through the LvlTypes join. */
+   cli_alloc_global_buffers();
+
+   /* txt_load() indexes glb_txt_req_ptr[] to find each table's required
+    * columns; ds1edit_init() normally wires it and the CLI skips that. */
+   ds1edit_init_txt_requirements();
+
+   if (area_browser_init() != 0)
+   {
+      fprintf(stderr,
+              "ds1edit: failed to load the Excel tables the area browser "
+              "needs (Levels.txt / LvlPrest.txt / LvlTypes.txt).\n");
+      return CLI_EXIT_NOTHING;
+   }
+   return CLI_EXIT_OK;
+}
+
+static int verb_list_areas(int argc, char **argv)
+{
+   int rc = cli_area_browser_ready(argc, argv);
+   if (rc != CLI_EXIT_OK) return rc;
+
+   if (cli_has_flag(argc, argv, "ext"))
+      area_browser_list_ext();
+   else
+      area_browser_list();
+   return CLI_EXIT_OK;
+}
+
+static int verb_list_files(int argc, char **argv)
+{
+   const char *filter;
+   int rc = cli_area_browser_ready(argc, argv);
+   if (rc != CLI_EXIT_OK) return rc;
+
+   /* Positional substring filter, matching the old --list-files <filter>. */
+   filter = cli_first_positional(argc, argv);
+   area_browser_list_files(filter);
+   return CLI_EXIT_OK;
+}
+
+static int verb_audit_lvltypes(int argc, char **argv)
+{
+   int n;
+   int rc = cli_area_browser_ready(argc, argv);
+   if (rc != CLI_EXIT_OK) return rc;
+
+   n = area_browser_audit_lvltypes(stdout);
+   printf("\n%d LvlTypes row(s) disagree with their Act column.\n", n);
+   return CLI_EXIT_OK;
+}
+
 /* ---- help ------------------------------------------------------------ */
 
 static int verb_help(int argc, char **argv)
@@ -2109,7 +2214,9 @@ static int verb_help(int argc, char **argv)
       "\n"
       "Exit codes:\n"
       "  0 = clean run; 1 = some failures; 2 = nothing produced;\n"
-      "  3 = bad arguments.\n");
+      "  3 = bad arguments.\n"
+      "\n"
+      "DS1Edit continues win_ds1edit by Paul Siramy (2002-2011); see NOTICE.\n");
    return CLI_EXIT_OK;
 }
 
@@ -2123,6 +2230,20 @@ int cli_run(int argc, char **argv)
       return verb_help(argc, argv);
 
    v = find_verb(argv[1]);
+
+   /* Legacy spellings. cli_is_verb() routes every '-'-prefixed argv[1] here,
+    * so these three README-documented flags used to be answered with
+    * "unknown verb" instead of reaching main.c's handler. Strip the dashes
+    * and look the verb up again rather than keeping a second CLI style. */
+   if (v == NULL && argv[1][0] == '-')
+   {
+      const char *bare = argv[1];
+      while (*bare == '-') bare++;
+      v = find_verb(bare);
+      /* --list-areas-ext is list-areas with the extended formatter. */
+      if (v == NULL && strcasecmp(bare, "list-areas-ext") == 0)
+         v = find_verb("list-areas");
+   }
    if (v == NULL)
    {
       fprintf(stderr, "ds1edit: unknown verb '%s'\n", argv[1]);

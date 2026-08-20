@@ -1,3 +1,6 @@
+/* Derived from win_ds1edit by Paul Siramy (originally wPreview.h).
+ * See NOTICE at the repository root for attribution and license status. */
+
 #ifndef _WPREVIEW_H_
 
 #define _WPREVIEW_H_

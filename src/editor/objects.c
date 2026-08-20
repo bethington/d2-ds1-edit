@@ -1,3 +1,6 @@
+/* Derived from win_ds1edit by Paul Siramy (originally editobj.c).
+ * See NOTICE at the repository root for attribution and license status. */
+
 #include "structs.h"
 #include "misc.h"
 #include "error.h"

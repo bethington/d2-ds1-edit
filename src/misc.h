@@ -1,3 +1,6 @@
+/* Derived from win_ds1edit by Paul Siramy.
+ * See NOTICE at the repository root for attribution and license status. */
+
 #ifndef _MISC_H_
 
 #define _MISC_H_
@@ -8,6 +11,7 @@ int    misc_qsort_helper_block_table_2 (const void * e1, const void * e2);
 void   misc_check_tiles_conflicts      (int ds1_idx);
 void   misc_make_block_table           (int ds1_idx);
 double misc_gamma_value                (int gt);
+void   ds1edit_init_txt_requirements   (void);  /* defined in main.c */
 void   misc_read_gamma                 (void);
 void   misc_update_pal_with_gamma      (void);
 void   misc_pcx_put_d2_palette         (char * name, int pal_idx);

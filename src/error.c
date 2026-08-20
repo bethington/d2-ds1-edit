@@ -1,3 +1,6 @@
+/* Derived from win_ds1edit by Paul Siramy.
+ * See NOTICE at the repository root for attribution and license status. */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "structs.h"

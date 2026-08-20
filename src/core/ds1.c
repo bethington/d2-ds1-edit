@@ -1,3 +1,6 @@
+/* Derived from win_ds1edit by Paul Siramy (originally ds1misc.c and ds1save.c).
+ * See NOTICE at the repository root for attribution and license status. */
+
 #include <string.h>
 #include <stdint.h>
 #include "structs.h"

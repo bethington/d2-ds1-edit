@@ -1,3 +1,6 @@
+/* Derived from win_ds1edit by Paul Siramy (originally ds1misc.h and ds1save.h).
+ * See NOTICE at the repository root for attribution and license status. */
+
 #ifndef _DS1MISC_H_
 
 #define _DS1MISC_H_

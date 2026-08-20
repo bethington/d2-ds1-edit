@@ -1,3 +1,6 @@
+/* Derived from win_ds1edit by Paul Siramy (originally gfx_custom.h).
+ * See NOTICE at the repository root for attribution and license status. */
+
 #ifndef _GFX_CUSTOM_H_
 
 #define _GFX_CUSTOM_H_

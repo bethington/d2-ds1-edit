@@ -1,3 +1,6 @@
+/* Derived from win_ds1edit by Paul Siramy (originally anim.h).
+ * See NOTICE at the repository root for attribution and license status. */
+
 #ifndef _ANIM_H_
 
 #define _ANIM_H_

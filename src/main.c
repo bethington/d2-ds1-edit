@@ -1,3 +1,6 @@
+/* Derived from win_ds1edit by Paul Siramy.
+ * See NOTICE at the repository root for attribution and license status. */
+
 /*
   - create "Debug" directory
   - added "-debug" in command line : create debug files, like "Debug\D2.lvlprest.headers.txt" or "Debug\Editor.objects.memory.bin"
@@ -272,6 +275,21 @@ char *glb_path_objects_def = "Debug\\D2.objects.headers.txt";
 
 // ==========================================================================
 // near the start of the prog
+// ==========================================================================
+// Point each RQ_* slot at its column-requirement list.
+//
+// This lived inside ds1edit_init(), which the CLI skips -- so every CLI verb
+// that parsed a table with column requirements hit a NULL glb_txt_req_ptr[]
+// entry in txt_load() and segfaulted. Both paths call this now.
+void ds1edit_init_txt_requirements(void)
+{
+   glb_txt_req_ptr[RQ_LVLTYPE]  = txt_def_lvltype_req;
+   glb_txt_req_ptr[RQ_LVLPREST] = txt_def_lvlprest_req;
+   glb_txt_req_ptr[RQ_OBJ]      = txt_def_obj_req;
+   glb_txt_req_ptr[RQ_OBJECTS]  = txt_def_objects_req;
+   glb_txt_req_ptr[RQ_LEVELS]   = txt_def_levels_req;
+}
+
 void ds1edit_init(void)
 {
    FILE *out;
@@ -385,11 +403,7 @@ void ds1edit_init(void)
    }
 
    // txt
-   glb_txt_req_ptr[RQ_LVLTYPE] = txt_def_lvltype_req;
-   glb_txt_req_ptr[RQ_LVLPREST] = txt_def_lvlprest_req;
-   glb_txt_req_ptr[RQ_OBJ] = txt_def_obj_req;
-   glb_txt_req_ptr[RQ_OBJECTS] = txt_def_objects_req;
-   glb_txt_req_ptr[RQ_LEVELS] = txt_def_levels_req;
+   ds1edit_init_txt_requirements();
 
    // debug files
    remove(glb_path_lvltypes_mem);

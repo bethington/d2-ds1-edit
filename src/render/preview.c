@@ -1,3 +1,6 @@
+/* Derived from win_ds1edit by Paul Siramy (originally wPreview.c).
+ * See NOTICE at the repository root for attribution and license status. */
+
 #include <math.h>
 #include <string.h>
 #include "structs.h"

@@ -1,3 +1,6 @@
+/* Derived from win_ds1edit by Paul Siramy.
+ * See NOTICE at the repository root for attribution and license status. */
+
 #ifndef _WINDS1EDIT_STRUCTS_H_
 
 #define _WINDS1EDIT_STRUCTS_H_

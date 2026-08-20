@@ -1,3 +1,6 @@
+/* Derived from win_ds1edit by Paul Siramy (originally editobj.h).
+ * See NOTICE at the repository root for attribution and license status. */
+
 #ifndef _EDITOBJ_H_
 
 #define _EDITOBJ_H_                                                           

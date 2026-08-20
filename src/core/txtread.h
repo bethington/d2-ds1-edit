@@ -1,3 +1,6 @@
+/* Derived from win_ds1edit by Paul Siramy.
+ * See NOTICE at the repository root for attribution and license status. */
+
 #ifndef _TXTREAD_H_
 
 #define _TXTREAD_H_
@@ -13,6 +16,8 @@ TXT_S * txt_load               (char * mem, RQ_ENUM enum_txt, char * filename);
 void  * txt_read_in_mem        (char * txtname);
 void  txt_convert_slash        (char * str);
 void  txt_debug                (char * file_path_mem, char * file_path_def, TXT_S * txt);
+int   txt_ensure_lvltypes      (void);   /* parse+cache only, no DS1 side effects */
+int   txt_ensure_lvlprest      (void);
 int   read_lvltypes_txt        (int ds1_idx, int type);
 int   read_lvlprest_txt        (int ds1_idx, int def);
 int   read_obj_txt             (void);

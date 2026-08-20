@@ -1,3 +1,6 @@
+/* Derived from win_ds1edit by Paul Siramy (originally dc6info.h).
+ * See NOTICE at the repository root for attribution and license status. */
+
 #ifndef _DC6_INFO_H_
 
 #define _DC6_INFO_H_

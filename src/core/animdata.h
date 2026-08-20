@@ -1,3 +1,6 @@
+/* Derived from win_ds1edit by Paul Siramy.
+ * See NOTICE at the repository root for attribution and license status. */
+
 #ifndef _ANIMDATA_H_
 
 #define _ANIMDATA_H_

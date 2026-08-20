@@ -1,3 +1,6 @@
+/* Derived from win_ds1edit by Paul Siramy (originally wMsg.c, msg_quit.c and msg_save.c).
+ * See NOTICE at the repository root for attribution and license status. */
+
 #include <string.h>
 #include "structs.h"
 #include "error.h"
