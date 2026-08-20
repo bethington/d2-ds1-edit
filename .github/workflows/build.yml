@@ -48,16 +48,6 @@ jobs:
       - name: Build
         run: cmake --build --preset linux
 
-      # Temporary: 'ds1edit help' dies with SIGABRT here but not on Windows.
-      # Run it directly so glibc's diagnostic reaches the log.
-      - name: Diagnose startup
-        run: |
-          echo "--- ds1edit help ---"
-          ./bin/ds1edit help; echo "exit=$?"
-          echo "--- under gdb ---"
-          sudo apt-get install -y -qq gdb >/dev/null
-          gdb -batch -ex run -ex bt --args ./bin/ds1edit help 2>&1 | tail -40
-
       - name: Test
         run: ctest --preset linux --output-on-failure
 
@@ -71,16 +61,6 @@ jobs:
         run: cmake --preset macos
       - name: Build
         run: cmake --build --preset macos
-
-      # Temporary: 'ds1edit help' dies with SIGABRT on macOS but not Linux.
-      - name: Diagnose startup
-        run: |
-          echo "--- ds1edit help ---"
-          ./bin/ds1edit help 2>&1 | tail -20; echo "exit=${PIPESTATUS[0]}"
-          echo "--- crash report ---"
-          ls -la ~/Library/Logs/DiagnosticReports/ 2>/dev/null || true
-          cat ~/Library/Logs/DiagnosticReports/ds1edit* 2>/dev/null | head -60 || true
-        continue-on-error: true
 
       - name: Test
         run: ctest --preset macos --output-on-failure
