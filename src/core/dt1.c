@@ -417,7 +417,14 @@ void dt1_all_zoom_make(int i)
       }
 
       // normal block (non-empty)
-      tmp_bmp = al_create_bitmap(w, h);
+      /* Scratch surface: composed pixel by pixel below, blitted once, then
+         destroyed. It must stay in system memory -- on the GPU each of those
+         writes takes a texture lock, which costs ~280 ms per block against
+         ~0.4 ms here. Only the bitmap dt1_zoom keeps wants to be a texture. */
+      { int prev_flags = al_get_new_bitmap_flags();
+        al_set_new_bitmap_flags(ALLEGRO_MEMORY_BITMAP);
+        tmp_bmp = al_create_bitmap(w, h);
+        al_set_new_bitmap_flags(prev_flags); }
       if (tmp_bmp == NULL)
       {
          sprintf(tmp_str, "dt1_all_zoom_make(%i), can't make a bitmap "
