@@ -93,8 +93,12 @@ static void test_export_compose_without_target_or_out_returns_3(void)
    /* Either CLI_EXIT_BAD_ARGS (3) for missing args, or NOTHING (2) if
     * the run gets past arg parsing but produces zero output -- both
     * are non-zero "not OK" outcomes which is what we're asserting. */
-   TEST_ASSERT_NOT_EQUAL(0, rc);
-   TEST_ASSERT_TRUE(rc == 2 || rc == 3);
+   {
+      char msg[128];
+      snprintf(msg, sizeof(msg), "expected exit 2 or 3, got %d", rc);
+      TEST_ASSERT_NOT_EQUAL_MESSAGE(0, rc, msg);
+      TEST_ASSERT_TRUE_MESSAGE(rc == 2 || rc == 3, msg);
+   }
 }
 
 int main(void)
