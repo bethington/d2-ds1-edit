@@ -397,22 +397,80 @@ void wpreview_shape(ALLEGRO_BITMAP *tmp_bmp, int x0, int y0, int ds1_idx,
 
 // ==========================================================================
 // draw a gouraud floor sprite
+// ==========================================================================
+// Draw a bitmap with per-corner brightness interpolated across it.
+//
+// The Allegro 5 replacement for Allegro 4's draw_gouraud_sprite: a textured
+// quad whose four vertices carry the corner intensities as greyscale colours.
+// al_draw_prim multiplies texture by vertex colour, and the GPU interpolates
+// between them, so the gradient is per-pixel rather than per-tile.
+//
+// Corner order matches the callers: c1 top-left, c2 top-right, c3
+// bottom-right, c4 bottom-left.
+static void wpreview_draw_gouraud_bitmap(ALLEGRO_BITMAP *bmp, int x, int y,
+                                         int c1, int c2, int c3, int c4)
+{
+   ALLEGRO_VERTEX v[4];
+   float sw, sh, dw, dh;
+   int   mul = 1, div = 1;
+
+   if (bmp == NULL)
+      return;
+
+   /* Same height scaling wpreview_draw_bitmap applies. */
+   if (glb_ds1edit.has_loaded_ds1)
+   {
+      mul = glb_ds1[glb_ds1edit.ds1_group_idx].height_mul;
+      div = glb_ds1[glb_ds1edit.ds1_group_idx].height_div;
+   }
+
+   sw = (float) al_get_bitmap_width(bmp);
+   sh = (float) al_get_bitmap_height(bmp);
+   if (sw <= 0.0f || sh <= 0.0f)
+      return;
+
+   dw = sw * (float) mul / (float) div;
+   dh = sh * (float) mul / (float) div;
+
+   /* Texture coordinates are in pixels, not normalised. */
+   v[0].x = (float) x;      v[0].y = (float) y;      v[0].z = 0;
+   v[0].u = 0;              v[0].v = 0;
+   v[0].color = al_map_rgb(c1, c1, c1);
+
+   v[1].x = (float) x + dw; v[1].y = (float) y;      v[1].z = 0;
+   v[1].u = sw;             v[1].v = 0;
+   v[1].color = al_map_rgb(c2, c2, c2);
+
+   v[2].x = (float) x + dw; v[2].y = (float) y + dh; v[2].z = 0;
+   v[2].u = sw;             v[2].v = sh;
+   v[2].color = al_map_rgb(c3, c3, c3);
+
+   v[3].x = (float) x;      v[3].y = (float) y + dh; v[3].z = 0;
+   v[3].u = 0;              v[3].v = sh;
+   v[3].color = al_map_rgb(c4, c4, c4);
+
+   al_draw_prim(v, NULL, bmp, 0, 4, ALLEGRO_PRIM_TRIANGLE_FAN);
+}
+
 void wpreview_gouraud_f(ALLEGRO_BITMAP *tmp_bmp, int x0, int y0, int ds1_idx,
                         int c1, int c2, int c3, int c4)
 {
-   if ((c1 == c2) && (c2 == c3) && (c3 == c4))
+   (void) ds1_idx;
+
+   /* Fully dark on every corner: nothing to draw, and skipping is what keeps
+      light mode cheap out at the edges of the map. */
+   if (c1 <= 7 && c2 <= 7 && c3 <= 7 && c4 <= 7)
+      return;
+
+   /* Fully lit on every corner: the common case inside the plateau radius,
+      and an ordinary blit is cheaper than a textured quad. */
+   if (c1 >= 248 && c2 >= 248 && c3 >= 248 && c4 >= 248)
    {
-      if (c1 <= 7)
-         return;
-      if (c1 >= 248)
-         wpreview_draw_bitmap(tmp_bmp, x0, y0);
-      else
-         wpreview_draw_trans_bitmap(tmp_bmp, x0, y0, a5_trans_alpha);
+      wpreview_draw_bitmap(tmp_bmp, x0, y0);
+      return;
    }
-   else
-   {
-      wpreview_draw_trans_bitmap(tmp_bmp, x0, y0, a5_trans_alpha);
-   }
+
+   wpreview_draw_gouraud_bitmap(tmp_bmp, x0, y0, c1, c2, c3, c4);
 }
 
 // ==========================================================================
@@ -420,17 +478,17 @@ void wpreview_gouraud_f(ALLEGRO_BITMAP *tmp_bmp, int x0, int y0, int ds1_idx,
 void wpreview_gouraud_w(ALLEGRO_BITMAP *tmp_bmp, int x0, int y0, int ds1_idx,
                         int c1, int c2, int c3, int c4)
 {
-   if ((c1 == c2) && (c2 == c3) && (c3 == c4))
+   (void) ds1_idx;
+
+   /* Walls have no dark skip: a wall silhouetted against a lit floor still
+      needs drawing, which is why this differs from the floor path. */
+   if (c1 >= 248 && c2 >= 248 && c3 >= 248 && c4 >= 248)
    {
-      if (c1 >= 248)
-         wpreview_draw_bitmap(tmp_bmp, x0, y0);
-      else
-         wpreview_draw_trans_bitmap(tmp_bmp, x0, y0, a5_trans_alpha);
+      wpreview_draw_bitmap(tmp_bmp, x0, y0);
+      return;
    }
-   else
-   {
-      wpreview_draw_trans_bitmap(tmp_bmp, x0, y0, a5_trans_alpha);
-   }
+
+   wpreview_draw_gouraud_bitmap(tmp_bmp, x0, y0, c1, c2, c3, c4);
 }
 
 // ==========================================================================
