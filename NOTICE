@@ -1,0 +1,99 @@
+NOTICE
+======
+
+DS1Edit is a continuation of win_ds1edit, the Diablo II DS1 map editor written
+by Paul Siramy. This file records where the code came from and the license
+status of each part. It ships next to LICENSE in every release package.
+
+
+1. win_ds1edit by Paul Siramy (2002-2011)
+-----------------------------------------
+
+Paul Siramy wrote ds1edit / win_ds1edit, the WYSIWYG DS1 editor the Diablo II
+modding community has relied on since 2002: the DS1, DT1, DCC, DC6, COF and
+AnimData.d2 format handling, the tile / object / path editing model, the
+preview renderer, the undo system, and the on-line documentation and
+tutorials. This project started from his last source release:
+
+    win_ds1edit_20111030_src.zip  (5 November 2011, 25,326 lines)
+    http://paul.siramy.free.fr/_divers/ds1/dl_ds1edit.html
+    http://paul.siramy.free.fr/_divers/ds1/doc/index.html
+    https://d2mods.info/forum/viewtopic.php?t=44  (ds1edit thread, 2002-)
+
+License status. Neither that archive nor Paul's site carries a license text
+or a copyright notice; the only document in the archive, "README FIRST.txt",
+gives build instructions. Paul published the source next to every binary from
+2002 onward, and in April 2003 noted on the Phrozen Keep that he had "released
+the sources of my editor since 1 year now" and that no other editor had yet
+been built from them. DS1Edit uses his code on that basis, with this
+attribution. The MIT license in LICENSE is granted by Ben Ethington for the
+modifications and additions made in this project; it is not a relicensing of
+Paul's original work, which remains his. If you are Paul and would like the
+attribution or terms stated differently, open an issue at
+https://github.com/bethington/d2-ds1-edit and it will be changed.
+
+Files that derive directly from win_ds1edit (current path <- original file):
+
+    src/main.c                 <- main.c
+    src/misc.c, misc.h         <- misc.c, misc.h
+    src/error.c, error.h       <- error.c, error.h
+    src/structs.h              <- structs.h
+    src/types.h                <- types.h
+    src/config.c, config.h     <- iniread.c/h, inicreat.c/h
+    src/core/animdata.c, .h    <- animdata.c, animdata.h
+    src/core/cof.c, .h         <- anim.c, anim.h
+    src/core/dc6.c, .h         <- dc6info.c, dc6info.h
+    src/core/dcc.c, .h         <- dccinfo.c, dccinfo.h
+    src/core/ds1.c, .h         <- ds1misc.c/h, ds1save.c/h
+    src/core/dt1.c, .h         <- dt1misc.c, dt1misc.h
+    src/core/dt1_draw.c, .h    <- dt1_draw.c, dt1_draw.h
+    src/core/txtread.c, .h     <- txtread.c, txtread.h
+    src/editor/objects.c, .h   <- editobj.c, editobj.h
+    src/editor/paths.c, .h     <- editpath.c, editpath.h
+    src/editor/tiles.c, .h     <- edittile.c, edittile.h
+    src/editor/undo.c, .h      <- undo.c, undo.h
+    src/render/gfx.c, .h       <- gfx_custom.c, gfx_custom.h
+    src/render/preview.c, .h   <- wPreview.c, wPreview.h
+    src/ui/bits_window.c, .h   <- wBits.c, wBits.h
+    src/ui/dialogs.c, .h       <- wMsg.c/h, msg_quit.c/h, msg_save.c/h
+    src/ui/edit_window.c, .h   <- wEdit.c, wEdit.h
+    src/ui/interface.c, .h     <- interfac.c, interfac.h
+
+Every one of these has been modified, some heavily, for the Allegro 4 -> 5
+port and the work since; each carries a short header pointing back here.
+Files not listed (src/cli/, src/core/compose_*, src/core/mpq_index*,
+src/core/palette.c, src/core/rgba_cache.c, most of src/ui/, the tests and the
+CMake build) are new to this project.
+
+The user guides under docs/01-Getting-Started, docs/02-Tutorials,
+docs/03-Advanced-Guides and docs/04-Examples are Paul's original documentation
+and tutorials (http://paul.siramy.free.fr/_divers/ds1/doc/index.html),
+converted to Markdown. docs/README.txt is his original readme.
+
+
+2. Stormless MPQ sample code by Tom Amigo (2000)
+------------------------------------------------
+
+src/mpq/ (Dcl_tbl.c, Dclib.h, Explode.c, MpqView.c, MpqView.h, Wav_unp.c,
+Wav_unp.h, mpqtypes.h) is the "Sample Console App source code" that Tom Amigo
+published with the Stormless MPQ Editor at http://www.angelfire.com/sc/mpq/
+(August 2000), as adapted by Paul Siramy for win_ds1edit ("I needed very few
+minor modifications to suit my needs" -- README FIRST.txt). Tom Amigo released
+it so that others could learn the MPQ format and build on it; no license text
+accompanies it.
+
+
+3. Libraries
+------------
+
+Allegro 5 (https://liballeg.org/) -- zlib license. Release packages bundle
+its runtime libraries on Windows and macOS.
+zlib (https://zlib.net/) -- zlib license, used by the MPQ reader.
+
+
+Other credits
+-------------
+
+Mark Nevill ('DarthDevilous') wrote the original GUI loader for win_ds1edit
+(not part of this repository). The Phrozen Keep community
+(https://d2mods.info/) documented the Diablo II file formats over two decades.

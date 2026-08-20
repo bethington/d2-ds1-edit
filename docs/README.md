@@ -1,6 +1,6 @@
 # DS1Edit Documentation
 
-DS1Edit is a level editor for Diablo II, allowing creation and modification of game maps (.ds1 files). Built with Allegro 5 for GPU-accelerated rendering.
+DS1Edit is a level editor for Diablo II, allowing creation and modification of game maps (.ds1 files). Built with Allegro 5 for GPU-accelerated rendering. It continues Paul Siramy's `win_ds1edit` (2002-2011): the user guides below are his original documentation, and [NOTICE](../NOTICE) records the provenance of the code.
 
 ## Documentation Index
 
