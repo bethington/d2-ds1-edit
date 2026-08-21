@@ -13,6 +13,10 @@ unsigned char a5_key_suppressed[ALLEGRO_KEY_MAX];
 unsigned char a5_mb_hit[DS1_MOUSE_BUTTON_MAX];
 int a5_display_closed;
 
+unsigned long a5_input_frames;
+unsigned long a5_input_events;
+unsigned long a5_input_timer_events;
+
 static int input_resize_pending;
 
 void input_init(void)
@@ -21,6 +25,9 @@ void input_init(void)
    memset(a5_mb_hit, 0, sizeof(a5_mb_hit));
    a5_display_closed = 0;
    input_resize_pending = 0;
+   a5_input_frames = 0;
+   a5_input_events = 0;
+   a5_input_timer_events = 0;
 
    memset(a5_key_suppressed, 0, sizeof(a5_key_suppressed));
    al_get_keyboard_state(&a5_kb_state);
@@ -55,6 +62,8 @@ void input_note_event(const ALLEGRO_EVENT *ev)
    if (ev == NULL)
       return;
 
+   a5_input_events++;
+
    switch (ev->type)
    {
    case ALLEGRO_EVENT_KEY_DOWN:
@@ -70,6 +79,12 @@ void input_note_event(const ALLEGRO_EVENT *ev)
    case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
       if (ev->mouse.button < DS1_MOUSE_BUTTON_MAX)
          a5_mb_hit[ev->mouse.button] = 1;
+      break;
+
+   case ALLEGRO_EVENT_TIMER:
+      /* Not acted on here -- the main loop owns timer semantics -- but seeing
+         one proves the real queue reaches this layer. */
+      a5_input_timer_events++;
       break;
 
    case ALLEGRO_EVENT_DISPLAY_CLOSE:
@@ -101,6 +116,7 @@ void input_note_event(const ALLEGRO_EVENT *ev)
 
 void input_end_frame(void)
 {
+   a5_input_frames++;
    al_get_keyboard_state(&a5_kb_state);
    al_get_mouse_state(&a5_ms_state);
 }

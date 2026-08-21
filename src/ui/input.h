@@ -61,6 +61,17 @@ extern int a5_display_closed;
    match. Cleared by input_take_resize(). */
 int  input_take_resize(void);
 
+/* Wiring telemetry. A loop that forgets to pump still renders perfectly --
+   it just never sees a key again -- so these let --selftest prove the main
+   loop is actually connected rather than merely drawing. */
+extern unsigned long a5_input_frames;   /* input_end_frame() calls */
+extern unsigned long a5_input_events;   /* events handed to input_note_event() */
+/* Timer events specifically. The tick timer runs at 25 Hz off the real queue
+   and nothing synthesises one, so a non-zero count is proof that the queue is
+   genuinely being drained through this layer -- which a test that injects its
+   own events cannot fake. */
+extern unsigned long a5_input_timer_events;
+
 void input_init(void);
 
 /* Clear per-pump state, drain the queue, then sample the held state.

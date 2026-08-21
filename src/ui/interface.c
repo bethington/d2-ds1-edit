@@ -146,8 +146,14 @@ void interfac_user_handler(int start_ds1_idx)
       section_start_ms = perf_now_ms();
       {
          ALLEGRO_EVENT event;
+         input_begin_frame();
          while (al_get_next_event(a5_event_queue, &event))
          {
+            /* Key/button edges, wheel, resize, focus loss and close all go
+               through the input layer; only the editor-specific events are
+               worth handling by hand below. */
+            input_note_event(&event);
+
             if (event.type == ALLEGRO_EVENT_TIMER)
             {
                if (event.timer.source == a5_tick_timer)
@@ -157,10 +163,6 @@ void interfac_user_handler(int start_ds1_idx)
                   glb_ds1edit.old_fps = glb_ds1edit.fps;
                   glb_ds1edit.fps = 0;
                }
-            }
-            else if (event.type == ALLEGRO_EVENT_DISPLAY_CLOSE)
-            {
-               done = TRUE;
             }
             else if (event.type == ALLEGRO_EVENT_KEY_CHAR)
             {
@@ -197,8 +199,12 @@ void interfac_user_handler(int start_ds1_idx)
 
       // poll input state
       section_start_ms = perf_now_ms();
-      al_get_keyboard_state(&a5_kb_state);
-      al_get_mouse_state(&a5_ms_state);
+      input_end_frame();
+
+      /* Close is a request, not an event to be swallowed: honour it here so
+         it behaves the same whether or not a panel has focus. */
+      if (a5_display_closed)
+         done = TRUE;
 
       perf_accumulate(
           &glb_perf_stats.input_ms_total,
@@ -1970,6 +1976,23 @@ void interfac_user_handler(int start_ds1_idx)
                else
                   fprintf(stdout, "selftest: could not write %s\n",
                           glb_ds1edit.cmd_line.selftest_shot);
+            }
+
+            /* Rendering proves nothing about input: a main loop that never
+               pumps draws a perfect picture and ignores the keyboard for
+               ever. That shipped once. The tick timer fires at 25 Hz, so
+               after this many frames both counters must have moved. */
+            fprintf(stdout,
+                    "selftest: input frames=%lu events=%lu timer=%lu\n",
+                    a5_input_frames, a5_input_events,
+                    a5_input_timer_events);
+            if (a5_input_frames == 0 || a5_input_timer_events == 0)
+            {
+               fprintf(stdout,
+                       "selftest: FAIL -- the main loop is not wired to the "
+                       "input layer, so key_hit()/mouse_hit() can never fire\n");
+               fflush(stdout);
+               exit(1);
             }
             fflush(stdout);
             done = TRUE;
