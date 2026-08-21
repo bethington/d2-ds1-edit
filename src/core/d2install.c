@@ -36,6 +36,7 @@ static int dir_has_d2_mpq(const char *dir)
    for (i = 0; i < (int)(sizeof(probes) / sizeof(probes[0])); i++)
    {
       snprintf(path, sizeof(path), "%s%s%s", dir, DS1_SEP_STR, probes[i]);
+      ds1_path_normalize(path);
       fp = fopen(path, "rb");
       if (fp != NULL) { fclose(fp); return 1; }
    }
@@ -161,7 +162,9 @@ int d2install_resolve_mpqs(void)
       if (glb_config.mpq_file[i] != NULL && glb_config.mpq_file[i][0] != 0)
          continue; // explicit INI entry wins
 
-      snprintf(full, sizeof(full), "%s\\%s", install, MPQ_SLOT_NAMES[i]);
+      snprintf(full, sizeof(full), "%s%s%s",
+               install, DS1_SEP_STR, MPQ_SLOT_NAMES[i]);
+      ds1_path_normalize(full);
 
       fp = fopen(full, "rb");
       if (fp == NULL) continue;

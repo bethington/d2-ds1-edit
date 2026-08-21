@@ -565,7 +565,8 @@ static void compose_open_failure_log(COMPOSE_RUN_STATE_S *st,
     * overwrite the previous log (which matches the "freshest run
     * wins" mental model of the export-to-folder flow). */
    snprintf(st->failure_log_path, sizeof(st->failure_log_path),
-            "%s\\compose_failures.log", root);
+            "%s" DS1_SEP_STR "compose_failures.log", root);
+   ds1_path_normalize(st->failure_log_path);
 
    /* The output root may not exist yet (the ensure_dir calls happen
     * per-token inside compose_run_token). Create it lazily. */
