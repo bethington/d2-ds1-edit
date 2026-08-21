@@ -2,6 +2,43 @@
 
 ## Common Issues and Solutions
 
+### Display Issues
+
+#### The window opens but the map area is black
+
+**Problem**: The status bar and the mouse cursor draw, the frame rate is
+normal, and nothing appears in the logs -- but no tiles.
+
+This is the graphics backend, not the editor. Allegro picks one per platform
+and either can misbehave on a given machine: Direct3D has been seen stalling
+to 0 FPS, and OpenGL has been seen rendering exactly this black map.
+
+**Solution**: switch the backend with an `allegro5.cfg` beside the executable.
+
+```ini
+[graphics]
+driver=opengl
+```
+
+- From a **release package** there is no `allegro5.cfg`, so you are on the
+  platform default. Create one with `driver=opengl`, or `driver=direct3d` on
+  Windows, and try the other.
+- From a **source build** the repository ships an `allegro5.cfg` pinning
+  OpenGL, which CMake copies next to the executable. Rename or delete it to
+  fall back to the platform default.
+
+The editor prints the driver it ended up on at startup, in `stderr.txt` or on
+the console:
+
+```text
+display: 2560x1440, OpenGL driver
+```
+
+Note that headless rendering is unaffected -- `--headless` never creates a
+display -- so exports and the golden screenshot tests keep working while the
+window is black.
+
+
 ### Build Issues
 
 #### Error: "MSVC compiler not found"

@@ -87,9 +87,8 @@ from the archives of the player's own installation at run time, and the
 palette and colormap caches under assets/editor (pal*.bin, cmap*.bin) are
 generated on the machine that runs the editor rather than shipped.
 
-The user guides under docs/01-Getting-Started, docs/02-Tutorials,
-docs/03-Advanced-Guides and docs/04-Examples are Paul's original documentation
-and tutorials (http://paul.siramy.free.fr/_divers/ds1/doc/index.html),
+The user guides under docs/getting-started, docs/tutorials and docs/guides
+are Paul's original documentation and tutorials (http://paul.siramy.free.fr/_divers/ds1/doc/index.html),
 converted to Markdown. docs/README.txt is his original readme.
 
 

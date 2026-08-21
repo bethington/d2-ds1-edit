@@ -67,6 +67,13 @@ ds1edit.ini
 all_dc6_log.txt
 *smoke*/
 
+# Palette and colormap caches the editor extracts from the user's own MPQs.
+# Blizzard data: generated at run time from the player's installation, never
+# committed. data/ is the pre-2.1 location and is no longer read by anything.
+/data/
+assets/editor/pal*.bin
+assets/editor/cmap*.bin
+
 # Generated version file
 data/version
 

@@ -2,13 +2,13 @@
 
 * * *
 
-[**Back to Documentation Home**](../README.html)
+[**Back to Documentation Home**](../README.md)
 
 This is not a complete tutorial explaining all you need to know, but at least I hope it'll cover the most basic questions anyone can have concerning the use of my DS1 Editor, and some more general wondering on Map Concepts.
 
 **Other Docs**
 
-*   [**Tutorial 1**](../tutorials/Tutorial-01-Basic-Map-Editing.html) : advanced map editing stuff (Warps / Map Resizing / Walkable infos / House with Roofs)  
+*   [**Tutorial 1**](../tutorials/Tutorial-01-Basic-Map-Editing.md) : advanced map editing stuff (Warps / Map Resizing / Walkable infos / House with Roofs)  
     **\- IN CONSTRUCTION -**
 
 **Revision History**

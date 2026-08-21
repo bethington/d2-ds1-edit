@@ -1,6 +1,11 @@
 **Adding ANY Monsters and ANY Objects to a DS1**   
 by **Paul Siramy** - May 2010  
 
+> **On the example ZIPs.** The downloads named below are not
+> redistributed with DS1Edit: they contain Diablo II data. They are
+> part of Paul Siramy's original release, at
+> <http://paul.siramy.free.fr/_divers/ds1/dl_ds1edit.html>.
+
 **Table Of Content :**
 
 *   [Overview](#)
@@ -100,7 +105,7 @@ Run the game in \-direct -txt mode, go to the Den of Evil, and here's the result
 
 > ![](../assets/images/07.png)
 
-ZIP file with the relevant modded files to place _Frozenstein_ at the entrance of the Den of Evil : [doe\_frozenstein\_1.13 example files](../04-Examples/Doe-Frozenstein-Example/). It contains these 3 files :
+ZIP file with the relevant modded files to place _Frozenstein_ at the entrance of the Den of Evil : doe_frozenstein_1.13 example files. It contains these 3 files :
 
 *   Data\\Global\\Excel\\ MonPreset.txt
     
@@ -155,7 +160,7 @@ Run the game in \-direct mode, go to Act 3 if needed, then to the place where yo
 
 > ![](../assets/images/12.png)
 
-ZIP file with the modified DS1 docktown3.ds1 : [act3\_town\_diablo\_method1 example files](../04-Examples/Act3-Town-Method1-Example/)
+ZIP file with the modified DS1 docktown3.ds1 : act3_town_diablo_method1 example files
 
 **Second method (indirect index)**
 
@@ -175,7 +180,7 @@ Run the game in \-direct -txt mode, go to Act 3 if needed, then to the place whe
 
 > ![](../assets/images/16.png)
 
-ZIP file with the modified files : [act3\_town\_diablo\_method2 example files](../04-Examples/Act3-Town-Method2-Example/). It contains these 2 files :
+ZIP file with the modified files : act3_town_diablo_method2 example files. It contains these 2 files :
 
 *   Data\\Global\\Excel\\ MonPreset.txt
     
@@ -266,7 +271,7 @@ Run the game in \-direct -txt mode, go to the place where you have added the 4 O
 
 As you can see, the Objects looks like they're working (more or less).
 
-ZIP file with the modified files : [act1town\_4objects example files](../04-Examples/Act1-Town-4Objects-Example/). It contains these 2 files :
+ZIP file with the modified files : act1town_4objects example files. It contains these 2 files :
 
 *   Data\\Global\\Excel\\ LvlPrest.txt
     

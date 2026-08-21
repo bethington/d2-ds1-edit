@@ -13,7 +13,6 @@ DS1Edit is a level editor for Diablo II, allowing creation and modification of g
 - **[Getting Started](getting-started/)** - First steps with DS1Edit
 - **[Basic Tutorials](tutorials/)** - Step-by-step map editing guide
 - **[Advanced Guides](guides/)** - Adding monsters, objects, and more
-- **[Examples](04-Examples/)** - Sample projects and maps
 
 ### Technical Reference
 - **[API Reference](reference/API_REFERENCE.md)** - Command-line and configuration reference

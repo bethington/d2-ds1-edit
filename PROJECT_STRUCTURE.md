@@ -59,24 +59,13 @@ d2-ds1-edit/
 │       ├── Dcl_tbl.c
 │       └── Wav_unp.c/h
 │
-├── data/                       # Runtime data (copied to bin/ at build time)
-│   ├── pal*.bin               # Palettes
-│   ├── cmap*.bin              # Color maps
-│   ├── gamma.dat              # Gamma correction tables
-│   ├── obj.txt                # Object definitions
-│   └── ds1edit.dt1            # Editor tile set
-│
-│   ├── *.png                  # Cursors, buttons, tabs, icons
-│   ├── preview/               # Preview direction arrows
-│   └── tiles/                 # Tile selection arrows
-│
-├── assets/                     # Copied to bin/ at build time
-│   ├── *.ini                   # Per-area configs
-│   └── ui/                     # Editor interface images (was pcx/)
-│   ├── *.ini                  # Area configs (act1_town.ini, etc.)
-│   ├── tiles/                 # DS1 map files organized by Act
-│   ├── excel/                 # Game data tables
-│
+├── assets/                     # The editor's own resources, copied to bin/
+│   ├── *.ini                  # Per-area presets (act1_town.ini, etc.)
+│   ├── editor/                # ds1edit.dt1, obj.txt
+│   └── ui/                    # Interface images, PNG (was pcx/)
+│       ├── *.png              # Cursors, buttons, tabs, icons
+│       ├── frame_preview/     # Preview window frame
+│       └── frame_tilewin/     # Tile window frame
 │
 ├── test/                       # Unit tests (Unity framework)
 │   ├── CMakeLists.txt         # Test build configuration
