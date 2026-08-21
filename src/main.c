@@ -560,6 +560,17 @@ void ds1edit_recreate_render_targets(void)
 
    glb_ds1edit.big_screen_buff = new_big_screen_buff;
    glb_ds1edit.screen_buff = new_screen_buff;
+
+   /* The map viewport has to follow the screen. preview.c clips the tile draw
+      to win_preview.w/h, so a viewport left at the old size paints the map
+      into the old rectangle and leaves everything the resize exposed black --
+      which is exactly what maximising the window used to do. Every resize
+      path comes through here, so this is the one place it has to happen.
+
+      Size only: x0/y0 are the scroll position, not a window origin, and the
+      view has to stay where the user left it across a resize. */
+   glb_ds1edit.win_preview.w = glb_config.screen.width;
+   glb_ds1edit.win_preview.h = glb_config.screen.height;
 }
 
 // ==========================================================================
@@ -932,7 +943,7 @@ int main(int argc, char *argv[])
 #endif
 {
    int i, mpq_num = 0, mod_num = 0, ds1_idx = 0;
-   char *ininame = "ds1edit.ini";
+   char *ininame = DS1EDIT_INI_NAME;
    static char tmp[512];
    static char tmp2[512];
 
@@ -1011,8 +1022,8 @@ int main(int argc, char *argv[])
       }
    }
 
-   // check if ds1edit.ini exists
-   sprintf(tmp, "ds1edit.ini");
+   // check if the config file exists
+   sprintf(tmp, DS1EDIT_INI_NAME);
    if (a5_file_exists(tmp) == 0)
    {
       ini_create(tmp);

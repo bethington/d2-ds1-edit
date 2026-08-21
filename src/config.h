@@ -5,6 +5,13 @@
 
 #define _CONFIG_H_
 
+/* The config file's name, spelled once so the code that opens it and the
+ * build rules that copy it into bin/ cannot drift apart. Case matters:
+ * on a case-sensitive filesystem a lowercase literal here does not match
+ * the Ds1edit.ini that CMake installs and that README tells users to
+ * create, so the editor never sees its own config. */
+#define DS1EDIT_INI_NAME "Ds1edit.ini"
+
 void ini_create (char * ininame);
 void ini_read   (char * ininame);
 

@@ -9,6 +9,9 @@
 #ifdef WIN32
    #define WIN32_LEAN_AND_MEAN
    #include <windows.h>
+#else
+   #include <dirent.h>
+   #include <strings.h>
 #endif
 
 // Slot layout mirrors the precedence assigned in config.c:
@@ -23,23 +26,61 @@ static const char * const MPQ_SLOT_NAMES[MAX_MPQ_FILE] = {
    "d2char.mpq"
 };
 
+// Resolve <dir>/<want> to a real file, ignoring filename case, and write the
+// path that actually exists into `out`. Returns 1 on success.
+//
+// A stock Blizzard install spells the patch archive "Patch_D2.mpq" while the
+// other four are lowercase, and repacks vary. fopen() papers over that on
+// Windows; on a case-sensitive filesystem it does not, and silently missing
+// patch_d2.mpq costs the editor every table the patch updates -- Levels.txt
+// included, which then looks like a version mismatch rather than a missing
+// archive. So: try the exact name, then scan the directory case-insensitively.
+static int resolve_mpq_path(const char *dir, const char *want,
+                            char *out, size_t out_cap)
+{
+   FILE *fp;
+
+   snprintf(out, out_cap, "%s%s%s", dir, DS1_SEP_STR, want);
+   ds1_path_normalize(out);
+   fp = fopen(out, "rb");
+   if (fp != NULL) { fclose(fp); return 1; }
+
+#ifndef WIN32
+   {
+      DIR *d = opendir(dir);
+      struct dirent *ent;
+
+      if (d != NULL)
+      {
+         while ((ent = readdir(d)) != NULL)
+         {
+            if (strcasecmp(ent->d_name, want) == 0)
+            {
+               snprintf(out, out_cap, "%s%s%s", dir, DS1_SEP_STR, ent->d_name);
+               ds1_path_normalize(out);
+               closedir(d);
+               return 1;
+            }
+         }
+         closedir(d);
+      }
+   }
+#endif
+
+   return 0;
+}
+
 // Returns 1 if `dir` looks like a D2 install (contains d2data.mpq or d2exp.mpq).
-// Name matching is case-sensitive on case-sensitive filesystems; on Windows it
-// is case-insensitive automatically, which is what we need.
 static int dir_has_d2_mpq(const char *dir)
 {
    static const char * const probes[] = { "d2data.mpq", "d2exp.mpq" };
    char path[512];
-   FILE *fp;
    int i;
 
    for (i = 0; i < (int)(sizeof(probes) / sizeof(probes[0])); i++)
-   {
-      snprintf(path, sizeof(path), "%s%s%s", dir, DS1_SEP_STR, probes[i]);
-      ds1_path_normalize(path);
-      fp = fopen(path, "rb");
-      if (fp != NULL) { fclose(fp); return 1; }
-   }
+      if (resolve_mpq_path(dir, probes[i], path, sizeof(path)))
+         return 1;
+
    return 0;
 }
 
@@ -127,7 +168,6 @@ int d2install_resolve_mpqs(void)
    char full[512];
    char *buf;
    size_t len;
-   FILE *fp;
    int i, filled = 0;
 
    install = glb_config.d2_install;
@@ -162,13 +202,8 @@ int d2install_resolve_mpqs(void)
       if (glb_config.mpq_file[i] != NULL && glb_config.mpq_file[i][0] != 0)
          continue; // explicit INI entry wins
 
-      snprintf(full, sizeof(full), "%s%s%s",
-               install, DS1_SEP_STR, MPQ_SLOT_NAMES[i]);
-      ds1_path_normalize(full);
-
-      fp = fopen(full, "rb");
-      if (fp == NULL) continue;
-      fclose(fp);
+      if (!resolve_mpq_path(install, MPQ_SLOT_NAMES[i], full, sizeof(full)))
+         continue;
 
       len = strlen(full);
       buf = (char *) malloc(len + 1);

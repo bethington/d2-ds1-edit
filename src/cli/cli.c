@@ -165,7 +165,7 @@ int cli_is_verb(int argc, char **argv)
  * and applies them on top of the loaded INI. */
 typedef struct CLI_COMMON_OPTS_S
 {
-   const char *ini_path;       /* NULL = use default "ds1edit.ini" */
+   const char *ini_path;       /* NULL = use default DS1EDIT_INI_NAME */
    int         no_ini;         /* 1 = don't load any INI */
    const char *d2_install;     /* NULL = no override */
    const char *mod_dir;        /* NULL = no override */
@@ -269,7 +269,7 @@ static int cli_minimum_init(const CLI_COMMON_OPTS_S *opts)
 {
    int i;
    const char *ininame = (opts->ini_path != NULL && opts->ini_path[0] != 0)
-                         ? opts->ini_path : "ds1edit.ini";
+                         ? opts->ini_path : DS1EDIT_INI_NAME;
 
    /* Zero the config + MPQ slot state. ds1edit_init normally does this
     * but it allocates DS1/DT1 buffers + cursors + a lot of other things
@@ -2192,7 +2192,7 @@ static int verb_help(int argc, char **argv)
    printf(
       "\n"
       "Common flags (apply to most verbs):\n"
-      "  --ini=<path>          load this INI instead of ds1edit.ini\n"
+      "  --ini=<path>          load this INI instead of " DS1EDIT_INI_NAME "\n"
       "  --no-ini              do not load any INI; use only CLI flags\n"
       "  --d2-install=<dir>    override d2_install (auto-fills MPQ slots)\n"
       "  --mod-dir=<dir>       override mod_dir[0] (overlay)\n"

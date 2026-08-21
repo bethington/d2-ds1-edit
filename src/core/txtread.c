@@ -1068,7 +1068,7 @@ int read_lvlprest_txt(int ds1_idx, int def)
 int read_obj_txt(void)
 {
    TXT_S *txt;
-   char *buff, obj[] = "Obj.txt";
+   char *buff, obj[] = "obj.txt";
    int i, size;
    long *lptr, len;
    char *sptr, tmp[150];
