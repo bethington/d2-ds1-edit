@@ -450,6 +450,7 @@ void ds1edit_init(void)
    glb_ds1edit.cmd_line.dt1_list_num = -1;
    glb_ds1edit.cmd_line.headless_mode = FALSE;
    glb_ds1edit.cmd_line.selftest_frames = 0;
+   glb_ds1edit.cmd_line.selftest_shot = NULL;
    glb_ds1edit.cmd_line.switchbench_group = -1;
    glb_ds1edit.cmd_line.switchbench_count = 0;
    glb_ds1edit.cmd_line.headless_output = NULL;

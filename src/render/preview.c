@@ -2,6 +2,7 @@
  * See NOTICE at the repository root for attribution and license status. */
 
 #include <math.h>
+#include <limits.h>
 #include <string.h>
 #include "structs.h"
 #include "render/gfx.h"
@@ -3361,8 +3362,13 @@ int wpreview_draw_tiles_big_screenshot(int ds1_idx)
    z = ZM_11;
 
    // init coordinates
-   minx = miny = 0x7FFFFFFFLU;
-   maxx = maxy = 0x80000000LU;
+   /* Sentinels for a running min/max. These were 0x7FFFFFFF / 0x80000000,
+      which only behave as "highest" and "lowest" while long is 32 bits: under
+      LP64 0x80000000 is +2147483648, so maxx/maxy started positive, no tile
+      ever exceeded them, and the computed bounds came out nonsense --
+      --headless has been failing with "empty map?" ever since. */
+   minx = miny = LONG_MAX;
+   maxx = maxy = LONG_MIN;
 
    // find coordinates
    for (y = 0; y < glb_ds1[ds1_idx].height; y++)

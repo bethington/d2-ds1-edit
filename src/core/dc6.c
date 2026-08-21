@@ -2,6 +2,7 @@
  * See NOTICE at the repository root for attribution and license status. */
 
 #include "structs.h"
+#include <limits.h>
 #include <stdint.h>
 #include "misc.h"
 #include "core/dc6.h"
@@ -137,8 +138,8 @@ int anim_load_dc6(char * name, COF_S * cof, int lay_idx, long user_dir,
    // decode dc6 direction
 
    // search the direction "box"
-   x1 = y1 = 0x7FFFFFFFL;
-   x2 = y2 = 0x80000000L;
+   x1 = y1 = LONG_MAX;
+   x2 = y2 = LONG_MIN;
    for (i=0; i < dc6_fpd; i++)
    {
       // get pointer to frame header

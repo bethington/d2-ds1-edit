@@ -1562,6 +1562,22 @@ int misc_cmd_line_parse(int argc, char **argv)
          glb_ds1edit.cmd_line.switchbench_group = g;
          glb_ds1edit.cmd_line.switchbench_count = (n > 1) ? n : 3;
       }
+      else if (strnicmp(argv[i], "--selftest-shot=", 16) == 0
+               || strnicmp(argv[i], "-selftest-shot=", 15) == 0)
+      {
+         /* Must be tested before the plain --selftest branch below, which
+            matches on a 10-character prefix and would swallow this. */
+         const char *eq = strchr(argv[i], '=');
+         glb_ds1edit.cmd_line.selftest_shot =
+             (eq != NULL && eq[1] != 0) ? (char *) (eq + 1) : NULL;
+         if (glb_ds1edit.cmd_line.selftest_shot == NULL)
+         {
+            printf("misc_cmd_line_parse(), error : --selftest-shot needs a filename\n");
+            return -1;
+         }
+         if (glb_ds1edit.cmd_line.selftest_frames <= 0)
+            glb_ds1edit.cmd_line.selftest_frames = 30;
+      }
       else if (strnicmp(argv[i], "--selftest", 10) == 0
                || strnicmp(argv[i], "-selftest", 9) == 0)
       {

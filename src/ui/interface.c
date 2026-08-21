@@ -2299,6 +2299,21 @@ void interfac_user_handler(int start_ds1_idx)
          {
             fprintf(stdout, "selftest: rendered %d frame(s), exiting\n",
                     selftest_rendered);
+
+            /* --selftest-shot: dump the finished frame. This is the only way
+               to see what the GUI actually drew -- the unit tests are headless
+               and --headless never creates a display -- and it is how the
+               missing torches were finally pinned down. */
+            if (glb_ds1edit.cmd_line.selftest_shot != NULL)
+            {
+               if (al_save_bitmap(glb_ds1edit.cmd_line.selftest_shot,
+                                  glb_ds1edit.screen_buff))
+                  fprintf(stdout, "selftest: wrote %s\n",
+                          glb_ds1edit.cmd_line.selftest_shot);
+               else
+                  fprintf(stdout, "selftest: could not write %s\n",
+                          glb_ds1edit.cmd_line.selftest_shot);
+            }
             fflush(stdout);
             done = TRUE;
          }
