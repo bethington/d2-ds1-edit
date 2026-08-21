@@ -177,18 +177,25 @@ See the sample file for all available settings (resolution, scroll speed, gamma,
 **The window opens but the map area is black.** The status bar and the mouse
 cursor draw, the frame rate looks normal, and nothing appears in the logs.
 
-This is the graphics driver. `allegro5.cfg` next to the executable pins
-Allegro to OpenGL:
+This is the graphics driver, and switching it fixes it. Which way you switch
+depends on how you got the editor.
+
+Allegro picks a backend per platform, and either choice can misbehave on a
+given machine: Direct3D has been seen dropping to 0 fps, and OpenGL has been
+seen rendering an all-black map exactly as described. An `allegro5.cfg` next
+to the executable overrides the choice:
 
 ```ini
 [graphics]
 driver=opengl
 ```
 
-That pin exists because the Direct3D backend intermittently dropped to 0 fps,
-but on a machine whose OpenGL driver is unhappy it produces exactly the
-symptom above. Rename or delete `allegro5.cfg` to fall back to the platform
-default and the map returns immediately.
+- **From a release package**, there is no `allegro5.cfg` and you are on the
+  platform default. Create the file next to `ds1edit` with `driver=opengl`, or
+  `driver=direct3d` on Windows, and try the other one.
+- **From a source build**, the repository ships an `allegro5.cfg` that pins
+  OpenGL, and CMake copies it next to the executable. Rename or delete it to
+  fall back to the platform default.
 
 The editor prints the driver it ended up on at startup, so check `stderr.txt`
 (or the console) for:

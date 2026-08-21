@@ -953,9 +953,9 @@ static void ds1edit_report_display_driver(ALLEGRO_DISPLAY *d)
            al_get_display_width(d), al_get_display_height(d), driver,
            (flags & ALLEGRO_FULLSCREEN) ? ", fullscreen" : "");
    fprintf(stderr,
-           "display: if the map area is black but the status bar draws, the "
-           "graphics driver is the first thing to suspect -- try renaming "
-           "allegro5.cfg, which pins this choice.\n");
+           "display: if the map area is black but the status bar draws, "
+           "suspect this driver -- an allegro5.cfg next to the executable "
+           "selects it. See Troubleshooting in README.md.\n");
    fflush(stderr);
 }
 
