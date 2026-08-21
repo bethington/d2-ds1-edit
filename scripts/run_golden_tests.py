@@ -5,7 +5,11 @@ Renders maps using the current build's --headless mode and compares
 against golden reference PNGs.
 
 Usage:
-    python run_golden_tests.py [--core|--full] [--tolerance N]
+    python run_golden_tests.py [--core|--full] [--tolerance N] [--update]
+
+--update rewrites the reference images from the current build. Only do that
+once you have confirmed the new output is right -- it blesses whatever the
+build currently produces.
 
 Default tolerance is 0 (exact match). Use --tolerance to allow for
 animation non-determinism (e.g., --tolerance 255 ignores color diffs).
@@ -63,9 +67,17 @@ def get_all_ini_names():
     return names
 
 
+# Pinned so a reference means the same thing on every machine. Without it the
+# render follows default_zoom from the local ds1edit.ini and the comparison
+# fails on a size mismatch. 1:4 keeps the reference images small while still
+# making a palette or tile regression obvious.
+GOLDEN_ZOOM = "1:4"
+
+
 def render_headless(lvltype_id, lvlprest_def, ds1_path, output_path):
     """Render a map in headless mode. Returns True on success."""
-    cmd = [EXE, ds1_path, lvltype_id, lvlprest_def, "--headless", output_path]
+    cmd = [EXE, ds1_path, lvltype_id, lvlprest_def,
+           "--zoom=" + GOLDEN_ZOOM, "--headless", output_path]
     try:
         result = subprocess.run(cmd, cwd=BIN_DIR, capture_output=True,
                                 text=True, timeout=120)
@@ -89,6 +101,7 @@ def bmp_to_png_path(bmp_path):
 def main():
     mode = "--core"
     tolerance = 0
+    update = "--update" in sys.argv
 
     for arg in sys.argv[1:]:
         if arg in ("--core", "--full"):
@@ -109,7 +122,8 @@ def main():
         map_names = CORE_MAPS
 
     print(f"Golden screenshot tests ({'core' if mode == '--core' else 'full'}): "
-          f"{len(map_names)} maps, tolerance={tolerance}")
+          f"{len(map_names)} maps, tolerance={tolerance}, zoom={GOLDEN_ZOOM}"
+          f"{', UPDATING REFERENCES' if update else ''}")
     print()
 
     passed = 0
@@ -125,6 +139,8 @@ def main():
                 golden_path = golden_png
             elif os.path.exists(golden_bmp):
                 golden_path = golden_bmp
+            elif update:
+                golden_path = golden_png   # about to be created
             else:
                 print(f"  SKIP {map_name} (no golden reference)")
                 skipped += 1
@@ -154,6 +170,18 @@ def main():
 
             # Convert test BMP to PNG for comparison
             test_png = bmp_to_png_path(test_bmp)
+
+            if update:
+                # Store as an indexed PNG when the render fits in 256 colours,
+                # which is lossless for these and keeps the repo small.
+                img = Image.open(test_png)
+                rgb = img.convert("RGB")
+                if len(rgb.getcolors(maxcolors=256) or []) > 0:
+                    rgb = rgb.convert("P", palette=Image.ADAPTIVE, colors=256)
+                rgb.save(golden_path, "PNG", optimize=True)
+                print(f"  UPDATED {map_name} ({img.size[0]}x{img.size[1]})")
+                passed += 1
+                continue
 
             # Compare
             match, stats = compare_images(golden_path, test_png, tolerance)

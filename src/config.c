@@ -262,6 +262,22 @@ static void config_sanity_check_screen(void)
       glb_config.screen.refresh = 0;
 }
 
+/* "1:4" -> ZM_14, and so on. Returns -1 for anything unrecognised, which the
+   callers read as "leave it alone". Shared so the ini and the --zoom option
+   cannot drift apart. */
+int config_zoom_from_string(const char *str)
+{
+   if (str == NULL)
+      return -1;
+   if (stricmp(str, "2:1") == 0)   return ZM_21;
+   if (stricmp(str, "1:1") == 0)   return ZM_11;
+   if (stricmp(str, "1:2") == 0)   return ZM_12;
+   if (stricmp(str, "1:4") == 0)   return ZM_14;
+   if (stricmp(str, "1:8") == 0)   return ZM_18;
+   if (stricmp(str, "1:16") == 0)  return ZM_116;
+   return -1;
+}
+
 void ini_read(char *ininame)
 {
    typedef enum
@@ -443,24 +459,7 @@ void ini_read(char *ininame)
       // zoom string
       case T_ZOOM:
          if (strlen(str))
-         {
-            // default value
-            *((int *)datas[i].data_ptr) = -1;
-
-            // read value
-            if (stricmp(str, "2:1") == 0)
-               *((int *)datas[i].data_ptr) = ZM_21;
-            else if (stricmp(str, "1:1") == 0)
-               *((int *)datas[i].data_ptr) = ZM_11;
-            else if (stricmp(str, "1:2") == 0)
-               *((int *)datas[i].data_ptr) = ZM_12;
-            else if (stricmp(str, "1:4") == 0)
-               *((int *)datas[i].data_ptr) = ZM_14;
-            else if (stricmp(str, "1:8") == 0)
-               *((int *)datas[i].data_ptr) = ZM_18;
-            else if (stricmp(str, "1:16") == 0)
-               *((int *)datas[i].data_ptr) = ZM_116;
-         }
+            *((int *)datas[i].data_ptr) = config_zoom_from_string(str);
          break;
       }
       i++;

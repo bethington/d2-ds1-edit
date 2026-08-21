@@ -163,7 +163,7 @@ static void test_dcc_cli_smoke_if_configured(void)
    ensure_dir(out_root);
 
    snprintf(command, sizeof(command),
-      "\"%s\" --export-asset \"%s\" \"%s\" -force_pal 1 > NUL 2>&1",
+      "\"%s\" --export-asset \"%s\" \"%s\" -force_pal 1 > " DS1_DEVNULL " 2>&1",
       DS1EDIT_BIN_EXE,
       asset_path,
       out_root);

@@ -3353,7 +3353,12 @@ int wpreview_draw_tiles_big_screenshot(int ds1_idx)
        old_screen_x0, old_screen_y0;
 
    // some inits
-   z = glb_ds1[ds1_idx].cur_zoom;
+   //
+   // Only ZM_11 bitmaps exist -- see dt1_all_zoom_make -- and the draw path
+   // scales them by height_mul/height_div in wpreview_draw_bitmap, exactly as
+   // the interactive renderer does. Indexing block_zoom by cur_zoom found
+   // nothing but NULLs at any other zoom, so the whole map came out 1x1.
+   z = ZM_11;
 
    // init coordinates
    minx = miny = 0x7FFFFFFFLU;
@@ -3398,9 +3403,11 @@ int wpreview_draw_tiles_big_screenshot(int ds1_idx)
                     bt_ptr->zero_line * glb_ds1[ds1_idx].height_mul / glb_ds1[ds1_idx].height_div;
                y1 += glb_ds1[ds1_idx].tile_h; // shadow, like walls, are lower than floors
                                               //    (and than roofs) by 80 pixels
-               y2 = y1 + al_get_bitmap_height(tmp_bmp);
+               y2 = y1 + al_get_bitmap_height(tmp_bmp) *
+                         glb_ds1[ds1_idx].height_mul / glb_ds1[ds1_idx].height_div;
                x1 = mx;
-               x2 = x1 + al_get_bitmap_width(tmp_bmp);
+               x2 = x1 + al_get_bitmap_width(tmp_bmp) *
+                         glb_ds1[ds1_idx].height_mul / glb_ds1[ds1_idx].height_div;
                if (x1 < minx)
                   minx = x1;
                if (x2 > maxx)
@@ -3436,9 +3443,11 @@ int wpreview_draw_tiles_big_screenshot(int ds1_idx)
 
                y1 = my -
                     bt_ptr->zero_line * glb_ds1[ds1_idx].height_mul / glb_ds1[ds1_idx].height_div;
-               y2 = y1 + al_get_bitmap_height(tmp_bmp);
+               y2 = y1 + al_get_bitmap_height(tmp_bmp) *
+                         glb_ds1[ds1_idx].height_mul / glb_ds1[ds1_idx].height_div;
                x1 = mx;
-               x2 = x1 + al_get_bitmap_width(tmp_bmp);
+               x2 = x1 + al_get_bitmap_width(tmp_bmp) *
+                         glb_ds1[ds1_idx].height_mul / glb_ds1[ds1_idx].height_div;
                if (x1 < minx)
                   minx = x1;
                if (x2 > maxx)
@@ -3482,9 +3491,11 @@ int wpreview_draw_tiles_big_screenshot(int ds1_idx)
                     bt_ptr->zero_line * glb_ds1[ds1_idx].height_mul / glb_ds1[ds1_idx].height_div;
                y1 += glb_ds1[ds1_idx].tile_h; // shadow, like walls, are lower than floors
                                               //    (and than roofs) by 80 pixels
-               y2 = y1 + al_get_bitmap_height(tmp_bmp);
+               y2 = y1 + al_get_bitmap_height(tmp_bmp) *
+                         glb_ds1[ds1_idx].height_mul / glb_ds1[ds1_idx].height_div;
                x1 = mx;
-               x2 = x1 + al_get_bitmap_width(tmp_bmp);
+               x2 = x1 + al_get_bitmap_width(tmp_bmp) *
+                         glb_ds1[ds1_idx].height_mul / glb_ds1[ds1_idx].height_div;
                if (x1 < minx)
                   minx = x1;
                if (x2 > maxx)

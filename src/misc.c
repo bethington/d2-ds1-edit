@@ -1526,6 +1526,23 @@ int misc_cmd_line_parse(int argc, char **argv)
             return -1;
          }
       }
+      else if ((strnicmp(argv[i], "--zoom=", 7) == 0)
+               || (strnicmp(argv[i], "-zoom=", 6) == 0))
+      {
+         /* Overrides default_zoom from the ini, so a render can be pinned
+            regardless of the config on the machine running it -- see the
+            golden screenshot harness. */
+         const char *eq = strchr(argv[i], '=');
+         int z = config_zoom_from_string((eq != NULL) ? eq + 1 : NULL);
+
+         if (z < 0)
+         {
+            printf("misc_cmd_line_parse(), error : --zoom wants one of "
+                   "2:1, 1:1, 1:2, 1:4, 1:8, 1:16\n");
+            return -1;
+         }
+         glb_config.default_zoom = z;
+      }
       else if (strnicmp(argv[i], "--switchbench", 13) == 0
                || strnicmp(argv[i], "-switchbench", 12) == 0)
       {

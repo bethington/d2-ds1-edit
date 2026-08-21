@@ -1181,6 +1181,19 @@ int main(int argc, char *argv[])
    if (misc_cmd_line_parse(argc, argv))
       ds1edit_error("main(), error.\nProblem in the command line.");
 
+   /* A non-interactive render has to be reproducible.
+    *
+    * Objects start on a random animation frame -- frame_delta = rand()%256 in
+    * ds1.c and objects.c, cur_frame = rand()%fpd in cof.c -- so with the
+    * time-based seed above every torch and NPC lands somewhere different on
+    * each run, and two renders of the same map differ by around 1% of their
+    * pixels. That is enough to drown out a real regression in a golden
+    * comparison. Re-seed with a fixed value now that we know nobody is
+    * watching the animation play. */
+   if ((glb_ds1edit.cmd_line.headless_mode == TRUE) ||
+       (glb_ds1edit.cmd_line.selftest_frames > 0))
+      srand(DS1EDIT_DETERMINISTIC_SEED);
+
    // create debug directory if necessary
    if (glb_ds1edit.cmd_line.debug_mode == TRUE)
       DS1_MKDIR("Debug");

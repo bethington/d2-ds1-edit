@@ -8,4 +8,7 @@
 void ini_create (char * ininame);
 void ini_read   (char * ininame);
 
+/* Parse a zoom string ("1:1", "1:4", ...) into a ZOOM_E, or -1. */
+int config_zoom_from_string(const char *str);
+
 #endif

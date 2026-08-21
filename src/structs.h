@@ -529,6 +529,10 @@ typedef struct DS1_OPEN_PROFILE_S
 
 extern DS1_OPEN_PROFILE_S glb_open_profile;
 
+/* Fixed rand() seed for headless renders and self-tests, so repeated runs of
+ * the same map produce the same picture. See the note in main(). */
+#define DS1EDIT_DETERMINISTIC_SEED  20020101u
+
 /* ---- Area Browser data structures ---- */
 
 typedef struct AREA_DS1_ENTRY_S

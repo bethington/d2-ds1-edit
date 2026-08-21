@@ -68,10 +68,13 @@
  */
 #ifdef WIN32
    #define DS1_POPEN(cmd, mode)  _popen((cmd), (mode))
+   /* Shell redirect target for output nobody wants to see. */
+   #define DS1_DEVNULL           "NUL"
    #define DS1_PCLOSE(fp)        _pclose(fp)
 #else
    #include <sys/wait.h>
    #define DS1_POPEN(cmd, mode)  popen((cmd), (mode))
+   #define DS1_DEVNULL           "/dev/null"
    #define DS1_PCLOSE(fp)        ds1_pclose_status(fp)
 
    static inline int ds1_pclose_status(FILE *fp)
