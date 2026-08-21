@@ -176,7 +176,39 @@ static inline void a5_draw_scaled_shadow_sprite(ALLEGRO_BITMAP *dst, ALLEGRO_BIT
 static inline void a5_blit(ALLEGRO_BITMAP *src, ALLEGRO_BITMAP *dst,
                            int sx, int sy, int dx, int dy, int w, int h)
 {
-    ALLEGRO_BITMAP *old_target = a5_begin_target_bitmap(dst);
+    ALLEGRO_BITMAP *old_target;
+
+    /* Allegro 5 refuses to draw a bitmap onto itself: _bitmap_drawer
+       asserts bitmap != dest. The DCC decoder does exactly that when it
+       moves a frame cell from its old position to its new one inside a
+       direction bitmap, so route an overlapping self-copy through a
+       scratch bitmap. ONE/ZERO replaces the destination pixels instead of
+       alpha-blending onto them, which is what Allegro 4's blit() -- the
+       call this wrapper stands in for -- used to do. */
+    if (src == dst)
+    {
+        ALLEGRO_BITMAP *scratch = al_create_bitmap(w, h);
+        if (scratch == NULL)
+            return;
+
+        al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_ZERO);
+
+        old_target = a5_begin_target_bitmap(scratch);
+        al_draw_bitmap_region(src, (float)sx, (float)sy, (float)w, (float)h,
+                              0, 0, 0);
+        a5_end_target_bitmap(old_target, scratch);
+
+        old_target = a5_begin_target_bitmap(dst);
+        al_draw_bitmap_region(scratch, 0, 0, (float)w, (float)h,
+                              (float)dx, (float)dy, 0);
+        a5_end_target_bitmap(old_target, dst);
+
+        al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
+        al_destroy_bitmap(scratch);
+        return;
+    }
+
+    old_target = a5_begin_target_bitmap(dst);
     al_draw_bitmap_region(src, (float)sx, (float)sy, (float)w, (float)h,
                           (float)dx, (float)dy, 0);
     a5_end_target_bitmap(old_target, dst);
