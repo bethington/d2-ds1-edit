@@ -14,6 +14,7 @@
 #include "mpq/MpqView.h"
 #include "core/area_browser.h"
 #include "ui/props_panel.h"
+#include "config.h"
 #include "misc.h"
 
 // ==========================================================================
