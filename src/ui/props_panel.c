@@ -72,7 +72,7 @@ void props_panel_calc_shared_counts(void)
    }
 
    lt_col = pp_find_col(lv, RQ_LEVELS, "LevelType");
-   /* No LevelPreset column in PD2, so count by LevelType only */
+   /* Levels.txt has no LevelPreset column, so count by LevelType only */
    lp_col = -1;
 
    for (row = 0; row < lv->line_num; row++)

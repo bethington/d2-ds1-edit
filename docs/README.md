@@ -18,7 +18,7 @@ DS1Edit is a level editor for Diablo II, allowing creation and modification of g
 - **[API Reference](reference/API_REFERENCE.md)** - Command-line and configuration reference
 - **[DS1/Maze Format](reference/d2_maze_ds1_docs.md)** - File format specifications and maze generation
 - **[Troubleshooting](reference/TROUBLESHOOTING.md)** - Common issues and solutions
-- **[COF Pipeline](guides/PD2_S12_COF_PIPELINE.md)** - COF animation pipeline details
+- **[COF Pipeline](guides/COF-Pipeline-1.13c.md)** - COF animation pipeline, reverse-engineered from the 1.13c DLLs
 
 ### Project Reports
 - Reports in [internal/](internal/) document historical analysis

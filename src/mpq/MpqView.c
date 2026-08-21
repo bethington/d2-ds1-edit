@@ -91,7 +91,7 @@ int mod_load_in_mem(
 
    // Fallback: if filename starts with "Data\" (or "Data/"), the moddir
    // may already be rooted INSIDE Data (a common convention, e.g.
-   // mod_dir = "D:\mods\pd2\data"). Try once more with the prefix
+   // mod_dir = "D:\mods\mymod\data"). Try once more with the prefix
    // stripped so overlay reads succeed in that layout.
    if (in == NULL && filename != NULL
        && (strnicmp(filename, "Data\\", 5) == 0

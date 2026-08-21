@@ -1,4 +1,8 @@
-# PD2-S12 COF (Composite Object File) Pipeline
+# COF (Composite Object File) Pipeline
+
+> Reverse-engineered from the Diablo II 1.13c game DLLs. The addresses and call
+> graphs below are 1.13c addresses, so they hold for any mod built on that
+> version -- mods of this era ship Blizzard's DLLs unchanged.
 
 ## Overview
 
