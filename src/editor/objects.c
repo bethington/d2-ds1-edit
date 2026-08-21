@@ -7,6 +7,7 @@
 #include "core/cof.h"
 #include "editor/paths.h"
 #include "editor/objects.h"
+#include "ui/input.h"
 
 
 // ==========================================================================
@@ -1297,10 +1298,9 @@ int editobj_edit_obj(int ds1_idx, int * edit_end, int mx, int my, int mb)
          glb_ds1[ds1_idx].obj[ptr_w->obj_idx].label.w = w;
       }
    }
-   else if (key_pressed(KEY_ENTER) || key_pressed(KEY_ENTER_PAD))
+   else if (key_hit(KEY_ENTER) || key_hit(KEY_ENTER_PAD))
    {
       // simulate the click on the OK button
-      while (key_pressed(KEY_ENTER) || key_pressed(KEY_ENTER_PAD)) { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
       glb_ds1[ds1_idx].draw_edit_obj = FALSE;
       redraw = TRUE;
       * edit_end = TRUE;
@@ -1358,12 +1358,8 @@ int editobj_edit_obj(int ds1_idx, int * edit_end, int mx, int my, int mb)
            )
    {
       // over TYPE1 button
-      if (mb & 1)
+      if (mouse_hit(1))
       {
-         while (a5_mouse_b & 1)
-         { al_rest(0.01); al_get_mouse_state(&a5_ms_state);
-            // wait until the left mouse button is released
-         }
          if (ptr_w->cur_type != 1)
             ptr_w->cur_act  = glb_ds1[ds1_idx].act;
          ptr_w->cur_type = 1;
@@ -1378,12 +1374,8 @@ int editobj_edit_obj(int ds1_idx, int * edit_end, int mx, int my, int mb)
            )
    {
       // over TYPE2 button
-      if (mb & 1)
+      if (mouse_hit(1))
       {
-         while (a5_mouse_b & 1)
-         { al_rest(0.01); al_get_mouse_state(&a5_ms_state);
-            // wait until the left mouse button is released
-         }
          ptr_w->cur_type = 2;
          ptr_w->cur_act  = glb_ds1[ds1_idx].act;
          editobj_prepare_edit_obj_win(ds1_idx, ptr_w->obj_idx);
@@ -1397,12 +1389,8 @@ int editobj_edit_obj(int ds1_idx, int * edit_end, int mx, int my, int mb)
            )
    {
       // over ACT1 button
-      if ((mb & 1) && (IS_ACTIVATED(ptr_w->button[EB_ACT1].flags)))
+      if ((mouse_hit(1)) && (IS_ACTIVATED(ptr_w->button[EB_ACT1].flags)))
       {
-         while (a5_mouse_b & 1)
-         { al_rest(0.01); al_get_mouse_state(&a5_ms_state);
-            // wait until the left mouse button is released
-         }
          ptr_w->cur_act = 1;
          editobj_prepare_edit_obj_win(ds1_idx, ptr_w->obj_idx);
          redraw = TRUE;
@@ -1415,12 +1403,8 @@ int editobj_edit_obj(int ds1_idx, int * edit_end, int mx, int my, int mb)
            )
    {
       // over ACT2 button
-      if ((mb & 1) && (IS_ACTIVATED(ptr_w->button[EB_ACT2].flags)))
+      if ((mouse_hit(1)) && (IS_ACTIVATED(ptr_w->button[EB_ACT2].flags)))
       {
-         while (a5_mouse_b & 1)
-         { al_rest(0.01); al_get_mouse_state(&a5_ms_state);
-            // wait until the left mouse button is released
-         }
          ptr_w->cur_act = 2;
          editobj_prepare_edit_obj_win(ds1_idx, ptr_w->obj_idx);
          redraw = TRUE;
@@ -1433,12 +1417,8 @@ int editobj_edit_obj(int ds1_idx, int * edit_end, int mx, int my, int mb)
            )
    {
       // over ACT3 button
-      if ((mb & 1) && (IS_ACTIVATED(ptr_w->button[EB_ACT3].flags)))
+      if ((mouse_hit(1)) && (IS_ACTIVATED(ptr_w->button[EB_ACT3].flags)))
       {
-         while (a5_mouse_b & 1)
-         { al_rest(0.01); al_get_mouse_state(&a5_ms_state);
-            // wait until the left mouse button is released
-         }
          ptr_w->cur_act = 3;
          editobj_prepare_edit_obj_win(ds1_idx, ptr_w->obj_idx);
          redraw = TRUE;
@@ -1451,12 +1431,8 @@ int editobj_edit_obj(int ds1_idx, int * edit_end, int mx, int my, int mb)
            )
    {
       // over ACT4 button
-      if ((mb & 1) && (IS_ACTIVATED(ptr_w->button[EB_ACT4].flags)))
+      if ((mouse_hit(1)) && (IS_ACTIVATED(ptr_w->button[EB_ACT4].flags)))
       {
-         while (a5_mouse_b & 1)
-         { al_rest(0.01); al_get_mouse_state(&a5_ms_state);
-            // wait until the left mouse button is released
-         }
          ptr_w->cur_act = 4;
          editobj_prepare_edit_obj_win(ds1_idx, ptr_w->obj_idx);
          redraw = TRUE;
@@ -1469,12 +1445,8 @@ int editobj_edit_obj(int ds1_idx, int * edit_end, int mx, int my, int mb)
            )
    {
       // over ACT5 button
-      if ((mb & 1) && (IS_ACTIVATED(ptr_w->button[EB_ACT5].flags)))
+      if ((mouse_hit(1)) && (IS_ACTIVATED(ptr_w->button[EB_ACT5].flags)))
       {
-         while (a5_mouse_b & 1)
-         { al_rest(0.01); al_get_mouse_state(&a5_ms_state);
-            // wait until the left mouse button is released
-         }
          ptr_w->cur_act = 5;
          editobj_prepare_edit_obj_win(ds1_idx, ptr_w->obj_idx);
          redraw = TRUE;
@@ -1793,10 +1765,6 @@ int editobj_handler(int ds1_idx, int cx, int cy, int mx, int my, int mb)
       if (edit_end)
       {
          old_mode = OM_NONE;
-         while (a5_mouse_b & 1)
-         { al_rest(0.01); al_get_mouse_state(&a5_ms_state);
-            // wait until the left mouse button is released
-         }
          anim_update_gfx(FALSE);
       }
    }
@@ -1828,10 +1796,6 @@ int editobj_handler(int ds1_idx, int cx, int cy, int mx, int my, int mb)
                      editobj_prepare_undo(ds1_idx);
                      editobj_prepare_moving(ds1_idx);
                      old_mode = OM_MOV;
-                     while (a5_mouse_b & 1)
-         { al_rest(0.01); al_get_mouse_state(&a5_ms_state);
-                        // wait until the left mouse button is released
-                     }
                   }
                }
                else if ((cur_type == 2) && (t == 2))
@@ -1841,10 +1805,6 @@ int editobj_handler(int ds1_idx, int cx, int cy, int mx, int my, int mb)
                      editobj_prepare_undo(ds1_idx);
                      editobj_prepare_moving(ds1_idx);
                      old_mode = OM_MOV;
-                     while (a5_mouse_b & 1)
-         { al_rest(0.01); al_get_mouse_state(&a5_ms_state);
-                        // wait until the left mouse button is released
-                     }
                   }
                }
             }
@@ -2046,11 +2006,9 @@ int editobj_handler(int ds1_idx, int cx, int cy, int mx, int my, int mb)
       {
          // NO button 1 or 2 pressed (& not moving obj nor label)
 
-         if (key_pressed(KEY_DEL) || key_pressed(KEY_DEL_PAD))
+         if (key_hit(KEY_DEL) || key_hit(KEY_DEL_PAD))
          {
             // delete objects
-            while (key_pressed(KEY_DEL) || key_pressed(KEY_DEL_PAD))
-            { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
             editobj_prepare_undo(ds1_idx);
             editobj_del_obj(ds1_idx);
             redraw = TRUE;
@@ -2061,8 +2019,6 @@ int editobj_handler(int ds1_idx, int cx, int cy, int mx, int my, int mb)
             // undo last modification (movement / copy / delete / edit)
             if (glb_ds1[ds1_idx].can_undo_obj)
             {
-               while (key_pressed(KEY_U))
-               { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
                editobj_undo(ds1_idx);
                redraw = TRUE;
             }
@@ -2076,8 +2032,6 @@ int editobj_handler(int ds1_idx, int cx, int cy, int mx, int my, int mb)
 //
             if (editobj_count_sel_obj(ds1_idx))
             {
-               while (key_pressed(KEY_C))
-               { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
                editobj_prepare_undo(ds1_idx);
                editobj_copy_obj(ds1_idx);
                old_mode = OM_MOV;
@@ -2089,10 +2043,9 @@ int editobj_handler(int ds1_idx, int cx, int cy, int mx, int my, int mb)
                editobj_prepare_moving(ds1_idx);
             }
          }
-         else if (key_pressed(KEY_INSERT))
+         else if (key_hit(KEY_INSERT))
          {
             // create a new object
-            while (key_pressed(KEY_INSERT)) { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
             editobj_prepare_undo(ds1_idx);
             editobj_clear_obj_lab_sel(ds1_idx);
             if (editobj_insert_obj(ds1_idx, cx, cy) == 0)
@@ -2126,10 +2079,6 @@ int editobj_handler(int ds1_idx, int cx, int cy, int mx, int my, int mb)
          editobj_end_move_obj_lab(ds1_idx);
          old_mode = OM_NONE;
          redraw   = TRUE;
-         while (a5_mouse_b & 1)
-         { al_rest(0.01); al_get_mouse_state(&a5_ms_state);
-            // wait until the left mouse button is released
-         }
       }
    }
 

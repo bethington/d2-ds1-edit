@@ -20,6 +20,7 @@
 #include "ui/preset_picker.h"
 #include "core/mpq_index.h"
 #include "core/area_browser.h"
+#include "ui/input.h"
 
 #define FILTER_MAX       63
 #define ROW_HEIGHT       13
@@ -400,17 +401,10 @@ void preset_picker_handle_shortcut(void)
    ctrl  = key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL);
    shift = key_pressed(KEY_LSHIFT)   || key_pressed(KEY_RSHIFT);
 
-   if (!ctrl || !shift || !key_pressed(KEY_P)) return;
+   if (!ctrl || !shift || !key_hit(KEY_P)) return;
    if (!mpq_index_is_ready()) return;
 
    /* debounce */
-   while (key_pressed(KEY_P) ||
-          key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL) ||
-          key_pressed(KEY_LSHIFT)   || key_pressed(KEY_RSHIFT))
-   {
-      al_rest(0.01);
-      al_get_keyboard_state(&a5_kb_state);
-   }
 
    memset(&s, 0, sizeof(s));
    s.filtered_cap = mpq_index_preset_count();
