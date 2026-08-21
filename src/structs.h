@@ -9,6 +9,7 @@
 #define USE_CONSOLE
 #endif
 
+#include <stdint.h>
 #include "types.h"
 #include <stdio.h>
 #include <string.h>
@@ -426,13 +427,29 @@ typedef struct TXT_S
 
 #pragma pack(1)
 
+   /* One record of Data\Global\AnimData.d2, and it is read straight out of
+      the file, so every field has to be exactly the width D2 wrote:
+      8 + 4 + 4 + 144 = 160 bytes.
+
+      These two were `long`, which is 4 bytes under Win32 and 8 under LP64 --
+      so on 64-bit macOS and Linux the struct came to 168, the record stride
+      used to walk a block was 8 bytes too long, and every name comparison
+      after the first drifted into the middle of the previous record. Nothing
+      was ever found: frames_per_dir and speed came back as garbage and every
+      animated object in the editor stayed invisible. Same class of bug as the
+      MPQ reader's `#define DWORD unsigned long`, missed in that sweep. */
    typedef struct ANIM_DATA_RECORD_S
    {
-      char  cof_name[8];
-      long  frames_per_dir;
-      long  speed;
-      UBYTE flags[144];
+      char    cof_name[8];
+      int32_t frames_per_dir;
+      int32_t speed;
+      UBYTE   flags[144];
    } ANIM_DATA_RECORD_S;
+
+   /* Compile-time size check: a mismatch breaks the format silently at
+      runtime, which is exactly how the above went unnoticed. */
+   typedef char ds1_animdata_record_is_160_bytes[
+      (sizeof(ANIM_DATA_RECORD_S) == 160) ? 1 : -1];
 
 #pragma pack()
 
@@ -487,6 +504,9 @@ typedef struct CMD_LINE_S
    int    headless_mode;
    char * headless_output; // output filename, NULL if not used
    int           selftest_frames;  /* >0: render this many frames, then exit */
+   /* --selftest-shot=<path>: save the final --selftest frame. The only way to
+      see what the GUI path actually drew; NULL means do not save. */
+   char        * selftest_shot;
    int           switchbench_group;  /* group to switch within, -1 = off   */
    int           switchbench_count;  /* how many maps to cycle through     */
 
@@ -711,6 +731,11 @@ typedef struct GLB_DS1EDIT_S
    RGBA_PALETTE  dummy_pal;
    int           pal_loaded[ACT_MAX];
    ALLEGRO_BITMAP * mouse_cursor[MOD_MAX];
+   /* The same artwork handed to the OS compositor. A software cursor drawn
+      into our own frame always trails the real pointer by a frame, which is
+      plainly visible over a remote session. NULL entries fall back to the
+      software path. */
+   ALLEGRO_MOUSE_CURSOR * hw_cursor[MOD_MAX];
    WIN_PREVIEW_S win_preview;
    WIN_EDIT_S    win_edit;
    ALLEGRO_BITMAP * big_screen_buff; // for safety about cliping

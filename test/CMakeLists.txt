@@ -299,3 +299,14 @@ if(WIN32 AND DEFINED ALLEGRO5_BIN_DIR AND EXISTS "${ALLEGRO5_BIN_DIR}")
         COMMENT "Copying Allegro DLLs for test_project"
     )
 endif()
+
+# Input edge detection and modal isolation. Guards the two rules the old
+# Allegro 4 spin-waits enforced by blocking -- fire once per press, and do not
+# let the keypress that opens a modal act inside it.
+add_executable(test_input_edges test_input_edges.c ../src/ui/input.c)
+target_link_libraries(test_input_edges PRIVATE unity ds1edit_allegro)
+target_include_directories(test_input_edges PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/mpq
+)
+add_test(NAME input_edges COMMAND test_input_edges)

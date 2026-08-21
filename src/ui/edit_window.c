@@ -10,6 +10,7 @@
 #include "core/palette.h"
 #include "ui/edit_window.h"
 #include "core/export_common.h"
+#include "ui/input.h"
 
 // ==========================================================================
 // draw shadow layer
@@ -1774,8 +1775,16 @@ void wedit_test(int ds1_idx, int tx, int ty)
    wedit_tab_tiles(ds1_idx, current_type, xn, yn, bt_sel, -1, -1);
 
    // main loop
+   input_suppress_held();
+
    while (!done)
    {
+      /* One refresh point for the whole iteration: events first, then the
+         held state everything below reads. */
+      input_pump();
+      if (a5_display_closed)
+         done = TRUE;
+
       mx = a5_mouse_x;
       my = a5_mouse_y;
       mb = a5_mouse_b;
@@ -1851,24 +1860,14 @@ void wedit_test(int ds1_idx, int tx, int ty)
       }
 
       // special tiles layer
-      if (key_pressed(KEY_F9))
+      if (key_hit(KEY_F9))
       {
-         while (key_pressed(KEY_F9))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
          glb_ds1[ds1_idx].special_layer_mask = 1 - glb_ds1[ds1_idx].special_layer_mask;
       }
 
       // shadow mode
-      if (key_pressed(KEY_F11))
+      if (key_hit(KEY_F11))
       {
-         while (key_pressed(KEY_F11))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
          if (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT))
          {
             glb_ds1[ds1_idx].shadow_layer_mask[0]--;
@@ -1911,7 +1910,7 @@ void wedit_test(int ds1_idx, int tx, int ty)
       }
 
       // screenshot
-      if (key_pressed(KEY_P))
+      if (key_hit(KEY_P))
       {
          export_make_screenshot_name(tmp, sizeof(tmp), glb_ds1edit.screenshot_num);
          while (a5_file_exists(tmp))
@@ -1930,11 +1929,6 @@ void wedit_test(int ds1_idx, int tx, int ty)
          // save the buffer
          al_save_bitmap(tmp, glb_ds1edit.screen_buff);
          glb_ds1edit.screenshot_num++;
-         while (key_pressed(KEY_P))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
       }
 
       // focus for buttons
@@ -2037,16 +2031,11 @@ void wedit_test(int ds1_idx, int tx, int ty)
       // when no mouse button
       if (mb == 0)
       {
-         if (key_pressed(KEY_ENTER) || key_pressed(KEY_ENTER_PAD))
+         if (key_hit(KEY_ENTER) || key_hit(KEY_ENTER_PAD))
          {
             // keep changes
             done = TRUE;
             wedit_keep_tile(ds1_idx, tx, ty, save_floor, save_wall, save_shadow);
-            while (key_pressed(KEY_ENTER) || key_pressed(KEY_ENTER_PAD))
-            {
-               al_rest(0.01);
-               al_get_keyboard_state(&a5_kb_state);
-            }
             focus_can_change = TRUE;
          }
 

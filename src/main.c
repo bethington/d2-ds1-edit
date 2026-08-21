@@ -57,6 +57,7 @@ October 30 2011 :
 #include "cli/cli.h"
 #include "platform.h"
 #include "ui/ui_assets.h"
+#include "ui/input.h"
 
 
 WRKSPC_DATAS_S glb_wrkspc_datas[WRKSPC_MAX] = // workspace datas saved in .ds1
@@ -450,6 +451,7 @@ void ds1edit_init(void)
    glb_ds1edit.cmd_line.dt1_list_num = -1;
    glb_ds1edit.cmd_line.headless_mode = FALSE;
    glb_ds1edit.cmd_line.selftest_frames = 0;
+   glb_ds1edit.cmd_line.selftest_shot = NULL;
    glb_ds1edit.cmd_line.switchbench_group = -1;
    glb_ds1edit.cmd_line.switchbench_count = 0;
    glb_ds1edit.cmd_line.headless_output = NULL;
@@ -878,6 +880,12 @@ static ALLEGRO_DISPLAY * ds1edit_try_create_display(void)
    int w = glb_config.screen.width;
    int h = glb_config.screen.height;
 
+   /* The editor redraws unconditionally every iteration. Without vsync that
+      is whatever the GPU will give -- 120 fps of identical frames on an idle
+      map. SUGGEST rather than REQUIRE: a driver that will not do it should
+      still give us a display. */
+   al_set_new_display_option(ALLEGRO_VSYNC, 1, ALLEGRO_SUGGEST);
+
    if (glb_config.fullscreen == TRUE)
    {
       al_set_new_display_flags(ALLEGRO_FULLSCREEN);
@@ -929,6 +937,11 @@ int main(int argc, char *argv[])
    static char tmp2[512];
 
    // init
+#ifdef __APPLE__
+   /* Launched from ds1edit.app the CWD is "/", and every resource path below
+      is relative. Do this first -- it has to precede the INI read. */
+   ds1_mac_fix_working_directory();
+#endif
    srand(time(NULL));
    if (!al_init())
       ds1edit_error("main(), error.\nCan't initialize Allegro 5.");
@@ -1073,7 +1086,8 @@ int main(int argc, char *argv[])
    mod_num = 0;
    if (glb_config.mod_dir[0] != NULL)
    {
-      sprintf(tmp, "%s\\.", glb_config.mod_dir[0]);
+      snprintf(tmp, sizeof(tmp), "%s%s.", glb_config.mod_dir[0], DS1_SEP_STR);
+      ds1_path_normalize(tmp);
       if (a5_file_exists(tmp) == 0)
       {
          sprintf(
@@ -1618,8 +1632,31 @@ int main(int argc, char *argv[])
    // mouse (skip if already installed by area browser)
    if (!al_is_mouse_installed())
    {
+#ifdef __APPLE__
+      /* Allegro's macOS mouse driver counts buttons by enumerating HID
+         devices, and TCC hides every input device from a process without
+         Input Monitoring -- so al_install_mouse() fails on a machine whose
+         trackpad plainly works. Ask first, and if the answer is no, say what
+         to do about it rather than reporting a driver failure. */
+      int mac_hid_ok = ds1_mac_request_input_monitoring();
+#endif
       if (!al_install_mouse())
       {
+#ifdef __APPLE__
+         if (!mac_hid_ok)
+         {
+            sprintf(
+                tmp,
+                "main(), error.\n"
+                "Can't install the Mouse handler.\n\n"
+                "macOS is withholding Input Monitoring from this process, so\n"
+                "Allegro cannot see any mouse. Grant it in System Settings >\n"
+                "Privacy & Security > Input Monitoring (add ds1edit.app with\n"
+                "the + button if it is not listed), then start the editor\n"
+                "again -- a new grant does not reach a running process.");
+            ds1edit_error(tmp);
+         }
+#endif
          sprintf(
              tmp,
              "main(), error.\nCan't install the Mouse handler.");
@@ -1632,6 +1669,22 @@ int main(int argc, char *argv[])
    al_register_event_source(a5_event_queue, al_get_keyboard_event_source());
    al_register_event_source(a5_event_queue, al_get_mouse_event_source());
    al_register_event_source(a5_event_queue, al_get_display_event_source(a5_display));
+
+   /* Edge-detected input. Everything that reads a key or a button goes
+      through this; see src/ui/input.h. */
+   input_init();
+
+   /* Promote the per-mode cursor artwork to real OS cursors. Needs the
+      display, so it cannot happen where the bitmaps are loaded. */
+   for (i = 0; i < MOD_MAX; i++)
+   {
+      glb_ds1edit.hw_cursor[i] = NULL;
+      if (glb_ds1edit.mouse_cursor[i] != NULL)
+      {
+         glb_ds1edit.hw_cursor[i] =
+             al_create_mouse_cursor(glb_ds1edit.mouse_cursor[i], 1, 1);
+      }
+   }
 
    // timers (Allegro 5 event-based timers replace the old interrupt callbacks)
    a5_tick_timer = al_create_timer(1.0 / 25.0);

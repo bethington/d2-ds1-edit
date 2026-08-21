@@ -105,6 +105,25 @@
    call on a NULL pointer. Do NOT call this on an MPQ virtual path. */
 void ds1_path_normalize(char *path);
 
+/* ---- macOS host integration ------------------------------------------- */
+/*
+ * Defined in mac_platform.c; see the header comment there for why each exists.
+ *
+ * ds1_mac_request_input_monitoring() returns 1 when the process may enumerate
+ * HID input devices -- which Allegro's macOS mouse driver requires -- and 0
+ * otherwise, having raised the system prompt if the user had not yet been
+ * asked. A fresh grant does not reach a running process, so a 0 return means
+ * al_install_mouse() is still going to fail on this run.
+ *
+ * ds1_mac_fix_working_directory() moves the CWD out of a .app bundle to the
+ * directory containing it, where assets/ and Ds1edit.ini live. It is a no-op
+ * for a plain command-line binary. Call it before anything reads a file.
+ */
+#ifdef __APPLE__
+int  ds1_mac_request_input_monitoring(void);
+void ds1_mac_fix_working_directory(void);
+#endif
+
 /* ---- directory enumeration -------------------------------------------- */
 /*
  * A minimal read-only directory iterator, because FindFirstFileA and

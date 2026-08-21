@@ -15,6 +15,7 @@
 #include "core/area_browser.h"
 #include "ui/props_panel.h"
 #include "platform.h"
+#include "ui/input.h"
 
 #define AREA_INIT_GROUPS    64
 #define AREA_INIT_ENTRIES   32
@@ -2268,5 +2269,11 @@ int area_browser_run(void)
    }
 
    al_destroy_event_queue(eq);
+
+   /* The main queue saw every one of those keystrokes too -- Allegro fans
+      events out to all registered queues -- and would replay them as fresh
+      presses on the first pump after we return. */
+   input_discard_pending();
+
    return result;
 }
