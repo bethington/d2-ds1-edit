@@ -44,8 +44,10 @@
    ALLEGRO_KEY_*; read it through key_hit(). */
 extern unsigned char a5_key_hit[ALLEGRO_KEY_MAX];
 
-/* Keys masked off after a focus loss; declared in ui/compat.h, which is where
-   key_pressed() reads it. Defined here alongside the rest of the input state. */
+/* Keys masked off until they are released and pressed again -- see
+   input_suppress_held(). key_pressed() in ui/compat.h consults this, which is
+   what makes a suppressed key read as not-held. */
+extern unsigned char a5_key_suppressed[ALLEGRO_KEY_MAX];
 
 /* Mouse buttons that went down during the most recent pump, 1-based to match
    al_mouse_button_down(). Index 0 is unused. */
@@ -86,6 +88,36 @@ void input_end_frame(void);
    event is delivered to whoever has focus instead of to us -- without this a
    key held during Cmd-Tab stays latched down forever. */
 void input_forget_held(void);
+
+/* Mask every key held right now until it is released and pressed again.
+ *
+ * This is the half of the old spin-waits that the edge conversion missed.
+ * They ran *before* opening a modal, not just after acting:
+ *
+ *    if (key_pressed(KEY_ESC)) {
+ *       while (key_pressed(KEY_ESC)) { ... }   // <- release, THEN open
+ *       ret = msg_quit_main();
+ *    }
+ *
+ * so by the time the dialog looked at the keyboard, Escape was long up.
+ * key_hit() alone reproduces the debounce but not that isolation: the dialog
+ * opens on the same frame the key went down, sees its own Cancel shortcut
+ * still held, and closes again -- the quit menu flashing and vanishing.
+ *
+ * Call it when a modal takes over, and again when one returns on a keyboard
+ * shortcut, so the keypress cannot act twice on two different screens.
+ */
+void input_suppress_held(void);
+
+/* Throw away anything queued on the main queue, plus any pending edges.
+ *
+ * For code that runs its own event queue: Allegro delivers to every queue
+ * registered on a source, so while the area browser drains its own, the main
+ * queue quietly accumulates the same keystrokes. Left alone they are replayed
+ * the moment the browser returns and fire editor commands the user already
+ * spent inside the browser. Harmless while the main loop only polled; not
+ * harmless now that a queued KEY_DOWN means "pressed". */
+void input_discard_pending(void);
 
 /* Did this key go down since the last pump? */
 #define key_hit(k)     (a5_key_hit[(k)] != 0)

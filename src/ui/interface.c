@@ -363,6 +363,10 @@ void interfac_user_handler(int start_ds1_idx)
                if (menu_y + menu_h > disp_h)
                   menu_y = disp_h - menu_h;
 
+               /* The click that opened this menu is still held; without
+                  this it selects whatever sits under the cursor at once. */
+               input_suppress_held();
+
                while (!menu_done)
                {
                   int mx, my;
@@ -1294,7 +1298,10 @@ void interfac_user_handler(int start_ds1_idx)
          }
          else
          {
-            if (!key_hit(KEY_LCONTROL) && !key_hit(KEY_RCONTROL))
+            /* Ctrl is *held* while C is tapped, so this has to ask whether
+               it is down, not whether it just went down -- the two are never
+               the same frame. */
+            if (!key_pressed(KEY_LCONTROL) && !key_pressed(KEY_RCONTROL))
             {
                // Center to mouse in OBJECT / PATH mode
                cx /= 5;

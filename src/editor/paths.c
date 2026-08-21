@@ -244,6 +244,8 @@ void editpath_enter_action(int ds1_idx, long * paction)
 
    // main loop
    done = FALSE;
+   input_suppress_held();
+
    while ( ! done)
    {
       /* Without this the loop spun on a keyboard snapshot that was never

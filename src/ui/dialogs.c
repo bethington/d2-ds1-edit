@@ -135,6 +135,11 @@ int wmsg_main(WMSG_S * wmsg)
    mb = a5_mouse_b;
 
    // main loop
+   /* The keypress that opened this dialog is still down. Without this its
+      own Cancel shortcut matches immediately and the dialog vanishes on the
+      frame it appeared. */
+   input_suppress_held();
+
    while ( ! done)
    {
       input_pump();
@@ -167,21 +172,10 @@ int wmsg_main(WMSG_S * wmsg)
                done = TRUE;
                ret  = i;
 
-               // wait for all keys of the shortcut to not be pressed
-               while (all_keys == TRUE)
-               {
-                  al_rest(0.01);
-                  al_get_keyboard_state(&a5_kb_state);
-                  all_keys = FALSE;
-                  for (k=0; k < MW_COMBINATION_KEY_NUM; k++)
-                  {
-                     if (wmsg->button[i].shortcut[s].key[k])
-                     {
-                        if (key_pressed( wmsg->button[i].shortcut[s].key[k] ))
-                           all_keys = TRUE;
-                     }
-                  }
-               }
+               /* Do not let the shortcut act again on whatever screen we
+                  return to. This used to block until the keys came up, which
+                  froze the dialog mid-dismiss. */
+               input_suppress_held();
             }
          }
 

@@ -1775,6 +1775,8 @@ void wedit_test(int ds1_idx, int tx, int ty)
    wedit_tab_tiles(ds1_idx, current_type, xn, yn, bt_sel, -1, -1);
 
    // main loop
+   input_suppress_held();
+
    while (!done)
    {
       /* One refresh point for the whole iteration: events first, then the

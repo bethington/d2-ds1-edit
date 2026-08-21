@@ -135,6 +135,8 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
    mb = a5_mouse_b;
 
    // main loop
+   input_suppress_held();
+
    while ( ! done)
    {
       input_pump();
@@ -899,6 +901,8 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
    mb = a5_mouse_b;
 
    // main loop
+   input_suppress_held();
+
    while ( ! done)
    {
       input_pump();

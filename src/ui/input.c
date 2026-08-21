@@ -40,13 +40,13 @@ void input_begin_frame(void)
    memset(a5_mb_hit, 0, sizeof(a5_mb_hit));
 }
 
-void input_forget_held(void)
+void input_suppress_held(void)
 {
    int k;
 
-   /* Allegro keeps reporting these as down, so mask them off ourselves until
-      each one is pressed again for real. */
-   al_get_keyboard_state(&a5_kb_state);
+   /* Deliberately does not re-poll: it masks what the editor currently
+      believes is held, which the surrounding pump has just refreshed.
+      Re-polling here would race the caller and makes this untestable. */
    for (k = 1; k < ALLEGRO_KEY_MAX; k++)
    {
       if (al_key_down(&a5_kb_state, k))
@@ -55,6 +55,26 @@ void input_forget_held(void)
 
    memset(a5_key_hit, 0, sizeof(a5_key_hit));
    memset(a5_mb_hit, 0, sizeof(a5_mb_hit));
+}
+
+void input_forget_held(void)
+{
+   /* Focus loss and modal entry want the same thing: stop believing anything
+      is held, because the release will not be delivered to the code that
+      cares about it. Focus loss does need a fresh sample first -- it arrives
+      as an event, mid-drain, before input_end_frame() has run. */
+   al_get_keyboard_state(&a5_kb_state);
+   input_suppress_held();
+}
+
+void input_discard_pending(void)
+{
+   if (a5_event_queue != NULL)
+      al_flush_event_queue(a5_event_queue);
+
+   memset(a5_key_hit, 0, sizeof(a5_key_hit));
+   memset(a5_mb_hit, 0, sizeof(a5_mb_hit));
+   input_suppress_held();
 }
 
 void input_note_event(const ALLEGRO_EVENT *ev)
