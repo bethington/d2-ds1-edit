@@ -664,7 +664,8 @@ void wedit_load_window_images(void)
 
    for (i = 0; i < 9; i++)
       al_destroy_bitmap(img[i]);
-   al_destroy_bitmap(tmp_bmp);
+   /* Not destroyed here: w_elm->border now owns this bitmap and it is
+      read again below (and drawn all session). wedit_free() releases it. */
 
    // make tiles window
    for (i = 0; i < 9; i++)
@@ -723,7 +724,8 @@ void wedit_load_window_images(void)
 
    for (i = 0; i < 9; i++)
       al_destroy_bitmap(img[i]);
-   al_destroy_bitmap(tmp_bmp);
+   /* Not destroyed here: w_elm->border now owns this bitmap and it is
+      read again below (and drawn all session). wedit_free() releases it. */
 
    fprintf(stderr, "\n");
    fflush(stderr);
