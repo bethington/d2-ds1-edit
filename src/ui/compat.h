@@ -357,8 +357,25 @@ extern ALLEGRO_KEYBOARD_STATE a5_kb_state;
  * (glb_config.screen). Use al_get_backbuffer(a5_display) directly in the
  * few places that need the display backbuffer. */
 
-/* key_pressed(k): check if key k is currently held down */
-#define key_pressed(k) al_key_down(&a5_kb_state, (k))
+/* Keys that were held when the window lost focus. The matching key-up is
+   delivered to whoever took focus, never to us, so Allegro would go on
+   reporting them held forever -- Alt-Tab with a key down and it latches. A key
+   stays suppressed until we see it genuinely pressed again.
+
+   al_clear_keyboard_state() would do this for us, but it sits behind
+   ALLEGRO_UNSTABLE and is not dependable across the vcpkg, distro and
+   Homebrew builds this project targets. Declared in ui/input.h. */
+#include "ui/input.h"
+
+/* key_pressed(k): is key k held down right now? For one-shot commands use
+   key_hit(k) from ui/input.h instead -- see the note there. */
+static inline bool ds1_key_is_down(int k)
+{
+   if (k <= 0 || k >= ALLEGRO_KEY_MAX)
+      return false;
+   return al_key_down(&a5_kb_state, k) && !a5_key_suppressed[k];
+}
+#define key_pressed(k) ds1_key_is_down(k)
 
 /* ---- Mouse compat ---- */
 extern ALLEGRO_MOUSE_STATE a5_ms_state;

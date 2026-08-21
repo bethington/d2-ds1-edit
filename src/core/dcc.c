@@ -2,6 +2,7 @@
  * See NOTICE at the repository root for attribution and license status. */
 
 #include <stdio.h>
+#include <limits.h>
 #include <string.h>
 #include "types.h"
 
@@ -1309,8 +1310,8 @@ int dcc_dir_bitstream(DCC_S * dcc, int d)
 
    
    // init direction box min & max (NOT ZERO !)
-   dcc->direction[d].box.xmin = dcc->direction[d].box.ymin = 0x7FFFFFFFL;
-   dcc->direction[d].box.xmax = dcc->direction[d].box.ymax = 0x80000000L;
+   dcc->direction[d].box.xmin = dcc->direction[d].box.ymin = LONG_MAX;
+   dcc->direction[d].box.xmax = dcc->direction[d].box.ymax = LONG_MIN;
 
    
    // read frames header
@@ -1461,8 +1462,8 @@ int dcc_decode(DCC_S * dcc, long dir_bitfield)
    dcc_init();
 
    // init direction box min & max (NOT ZERO !)
-   dcc->box.xmin = dcc->box.ymin = 0x7FFFFFFFL; // highest long number
-   dcc->box.xmax = dcc->box.ymax = 0x80000000L; // lowest  long number
+   dcc->box.xmin = dcc->box.ymin = LONG_MAX;
+   dcc->box.xmax = dcc->box.ymax = LONG_MIN;
    
    // file header
    if (dcc_file_header(dcc))

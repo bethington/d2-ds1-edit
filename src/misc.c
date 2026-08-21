@@ -13,6 +13,7 @@
 #include "core/mpq_index.h"
 #include "mpq/MpqView.h"
 #include "core/area_browser.h"
+#include "config.h"
 #include "ui/props_panel.h"
 #include "config.h"
 #include "misc.h"
@@ -1562,6 +1563,22 @@ int misc_cmd_line_parse(int argc, char **argv)
          glb_ds1edit.cmd_line.switchbench_group = g;
          glb_ds1edit.cmd_line.switchbench_count = (n > 1) ? n : 3;
       }
+      else if (strnicmp(argv[i], "--selftest-shot=", 16) == 0
+               || strnicmp(argv[i], "-selftest-shot=", 15) == 0)
+      {
+         /* Must be tested before the plain --selftest branch below, which
+            matches on a 10-character prefix and would swallow this. */
+         const char *eq = strchr(argv[i], '=');
+         glb_ds1edit.cmd_line.selftest_shot =
+             (eq != NULL && eq[1] != 0) ? (char *) (eq + 1) : NULL;
+         if (glb_ds1edit.cmd_line.selftest_shot == NULL)
+         {
+            printf("misc_cmd_line_parse(), error : --selftest-shot needs a filename\n");
+            return -1;
+         }
+         if (glb_ds1edit.cmd_line.selftest_frames <= 0)
+            glb_ds1edit.cmd_line.selftest_frames = 30;
+      }
       else if (strnicmp(argv[i], "--selftest", 10) == 0
                || strnicmp(argv[i], "-selftest", 9) == 0)
       {
@@ -1652,8 +1669,23 @@ void misc_draw_screen(int mx, int my)
    else
       props_panel_draw_tab(disp_h);
 
-   if (mouse_sprite != NULL)
+   /* Hand the pointer to the compositor when we can: an OS cursor tracks the
+      real device instead of lagging our frame rate. Only draw it ourselves if
+      that cursor could not be created. */
+   if (glb_ds1edit.hw_cursor[glb_ds1edit.mode] != NULL)
+   {
+      static int last_cursor_mode = -1;
+      if (last_cursor_mode != glb_ds1edit.mode)
+      {
+         al_set_mouse_cursor(a5_display,
+                             glb_ds1edit.hw_cursor[glb_ds1edit.mode]);
+         last_cursor_mode = glb_ds1edit.mode;
+      }
+   }
+   else if (mouse_sprite != NULL)
+   {
       al_draw_bitmap(mouse_sprite, (float)mx, (float)my, 0);
+   }
    al_flip_display();
 }
 

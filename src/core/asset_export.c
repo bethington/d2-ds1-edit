@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <limits.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
@@ -1283,8 +1284,8 @@ int asset_export_dc6_buffer_png(const char *asset_path, const void *buffer,
 
    for (d = 0; d < dc6_dir; d++)
    {
-      x1 = y1 = 0x7FFFFFFF;
-      x2 = y2 = 0x80000000;
+      x1 = y1 = LONG_MAX;
+      x2 = y2 = LONG_MIN;
       for (f = 0; f < dc6_fpd; f++)
       {
          offset = dc6_fptr[d * dc6_fpd + f];
