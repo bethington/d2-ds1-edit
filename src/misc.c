@@ -15,7 +15,6 @@
 #include "core/area_browser.h"
 #include "config.h"
 #include "ui/props_panel.h"
-#include "config.h"
 #include "misc.h"
 
 // ==========================================================================
