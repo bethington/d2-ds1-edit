@@ -395,8 +395,8 @@ void misc_make_block_table(int ds1_idx)
              glb_ds1[ds1_idx].block_table[b].main_index,
              glb_ds1[ds1_idx].block_table[b].sub_index,
              glb_ds1[ds1_idx].block_table[b].rarity,
-             glb_ds1[ds1_idx].block_table[b].dt1_idx,
-             glb_ds1[ds1_idx].block_table[b].block_idx,
+             (long)glb_ds1[ds1_idx].block_table[b].dt1_idx,
+             (long)glb_ds1[ds1_idx].block_table[b].block_idx,
              glb_ds1[ds1_idx].block_table[b].roof_y,
              glb_ds1[ds1_idx].block_table[b].type,
              glb_ds1[ds1_idx].block_table[b].zero_line);

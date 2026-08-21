@@ -316,12 +316,12 @@ void editobj_draw_obj_lab(int ds1_idx, int is_shadow)
                else if (id < 10)   x2 = lx0 - 8 - 4;
                else if (id < 100)  x2 = lx0 - 2 * 8;
                else                x2 = lx0 - 2 * 8 - 4;
-               a5_textprintf(glb_ds1edit.screen_buff, font, x2, y2, is_shadow ? 255 : 11, "%i", type);
+               a5_textprintf(glb_ds1edit.screen_buff, font, x2, y2, is_shadow ? 255 : 11, "%i", (int)type);
 
 
                // Id
                x2 += 1*8;
-               a5_textprintf(glb_ds1edit.screen_buff, font, x2, y2, is_shadow ? 255 : 255, " %i", id);
+               a5_textprintf(glb_ds1edit.screen_buff, font, x2, y2, is_shadow ? 255 : 255, " %i", (int)id);
 
                // paths number
                if (p < 10)

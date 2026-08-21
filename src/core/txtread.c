@@ -380,8 +380,13 @@ TXT_S *txt_load(char *mem, RQ_ENUM enum_txt, char *filename)
    txt->col = (TXT_COL_S *)calloc(txt->col_num + 1, sizeof(TXT_COL_S));
    if (txt->col == NULL)
    {
+      /* Read what we need to report *before* destroying it: txt_destroy frees
+         the struct and returns NULL, so the old order dereferenced freed
+         memory to build its own error message. */
+      int want = txt->col_num + 1;
       txt = txt_destroy(txt);
-      sprintf(tmp, "txt_load() : calloc() error for %i element * %i bytes each", txt->col_num + 1, sizeof(TXT_COL_S));
+      sprintf(tmp, "txt_load() : calloc() error for %i element * %zu bytes each",
+              want, sizeof(TXT_COL_S));
       ds1edit_error(tmp);
    }
 
@@ -530,8 +535,8 @@ void *txt_read_in_mem(char *txtname)
    new_buff = realloc(buff, len);
    if (new_buff == NULL)
    {
-      sprintf(tmp, "txt_read_in_mem() : can't reallocate %i bytes for %s",
-              len, txtname);
+      sprintf(tmp, "txt_read_in_mem() : can't reallocate %li bytes for %s",
+              (long) len, txtname);
       if (buff != NULL)
          free(buff);
       ds1edit_error(tmp);
@@ -976,7 +981,7 @@ int read_lvlprest_txt(int ds1_idx, int def)
          mask = *lptr;
 
          printf("DT1MASK = %li in LvlPrest.txt at row %i, col %i\n",
-                mask, i + 1, txt->col[misc_get_txt_column_num(RQ_LVLPREST, "Dt1Mask")].pos);
+                (long) mask, i + 1, txt->col[misc_get_txt_column_num(RQ_LVLPREST, "Dt1Mask")].pos);
          fflush(stdout);
 
          for (b = 0; b < DT1_IN_DS1_MAX; b++)
@@ -1040,7 +1045,7 @@ int read_lvlprest_txt(int ds1_idx, int def)
             mask = *lptr;
 
             printf("DT1MASK = %li in LvlPrest.txt at row %i, col %i\n",
-                   mask, i + 1, txt->col[misc_get_txt_column_num(RQ_LVLPREST, "Dt1Mask")].pos);
+                   (long) mask, i + 1, txt->col[misc_get_txt_column_num(RQ_LVLPREST, "Dt1Mask")].pos);
             fflush(stdout);
 
             for (b = 0; b < DT1_IN_DS1_MAX; b++)

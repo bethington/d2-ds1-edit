@@ -52,7 +52,7 @@ int dcc_read_bytes(DCC_BITSTREAM_S * bs, int bytes_number, void * dest)
       {
          sprintf(dcc_error, "dcc_read_bytes() : want to read behind "
                             "the end (%li >= %li)\n",
-                            bs->cur_bit_num, bs->size);
+                            (long)bs->cur_bit_num, (long)bs->size);
          return 1;
       }
       * (((UBYTE *) dest) + i) = bs->data[bs->cur_byte];
@@ -113,7 +113,7 @@ int dcc_read_bits(DCC_BITSTREAM_S * bs, int bits_number, int is_signed,
       {
          sprintf(dcc_error, "dcc_read_bits() : want to read behind "
                             "the end (%li >= %li)\n",
-                            bs->cur_bit_num, bs->size);
+                            (long)bs->cur_bit_num, (long)bs->size);
          return 1;
       }
 
@@ -402,7 +402,7 @@ int dcc_optional_datas(DCC_S * dcc, DCC_BITSTREAM_S * bs, int d)
                "dcc_optional_datas() : can't allocate "
                "%li bytes for optional_byte_data\n"
                "direction %i, frame %i\n",
-               size, d, f);
+               (long)size, d, f);
             return 1;
          }
 
@@ -778,7 +778,7 @@ int dcc_fill_pixel_buffer(DCC_S * dcc, int d)
    {
       sprintf(dcc_error, "dcc_fill_pixel_buffer() : can't create buffer bitmap "
                          "of %i * %i pixels\n",
-                         dir->box.width, dir->box.height);
+                         (int)dir->box.width, (int)dir->box.height);
       return 1;
    }
    a5_clear(dir->bmp); // all 0
@@ -1088,7 +1088,7 @@ int dcc_make_frames(DCC_S * dcc, int d)
    {
       sprintf(dcc_error, "dcc_make_frames() : can't create tmp frame "
                          "bitmap of %i * %i pixels",
-                         dir->box.width, dir->box.height
+                         (int)dir->box.width, (int)dir->box.height
       );
       return 1;
    }
@@ -1521,15 +1521,15 @@ void dcc_debug(DCC_S * dcc)
    for (d=0; d<dcc->header.directions; d++)
    {
       printf("\ndirection %2i\n", d);
-      printf("   outsize_coded       = %li bytes\n", dcc->direction[d].outsize_coded);
-      printf("   compression_flag    = %li\n", dcc->direction[d].compression_flag);
-      printf("   variable0_bits      = %2lu  (%2i bits)\n", dcc->direction[d].variable0_bits,      dcc_bits_width_table[dcc->direction[d].variable0_bits]);
-      printf("   width_bits          = %2lu  (%2i bits)\n", dcc->direction[d].width_bits,          dcc_bits_width_table[dcc->direction[d].width_bits]);
-      printf("   height_bits         = %2lu  (%2i bits)\n", dcc->direction[d].height_bits,         dcc_bits_width_table[dcc->direction[d].height_bits]);
-      printf("   xoffset_bits        = %2lu  (%2i bits)\n", dcc->direction[d].xoffset_bits,        dcc_bits_width_table[dcc->direction[d].xoffset_bits]);
-      printf("   yoffset_bits        = %2lu  (%2i bits)\n", dcc->direction[d].yoffset_bits,        dcc_bits_width_table[dcc->direction[d].yoffset_bits]);
-      printf("   optional_bytes_bits = %2lu  (%2i bits)\n", dcc->direction[d].optional_bytes_bits, dcc_bits_width_table[dcc->direction[d].optional_bytes_bits]);
-      printf("   coded_bytes_bits    = %2lu  (%2i bits)\n", dcc->direction[d].coded_bytes_bits,    dcc_bits_width_table[dcc->direction[d].coded_bytes_bits]);
+      printf("   outsize_coded       = %li bytes\n", (long)dcc->direction[d].outsize_coded);
+      printf("   compression_flag    = %li\n", (long)dcc->direction[d].compression_flag);
+      printf("   variable0_bits      = %2lu  (%2i bits)\n", (unsigned long)dcc->direction[d].variable0_bits,      dcc_bits_width_table[dcc->direction[d].variable0_bits]);
+      printf("   width_bits          = %2lu  (%2i bits)\n", (unsigned long)dcc->direction[d].width_bits,          dcc_bits_width_table[dcc->direction[d].width_bits]);
+      printf("   height_bits         = %2lu  (%2i bits)\n", (unsigned long)dcc->direction[d].height_bits,         dcc_bits_width_table[dcc->direction[d].height_bits]);
+      printf("   xoffset_bits        = %2lu  (%2i bits)\n", (unsigned long)dcc->direction[d].xoffset_bits,        dcc_bits_width_table[dcc->direction[d].xoffset_bits]);
+      printf("   yoffset_bits        = %2lu  (%2i bits)\n", (unsigned long)dcc->direction[d].yoffset_bits,        dcc_bits_width_table[dcc->direction[d].yoffset_bits]);
+      printf("   optional_bytes_bits = %2lu  (%2i bits)\n", (unsigned long)dcc->direction[d].optional_bytes_bits, dcc_bits_width_table[dcc->direction[d].optional_bytes_bits]);
+      printf("   coded_bytes_bits    = %2lu  (%2i bits)\n", (unsigned long)dcc->direction[d].coded_bytes_bits,    dcc_bits_width_table[dcc->direction[d].coded_bytes_bits]);
       printf("   box                 = (%li, %li)  --->  (%li, %li)  =  %li * %li\n",
          dcc->direction[d].box.xmin,
          dcc->direction[d].box.ymin,
@@ -1547,11 +1547,11 @@ void dcc_debug(DCC_S * dcc)
          dcc->direction[d].box.xmin,
          dcc->direction[d].box.ymax
       );
-      printf("   equal_cell_bitstream_size       = %8li bits (read %8li)\n", dcc->direction[d].equal_cell_bitstream_size, dcc->direction[d].equal_cell_bitstream.cur_bit_num);
-      printf("   pixel_mask_bitstream_size       = %8li bits (read %8li)\n", dcc->direction[d].pixel_mask_bitstream_size, dcc->direction[d].pixel_mask_bitstream.cur_bit_num);
-      printf("   encoding_type_bitstream_size    = %8li bits (read %8li)\n", dcc->direction[d].encoding_type_bitstream_size, dcc->direction[d].encoding_type_bitstream.cur_bit_num);
-      printf("   raw_pixel_bitstream_size        = %8li bits (read %8li)\n", dcc->direction[d].raw_pixel_bitstream_size, dcc->direction[d].raw_pixel_bitstream.cur_bit_num);
-      printf("   pixel_code_and_displacment.size = %8li bits (read %8li)\n", dcc->direction[d].pixel_code_and_displacment_bitstream.size, dcc->direction[d].pixel_code_and_displacment_bitstream.cur_bit_num);
+      printf("   equal_cell_bitstream_size       = %8li bits (read %8li)\n", (long)dcc->direction[d].equal_cell_bitstream_size, (long)dcc->direction[d].equal_cell_bitstream.cur_bit_num);
+      printf("   pixel_mask_bitstream_size       = %8li bits (read %8li)\n", (long)dcc->direction[d].pixel_mask_bitstream_size, (long)dcc->direction[d].pixel_mask_bitstream.cur_bit_num);
+      printf("   encoding_type_bitstream_size    = %8li bits (read %8li)\n", (long)dcc->direction[d].encoding_type_bitstream_size, (long)dcc->direction[d].encoding_type_bitstream.cur_bit_num);
+      printf("   raw_pixel_bitstream_size        = %8li bits (read %8li)\n", (long)dcc->direction[d].raw_pixel_bitstream_size, (long)dcc->direction[d].raw_pixel_bitstream.cur_bit_num);
+      printf("   pixel_code_and_displacment.size = %8li bits (read %8li)\n", (long)dcc->direction[d].pixel_code_and_displacment_bitstream.size, (long)dcc->direction[d].pixel_code_and_displacment_bitstream.cur_bit_num);
 
       printf("\n   pixel_values :\n");
       for (i=0; i < 256; i++)
@@ -1566,13 +1566,13 @@ void dcc_debug(DCC_S * dcc)
          printf("\n   frame %3i\n", f);
 
          if (dcc->direction[d].variable0_bits)
-            printf("      variable0      = %lu\n", dcc->frame[d][f].variable0);
+            printf("      variable0      = %lu\n", (unsigned long)dcc->frame[d][f].variable0);
 
          if (dcc->direction[d].width_bits)
-            printf("      width          = %lu\n", dcc->frame[d][f].width);
+            printf("      width          = %lu\n", (unsigned long)dcc->frame[d][f].width);
 
          if (dcc->direction[d].height_bits)
-            printf("      height         = %lu\n", dcc->frame[d][f].height);
+            printf("      height         = %lu\n", (unsigned long)dcc->frame[d][f].height);
 
          if (dcc->direction[d].xoffset_bits)
             printf("      xoffset        = %li\n", dcc->frame[d][f].xoffset);
@@ -1581,12 +1581,12 @@ void dcc_debug(DCC_S * dcc)
             printf("      yoffset        = %li\n", dcc->frame[d][f].yoffset);
 
          if (dcc->direction[d].optional_bytes_bits)
-            printf("      optional_bytes = %lu\n", dcc->frame[d][f].optional_bytes);
+            printf("      optional_bytes = %lu\n", (unsigned long)dcc->frame[d][f].optional_bytes);
 
          if (dcc->direction[d].coded_bytes_bits)
-            printf("      coded_bytes    = %lu\n", dcc->frame[d][f].coded_bytes);
+            printf("      coded_bytes    = %lu\n", (unsigned long)dcc->frame[d][f].coded_bytes);
 
-         printf("      bottom_up      = %li\n", dcc->frame[d][f].bottom_up);
+         printf("      bottom_up      = %li\n", (long)dcc->frame[d][f].bottom_up);
          printf("      box            = (%li, %li)  --->  (%li, %li)  =  %li * %li\n",
             dcc->frame[d][f].box.xmin,
             dcc->frame[d][f].box.ymin,
@@ -1612,8 +1612,8 @@ void dcc_debug(DCC_S * dcc)
          );
 
          printf("      1st cell0_x, y = %li, %li\n",
-            dcc->frame[d][f].cell[0].x0,
-            dcc->frame[d][f].cell[0].y0
+            (long)dcc->frame[d][f].cell[0].x0,
+            (long)dcc->frame[d][f].cell[0].y0
          );
 
          if (dcc->frame[d][f].optional_bytes)
