@@ -1,0 +1,62 @@
+<head>
+<body bgColor=black text=#cccc99 link=#189bd8 vLink=#189bd8 aLink=silver background="../../backgrnd/infos.png">
+<style type="text/css">BODY {background-attachment:fixed;}</style>
+<table width=546><tr><td>
+<font face=verdana size=2>
+<font color=white><br><h3>MAPS LAYOUT</h3></font>
+This data is the <font color=white><b>random seed</b></font> you get when you start a new game. You can see it when you open your debug text files (in your "Diablo II" directory, something like "D2010528.txt") at the line where appear "Seed:", followed by a decimal number.
+<p>
+We can consider it's a <font color=white><b>map ID</b></font> because it determines all the maps layout that you'll have in the acts of your present difficulty level. If you take this value from another player, you will play on the exact maps as him. The value really don't seem to be an array (with 1 byte for each act) because whatever byte you change, the act 1 is not the same.
+<p>
+The file with the MAP extension is always 24 bytes. It is composed of 6 datas of 4 bytes each :
+<ul>
+   <li>Signature header (0000000Bh)
+   <li>Next slot to use (from 0 to 3)
+   <li>Slot 0 map ID
+   <li>Slot 1 map ID
+   <li>Slot 2 map ID
+   <li>Slot 3 map ID
+</ul>
+Slot <font color=white><b>n</b></font> correspond to the file with the extension MA<font color=white><b>n</b></font>. This files are growing in size each time you revealed new portions of the map. When you start a new game, a random map ID is given to you. It is write in your D2S file at the offset <font color=white><b>07Eh</b></font>. The MAP file then looks like this :
+<ul>
+   <li>0000000Bh
+   <li>00000001h
+   <li>your map ID
+   <li>00000000h
+   <li>00000000h
+   <li>00000000h
+</ul>
+When you'll start a new game in Nightmare difficulty (by killing Diablo), you'll get another random map ID, wich will overwrite your precedent map ID in your D2S file. The <b>Next slot to use</b> data will be incremented by 1, and the <b>Slot 1</b> will be equal to your new map ID.
+<p>
+Note about the increment : the value of <b>next slot to use</b> can only be between 0 and 3. So, if the increment give 4, then it switch back to 0. So you can only have a maximum of 4 files with the MA<font color=white><b>n</b></font> entension : from MA0 to MA3.
+<p>
+At this point you might think that by playing again in Normal difficulty you'll keep your old maps. It's wrong : <b>EACH</b> time you play in another difficulty level than in your precedent savegame, you have a new map.
+<p>
+The MA0 file is here, the corresponding map ID is write in the MAP file, but it is <b>another</b> map ID that you'll have, and so you'll use the Slot 2, with the MA2 file. If you then try to play again in Nightmare difficulty, it is again (for the 4th time) another map ID that you'll have. So, you can wonder what are the use of keeping your old maps in 3 slots, because they can't be re-used by the game. All necessary materials are here, but the mechanism is not implemented. For the fun of playing maybe ?
+<p>
+You can in fact re-use your old maps, but you have to do it manually. Just put, in the <b>map layout</b> data (at the offset 07Eh), one of the map ID you have in the MAP file. That's all. You can even get the maps of someone else. An example :
+<p>
+You want to play in the same maps of a friend. You also want the same reaveled portions of the map that he have done. Here is the methode :
+<p>
+<u>Get his map ID</u>
+<ul>
+   <li>Open the D2S file of your friend
+   <li>Check the 4 bytes starting from the offset 07Eh (<b>maps layout</b> data)
+</ul>
+<u>Get his MA<font color=white><b>n</b></font> file</u>
+<ul>
+   <li>Open his MAP file
+   <li>Check in which slot the precedent map ID is present
+   <li>Copy the corresponding MA<font color=white><b>n</b></font> file to be your MA0 file
+</ul>
+<u>Modify your map ID</u>
+<ul>
+   <li>Open your MAP file
+   <li>Put in slot 0 the new map ID
+   <li>Open your D2S file
+   <li>Put in the <b>maps layout</b> data the new map ID
+</ul>
+That's done. Now, you have the same maps of your friend, and all the portions of the maps that he had revealed.
+<p><br>
+Back to <a href="part_1.html#mapslayout"><b>Part 1</b></a>
+</td></tr></table>

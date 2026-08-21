@@ -1,0 +1,199 @@
+<head>
+<body bgColor=black text=#cccc99 link=#189bd8 vLink=#189bd8 aLink=silver background="../backgrnd/infos.png">
+<style type="text/css">BODY {background-attachment:fixed;}</style>
+<table width=546><tr><td>
+<font face=verdana size=2>
+<font color=white><br><h3>DESCRIPTION DU FICHIER <font size=2> &nbsp (Partie 2, où nous rencontrons des données volatiles)</font></h3></font>
+<p><br><br><br>
+<u><font color=white><b>APERCU RAPIDE</b></font></u>
+<p>
+Toutes les données de statut sont à considérer comme <font color=white><b>optionnelles</b></font>. Le fait que l'une soit présente ou non, dépend <font color=white><b>d'un bit</b></font> des <font color=white><b>champs de bits de statut</b></font>. En conséquence, il est impossible de donner des offsets explicites où les données pourraient êtres trouvées.
+<p>
+Par exemple, quand vous montez de niveau, vous avez 5 points de statut et 1 point d'aptitude à répartir. Mais la plupart du temps vous n'avez pas de points de statut : la donnée <b>points de statut</b> ne sera pas égale à zéro : le bit correspondant sera oté, et la donnée ne sera pas présente <b>du tout !</b>
+<p>
+Un autre exemple facile : si tout votre or est dans votre bourse, alors la donnée <b>Argent dans la bourse</b> sera présente, mais la donnée <b>Argent (sur soi)</b> sera absente. Encore un dernier exemple (pas évident celui-là) : si le joueur est en mode hardcore ET est mort, alors la donnée <b>vie actuelle</b> sera absente.
+<p><br><br><br>
+<u><font color=white><b><u>ASSIGNATION DES BITS</u></b></font></u>
+<p>
+Pour le moment, seuls les 2 premiers champs de bits sont utilisés. Ils fournissent un total de 16 bits, et chacun d'entre eux correspond à une donnée. C'est la raison pour laquelle j'appelle l'octet qui suit les 2 premiers champs de bits, le champ de bits <b>réservé</b>. Il est toujours égal à zéro, comme si Blizzard avait projeté de l'utiliser plus tard.
+<p>
+Les champs de bits sont nommés d'après les données qui ont le plus de chance d'être absentes.
+<p>
+Le premier d'entre eux (à l'offset <font color=white><b>232h</b></font>) est le <font color=white><b>Statut / aptitudes</b></font>. Les données correspondantes sont :
+<table cols=4 width=300 border=0 cellspacing=0>
+   <col width=40  valign=top>
+   <col width=35  valign=top>
+   <col width=15  valign=top>
+   <col width=200 valign=top>
+<tr>
+   <td>&nbsp
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 0</font>
+   <td>:
+   <td><font size=2>Force</font>
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 1</font>
+   <td>:
+   <td><font size=2>Energie</font>
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 2</font>
+   <td>:
+   <td><font size=2>Dextérité</font>
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 3</font>
+   <td>:
+   <td><font size=2>Vitalité</font>
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 4</font>
+   <td>:
+   <td><font size=2>Points de statut à répartir</font>
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 5</font>
+   <td>:
+   <td><font size=2>Points d'aptitude à répartir</font>
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 6</font>
+   <td>:
+   <td><font size=2>Vie actuelle</font>
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 7</font>
+   <td>:
+   <td><font size=2>Vie maximum</font>
+   </tr>
+</table>
+<p><br>
+<a name="2ndflag">
+Le deuxième champ de bits (à l'offset <font color=white><b>233h</b></font>) est le <font color=white><b>Expérience / argent / bourse</b></font>. Les données correspondantes sont :
+<table cols=4 width=300 border=0 cellspacing=0>
+   <col width=40  valign=top>
+   <col width=35  valign=top>
+   <col width=15  valign=top>
+   <col width=200 valign=top>
+<tr>
+   <td>&nbsp
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 0</font>
+   <td>:
+   <td><font size=2>Mana actuel</font>
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 1</font>
+   <td>:
+   <td><font size=2>Mana maximum</font>
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 2</font>
+   <td>:
+   <td><font size=2>Endurance actuelle</font>
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 3</font>
+   <td>:
+   <td><font size=2>Endurance maximum</font>
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 4</font>
+   <td>:
+   <td><font size=2>Véritable niveau du joueur</font>
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 5</font>
+   <td>:
+   <td><font size=2>Expérience</font>
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 6</font>
+   <td>:
+   <td><font size=2>Argent</font>
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 7</font>
+   <td>:
+   <td><font size=2>Argent dans la bourse</font>
+   </tr>
+</table>
+<p>
+Le bit 0 est le bit de poid faible et le bit 7 le bit de poid fort, évidemment.
+<p><br><br><br>
+<u><font color=white><b><u>LIRE LES DONNEES</u></b></font></u>
+<p>
+Tout serait parfait si les données avaient la même taille. Et bien, ce n'est pas le cas. Certaines font 4 octets, d'autres 2 octets, et il existe même 2 données qui ne font qu'un seul octet chacune. Regardons ça de plus près.
+<p>
+En général, toutes les données ont une taille de <font color=white><b>4 octets</b></font>. Comme toujours, elles sont dans l'ordre d'Intel. En commençant à partir de l'offfset <font color=white><b>235h</b></font>, voici les données que l'on peut trouver, mais <font color=white><b>SEULEMENT</b></font> si leurs bits respectifs sont posés !
+<p>
+<ul>
+   <li>Force
+   <li>Energie
+   <li>Dextérité
+   <li>Vitalité
+   <li>Points de statut
+   <li>Points d'aptitude
+</ul>
+Maintenant, il a un piège. Il y a un octet que l'on doit sauter. La plupart du temps il est égal à zéro, mais pas toujours. Je n'ai pas encore compris sa signification.
+<ul>
+   <li>Octet piégé inconnu
+</ul>
+<p>
+On peut maintenant continuer la lecture normale des données, à une exeption près : ces données ont une taille de <font color=white><b>2&nbspoctets</b></font>. Juste après on trouve <font color=white><b>2&nbspautres octets</b></font> avec parfois zéro, parfois de drôles de valeurs. Encore une fois, je n'ai pas compris leurs significations. On dirait qu'elles apparaissent quand certaines données actuelles sont supérieures à leur maximum. Par exemple quand la <b>Vie actuelle</b> est supérieure à la <b>Vie maximum</b> (à cause d'objets magiques).
+<p>
+<ul>
+   <li>Vie actuelle
+   <li>?
+   <li>Vie maximum
+   <li>?
+   <li>Mana actuel
+   <li>?
+   <li>Mana maximum
+   <li>?
+   <li>Endurance actuelle
+   <li>?
+</ul>
+Un autre piège. L'endurance maximum à une taille de 2 octets (c'est bon), cependant elle n'est <font color=white><b>pas suivie de 2 octets</b></font>, mais d' <font color=white><b>1&nbspseul octet</b></font>. Se pourrait-il que l'octet piégé précédent (entre les données <b>Points d'aptitude</b> et <b>Vie actuelle</b>) soit, en fait, une partie de la donnée inconnue qui suit la donnée <b>Endurance maximum</b> ? Je ne sais pas.
+<ul>
+   <li>Endurance maximum
+   <li>?
+</ul>
+<p>
+Après ça, toutes les données ont de nouveau une taille de <font color=white><b>4&nbspoctets</b></font>.
+<ul>
+   <li>Véritable niveau du joueur (1)
+   <li>Expérience
+   <li>Argent (sur soi)
+   <li>Argent dans la bourse
+</ul>
+(1) Note à propos du <b>Véritable niveau du joueur</b> : puisque la copie de cette valeur à l'offset <font color=white><b>024h</b></font> ne fait que 2 octets, il n'est pas convenable de mettre une valeur plus grande que 65535&nbsp(FFFFh). Une valeur plus grande que 99&nbsp(63h) n'est de toutes façons pas convenable du tout <b>:)</b>
+<p><br><br>
+Après toutes ces données volatiles, nous trouvons normalement l'<font color=white><b>entête d'aptitude</b></font>, qui est égale à <font color=white><b>6669h</b></font>. Dans le cas contraire, ceci peut être la cause du champ de bits <b>Réservé</b>. S'il n'est pas égal à zéro, c'est un problème de version. Mais s'il est égal à zéro, comment savoir ?
+<p><br>
+Tout ceci est expliqué dans la <a href="part_3.html"><b>Partie 3</b></a> : Niveaux d'aptitude
+<p>
+Retour à la <a href="part_1.html"><b>Partie 1</b></a> : Modifications faciles<br>
+Aller à la <a href="part_4.html"><b>Partie 4</b></a> : Objets<br>
+Aller à la <a href="part_5.html"><b>Partie 5</b></a> : Cadavre & Mercenaire<br>
+Retour à la <a href="index.html"><b>Page de menu</b></a>
+</td></tr></table>

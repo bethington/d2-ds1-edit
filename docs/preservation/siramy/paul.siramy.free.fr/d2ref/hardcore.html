@@ -1,0 +1,35 @@
+<head>
+<body bgColor=black text=#cccc99 link=#189bd8 vLink=#189bd8 aLink=silver background="../backgrnd/infos.png">
+<style type="text/css">BODY {background-attachment:fixed;}</style>
+<table width=546><tr><td>
+<font face=verdana size=2>
+<font color=white><br><h3>MODE HARDCORE</h3></font>
+<p align=justify>Cette donnée indique si le joueur est en mode hardcore et / ou s'il est en vie.
+Depuis l'Extension "Lord of Destruction", elle indique aussi si la sauvegarde est en mode extension.
+<p align=justify>
+Bit 2 : est posé quand le joueur est en mode hardcore, sinon est absent (mode normal)<br>
+Bit 3 : est posé si le joueur est déjà mort, est absent s'il est en vie<br>
+Bit 5 : est posé si en mode extension (sauvegarde aussi bien convertie que nouvellement crée), est absent sinon
+<p align=justify>
+Valeurs possibles pour l'ensemble de la donnée, et leurs significations :
+<ul>
+   <li>00h : mode normal, jamais mort
+   <li>04h : mode hardcore, en vie
+   <li>08h : mode normal, est déjà mort
+   <li>0Ch : mode hardcore, mort
+   <p align=justify>
+   <li>20h : extension, mode normal, jamais mort
+   <li>24h : extension, mode hardcore, en vie
+   <li>28h : extension, mode normal, est déjà mort
+   <li>2Ch : extension, mode hardcore, mort
+</ul>
+Note : quand le joueur est en mode hardcore ET est mort, la donnée de statut <b>vie actuelle</b> est absente.
+<p align=justify>
+Pour rescuciter un joueur mort en hardcore, vous n'avez seulement besoin que de changer la valeur de <b>0Ch</b> en <b>04h</b> (ou de <b>2Ch</b> en <b>24h</b> si c'est une sauvegarde en mode extension). Quand vous commencerez de jouer, votre vie sera égale à 1 à cause du problème de la <b>vie actuelle</b>, mais vous pouvez facilement la remplir. N'oubliez pas de récupérer votre cadavre, pour retrouver votre équipement. Maintenant, vous êtes un joueur hardcore vivant, tout ce qu'il y a de plus normal.
+<p align=justify>
+Astuce : à tout moment vous pouvez passer d'un mode à l'autre. Vous pouvez donc développer un personnage puissant en mode normal, puis passer au mode hardcore. L'inverse est aussi vrai : si vous avez des problèmes pour tuer un boss en hardcore, vous pouvez passer au mode normal. Après l'avoir tué, vous pouvez repasser au mode hardcore.
+<p align=justify>
+Malgrès ce que je viens d'écrire juste au dessus, je considère que changer de mode est une <font color=white><b>faute impardonnable</b></font> !
+<p align=justify><br>
+Retour à la <a href="part_1.html#hardcoreflag"><b>Partie 1</b></a>
+</td></tr></table>

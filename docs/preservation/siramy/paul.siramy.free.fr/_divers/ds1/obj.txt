@@ -1,0 +1,787 @@
+Act	Type	Id	Description
+1	1	0	Gheed
+1	1	1	# Cain (?)
+1	1	2	Akara
+1	1	3	?
+1	1	4	Rogue
+1	1	5	Kashya
+1	1	6	# Cow
+1	1	7	Warriv
+1	1	8	Charsie
+1	1	9	Andariel
+1	1	10	Fallens
+1	1	11	Fallen shaman + fallens
+1	1	12	Blood Raven
+1	1	13	Cow
+1	1	14	# Camel
+1	1	15	?
+1	1	16	# ?
+1	1	17	?
+1	1	18	# ?
+1	1	19	Champion Fallen shaman + fallens
+1	1	20	# Flavie
+1	1	21	# Rogue
+1	1	22	# Rogue
+1	1	23	Gargoyle Trap
+1	1	24	?
+1	1	25	# ?
+1	1	26	# 3 fallens
+1	1	27	Fallen shaman
+1	1	28	# ?
+1	1	29	# ?
+1	1	30	?
+1	1	31	?
+1	1	32	?
+1	1	33	?
+1	1	34	Bishibosh
+1	1	35	Bonebraker
+1	1	36	Coldcrow
+1	1	37	Rakanishu
+1	1	38	Treehead Woodfist
+1	1	39	Griswold
+1	1	40	Countess
+1	1	41	Pitspawn Fouldog
+1	1	42	# Flamespike the Crawler
+1	1	43	Boneash
+1	1	44	The Smith
+1	1	45	The Cowking
+1	1	46	Corpsefire
+1	1	59	# Skeleton enemy
+1	2	0	fountain
+1	2	1	standing torch 1
+1	2	2	fire
+1	2	3	flag 1
+1	2	4	flag 2
+1	2	5	chest
+1	2	6	cairn stone 1
+1	2	7	cairn stone 2
+1	2	8	cairn stone 3
+1	2	9	cairn stone 4
+1	2	10	cairn stone 5
+1	2	11	cairn stone 6 (non active)
+1	2	12	tree of inifuss
+1	2	13	# water drop 1
+1	2	14	# water drop 2
+1	2	15	# water drop 3
+1	2	16	# water drop 4
+1	2	17	standing torch 2
+1	2	18	bowl with blood
+1	2	19	candle holder 1
+1	2	20	candle holder 2
+1	2	21	standing torch 3
+1	2	22	# ?
+1	2	23	# ?
+1	2	24	# ?
+1	2	25	moldy tome
+1	2	26	cains gibbet
+1	2	27	undefiled grave
+1	2	28	hole with blood
+1	2	29	shrine random 1
+1	2	30	shrine random 2
+1	2	31	shrine health
+1	2	32	shrine random 3
+1	2	33	?
+1	2	34	?
+1	2	35	flies
+1	2	36	horadric mallus
+1	2	37	# waypoint
+1	2	38	chest
+1	2	39	well
+1	2	40	# hidden stash
+1	2	41	# hidden spot
+1	2	42	# hollow log
+1	2	43	fire small
+1	2	44	fire medium
+1	2	45	fire big
+1	2	46	armor stand 1
+1	2	47	armor stand 2
+1	2	48	weapon rack 1
+1	2	49	weapon rack 2
+1	2	50	bookshelf 1
+1	2	51	bookshelf 2
+1	2	52	waypoint
+1	2	53	waypoint
+1	2	54	bed 1
+1	2	55	bed 2
+1	2	56	# hidden stash
+1	2	57	# loose rock
+1	2	58	# loose boulder
+1	2	59	# chest 1
+1	2	60	# chest 2
+1	2	61	# chest 3
+1	2	62	chest 4
+1	2	63	chest 5
+1	2	64	chest 6
+1	2	65	chest 7
+1	2	66	chest 8
+1	2	67	dead rogue lying
+1	2	68	dead rogue lying 2
+1	2	69	dead rogue lying 3
+1	2	70	dead rogue hung 1
+1	2	71	dead rogue hung 2
+1	2	72	dead rogue hung 3
+1	2	73	# guard corpse hung
+1	2	74	body
+1	2	75	body 2 + fire
+1	2	76	dead cow
+1	2	77	# well 1
+1	2	78	well 2
+1	2	79	# well 3
+1	2	80	# shrine mana
+1	2	81	# shrine mana 2
+1	2	82	shrine health 1
+1	2	83	# shrine health 2
+1	2	84	# shrine NEW TYPE1
+1	2	85	# shrine NEW TYPE2
+1	2	86	# shrine NEW TYPE3
+1	2	87	# shrine health
+1	2	88	# shrine mana
+1	2	89	casket
+1	2	90	?
+1	2	91	casket
+1	2	92	casket
+1	2	93	casket
+1	2	94	# casket
+1	2	95	barel
+1	2	96	crate
+1	2	97	hanging torch
+1	2	98	stump
+1	2	99	# stump
+1	2	100	stump
+1	2	101	wall
+1	2	102	stash
+1	2	103	wirth
+1	2	104	gold
+1	2	105	# chest
+1	2	106	# ?
+1	2	107	# ?
+1	2	108	# ?
+1	2	109	# ?
+1	2	110	?
+1	2	111	fog
+1	2	112	?
+1	2	113	# chest shining
+2	1	0	Warriv
+2	1	1	Atma
+2	1	2	Drognan
+2	1	3	Farah
+2	1	4	?
+2	1	5	# ?
+2	1	6	# ?
+2	1	7	# ?
+2	1	8	Greiz
+2	1	9	Elzix
+2	1	10	Lycander
+2	1	11	Meshif
+2	1	12	Geglash
+2	1	13	# Jarhyn
+2	1	14	?
+2	1	15	# ?
+2	1	16	# ?
+2	1	17	Summoner
+2	1	18	Radament
+2	1	19	Duriel
+2	1	20	Deckard Cain
+2	1	21	# ?
+2	1	22	townsfolk man
+2	1	23	townsfolk woman
+2	1	24	desert mercenary
+2	1	25	townsfolk on carpet 1
+2	1	26	townsfolk on carpet 2
+2	1	27	# Maggot Queen(Mind Maw the Slasher)
+2	1	28	# ?
+2	1	29	?
+2	1	30	?
+2	1	31	# ?
+2	1	32	# ?
+2	1	33	?
+2	1	34	# Gargoyle Trap
+2	1	35	?
+2	1	36	?
+2	1	37	# ?
+2	1	38	?
+2	1	39	# ?
+2	1	40	# ?
+2	1	41	Lightning Spire
+2	1	42	Fire Tower
+2	1	43	# ?
+2	1	44	# ?
+2	1	45	# ?
+2	1	46	Bloodwitch the Wild
+2	1	47	Fangskin
+2	1	48	BeetleBurst
+2	1	49	Creeping Feature
+2	1	50	Cold Worm the Burrower
+2	1	51	Fire Eye
+2	1	52	Dark Elder
+2	1	53	Ancient Kaa the Soulless
+2	1	54	"# Flavie Desert Mercenary ;)"
+2	1	55	# Silent Desert Mercenary (Evil Force)
+2	1	56	Mummy Sarcophogus
+2	1	57	?
+2	1	58	Horror Skeleton
+2	2	0	?
+2	2	1	flame torch stand
+2	2	2	Teleporter
+2	2	3	Teleporter
+2	2	4	Teleporter
+2	2	5	Teleporter
+2	2	6	flame on floor
+2	2	7	flame in big bowl
+2	2	8	?
+2	2	9	flies
+2	2	10	waypoint
+2	2	11	chest(big drops)
+2	2	12	# well
+2	2	13	# secret door
+2	2	14	Horazon's Journal
+2	2	15	?
+2	2	16	?
+2	2	17	Desert Mercenary
+2	2	18	# maggot door(\ direction)
+2	2	19	# maggot door(/ direction)
+2	2	20	?
+2	2	21	private stash
+2	2	22	?
+2	2	23	Tainted Sun Altar
+2	2	24	three piles of gold
+2	2	25	large urn(straight)
+2	2	26	urn(vase like)
+2	2	27	urn(pot like)
+2	2	28	large urn(slanted to the right)
+2	2	29	large urn(slanted to the left)
+2	2	30	jug(small)
+2	2	31	jug(large)
+2	2	32	chest(/ direction)
+2	2	33	chest(\ direction)
+2	2	34	chest(/ direction)
+2	2	35	chest(\ direction)
+2	2	36	small chest(\ direction)
+2	2	37	small chest(\ direction)
+2	2	38	long chest(\ direction)
+2	2	39	long chest(/ direction)
+2	2	40	long chest(/ direction)
+2	2	41	dark skinny chest
+2	2	42	chest(\ direction)
+2	2	43	gold chest(/ direction)
+2	2	44	chest(/ direction)
+2	2	45	long chest(/ direction)
+2	2	46	# light skinny chest
+2	2	47	# rat's nest
+2	2	48	tall torch
+2	2	49	# small ground fire
+2	2	50	# medium ground fire
+2	2	51	# large ground fire
+2	2	52	# very small ground fire
+2	2	53	medium torch
+2	2	54	health shrine(animal type)
+2	2	55	random shrine(stone type)
+2	2	56	# health shrine(new type)
+2	2	57	# random shrine(goddess type)
+2	2	58	random shrine(large building type)
+2	2	59	random shrine(column type)
+2	2	60	random shrine(stone slab type)
+2	2	61	random shrine(fireplace type?)
+2	2	62	random shrine(house type)
+2	2	63	health shrine(pool well type)
+2	2	64	mana shrine(pool well type)
+2	2	65	random shrine(blue flame type)
+2	2	66	health shrine(basket type)
+2	2	67	mana shrine(basket type)
+2	2	68	random shrine(table with two blue candle type)
+2	2	69	mana shrine(animal type)
+2	2	70	# mana shrine(new type)
+2	2	71	# square well
+2	2	72	# square well
+2	2	73	sarcophagus
+2	2	74	# armor stand(\ direction)
+2	2	75	armor stand(/ direction)
+2	2	76	weapon stand(\ direction)
+2	2	77	weapon stand(/ direction)
+2	2	78	guard corpse
+2	2	79	# skeleton
+2	2	80	# guard corpse(on a pole)
+2	2	81	guard corpse(\ direction)
+2	2	82	# corpse
+2	2	83	# corpse tied to stump
+2	2	84	goo pile
+2	2	85	# invisible hidden stash
+2	2	86	larger rat's nest
+2	2	87	# sarcophagus box 
+2	2	88	palace waypoint
+2	2	89	arcane portal
+2	2	90	palace bed
+2	2	91	torch on wall(right)
+2	2	92	torch on wall(left)
+2	2	93	fire from stone ground
+2	2	94	fire on pillar
+2	2	95	flame on stand(with three legs)
+2	2	96	# barred closed door(/ direction)
+2	2	97	# barred closed door(\ direction)
+2	2	98	# cage closed door(/ direction)
+2	2	99	# cage closed door(\ direction)
+2	2	100	# wooden closed door(/ direction)
+2	2	101	# wooden closed door(\ direction)
+2	2	102	# random arcane shrine
+2	2	103	# random 'sphere' shrine
+2	2	104	# random shrine(new)
+2	2	105	# random shrine(new ball like thing on carpet)
+2	2	106	# health shrine(spike type)
+2	2	107	# mana shrine(spike type)
+2	2	108	# normal chest(/ direction)
+2	2	109	horadric chest(shiny)
+2	2	110	horadric symbol with circle with four lines
+2	2	111	# dead guard(spear through back stomach / direction)
+2	2	112	dead guard(spear through back stomach \ direction)
+2	2	113	dead guard(spear through front stomach \ direction)
+2	2	114	dead guard(spear through back stomach | direction)
+2	2	115	waypoint
+2	2	116	circle well
+2	2	117	drunk man drinking
+2	2	118	old man sitting at a table
+2	2	119	bald man sitting
+2	2	120	horadric chest(shiny)
+2	2	121	horadric chest(shiny)
+2	2	122	# horazon's journal
+2	2	123	?
+2	2	124	?
+2	2	125	?
+2	2	126	Orifice and Tal Rasha's Tomb entrance
+2	2	127	# ?
+2	2	128	# arcane metal chest(/ direction)
+2	2	129	# arcane metal chest(\ direction)
+2	2	130	# small arcane metal chest(/ direction)
+2	2	131	# small arcane metal chest(\ direction)
+2	2	132	# very large chest
+2	2	133	gold shiny chest
+2	2	134	waypoint
+3	1	0	Deckard Cain
+3	1	1	# 2-4 random champions
+3	1	2	man with towel
+3	1	3	woman in white dress
+3	1	4	Asheara
+3	1	5	# Hratli
+3	1	6	Alkor
+3	1	7	Ormus
+3	1	8	Meshif
+3	1	9	# ?
+3	1	10	Water Watcher (/ direction)
+3	1	11	Water Watcher (\ direction)
+3	1	12	# ?
+3	1	13	?
+3	1	14	?
+3	1	15	Natalya
+3	1	16	# ?
+3	1	17	?
+3	1	18	?
+3	1	19	?
+3	1	20	?
+3	1	21	Compelling orb
+3	1	22	Mephisto
+3	1	23	chest ('a Trap')
+3	1	24	Evil force(ghosts)
+3	1	25	sorcerer mercenary
+3	1	26	Rat Men
+3	1	27	RatMan Shaman
+3	1	28	Sszark the Burning
+3	1	29	Witch Doctor Endugu
+3	1	30	Stormtree
+3	1	31	Battlemaid Sarina
+3	1	32	Icehawk Riftwing
+3	1	33	Ismail Vilehand
+3	1	34	Geleb Flamefinger
+3	1	35	Bremm Sparkfist
+3	1	36	Toorc Icefist
+3	1	37	Wyand Voidbringer
+3	1	38	Maffer Dragonhand
+3	1	39	# Skeleton
+3	1	40	# Skeleton
+3	1	41	# Skeleton
+3	1	42	# Skeleton
+3	1	43	# Skeleton
+3	1	44	# Skeleton
+3	1	45	# Skeleton
+3	1	46	# Skeleton
+3	1	47	# Skeleton
+3	1	48	# Skeleton
+3	1	49	# Skeleton
+3	1	50	# Skeleton
+3	1	51	# Skeleton
+3	1	52	# Skeleton
+3	1	53	# Skeleton
+3	1	54	# Skeleton
+3	1	55	# Skeleton
+3	1	56	# Skeleton
+3	1	57	# Skeleton
+3	1	58	# Skeleton
+3	1	59	# Skeleton
+3	2	0	high torch
+3	2	1	waypoint
+3	2	2	chest (6 outputs)
+3	2	3	well
+3	2	4	bowl with flame
+3	2	5	torch on top of 3 feet
+3	2	6	small fire
+3	2	7	medium fire
+3	2	8	high fire
+3	2	9	armor stand (\ direction)
+3	2	10	armor stand (/ direction)
+3	2	11	weapon rack (\ direction)
+3	2	12	weapon rack (/ direction)
+3	2	13	altar stairs to underground (/ direction)
+3	2	14	altar stairs to underground (\ direction)
+3	2	15	Lam Esen's Tome
+3	2	16	rocks in river 1
+3	2	17	corpse & stuff in river 1
+3	2	18	woods in river 1
+3	2	19	more woods in river 1
+3	2	20	rocks in river 2
+3	2	21	corpse & stuff in river 2
+3	2	22	woods in river 2
+3	2	23	more woods in river 2
+3	2	24	rocks in river 3
+3	2	25	corpse & stuff in river 3
+3	2	26	woods in river 3
+3	2	27	more woods in river 3
+3	2	28	web between 2 trees (/ direction)
+3	2	29	web between 2 trees (\ direction)
+3	2	30	web around 1 tree (/ direction)
+3	2	31	web around 1 tree (\ direction)
+3	2	32	living cocoon
+3	2	33	static cocoon
+3	2	34	your private stash
+3	2	35	very small piles of gold
+3	2	36	chest
+3	2	37	random shrine
+3	2	38	random shrine
+3	2	39	random shrine
+3	2	40	random shrine
+3	2	41	random shrine
+3	2	42	random shrine
+3	2	43	random shrine
+3	2	44	random shrine
+3	2	45	random shrine
+3	2	46	mana shrine 1
+3	2	47	health shrine 1
+3	2	48	mana shrine 2
+3	2	49	health shrine 2
+3	2	50	well
+3	2	51	dead body (women tied to a seat)
+3	2	52	skeleton
+3	2	53	corpse (lying on floor)
+3	2	54	corpse (stand against a basket)
+3	2	55	medium torch on 3 feet
+3	2	56	larger torch
+3	2	57	metal chest (/ direction)
+3	2	58	metal chest (\ direction)
+3	2	59	small metal chest (/ direction)
+3	2	60	small metal chest (\ direction)
+3	2	61	wood chest (/ direction)
+3	2	62	medium wicker chest (/ direction)
+3	2	63	tiny wicker chest (\ direction)
+3	2	64	small wicker chest (\ direction)
+3	2	65	wood chest (/ direction)
+3	2	66	wood chest (\ direction)
+3	2	67	small wood chest (/ direction)
+3	2	68	wood chest (/ direction)
+3	2	69	tiny wood chest (\ direction)
+3	2	70	old wood chest (\ direction)
+3	2	71	small polished wood chest (/ direction)
+3	2	72	Rat's Nest
+3	2	73	stone stash (/ direction)
+3	2	74	stone stash (/ direction)
+3	2	75	tiny wood chest
+3	2	76	totem stash (\ direction)
+3	2	77	sort of barrel stash
+3	2	78	white box stash
+3	2	79	pyramid stash with swiveling orb
+3	2	80	small basket (player say 'not here')
+3	2	81	small basket (player say 'not here')
+3	2	82	hallow log
+3	2	83	waypoint
+3	2	84	waypoint
+3	2	85	?
+3	2	86	bubbles
+3	2	87	skullpile
+3	2	88	Rat's Nest
+3	2	89	an Evil Force
+3	2	90	an Evil Force
+3	2	91	an Evil Force
+3	2	92	rock pile
+3	2	93	random shrine
+3	2	94	basket
+3	2	95	casket
+3	2	96	Gidbinn Altar
+3	2	97	Gidbinn
+3	2	98	basket
+3	2	99	fire urn
+3	2	100	sewer lever
+3	2	101	sewer stairs
+3	2	102	dark wanderer
+3	2	103	rising bridge near Mephisto
+3	2	104	Mephisto's red portal
+3	2	105	mana shrine
+3	2	106	health shrine
+3	2	107	an Evil Force
+3	2	108	high torch
+3	2	109	an Evil Force
+3	2	110	Hratli
+3	2	111	Stairs open by the Compelling Orb
+3	2	112	golden chest
+3	2	113	Khalim's Heart chest
+3	2	114	Khalim's Eye chest
+3	2	115	Khalim's Brain chest
+4	1	0	2-4 champion monsters(random)
+4	1	1	# invisible spike ball trap
+4	1	2	# ?
+4	1	3	# health shrine
+4	1	4	health shrine
+4	1	5	# health shrine
+4	1	6	# ?
+4	1	7	Tyrael
+4	1	8	stained glass 1
+4	1	9	stained glass 2
+4	1	10	Jamella
+4	1	11	Halbu
+4	1	12	empty
+4	1	13	Izual
+4	1	14	# Diablo
+4	1	15	# Dark Wing
+4	1	16	# The Tormentor
+4	1	17	# Taintbreeder
+4	1	18	# Riftwraith the Cannibal
+4	1	19	# Infector of Souls
+4	1	20	# Lord de Sies
+4	1	21	# Grand Vizier of Chaos
+4	1	22	trapped soul 1
+4	1	23	trapped soul 2
+4	1	24	maw fiend
+4	1	25	Cain
+4	1	26	Hadriel
+4	1	27	Hephasto
+4	1	28	# skeleton enemy
+4	2	0	WP - second one, in fortress.ds1 wp=52
+4	2	1	chest - small
+4	2	2	stash
+4	2	3	# invisible object (An Evil Force)
+4	2	4	# small chest with gold around
+4	2	5	# empty
+4	2	6	# empty
+4	2	7	# empty
+4	2	8	fire - small
+4	2	9	fire - medium
+4	2	10	fire - big
+4	2	11	lava - big
+4	2	12	lava - medium
+4	2	13	lava - small
+4	2	14	empty
+4	2	15	empty
+4	2	16	empty
+4	2	17	fire lamp - skeletons hung with chains 1
+4	2	18	fire lamp - skeletons hung with chains 2
+4	2	19	# hung skeleton (tresure)
+4	2	20	skeleton rising from lava 1
+4	2	21	skeleton rising from lava 2
+4	2	22	bone chest (treasure)
+4	2	23	fog - flat
+4	2	24	shrine - health
+4	2	25	# shrine - mana
+4	2	26	# shrine - random - type 1
+4	2	27	# shrine - random - type 2
+4	2	28	# shrine - random - type 3
+4	2	29	shrine - mana
+4	2	30	# shrine - random - type 1
+4	2	31	# shrine - random - type 2
+4	2	32	# shrine - health
+4	2	33	shrine - random - type 3
+4	2	34	skullpile (treasure)
+4	2	35	# pillar - treasure (unused type!)
+4	2	36	# pillar - treasure
+4	2	37	# pillar - hidden stash
+4	2	38	skullpile (treasure)
+4	2	39	# hung skeleton - hidden stash
+4	2	40	# bone chest - hidden stash
+4	2	41	# DON'T USE!! CRASHES THE GAME
+4	2	42	hell forge
+4	2	43	ray of light 1
+4	2	44	ray of light 2
+4	2	45	# portal
+4	2	46	Diablo spawn point
+4	2	47	seal 1
+4	2	48	seal 2
+4	2	49	seal 3
+4	2	50	seal 4
+4	2	51	seal 5
+4	2	52	waypoint in Fortress.ds1
+4	2	53	chest (treasure, shining one)
+4	2	54	fissure
+4	2	55	fog - vertical
+4	2	56	firelamp
+4	2	57	trapped soul 1
+4	2	58	trapped soul 2
+4	2	59	trapped soul 3
+4	2	60	hung torch 1
+4	2	61	hung torch 2
+4	2	62	firelamp - big
+4	2	63	firelamp - small
+4	2	64	firelamp - medium
+4	2	65	firelamp - hung
+5	1	0	# Larzuk
+5	1	1	# Anya
+5	1	2	Mallah
+5	1	3	Nihlathak
+5	1	4	Qual-Kehk
+5	1	5	Demon Imp - group
+5	1	6	Shenk the Overseer
+5	1	7	# Tyrael
+5	1	8	# Cain
+5	1	9	Demon Imp - single
+5	1	10	Enslaved - single
+5	1	11	Enslaved - group
+5	1	12	Catapult 1
+5	1	13	Catapult 2
+5	1	14	Moon Lord
+5	1	15	Catapult 3
+5	1	16	Poison Catapult?
+5	1	17	Barbarian Combatant
+5	1	18	Dead Barbarian
+5	1	19	dead enslaved
+5	1	20	burned corpse
+5	1	21	Cain
+5	1	22	# Barbarian Combatant - will help you in restricted region
+5	1	23	rising prowling dead
+5	1	24	Madewic
+5	1	25	Korlic
+5	1	26	Talic
+5	1	27	Dac Farren
+5	1	28	Baal - one before throne room
+5	1	29	?
+5	1	30	Dieing barbarian 1
+5	1	31	Dieing barbarian 2
+5	1	32	Dieing barbarian 3
+5	1	33	Baal
+5	1	34	# Axe Dweller
+5	1	35	Boneaw Breaker
+5	1	36	Edritch the Rectifier
+5	1	37	Eyeback the Unleashed
+5	1	38	Sharptooth Slayer
+5	1	39	Pindleskin
+5	1	40	Snapchip Shatter
+5	1	41	# Hells Belle
+5	1	42	# Vinvear Molech
+5	1	43	Thresh Socket
+5	1	44	# Magma Torquer
+5	1	45	Blaze Ripper
+5	1	46	Frozenstein
+5	1	47	Tyrael spawn point in world chamber ?
+5	1	48	?
+5	1	49	?
+5	1	50	Evil Demon Hut(Demon Sprites)
+5	2	0	?
+5	2	1	?
+5	2	2	# noname house(crash if selected)
+5	2	3	# noname fire altar(crash if selected)
+5	2	4	# stash
+5	2	5	?
+5	2	6	torch
+5	2	7	# strange fire on ground
+5	2	8	flag (\ direction)
+5	2	9	flag (/ direction)
+5	2	10	candles- act 1 (\ direction)
+5	2	11	candles- act 1 (/ direction)
+5	2	12	# torch on wall
+5	2	13	# fire on stand
+5	2	14	# fire on wooden stand
+5	2	15	# dead barbarian on fire
+5	2	16	# large hole on fire(wood around it)
+5	2	17	fire on stove
+5	2	18	fire on larger stand
+5	2	19	brown flag (\ direction)
+5	2	20	skinny flag (\ direction)
+5	2	21	skinny flag (/ direction)
+5	2	22	chandelier
+5	2	23	waypoint
+5	2	24	wooden chest (/ direction)
+5	2	25	wooden chest (\ direction)
+5	2	26	?
+5	2	27	?
+5	2	28	?
+5	2	29	# ?
+5	2	30	?
+5	2	31	?
+5	2	32	?
+5	2	33	?
+5	2	34	?
+5	2	44	stash
+5	2	45	?
+5	2	46	?
+5	2	47	?
+5	2	48	?
+5	2	49	?
+5	2	50	?
+5	2	53	?
+5	2	54	?
+5	2	56	?
+5	2	57	?
+5	2	58	?
+5	2	59	?
+5	2	60	?
+5	2	61	?
+5	2	62	?
+5	2	66	?
+5	2	67	?
+5	2	68	?
+5	2	69	?
+5	2	70	?
+5	2	71	?
+5	2	73	?
+5	2	75	?
+5	2	76	?
+5	2	80	?
+5	2	82	?
+5	2	83	?
+5	2	94	?
+5	2	95	?
+5	2	96	?
+5	2	97	?
+5	2	101	?
+5	2	103	?
+5	2	105	?
+5	2	106	?
+5	2	107	?
+5	2	109	?
+5	2	110	?
+5	2	111	?
+5	2	112	?
+5	2	113	?
+5	2	114	?
+5	2	115	?
+5	2	116	?
+5	2	117	?
+5	2	118	?
+5	2	119	?
+5	2	120	?
+5	2	121	?
+5	2	122	?
+5	2	123	?
+5	2	125	?
+5	2	126	Larzuk
+5	2	127	Ancients Altar
+5	2	128	Door to Worldstone Keep
+5	2	129	?
+5	2	130	?
+5	2	131	?
+5	2	132	?
+5	2	134	?
+5	2	135	?
+5	2	138	?
+5	2	139	?
+5	2	140	?
+5	2	141	?
+5	2	142	Arreat Summit entrance door
+5	2	145	?
+5	2	146	?
+5	2	147	?
+5	2	148	?
+5	2	149	?
+6	1	5	?

@@ -1,0 +1,668 @@
+<html>
+<head>
+<body bgColor=black text=#cccc99 link=#189bd8 vLink=#189bd8 aLink=silver background="../../common/backgrnd/03.png">
+<font face=verdana size=2>
+<font color=white><br><h3>DESCRIPTION DU FICHIER <font size=2> &nbsp (Partie 3, données intéressantes à modifier : niveaux d'aptitude)</font></h3></font>
+<p><br>
+Juste après les <b>données de statut</b>, nous trouvons l' <font color=white><b>entête des aptitudes</b></font>. Elle est égale à <font color=white><b>6669h</b></font>. Si nous ne trouvons pas cette valeur, c'est peut être la cause du champ de bits <b>réservé</b> dans les données de statut : s'il n'est PAS égal à zéro, alors c'est peut être un problème de version.
+<p>
+Nous trouvons ensuite les données d'aptitude. C'est un tableau de 30 octets. Chaque aptitude utilise 1 octet, allant de 0 à 20 (14h). Leur ordre n'est pas ce que vous pourriez penser : les 10 premieres aptitudes ne sont PAS les 10 aptitudes que vous trouvez dans <b>l'onglet d'aptitude</b> #1. La clef primaire de l'ordre de tri est le <b>niveau minimum requis</b>, et la clef secondaire est <b>l'onglet d'aptitude</b> : l'onglet #3, puis le #2, et enfin le #1.
+<p>
+Pour chaque personnage dans les tableaux suivants, il y a 2 colonnes. La première est le nom de l'aptitude à un offset relatif donnée, et la seconde est un code : une lettre suivie d'un nombre. La lettre indique <b>l'onglet d'aptitude</b> où se trouve l'aptitude, et le nombre indique le <b>niveau minimum requis</b>. Voici la correspondance des lettres avec les onglets d'aptitudes :
+<p>
+<table border=1 cellpadding=5 cellspacing=0 width=740>
+<tr>
+   <td>&nbsp</td>
+   <td><center><font color=white size=2><b>A</b></font></center></td>
+   <td><center><font color=white size=2><b>B</b></font></center></td>
+   <td><center><font color=white size=2><b>C</b></font></center></td>
+   </tr>
+<tr>   
+      <td>
+          <font color=white size=2><b>
+          Amazone<br>
+          Ensorceleuse<br>
+          Nécromancien<br>
+          Paladin<br>
+          Barbare<br>
+          Druide<br>
+          Assassin<br>
+          <b></font></td>
+      <td>
+          <font size=2>
+          Aptitudes Javeline et Lance<br>
+          Sorts de Froid<br>
+          Sorts d'Invocation<br>
+          Auras Défensives<br>
+          Cris de Guerre<br>
+          Eléments<br>
+          Arts Martiaux<br>
+          </font></td>
+      <td>
+          <font size=2>
+          Aptitudes Passives et Magie<br>
+          Sorts de Foudre<br>
+          Poison et Sorts Mortuaires<br>
+          Auras Offensives<br>
+          Maîtrise de Combat<br>
+          Métamorphose<br>
+          Disciplines de l'Ombre<br>
+          </font></td>
+      <td>
+          <font size=2>
+          Aptitudes à l'Arc et l'Arbalète<br>
+          Sorts de Feu<br>
+          Malédictions<br>
+          Aptitudes de Combat<br>
+          Aptitudes de Combat<br>
+          Invocation<br>
+          Pièges<br>
+          </font></td>
+</table>
+<p>
+Puisque nous ne savons pas à quel offset commencent les données, les offsets donnés ci-dessous sont RELATIFS. Par exemple, si l'offset de l'Entête d'aptitude est <b>26Dh</b>, alors le début des données d'aptitudes est <b>26Fh</b>. Ce sera la base. Si le joueur est une Amazone, nous savons que l'aptitude <b>Coup Critique</b> est à l'offset <b>272h</b> (<b>26Fh + 3</b>), et que la dernière aptitude (<b>Eclairs en Furie</b>) est à l'offset <b>28Ch</b> (<b>26Fh + 29</b>).
+<p>
+Voici les aptitudes pour l'Amazone, l'Ensorceleuse et le Nécromancien :
+<p>
+<table border=1 cellpadding=5 cellspacing=0 width=670>
+   <col align=right>
+<tr>
+   <td>&nbsp</td>
+   <td colspan=2><center><font color=white size=2><b>Amazone</b></font></center></td>
+   <td colspan=2><center><font color=white size=2><b>Ensorceleuse</b></font></center></td>
+   <td colspan=2><center><font color=white size=2><b>Nécromancien</b></font></center></td>
+   </tr>
+<tr>
+   <td>
+       <font color=white size=2><b>
+       0<br>
+       1<br>
+       2<br>
+       3<br>
+       4<br>
+       5<br>
+       6<br>
+       7<br>
+       8<br>
+       9<br>
+       10<br>
+       11<br>
+       12<br>
+       13<br>
+       14<br>
+       15<br>
+       16<br>
+       17<br>
+       18<br>
+       19<br>
+       20<br>
+       21<br>
+       22<br>
+       23<br>
+       24<br>
+       25<br>
+       26<br>
+       27<br>
+       28<br>
+       29<br>
+       </b></font></td>
+   <td>
+       <font size=2>
+       Trait Magique<br>
+       Flèche Enflammée<br>
+       Vision Intérieure<br>
+       Coup Critique<br>
+       Coup<br>
+       Flèche de Froid<br>
+       Tirs Multiples<br>
+       Esquive<br>
+       Coup Foudroyant<br>
+       Javelot Empoisonné<br>
+       Trait Explosif<br>
+       Ralentir Missiles<br>
+       Eviter<br>
+       Empaler<br>
+       Feu Foudroyant<br>
+       Flèche de Glace<br>
+       Trait Intelligent<br>
+       Pénétrer<br>
+       Boule de Foudre<br>
+       Javelot du Fléau<br>
+       Bombarder<br>
+       Trait d'Immolation<br>
+       Leurre<br>
+       S'évader<br>
+       S'assumer<br>
+       Flèche Paralysante<br>
+       Walkyrie<br>
+       Percer<br>
+       Boule d'Eclair<br>
+       Eclairs en Furie<br>
+       </font></td>
+   <td align=right>
+       <font color=a0a0a0 size=2>
+       C01<br>
+       C01<br>
+       B01<br>
+       B01<br>
+       A01<br>
+       C06<br>
+       C06<br>
+       B06<br>
+       A06<br>
+       A06<br>
+       C12<br>
+       B12<br>
+       B12<br>
+       A12<br>
+       A12<br>
+       C18<br>
+       C18<br>
+       B18<br>
+       A18<br>
+       A18<br>
+       C24<br>
+       C24<br>
+       B24<br>
+       B24<br>
+       A24<br>
+       C30<br>
+       B30<br>
+       B30<br>
+       A30<br>
+       A30<br>
+       </font></td>
+   <td>
+       <font size=2>
+       Trait de Feu<br>
+       Chaleur<br>
+       Traits de Foudre<br>
+       Traits de Glace<br>
+       Armure de Glace<br>
+       Inferno<br>
+       Champ Statique<br>
+       Télékinésie<br>
+       Choc Thermique<br>
+       Souffle de Glace<br>
+       Flamboiement<br>
+       Boule de Feu<br>
+       Nova<br>
+       Foudre<br>
+       Armure de la Crainte<br>
+       Mur de Feu<br>
+       Enchanter<br>
+       Eclairs en Série<br>
+       Téléport<br>
+       Epieu de Glace<br>
+       Météore<br>
+       Orage<br>
+       Bouclier d'Energie<br>
+       Blizzard<br>
+       Armure de Gel<br>
+       Maîtrise du Feu<br>
+       Hydre<br>
+       Maîtrise de la Foudre<br>
+       Orbe de Glace<br>
+       Maîtrise de la Glace<br>
+       </font></td>
+   <td align=right>
+       <font color=a0a0a0 size=2>
+       C01<br>
+       C01<br>
+       B01<br>
+       A01<br>
+       A01<br>
+       C06<br>
+       B06<br>
+       B06<br>
+       A06<br>
+       A06<br>
+       C12<br>
+       C12<br>
+       B12<br>
+       B12<br>
+       A12<br>
+       C18<br>
+       C18<br>
+       B18<br>
+       B18<br>
+       A18<br>
+       C24<br>
+       B24<br>
+       B24<br>
+       A24<br>
+       A24<br>
+       C30<br>
+       C30<br>
+       B30<br>
+       A30<br>
+       A30<br>
+       </font></td>
+   <td>
+       <font size=2>
+       Augmente les Blessures<br>
+       Dents<br>
+       Armure d'Os<br>
+       Maîtrise des Squelettes<br>
+       Ressusciter un Squelette<br>
+       Vision Diminuée<br>
+       Affaiblir<br>
+       Dague Empoisonnée<br>
+       Explosion Morbide<br>
+       Golem d'Argile<br>
+       Dame de Fer<br>
+       Terreur<br>
+       Mur d'Os<br>
+       Maîtrise du Golem<br>
+       Ressusciter un Mage Squelette<br>
+       Embrouiller<br>
+       Balance de Vie<br>
+       Explosion Empoisonnée<br>
+       Lance d'Os<br>
+       Golem Sanglant<br>
+       Attraction<br>
+       Décrépit<br>
+       Prison d'Os<br>
+       Résistance aux Sorts<br>
+       Golem de Fer<br>
+       Résistance Moindre<br>
+       Choc Empoisonné<br>
+       Esprit d'Os<br>
+       Golem de Feu<br>
+       Ressusciter<br>
+       </font></td>
+   <td align=right>
+       <font color=a0a0a0 size=2>
+       C01<br>
+       B01<br>
+       B01<br>
+       A01<br>
+       A01<br>
+       C06<br>
+       C06<br>
+       B06<br>
+       B06<br>
+       A06<br>
+       C12<br>
+       C12<br>
+       B12<br>
+       A12<br>
+       A12<br>
+       C18<br>
+       C18<br>
+       B18<br>
+       B18<br>
+       A18<br>
+       C24<br>
+       C24<br>
+       B24<br>
+       A24<br>
+       A24<br>
+       C30<br>
+       B30<br>
+       B30<br>
+       A30<br>
+       A30<br>
+       </font></td>
+</table>
+<p><br>
+Voici les aptitudes pour le Paladin, le Barbare et le Druide :
+<p>
+<table border=1 cellpadding=5 cellspacing=0 width=672>
+   <col align=right>
+<tr>
+   <td>&nbsp</td>
+   <td colspan=2><center><font color=white size=2><b>Paladin</b></font></center></td>
+   <td colspan=2><center><font color=white size=2><b>Barbare</b></font></center></td>
+   <td colspan=2><center><font color=white size=2><b>Druide</b></font></center></td>
+   </tr>
+<tr>
+   <td>
+       <font color=white size=2><b>
+       0<br>
+       1<br>
+       2<br>
+       3<br>
+       4<br>
+       5<br>
+       6<br>
+       7<br>
+       8<br>
+       9<br>
+       10<br>
+       11<br>
+       12<br>
+       13<br>
+       14<br>
+       15<br>
+       16<br>
+       17<br>
+       18<br>
+       19<br>
+       20<br>
+       21<br>
+       22<br>
+       23<br>
+       24<br>
+       25<br>
+       26<br>
+       27<br>
+       28<br>
+       29<br>
+       </b></font></td>
+   <td>
+       <font size=2>
+       Sacrifice<br>
+       Frapper<br>
+       Puissance<br>
+       Prière<br>
+       Résistance au Feu<br>
+       Choc Sacré<br>
+       Feu Sacré<br>
+       Epines<br>
+       Défiance<br>
+       Résistance au Froid<br>
+       Ferveur<br>
+       Charge<br>
+       Dessein Sacré<br>
+       Purification<br>
+       Résistance à la Foudre<br>
+       Vengeance<br>
+       Marteau Béni<br>
+       Concentration<br>
+       Immobilisation Sacrée<br>
+       Vigueur<br>
+       Conversion<br>
+       Bouclier Sacré<br>
+       Choc Saint<br>
+       Sanctuaire<br>
+       Méditation<br>
+       Poing du Paradis<br>
+       Fanatisme<br>
+       Conviction<br>
+       Rédemption<br>
+       Salut<br>
+       </font></td>
+   <td align=right>
+       <font color=a0a0a0 size=2>
+       C01<br>
+       C01<br>
+       B01<br>
+       A01<br>
+       A01<br>
+       C06<br>
+       B06<br>
+       B06<br>
+       A06<br>
+       A06<br>
+       C12<br>
+       C12<br>
+       B12<br>
+       A12<br>
+       A12<br>
+       C18<br>
+       C18<br>
+       B18<br>
+       B18<br>
+       A18<br>
+       C24<br>
+       C24<br>
+       B24<br>
+       B24<br>
+       A24<br>
+       C30<br>
+       B30<br>
+       B30<br>
+       A30<br>
+       A30<br>
+       </font></td>
+   <td>
+       <font size=2>
+       Assommer<br>
+       Maîtrise de l'Epée<br>
+       Maîtrise de la Hache<br>
+       Maîtrise de la Masse<br>
+       Hurlement<br>
+       Trouver une Potion<br>
+       Bond<br>
+       A Deux Mains<br>
+       Maîtrise des Haches d'Armes<br>
+       Maîtrise du Lancer<br>
+       Maîtrise de la Lance<br>
+       Persiflage<br>
+       Cri<br>
+       Assommer<br>
+       Double Lancer<br>
+       Bonus d'Endurance<br>
+       Trouver Objets<br>
+       Saut d'Attaque<br>
+       Concentration<br>
+       Peau de Fer<br>
+       Cri de Bataille<br>
+       Frénésie<br>
+       Vitesse Accrue<br>
+       Ordres de Bataille<br>
+       Gardien Effrayant<br>
+       Trombe<br>
+       Berserk<br>
+       Résistance Naturelle<br>
+       Cri de Guerre<br>
+       Commande de Bataille<br>
+       </font></td>
+   <td align=right>
+       <font color=a0a0a0 size=2>
+       C01<br>
+       B01<br>
+       B01<br>
+       B01<br>
+       A01<br>
+       A01<br>
+       C06<br>
+       C06<br>
+       B06<br>
+       B06<br>
+       B06<br>
+       A06<br>
+       A06<br>
+       C06<br>
+       C12<br>
+       B12<br>
+       A12<br>
+       C18<br>
+       C18<br>
+       B18<br>
+       A18<br>
+       C24<br>
+       B24<br>
+       A24<br>
+       A24<br>
+       C30<br>
+       C30<br>
+       B30<br>
+       A30<br>
+       A30<br>
+       </font></td>
+   <td>
+       <font size=2>
+       Corbeau<br>
+       Graine de Peste<br>
+       Loup-Garou<br>
+       Lycantropie<br>
+       Tempête Feu<br>
+       Chêne Sage<br>
+       Esprit Gardien<br>
+       Grizzly (métamorphose)<br>
+       Roche Fusion<br>
+       Souffle Glace<br>
+       Cycle de Vie<br>
+       Folie<br>
+       Masse<br>
+       Eruption<br>
+       Arm. Ouragan<br>
+       Coeur de Wolverine<br>
+       Invoquer Loup<br>
+       Rage<br>
+       Griffes Feu<br>
+       Cyclone<br>
+       Cycle de l'Esprit<br>
+       Faim<br>
+       Onde de Choc<br>
+       Volcan<br>
+       Tornade<br>
+       Esprit Vengeur<br>
+       Grizzly (invoquer)<br>
+       Furie<br>
+       Armageddon<br>
+       Ouragan<br>
+       </font></td>
+   <td align=right>
+       <font color=a0a0a0 size=2>
+       C01<br>
+       C01<br>
+       B01<br>
+       B01<br>
+       A01<br>
+       C06<br>
+       C06<br>
+       B06<br>
+       A06<br>
+       A06<br>
+       C12<br>
+       B12<br>
+       B12<br>
+       A12<br>
+       A12<br>
+       C18<br>
+       C18<br>
+       B18<br>
+       B18<br>
+       A18<br>
+       C24<br>
+       B24<br>
+       B24<br>
+       A24<br>
+       A24<br>
+       C30<br>
+       C30<br>
+       B30<br>
+       A30<br>
+       A30<br>
+       </font></td>
+</table>
+<p><br>
+Et voici les aptitudes pour l'Assassin :
+<p>
+<table border=1 cellpadding=5 cellspacing=0 width=220>
+   <col align=right>
+<tr>
+   <td>&nbsp</td>
+   <td colspan=2><center><font color=white size=2><b>Assassin</b></font></center></td>
+   </tr>
+<tr>
+   <td>
+       <font color=white size=2><b>
+       0<br>
+       1<br>
+       2<br>
+       3<br>
+       4<br>
+       5<br>
+       6<br>
+       7<br>
+       8<br>
+       9<br>
+       10<br>
+       11<br>
+       12<br>
+       13<br>
+       14<br>
+       15<br>
+       16<br>
+       17<br>
+       18<br>
+       19<br>
+       20<br>
+       21<br>
+       22<br>
+       23<br>
+       24<br>
+       25<br>
+       26<br>
+       27<br>
+       28<br>
+       29<br>
+       </b></font></td>
+   <td>
+       <font size=2>
+       Boule de Feu<br>
+       Griffes<br>
+       Marteau Psychique<br>
+       Tigre<br>
+       Serre Dragon<br>
+       Champ de Choc<br>
+       Lame<br>
+       Rapidité<br>
+       Poing de Feu<br>
+       Griffe Dragon<br>
+       Sentinelle Electrique<br>
+       Esprit du Feu<br>
+       Parade Multiple<br>
+       Manteau des Ombres<br>
+       Cobra<br>
+       Danse Sabre<br>
+       Transparence<br>
+       Guerrier d'Ombre<br>
+       Griffes du Tonnerre<br>
+       Queue Dragon<br>
+       Sent. Eclair<br>
+       Sent. Inferno<br>
+       S. Mental<br>
+       Lames Glace<br>
+       Vol du Dragon<br>
+       Sent. Mortelle<br>
+       Boucl. lames<br>
+       Venin<br>
+       Maître de l'Ombre<br>
+       Frappe du Phénix<br>
+       </font></td>
+   <td align=right>
+       <font color=a0a0a0 size=2>
+       C01<br>
+       B01<br>
+       B01<br>
+       A01<br>
+       A01<br>
+       C06<br>
+       C06<br>
+       B06<br>
+       A06<br>
+       A06<br>
+       C12<br>
+       C12<br>
+       B12<br>
+       B12<br>
+       A12<br>
+       C18<br>
+       B18<br>
+       B18<br>
+       A18<br>
+       A18<br>
+       C24<br>
+       C24<br>
+       B24<br>
+       A24<br>
+       A24<br>
+       C30<br>
+       C30<br>
+       B30<br>
+       B30<br>
+       A30<br>
+       </font></td>
+</table>
+<p><br>
+Aller à la <a href="part_4.html"><b>Partie 4</b></a> : Objets<br>
+<br>
+Retour à la <a href="part_1.html"><b>Partie 1</b></a> : Modifications faciles<br>
+Retour à la <a href="part_2.html"><b>Partie 2</b></a> : donnéees de Statut<br>
+Aller à la <a href="part_5.html"><b>Partie 5</b></a> : Cadavre & Mercenaire<br>
+Retour à la <a href="index.html"><b>Page de Menu</b></a>

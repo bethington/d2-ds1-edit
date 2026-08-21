@@ -1,0 +1,44 @@
+<head>
+<body bgColor=black text=#cccc99 link=#189bd8 vLink=#189bd8 aLink=silver background="../../backgrnd/infos.png">
+<style type="text/css">BODY {background-attachment:fixed;}</style>
+<table width=546><tr><td>
+<font face=verdana size=2>
+<font color=white><br><h3>FILE DESCRIPTION <font size=2> &nbsp (Part 5, Corpse & Mercenary)<br>(before the patch 1.08)</font></h3></font>
+After the <b>Items data</b>, there are only 12 bytes to decode.
+<p><br>
+<u><font color=white><b>CORPSE</b></font></u>
+<p>
+First, we find the <b>Inventory Footer</b> which have a size of 4 bytes :
+<p>
+If it is equal to <font color=white><b>4A 4D 00 00</b></font>, there is no corpse present.<br>
+If it is equal to <font color=white><b>4A 4D 01 00</b></font>, there <b>IS</b> a corpse present.
+<p><br><br><br>
+<u><font color=white><b>MERCENARY</b></font></u>
+<p>
+And last, we find the mercenary data. It's starting with 2 bytes equal to <font color=white><b>4A 4D</b></font>. Then we find 6 bytes which determine the mercenary you have.
+<p>
+The defaut data is <font color=white><b>00 00 00 00 00 00</b></font> : no mercenary.
+<p>
+<u>Here are some value for Act I</u> :
+<ul>
+   <li><font color=white><b>CB 67 DF 87 5A 0D</b></font> Blaise Lvl:10 Life:60 Def:45 Cost:490 2-3 Damage Cold Arrow
+   <li><font color=white><b>2B 72 E4 8E 5A 0D</b></font> Blaise Lvl:08 Life:60 Def:45 Cost:415 1-3 Damage Cold Arrow
+   <li><font color=white><b>9B DA 65 86 71 0D</b></font> Meghan Lvl:09 Life:60 Def:15 Cost:415 2-4 Damage Cold Arrow
+   <li><font color=white><b>20 FA 19 45 69 0D</b></font> Isolde Lvl:03 Life:30 Def:15 Cost:150 1-3 Damage
+   <li><font color=white><b>BE 3E 4A 15 5D 0D</b></font> Kundri Lvl:06 Life:30 Def:45 Cost:315 1-3 Damage
+</ul>
+<u>Here are some value for Act II</u> :
+<ul>
+   <li><font color=white><b>FF 10 1B 1A 09 04</b></font> Leharas Lvl:17 Life:180 Def:60 Cost:690 3-8 Damage Jab Attack
+   <li><font color=white><b>F7 7E 7C 75 00 04</b></font> Haseen Lvl:15 Life:180 Def:60 Cost:565 2-6 Damage Jab Attack
+   <li><font color=white><b>93 B7 74 E2 0E 04</b></font> Waheed Lvl:17 Life:180 Def:60 Cost:690 3-8 Damage Jab Attack
+</ul>
+<u>And here are some value for Act III</u> :
+<ul>
+   <li><font color=white><b>83 3B 56 46 1F 04</b></font> Rhadge Lvl:26 Life:400 Def:150 Cost:1285 4-10 Damage Cold Fast Cast
+   <li><font color=white><b>05 A0 02 76 23 04</b></font> Scorch Lvl:20 Life:400 Def:150 Cost:895 3-8 Damage Lightning
+   <li><font color=white><b>FF 9B 57 EA 11 04</b></font> Barani Lvl:22 Life:400 Def:80 Cost:970 4-10 Damage Lightning
+</ul>
+<p><br><br><br>
+Back to <a href="part_5.html"><b>Part 5</b></a> : Corpse & Mercenary (since patch 1.08)
+</td></tr></table>

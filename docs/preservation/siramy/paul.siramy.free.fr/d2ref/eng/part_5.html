@@ -1,0 +1,66 @@
+<head>
+<body bgColor=black text=#cccc99 link=#189bd8 vLink=#189bd8 aLink=silver background="../../backgrnd/infos.png">
+<style type="text/css">BODY {background-attachment:fixed;}</style>
+<table width=546><tr><td>
+<font face=verdana size=2>
+<font color=white><br><h3>FILE DESCRIPTION <font size=2> &nbsp (Part 5, Corpse & Mercenary)<br>(since patch 1.08)</font></h3></font>
+Just after the <b>Items data</b> we find the <b>corpse data</b>, the <b>mercenary data</b>, and since patch 1.08 some strange <b>unknown datas</b>. Up to patch 1.06 this was easy, but the patch 1.08 introduced a little more complex structure (essentialy due to the fact that we can equip the mercenary in the <b>Expansion set : Lord of Destruction</b>).
+<p>
+This page will explain the patch 1.08 (and the expansion as well), but if you want, you can still read how it was <a href="part_5b.html">before the patch 1.08</a>.
+<p><br>
+<u><font color=white><b>CORPSE</b></font></u>
+<p>
+Just after the last item of the player inventory, we find the <b>Corpse</b> data.
+<ul>
+   <li>If the player is alive, it is represented by the bytes <font color=white><b>4A 4D 00 00</b></font>
+   <li>If the player is dead, theses bytes are "simply" not here !
+</ul>
+<p><br><br><br>
+<u><font color=white><b>MERCENARY</b></font></u>
+<p>
+Just after, we find the (new) mercenary structure.
+<ul>
+   <li> If the player has NEVER take a mercenary, we only find the byte <font color=white><b>00</b></font>, and that will be ALL for the <b>Mercenary data</b><p>
+   <li> If the player has a mercenary (dead or alive), we find the bytes <font color=white><b>4A 4D 00 00</b></font> (yes, this is the same sequence of bytes as for the <b>Corpse data</b>, and this may be confusing, especially if the player is dead), following by other datas :
+   <ul><ul>
+      <p>
+      <li>First we find 2 bytes which indicates if the mercenary is dead or alive :
+      <ul><ul>
+         <li>If the mercenary is dead, we find the bytes <font color=white><b>01 00</b></font>
+         <li>If the mercenary is alive, we find the bytes <font color=white><b>00 00</b></font>
+      </ul></ul>
+      <p>
+      <li>The following 8 bytes are describing the mercenary : his name, his type, and the skill he master. I don't really know how it works (and to tell the truth, I think it's not important)
+      <p>
+      <li>The following 4 bytes are his total experience points. Knowing it, we can deduce his level, and therefore his statut points (like strength, defense, dexterity and so on)
+      <p>
+      <li>The following 4 bytes indicates the number of items the mercenary is equiped with (between 0 and 4). <font color=white><b>4A 4D 04 00</b></font> means there are 4 items, and <font color=white><b>4A 4D 00 00</b></font> there are no items. Note : in the patch 1.08 we can't equip the mercenary (we need the expansion set), so we'll always find <font color=white><b>4A 4D 00 00</b></font>. This is only in the expansion set that we can find another values.
+      <p>
+      <li>Just after, there is a variable amount of bytes : they are the items the mercenary is wearing. Each item is starting with the bytes <font color=white><b>4A 4D 10 00</b></font> (which seems to be a constant in the item format). Of course, if it is not an <b>Expansion set</b> savegame, these bytes are not here (at all).
+   </ul></ul>
+</ul>
+<a name=warning>
+<p><br><br><br>
+<font color=#ff2010><b>I just found that the folowing unknown datas are used for the additional shortkeys of expansion. If the player use more than the regular F1 to F8 shortkey, the format change, so what I describe below is incorrect. I'll analyse it later.</b></font>
+<p>
+<u><font color=white><b>UNKNOWN DATA 1</b></font></u>
+<p>
+The <b>mercenary data</b> is now finished, but not the file. We find 8 curious sequences of bytes. The 2 first bytes of each sequence are <font color=white><b>FF 00</b></font> and the 4 next are <i>taken from some precedents bytes in the file !</i> They're take exactly <font color=white><b>4A</b></font> bytes before (74 in decimal). Some examples :<p>
+<ul>
+   <li>If the <b>unknown data 1</b> start at offset <font color=white><b>987</b></font>, then the bytes are taken from <font color=white><b>93D</b></font> (987 - 4A = 93D)
+   <li>If the <b>unknown data 1</b> start at offset <font color=white><b>73B</b></font>, then the bytes are taken from <font color=white><b>6F1</b></font> (73B - 4A = 6F1)
+</ul>
+And they're following a pattern : 4 bytes took, 2 bytes jump, 4 bytes took, 2 bytes jump, and so on. How strange. What's the use ? A kind of protection ? It can't be : it's too obvious.
+<p>
+It's like if a whole block of 48 bytes is take from 76 bytes before, then 8 sequences of <font color=white><b>FF 00</b></font> bytes are paste into it at regular interval, and finaly the resulting block is just put like that in the file.
+<p><br><br><br>
+<u><font color=white><b>UNKNOWN DATA 2</b></font></u>
+<p>
+And finally we find 8 another bytes. With the patch 1.08 without the expansion they're always set to <font color=white><b>00 00 00 00 00 00 00 00</b></font>, but with the expansion, they may change. For instance, I have found the value <font color=white><b>00 00 00 00 DC 00 00 00</b></font>. I don't figure out what it is yet.
+<p><br><br><br>
+Back to <a href="part_1.html"><b>Part 1</b></a> : Easy Hacking<br>
+Back to <a href="part_2.html"><b>Part 2</b></a> : Statut Datas<br>
+Back to <a href="part_3.html"><b>Part 3</b></a> : Skill Levels<br>
+Back to <a href="part_4.html"><b>Part 4</b></a> : Items<br>
+Back to <a href="index.html"><b>Menu page</b></a>
+</td></tr></table>

@@ -1,0 +1,181 @@
+<head>
+<body bgColor=black text=#cccc99 link=#189bd8 vLink=#189bd8 aLink=silver background="../../backgrnd/infos.png">
+<style type="text/css">BODY {background-attachment:fixed;}</style>
+<table width=546><tr><td>
+<font face=verdana size=2>
+<font color=white><br><h3>WAYPOINTS</h3></font>
+<br>
+This data is a bitfield of 5 bytes. There is a data for each 3 difficulty level. Here are the offsets :
+<p>
+<table width=350 border=1 cellpadding=5 cellspacing=0>
+   <col width=60 valign=top>
+   <col width=70 valign=top align=right>
+   <col width=90 valign=top align=right>
+   <col width=70 valign=top align=right>
+<tr>
+   <td>&nbsp
+   <td><font color=white size=2><b>Normal</b></font>
+   <td><font color=white size=2><b>Nightmare</b></font>
+   <td><font color=white size=2><b>Hell</b></font>
+   </tr>
+<tr>
+   <td><font color=white size=2><b>
+       Byte 1<br>
+       Byte 2<br>
+       Byte 3<br>
+       Byte 4<br>
+       Byte 5
+       </b></font>
+   <td><font size=2>
+       1B6h<br>
+       1B7h<br>
+       1B8h<br>
+       1B9h<br>
+       1BAh
+   <td><font size=2>
+       1CEh<br>
+       1CFh<br>
+       1D0h<br>
+       1D1h<br>
+       1D2h
+   <td><font size=2>
+       1E6h<br>
+       1E7h<br>
+       1E8h<br>
+       1E9h<br>
+       1EAh
+</table>
+<p><br>
+You can access to a waypoint if the corresponding bit is set. Because there are 9 waypoints per act, and there are 8 bits per byte, I prefered assigned a number to each bit. Having a bit number, you can deduct the byte where it is, and its position whithin.
+<ul>
+   <li><font color=white><b>Byte 1</b></font> : Bits from <font color=white><b>0</b></font> to <font color=white><b>7</b></font>
+   <li><font color=white><b>Byte 2</b></font> : Bits from <font color=white><b>8</b></font> to <font color=white><b>15</b></font>
+   <li><font color=white><b>Byte 3</b></font> : Bits from <font color=white><b>16</b></font> to <font color=white><b>23</b></font>
+   <li><font color=white><b>Byte 4</b></font> : Bits from <font color=white><b>24</b></font> to <font color=white><b>31</b></font>
+   <li><font color=white><b>Byte 5</b></font> : Bits from <font color=white><b>32</b></font> to <font color=white><b>39</b></font>
+</ul>
+<p><br>
+Here are the bit number used for each waypoint :
+<p>
+<table cellpadding=5 cellspacing=0 border=1 width=765>
+   <col valign=top>
+   <col valign=top align=right>
+   <col valign=top>
+   <col valign=top align=right>
+   <col valign=top>
+   <col valign=top align=right>
+   <col valign=top>
+   <col valign=top align=right>
+<tr>
+   <td><font color=white size=2>Act I</font>
+   <td><font color=white size=2>Bit</font>
+   <td><font color=white size=2>Act II</font>
+   <td><font color=white size=2>Bit</font>
+   <td><font color=white size=2>Act III</font>
+   <td><font color=white size=2>Bit</font>
+   <td><font color=white size=2>Act IV</font>
+   <td><font color=white size=2>Bit</font>
+   </tr>
+<tr>
+   <td><font size=2>
+       Rogue Encampment<br>
+       Cold Plains<br>
+       Stony Field<br>
+       Dark Wood<br>
+       Black Marsh<br>
+       Outer Cloister<br>
+       Jail Lv 1<br>
+       Inner Cloister<br>
+       Catacombs Lv 2<br></font>
+   <td><font size=2 color=a0a0a0>
+       0<br>
+       1<br> 
+       2<br>
+       3<br> 
+       4<br>
+       5<br> 
+       6<br>
+       7<br> 
+       8<br></font>
+   <td><font size=2>
+       Lut Gholein<br>
+       Sewers Lv 2<br>
+       Dry Hills<br>
+       Halls of the Dead Lv 2<br>
+       Far Oasis<br>
+       Lost City<br>
+       Palace Cellar Lv 1<br>
+       Arcane Sanctuary<br>
+       Canyon of the Magi<br></font>
+   <td><font size=2 color=a0a0a0>
+       9<br>
+       10<br> 
+       11<br>
+       12<br>
+       13<br> 
+       14<br>
+       15<br> 
+       16<br>
+       17<br></font>
+   <td><font size=2>
+       Kurast Docks<br>
+       Spider Forest<br>
+       Great Marsh<br>
+       Flayer Jungle<br>
+       Lower Kurast<br>
+       Kurast Bazaar<br>
+       Upper Kurast<br>
+       Travincal<br>
+       Durance of Hate Lv 2<br></font>
+   <td><font size=2 color=a0a0a0>
+       18<br>
+       19<br>
+       20<br> 
+       21<br>
+       22<br>
+       23<br> 
+       24<br>
+       25<br> 
+       26<br></font>
+   <td><font size=2>
+       The Pandemonium Fortress<br>
+       City of the Damned<br>
+       River of Flame<br></font>
+   <td><font size=2 color=a0a0a0>
+       27<br>
+       28<br> 
+       29<br></font>
+</table>
+<p>
+<table cellpadding=5 cellspacing=0 border=1 _width=174>
+   <col valign=top>
+   <col valign=top align=right>
+<tr>
+   <td><font color=white size=2>Act V</font>
+   <td><font color=white size=2>Bit</font>
+   </tr>
+<tr>
+   <td><font size=2>
+       .<br>
+       .<br>
+       .<br>
+       .<br>
+       .<br>
+       .<br>
+       .<br>
+       .<br>
+       .<br></font>
+   <td><font size=2 color=a0a0a0>
+       30<br>
+       31<br> 
+       32<br>
+       33<br> 
+       34<br>
+       35<br> 
+       36<br>
+       37<br> 
+       38<br></font>
+</table>
+<p><br>
+Back to <a href="part_1.html#waypoints"><b>Part 1</b></a>
+</td></tr></table>

@@ -1,0 +1,65 @@
+<head>
+<body bgColor=black text=#cccc99 link=#189bd8 vLink=#189bd8 aLink=silver background="../backgrnd/infos.png">
+<style type="text/css">BODY {background-attachment:fixed;}</style>
+<table width=546><tr><td>
+<font face=verdana size=2>
+<font color=white><br><h3>APPARENCE DU JOUEUR DANS LE MENU</h3></font>
+<p align=justify>Cette donnée est une structure : elle est divisée en de multiples sous-données. Les 32 octets de cette structure composent l'apparence de votre personnage quand vous êtes dans le menu de choix du joueur. Changer certaines d'entre elles peut produire des effets variés, mais vous devez vous rappeler : toutes <font color=white><b>ne sont qu' esthétiques</b></font>, puisque quand vous commencer de jouer, l'apparence de votre personnage est la même que d'habitude, et que quand vous SAUVEZ ET QUITTEZ, l'apparence que vous avez choisie est remplaçée par celle normale. Cette VERITABLE apparence, comme vous devez l'avoir constaté, est déterminée par seulement 4 objets que vous portez :
+<ul>
+   <li>Heaume
+   <li>Arme(s)
+   <li>Bouclier
+   <li>Armure
+</ul>
+<p align=justify>
+A ce niveau, vous devez maintenant savoir que certains sprites du jeu sont, en fait, composés de plusieurs sprites plus petit. C'est le cas pour les personnages que vous jouez, les monstres, et les projectiles. La première moitié de la structure est utilisée pour les différentes parties du corps, alors que la seconde moitié est utilisée pour leurs couleurs (il serait plus juste de parler de TEINTES).
+<p>
+Toutes les donnée ont une taille de 1 octet, exepté pour les parties <b>réservées</b>, qui font 6 octets chacunes. Vous pouvez aller voir le fichier <font color=white><b>d2data.mpq/data/global/excel/composit.txt</b></font>, et le répertoire <font color=white><b>d2char.mpq/data/global/chars/am/</b></font>. Si vous vous demandez comment vous pouvez le faire, allez voir <a href="http://user.cs.tu-berlin.de/~mickyk/cv.html">the CV5 program</a>. Voici les sous-données de la structure (avec leurs offsets), dans l'ordre exact où elles apparaissent dans le fichier :
+<ul>
+   <li>026h : Tête
+   <li>027h : Torse
+   <li>028h : Jambes
+   <li>029h : Bras droit
+   <li>02Ah : Bras gauche
+   <li>02Bh : Main droite
+   <li>02Ch : Main gauche
+   <li>02Dh : Bouclier
+   <li>02Eh : Epaule droite
+   <li>02Fh : Epaule gauche
+   <li>030h : Réservé (6 octets)
+   <p align=justify>
+   <li>036h : Teinte de la tête
+   <li>037h : Teinte du torse
+   <li>038h : Teinte des jambes
+   <li>039h : Teinte du bras droit
+   <li>03Ah : Teinte du bras gauche
+   <li>03Bh : Teinte de la main droite
+   <li>03Ch : Teinte de la main gauche
+   <li>03Dh : Teinte du bouclier
+   <li>03Eh : Teinte de l'épaule droite
+   <li>03Fh : Teinte de l'épaule gauche
+   <li>040h : Teinte de la partie réservée (6 octets)
+</ul>
+<p align=justify>Il y a quelques contraintes. La <b>Main gauche</b> (offset 02Ch) et le <b>Bouclier</b> (offset 02Dh) ne peuvent pas être présents en même temps. Certaines configurations pour une classe de personnage peuvent ne pas marcher pour une autre classe. Certaines valeurs ne font rien...
+<p align=justify>
+Tous les exemples suivant sont valides avec l'amazone (et avant le patch 1.08) :
+<ul>
+   <li>Quelques valeurs pour la Tête (offset 026h) : 03h rend la tête invisible, 04h, 06h, 08h, 09h, 0Ah sont différents heaumes.<p align=justify>
+   <li>Quelques valeurs pour le Torse (offset 027h) : 01h, 02h, 03h sont différentes armures, 04h rend le Torse invisible.<p align=justify>
+   <li>Pour les offsets 02Ch et 02Dh (Main gauche et Bouclier), une valeur de FFh signifie "vide". Si vous mettez une valeur à l'offset 02Ch, vous devez mettre FFh à l'offset 02Dh (et réciproquement). Voici quelques exemples pour les offsets 02Bh, 02Ch et 02Dh :<p align=justify>
+   <ul><ul>
+      <li>67h FFh 1Dh : epée large et bouclier triangulaire
+      <li>67h FFh 1Eh : epée large et bouclier rectangulaire
+      <li>01h 4Ch FFh : un arc (se tient dans les deux mains)
+   </ul></ul>
+</ul>
+<p align=justify>
+Voici un effet bizzare que vous pouvez facilement faire :<br>
+<table width=600>
+<tr>
+   <td><img src="invisibl.png" height=78 width=60 alt="Homme invisible">
+   <td><font size=2 face=verdana>Un homme invisible ! Avec seulement son arme, son bouclier, son heaume et son épaule gauche visibles. C'est marrant, mais quand vous sortez du menu du choix de joueur, comme il a été dit avant, toute l'apparence redevient normale.</font>
+</table>
+<p align=justify><br>
+Retour à la <a href="part_1.html#playerlook"><b>Partie 1</b></a>
+</td></tr></table>

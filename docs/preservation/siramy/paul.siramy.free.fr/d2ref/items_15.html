@@ -1,0 +1,398 @@
+<head>
+<body bgColor=black text=#cccc99 link=#189bd8 vLink=#189bd8 aLink=silver background="../backgrnd/infos.png">
+<style type="text/css">BODY {background-attachment:fixed;}</style>
+<table width=546><tr><td>
+<font face=verdana size=2>
+<font color=white><br><h3>OBJETS AYANT UNE TAILLE DE 15 OCTETS</h3></font>
+<p align=justify>Ces objets ont été introduits à partir de la version 1.04. Ils sont conçus pour décrire les objets simples, c'est à dire : les petits objets de <font color=white><b>1 carré</b></font>, qui <font color=white><b>ne peuvent pas être cumulés</b></font>. On peut y trouver les potions de santé, les gemmes, les parchemins, les antidotes ... mais pas les clefs, les potions vertes, les potions de feu ...
+<p align=justify>
+Je compte les octets à partir de 0, et non de 1, donc l'intervalle vas de 0 à 14.
+<p align=justify>
+Les octets 0 à 2 sont l'entête habituelle : <font color=white><b>4A 4D 10</b></font><br>
+L'octet 3 est la plupart du temps <font color=white><b>00</b></font>, mais dans de rare cas il est égal à <font color=white><b>04</b></font>. Je ne sais pas encore à quoi il sert.<br>
+Les octets de 4 à 7 sont une autre entête : <font color=white><b>38 00 00 00</b></font>, 38 indique que l'objet à une taille de 15 octets.<br>
+Les octets 8 et 9 sont pour la localisation.<br>
+Les octets 10 à 13 indique quel est le type de l'objet (si l'objet est à la ceinture, l'octet 10 a ses bits 0 et 1 posés)<br>
+L'octet 14 est toujours 00
+<p align=justify>
+<u><b>Localisation (octets 8 et 9)</b></u> :
+<p align=justify>
+<font color=white><b>INVENTAIRE</b></font>
+<table border=1 cellpadding=4 cellspacing=0 width=510>
+<tr>
+   <td><font size=2>00 00
+   <td><font size=2>04 00
+   <td><font size=2>08 00
+   <td><font size=2>0C 00
+   <td><font size=2>10 00
+   <td><font size=2>14 00
+   <td><font size=2>18 00
+   <td><font size=2>1C 00
+   <td><font size=2>20 00
+   <td><font size=2>24 00
+   </tr>
+<tr>
+   <td><font size=2>80 00
+   <td><font size=2>84 00
+   <td><font size=2>88 00
+   <td><font size=2>8C 00
+   <td><font size=2>90 00
+   <td><font size=2>94 00
+   <td><font size=2>98 00
+   <td><font size=2>9C 00
+   <td><font size=2>A0 00
+   <td><font size=2>A4 00
+   </tr>
+<tr>
+   <td><font size=2>00 01
+   <td><font size=2>04 01
+   <td><font size=2>08 01
+   <td><font size=2>0C 01
+   <td><font size=2>10 01
+   <td><font size=2>14 01
+   <td><font size=2>18 01
+   <td><font size=2>1C 01
+   <td><font size=2>20 01
+   <td><font size=2>24 01
+   </tr>
+<tr>
+   <td><font size=2>80 01
+   <td><font size=2>84 01
+   <td><font size=2>88 01
+   <td><font size=2>8C 01
+   <td><font size=2>90 01
+   <td><font size=2>94 01
+   <td><font size=2>98 01
+   <td><font size=2>9C 01
+   <td><font size=2>A0 01
+   <td><font size=2>A4 01
+   </tr>
+</table>
+<p align=justify>
+<font color=white><b>BOURSE</b></font>
+<table border=1 cellpadding=4 cellspacing=0 width=309>
+<tr>
+   <td><font size=2>00 10
+   <td><font size=2>04 10
+   <td><font size=2>08 10
+   <td><font size=2>0C 10
+   <td><font size=2>10 10
+   <td><font size=2>14 10
+   </tr>
+<tr>
+   <td><font size=2>80 10
+   <td><font size=2>84 10
+   <td><font size=2>88 10
+   <td><font size=2>8C 10
+   <td><font size=2>90 10
+   <td><font size=2>94 10
+   </tr>
+<tr>
+   <td><font size=2>00 11
+   <td><font size=2>04 11
+   <td><font size=2>08 11
+   <td><font size=2>0C 11
+   <td><font size=2>10 11
+   <td><font size=2>14 11
+   </tr>
+<tr>
+   <td><font size=2>80 11
+   <td><font size=2>84 11
+   <td><font size=2>88 11
+   <td><font size=2>8C 11
+   <td><font size=2>90 11
+   <td><font size=2>94 11
+   </tr>
+</table>
+<p align=justify>
+<font color=white><b>CEINTURE</b></font><br>
+Ces valeurs ne sont pas fixes, donc pas de description pour l'instant.<br>
+Il semble toutefois qu'il y ait une chose de fixe : l'octet 9 est l'une de ces valeurs : <font color=white><b>FC</b></font>, <font color=white><b>FD</b></font> ou <font color=white><b>FF</b></font> (peut être <font color=white><b>FE</b></font> également ?)
+<table border=1 cellpadding=4 cellspacing=0 width=207>
+<tr>
+   <td><font size=2>xx yy
+   <td><font size=2>xx yy
+   <td><font size=2>xx yy
+   <td><font size=2>xx yy
+   </tr>
+<tr>
+   <td><font size=2>xx yy
+   <td><font size=2>xx yy
+   <td><font size=2>xx yy
+   <td><font size=2>xx yy
+   </tr>
+<tr>
+   <td><font size=2>xx yy
+   <td><font size=2>xx yy
+   <td><font size=2>xx yy
+   <td><font size=2>xx yy
+   </tr>
+<tr>
+   <td><font size=2>xx yy
+   <td><font size=2>xx yy
+   <td><font size=2>xx yy
+   <td><font size=2>xx yy
+   </tr>
+</table>
+<p align=justify>
+<font color=white><b>CUBE HORADRIM</b></font>
+<table border=1 cellpadding=4 cellspacing=0 width=155>
+<tr>
+   <td><font size=2>00 0C
+   <td><font size=2>04 0C
+   <td><font size=2>08 0C
+   </tr>
+<tr>
+   <td><font size=2>80 0C
+   <td><font size=2>84 0C
+   <td><font size=2>88 0C
+   </tr>
+<tr>
+   <td><font size=2>00 0D
+   <td><font size=2>04 0D
+   <td><font size=2>08 0D
+   </tr>
+<tr>
+   <td><font size=2>80 0D
+   <td><font size=2>84 0D
+   <td><font size=2>88 0D
+   </tr>
+</table>
+<p align=justify><br><br><br>
+<u><b>Type d'objet (octets 10 à 13)</b></u> :<br>
+<p align=justify>
+Ce n'est pas complet. Je met à jour les valeurs quand je les trouve (mais je n'y passe pas beaucoup de temps).<br>
+Si l'objet est à la ceinture, l'octet 10 à ses bits 0 et 1 posés, vous devez donc lui soustraire 3 pour retrouver sa valeur d'origine.
+<p align=justify>
+<font color=white><b>POTIONS</b></font>
+<table border=1 cellpadding=4 cellspacing=0 width=330>
+   <col width=95>
+   <col width=200>
+<tr>
+   <td>
+       <font size=2>
+       A0 C1 C5 80<br>
+       A0 C1 C9 80<br>
+       A0 C1 CD 80<br>
+       A0 C1 D1 80<br>
+       A0 C1 D5 80<br>
+       </font>
+   <td>
+       <font size=2>
+       Petite potion de santé<br>
+       Potion de santé moyenne<br>
+       Potion de santé<br>
+       Grande potion de santé<br>
+       Super potion de santé<br>
+       </font>
+       </tr>
+<tr>
+   <td>
+       <font size=2>
+       B4 C1 C5 80<br>
+       B4 C1 C9 80<br>
+       B4 C1 CD 80<br>
+       B4 C1 D1 80<br>
+       B4 C1 D5 80<br>
+       </font>
+   <td>
+       <font size=2>
+       Petite potion de mana<br>
+       Potion de mana moyenne<br>
+       Potion de mana<br>
+       Grande potion de mana<br>
+       Super potion de mana<br>
+       </font>
+       </tr>
+<tr>
+   <td>
+       <font size=2>
+       C8 D9 CD 81<br>
+       C8 D9 B1 81<br>
+       </font>
+   <td>
+       <font size=2>
+       Potion de rajeunissement<br>
+       Potion de rajeunissement total<br>
+       </font>
+       </tr>
+<tr>
+   <td>
+       <font size=2>
+       D8 C1 CD 81<br>
+       E4 C1 CD 81<br>
+       DC B5 CD 81<br>
+       </font>
+   <td>
+       <font size=2>
+       Potion d'endurance<br>
+       Antidote<br>
+       Potion de dégel<br>
+       </font>
+       </tr>
+</table>
+<p align=justify><br>
+<font color=white><b>PARCHEMINS ET DIVERS</b></font>
+<table border=1 cellpadding=4 cellspacing=0 width=330>
+   <col width=95>
+   <col width=200>
+<tr>
+   <td>
+       <font size=2>
+       D0 CD 80 81<br>
+       A4 CD 8D 81<br>
+       </font>
+   <td>
+       <font size=2>
+       Parchemin de portail de ville<br>
+       Parchemin d'identification
+       </font>
+       </tr>
+<tr>
+   <td>
+       <font size=2>
+       C4 95 E5 81<br>
+       B4 CD CD 81<br>
+       </font>
+   <td>
+       <font size=2>
+       Oeil de Khalim<br>
+       Pierre d'âme de Mephisto
+       </font>
+       </tr>
+</table>
+<p align=justify><br>
+<font color=white><b>GEMMES</b></font>
+<table border=1 cellpadding=4 cellspacing=0 width=330>
+   <col width=95>
+   <col width=200>
+<tr>
+   <td>
+       <font size=2>
+       9C 8D D9 81<br>
+       9C 99 D9 81<br>
+       9C CD D9 81<br>
+       9C E9 D9 81<br>
+       9C C1 D9 81<br>
+       </font>
+   <td>
+       <font size=2>
+       Améthyste taillée<br>
+       Améthyste fissurée<br>
+       Améthyste<br>
+       Améthyste sans défaut<br>
+       Améthyste pure<br>
+       </font>
+       </tr>
+<tr>
+   <td>
+       <font size=2>
+       9C 8D E5 81<br>
+       9C 99 E5 81<br>
+       9C CD E5 81<br>
+       9C CD 9D 81<br>
+       9C C1 E5 81<br>
+       </font>
+   <td>
+       <font size=2>
+       Topaze taillée<br>
+       Topaze fissurée<br>
+       Topaze<br>
+       Topaze sans défaut<br>
+       Topaze pure<br>
+       </font>
+       </tr>
+<tr>
+   <td>
+       <font size=2>
+       9C 8D 89 81<br>
+       9C 99 89 81<br>
+       9C CD 89 81<br>
+       9C B1 89 81<br>
+       9C C1 89 81<br>
+       </font>
+   <td>
+       <font size=2>
+       Saphire taillé<br>
+       Saphire fissuré<br>
+       Saphire<br>
+       Saphire sans défaut<br>
+       Saphire pur<br>
+       </font>
+       </tr>
+<tr>
+   <td>
+       <font size=2>
+       9C 8D 9D 81<br>
+       9C 99 9D 81<br>
+       9C CD 9D 81<br>
+       9C B1 9D 81<br>
+       9C C1 9D 81<br>
+       </font>
+   <td>
+       <font size=2>
+       Emeraude taillée<br>
+       Emeraude fissurée<br>
+       Emeraude<br>
+       Emeraude sans défaut<br>
+       Emeraude pure<br>
+       </font>
+       </tr>
+<tr>
+   <td>
+       <font size=2>
+       9C 8D C9 81<br>
+       9C 99 C9 81<br>
+       9C CD C9 81<br>
+       9C B1 C9 81<br>
+       9C C1 C9 81<br>
+       </font>
+   <td>
+       <font size=2>
+       Ruby taillé<br>
+       Ruby fissuré<br>
+       Ruby<br>
+       Ruby sans défaut<br>
+       Ruby pur<br>
+       </font>
+       </tr>
+<tr>
+   <td>
+       <font size=2>
+       9C 8D DD 81<br>
+       9C 99 DD 81<br>
+       9C CD DD 81<br>
+       9C B1 DD 81<br>
+       9C C1 DD 81<br>
+       </font>
+   <td>
+       <font size=2>
+       Diamant taillé<br>
+       Diamant fissuré<br>
+       Diamant<br>
+       Diamant sans défaut<br>
+       Diamant pur<br>
+       </font>
+       </tr>
+<tr>
+   <td>
+       <font size=2>
+       CC AD 8D 81<br>
+       CC AD 99 81<br>
+       CC AD D5 81<br>
+       CC AD B1 81<br>
+       CC AD E9 81<br>
+       </font>
+   <td>
+       <font size=2>
+       Crâne taillé<br>
+       Crâne fissuré<br>
+       Crâne <br>
+       Crâne sans défaut<br>
+       Crâne pur<br>
+       </font>
+       </tr>
+</table>
+<p align=justify><br><br>
+Retour à la <a href="part_4.html"><b>Partie 4</b></a> : Objets
+</td></tr></table>

@@ -1,0 +1,44 @@
+<head>
+<body bgColor=black text=#cccc99 link=#189bd8 vLink=#189bd8 aLink=silver background="../backgrnd/infos.png">
+<style type="text/css">BODY {background-attachment:fixed;}</style>
+<table width=546><tr><td>
+<font face=verdana size=2>
+<font color=white><br><h3>DESCRIPTION DE FICHIER<font size=2> &nbsp (Partie 5, Cadavre & Mercenaire)<br>(avant le patch 1.08)</font></h3></font>
+Après les <b>Objets</b>, il ne reste plus que 12 octets à décoder.
+<p><br>
+<u><font color=white><b>CADAVRE</b></font></u>
+<p>
+D'abord, nous trouvons une <b>entête signalant la fin des Objets</b> qui a une taille de 4 octets :
+<p>
+S'il est égal à <font color=white><b>4A 4D 00 00</b></font>, il n'y a pas de cadavre.<br>
+S'il est égal à <font color=white><b>4A 4D 01 00</b></font>, <b>IL Y A</b> un cadavre.
+<p><br><br><br>
+<u><font color=white><b>MERCENAIRE</b></font></u>
+<p>
+Et enfin, nous trouvons les données du mercenaire. Elles commencent par 2 octets égaux à <font color=white><b>4A 4D</b></font>. Nous trouvons ensuite 6 octets qui déterminent le mercenaire que vous avez.
+<p>
+La valeur par défaut est <font color=white><b>00 00 00 00 00 00</b></font> : pas de mercenaire.
+<p>
+<u>Voici quelques valeurs pour l'acte I</u> :
+<ul>
+   <li><font color=white><b>CB 67 DF 87 5A 0D</b></font> Blaise Niv:10 Vie:60 Déf:45 Coût:490 Dommages 2-3 Flèche de Glace
+   <li><font color=white><b>2B 72 E4 8E 5A 0D</b></font> Blaise Niv:08 Vie:60 Déf:45 Coût:415 Dommages 1-3 Flèche de Glace
+   <li><font color=white><b>9B DA 65 86 71 0D</b></font> Meghan Niv:09 Vie:60 Déf:15 Coût:415 Dommages 2-4 Flèche de Glace
+   <li><font color=white><b>20 FA 19 45 69 0D</b></font> Isolde Niv:03 Vie:30 Déf:15 Coût:150 Dommages 1-3
+   <li><font color=white><b>BE 3E 4A 15 5D 0D</b></font> Kundri Niv:06 Vie:30 Déf:45 Coût:315 Dommages 1-3
+</ul>
+<u>Voici quelques valeurs pour l'acte II</u> :
+<ul>
+   <li><font color=white><b>FF 10 1B 1A 09 04</b></font> Leharas Niv:17 Vie:180 Déf:60 Coût:690 Dommages 3-8 Attack
+   <li><font color=white><b>F7 7E 7C 75 00 04</b></font> Haseen  Niv:15 Vie:180 Déf:60 Coût:565 Dommages 2-6 Attack
+   <li><font color=white><b>93 B7 74 E2 0E 04</b></font> Waheed  Niv:17 Vie:180 Déf:60 Coût:690 Dommages 3-8 Attack
+</ul>
+<u>Et voici quelques valeurs pour l'acte III</u> :
+<ul>
+   <li><font color=white><b>83 3B 56 46 1F 04</b></font> Rhadge Niv:26 Vie:400 Déf:150 Coût:1285 Dommages 4-10 Froid sortilège rapide
+   <li><font color=white><b>05 A0 02 76 23 04</b></font> Scorch Niv:20 Vie:400 Déf:150 Coût:895  Dommages 3-8 Foudre
+   <li><font color=white><b>FF 9B 57 EA 11 04</b></font> Barani Niv:22 Vie:400 Déf:80  Coût:970  Dommages 4-10 Foudre
+</ul>
+<p><br><br><br>
+Retour à la <a href="part_5.html"><b>Partie 5</b></a> : Cadavre & Mercenaire (depuis le patch 1.08)<br>
+</td></tr></table>

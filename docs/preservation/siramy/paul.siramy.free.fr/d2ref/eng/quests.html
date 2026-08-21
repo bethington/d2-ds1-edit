@@ -1,0 +1,169 @@
+<head>
+<body bgColor=black text=#cccc99 link=#189bd8 vLink=#189bd8 aLink=silver background="../../backgrnd/infos.png">
+<style type="text/css">BODY {background-attachment:fixed;}</style>
+<table width=546><tr><td>
+<font face=verdana size=2>
+<font color=white><br><h3>QUESTS STRUCTURE</h3></font>
+<p>
+This structure is 96 bytes size.
+<p>
+4 bytes are reserved for enabling Quests and Waypoints of each act<br>
+2 bytes are reserved for each Quest<br>
+Some bytes are not used<br>
+<p>
+If you want to consult the <font color=white><b>Quests Offsets</b></font>, that's <a href="quests_2.html"><b>here</b></a>
+<p><br>
+<font color=white><b>Structure detail</b></font> :
+<ul>
+   <li>Act 1 (total of 16 bytes)
+   <ul type=square>
+      <li>Enable A (2 bytes)
+      <li>Enable B (2 bytes)
+      <li>Quest 1 : Den of Evil
+      <li>Quest 2 : Sister's Burial Ground
+      <li>Quest 5 : Tools of the Trade
+      <li>Quest 3 : The Search for Cain
+      <li>Quest 4 : The Forgotten Tower
+      <li>Quest 6 : Sister to the Slaughter
+   </ul>
+   <br>
+   <li>Act 2 (total of 16 bytes)
+   <ul type=square>
+      <li>Enable A (2 bytes)
+      <li>Enable B (2 bytes)
+      <li>Quest 1 : Radament's Lair
+      <li>Quest 2 : The Horadric Staff
+      <li>Quest 3 : Tainted Sun
+      <li>Quest 4 : Arcane Sanctuary
+      <li>Quest 5 : The Summoner
+      <li>Quest 6 : The Seven Tombs
+   </ul>
+   <br>
+   <li>Act 3 (total of 16 bytes)
+   <ul type=square>
+      <li>Enable A (2 bytes)
+      <li>Enable B (2 bytes)
+      <li>Quest 1 : Lam Esen's Tomb
+      <li>Quest 2 : Blade of the Old Religion
+      <li>Quest 3 : Khalim's Will
+      <li>Quest 4 : The Golden Bird
+      <li>Quest 5 : The Blackened Temple
+      <li>Quest 6 : The Guardian
+   </ul>
+   <br>
+   <li>Act 4 (total of 10 bytes)
+   <ul type=square>
+      <li>Enable A (2 bytes)
+      <li>Enable B (2 bytes)
+      <li>Quest 1 : The Fallen Angel
+      <li>Quest 3 : Terror's End
+      <li>Quest 2 : Hell's Forge
+   </ul>
+   <br>
+   <li>Act 5 (total of 26 bytes)
+   <ul type=square>
+      <li>Enable A (2 bytes)
+      <li>Reserved (6 bytes)
+      <li>Enable B (2 bytes)
+      <li>Reserved (4 bytes)
+      <li>Quest 1 : 
+      <li>Quest 2 : 
+      <li>Quest 3 : 
+      <li>Quest 4 : 
+      <li>Quest 5 : 
+      <li>Quest 6 : 
+   </ul>
+   <br>
+   <li>Reserved Datas (10 bytes)
+</ul>
+<p><br><br>
+<font color=white><b>Enabling Quest and Waypoints</b></font> is done with this values :<br>
+<ul>
+   <li>Act 1 in Normal difficulty (the very first Quest data encountered) :<br>
+       &nbsp &nbsp &nbsp Enable A = <font color=white><b>2A 01</b></font><br>
+       &nbsp &nbsp &nbsp Enable B = <font color=white><b>01 00</b></font><br>
+       <br>
+   <li>Other Quest and / or other difficulty :<br>
+       &nbsp &nbsp &nbsp Enable A = <font color=white><b>01 00</b></font><br>
+       &nbsp &nbsp &nbsp Enable B = <font color=white><b>01 00</b></font><br>
+</ul>
+<p><br><br>
+<font color=white><b>Definition of the bits</b></font><br>
+As said before, each Quest value is 2 bytes. They are bitfields.<br>
+<p>
+<u>In the 1st byte</u> :
+<ul>
+   <li>Bit 0: Quest completed 1 (single player)
+   <li>Bit 1: Reward available
+   <li>Bit 2: Quest started
+   <li>Bit 3: Stage 4 complete
+   <li>Bit 4: Stage 1 complete
+   <li>Bit 5: Stage 2 complete
+   <li>Bit 6: Stage 3 complete
+   <li>Bit 7: 
+</ul>
+<u>In the 2nd byte</u> :
+<ul>
+   <li>Bit 0: 
+   <li>Bit 1: 
+   <li>Bit 2: Stage 5 complete
+   <li>Bit 3: Stage 6 complete
+   <li>Bit 4: Quest completed 2 (single player) (Quest has already vanished in fire in Quest window)
+   <li>Bit 5: 
+   <li>Bit 6: 
+   <li>Bit 7: Quest completed (multi player) (Quest will be vanished in fire in Quest window)
+</ul>
+(bit 0 is the lowest bit, 7 the highest)<p>
+To indicate that a Quest is complete and the reward has been collected,<br>
+set the value for the Quest to <font color=white><b>7D 1C</b></font>.
+<p>
+To indicate that a Quest is complete and the reward hasn't been collected,<br>
+set the value for the Quest to <font color=white><b>7F 1C</b></font>.
+<p><br><br>
+<font color=white><b>Secret cow level</b></font> (info in Act I Quest 3. Not verified, take this "as is")
+<p>
+<table width=400 border=1 cellpadding=5 cellspacing=0>
+   <col width=120 valign=top>
+   <col width=70 valign=top align=right>
+   <col width=90 valign=top align=right>
+   <col width=70 valign=top align=right>
+<tr>
+   <td>&nbsp
+   <td><font color=white size=2><b>Normal</b></font>
+   <td><font color=white size=2><b>Nightmare</b></font>
+   <td><font color=white size=2><b>Hell</b></font>
+   </tr>
+<tr>
+   <td><font color=white size=2><b>
+       Offset<br>
+       <br>
+       Enable<br>
+       Disable<br>
+       Killed Cow King<br></b></font>
+   <td><font size=2>
+       0094h<br>
+       <br>
+       90 0E<br>
+       98 0D<br>
+       9C 0D<br>
+   <td><font size=2>
+       00F4h<br>
+       <br>
+       10 0D<br>
+       ?<br>
+       ?<br>
+   <td><font size=2>
+       0154h<br>
+       <br>
+       ?<br>
+       ?<br>
+       ?<br>
+</table>
+<p><br><br>
+<font color=white><b>Imbue</b></font><br>
+Act I Quest 5 involves a smithing hammer, and as a result you get to Imbue one item.
+Setting Bit 1 of the 1st byte for Act I Quest 5 (at any difficulty level) enables you to Imbue one item.
+<p><br><br>
+If you want to consult the <font color=white><b>Quests Offsets</b></font>, that's <a href="quests_2.html"><b>here</b></a><br>
+Back to <a href="part_1.html#normalquests"><b>Part 1</b></a>
+</td></tr></table>

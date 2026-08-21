@@ -1,0 +1,398 @@
+<head>
+<body bgColor=black text=#cccc99 link=#189bd8 vLink=#189bd8 aLink=silver background="../../backgrnd/infos.png">
+<style type="text/css">BODY {background-attachment:fixed;}</style>
+<table width=546><tr><td>
+<font face=verdana size=2>
+<font color=white><br><h3>ITEMS WITH 15 BYTES SIZE &nbsp <font size=2>(tested on version 1.05)</font></h3></font>
+These items have been introduced since version 1.04. They are designed to describe simple items, that means : small items of <font color=white><b>1 square</b></font>, that <font color=white><b>can't be cumulated</b></font>. You can find life potions, gems, scrolls, antitotes ... but not keys, green potions, fire potions ...
+<p>
+I'm counting bytes from 0, not 1, so the range is from 0 to 14.
+<p>
+Bytes 0 to 2 are common item header : <font color=white><b>4A 4D 10</b></font><br>
+Byte 3 is most of the time <font color=white><b>00</b></font>, but in rare case is equal to <font color=white><b>04</b></font>. Still don't known what it is used for<br>
+Bytes 4 to 7 are another header : <font color=white><b>38 00 00 00</b></font>, 38 indicate the item is 15 bytes size<br>
+Bytes 8 and 9 are the location<br>
+Bytes 10 to 13 are the item's type (if the item is in the belt, byte 10 have its bits 0 and 1 set)<br>
+Byte 14 is always 00
+<p>
+<u><b>Location (bytes 8 and 9)</b></u> :
+<p>
+<font color=white><b>BACKPACK</b></font>
+<table border=1 cellpadding=4 cellspacing=0 width=510>
+<tr>
+   <td><font size=2>00 00
+   <td><font size=2>04 00
+   <td><font size=2>08 00
+   <td><font size=2>0C 00
+   <td><font size=2>10 00
+   <td><font size=2>14 00
+   <td><font size=2>18 00
+   <td><font size=2>1C 00
+   <td><font size=2>20 00
+   <td><font size=2>24 00
+   </tr>
+<tr>
+   <td><font size=2>80 00
+   <td><font size=2>84 00
+   <td><font size=2>88 00
+   <td><font size=2>8C 00
+   <td><font size=2>90 00
+   <td><font size=2>94 00
+   <td><font size=2>98 00
+   <td><font size=2>9C 00
+   <td><font size=2>A0 00
+   <td><font size=2>A4 00
+   </tr>
+<tr>
+   <td><font size=2>00 01
+   <td><font size=2>04 01
+   <td><font size=2>08 01
+   <td><font size=2>0C 01
+   <td><font size=2>10 01
+   <td><font size=2>14 01
+   <td><font size=2>18 01
+   <td><font size=2>1C 01
+   <td><font size=2>20 01
+   <td><font size=2>24 01
+   </tr>
+<tr>
+   <td><font size=2>80 01
+   <td><font size=2>84 01
+   <td><font size=2>88 01
+   <td><font size=2>8C 01
+   <td><font size=2>90 01
+   <td><font size=2>94 01
+   <td><font size=2>98 01
+   <td><font size=2>9C 01
+   <td><font size=2>A0 01
+   <td><font size=2>A4 01
+   </tr>
+</table>
+<p>
+<font color=white><b>STASH</b></font>
+<table border=1 cellpadding=4 cellspacing=0 width=309>
+<tr>
+   <td><font size=2>00 10
+   <td><font size=2>04 10
+   <td><font size=2>08 10
+   <td><font size=2>0C 10
+   <td><font size=2>10 10
+   <td><font size=2>14 10
+   </tr>
+<tr>
+   <td><font size=2>80 10
+   <td><font size=2>84 10
+   <td><font size=2>88 10
+   <td><font size=2>8C 10
+   <td><font size=2>90 10
+   <td><font size=2>94 10
+   </tr>
+<tr>
+   <td><font size=2>00 11
+   <td><font size=2>04 11
+   <td><font size=2>08 11
+   <td><font size=2>0C 11
+   <td><font size=2>10 11
+   <td><font size=2>14 11
+   </tr>
+<tr>
+   <td><font size=2>80 11
+   <td><font size=2>84 11
+   <td><font size=2>88 11
+   <td><font size=2>8C 11
+   <td><font size=2>90 11
+   <td><font size=2>94 11
+   </tr>
+</table>
+<p>
+<font color=white><b>BELT</b></font><br>
+These values are not fixed, so no description yet.<br>
+At least, it seems there is a fixed thing : byte 9 is one of this value : <font color=white><b>FC</b></font>, <font color=white><b>FD</b></font> or <font color=white><b>FF</b></font> (maybe <font color=white><b>FE</b></font> too ?).
+<table border=1 cellpadding=4 cellspacing=0 width=207>
+<tr>
+   <td><font size=2>xx yy
+   <td><font size=2>xx yy
+   <td><font size=2>xx yy
+   <td><font size=2>xx yy
+   </tr>
+<tr>
+   <td><font size=2>xx yy
+   <td><font size=2>xx yy
+   <td><font size=2>xx yy
+   <td><font size=2>xx yy
+   </tr>
+<tr>
+   <td><font size=2>xx yy
+   <td><font size=2>xx yy
+   <td><font size=2>xx yy
+   <td><font size=2>xx yy
+   </tr>
+<tr>
+   <td><font size=2>xx yy
+   <td><font size=2>xx yy
+   <td><font size=2>xx yy
+   <td><font size=2>xx yy
+   </tr>
+</table>
+<p>
+<font color=white><b>HORADRIC CUBE</b></font>
+<table border=1 cellpadding=4 cellspacing=0 width=155>
+<tr>
+   <td><font size=2>00 0C
+   <td><font size=2>04 0C
+   <td><font size=2>08 0C
+   </tr>
+<tr>
+   <td><font size=2>80 0C
+   <td><font size=2>84 0C
+   <td><font size=2>88 0C
+   </tr>
+<tr>
+   <td><font size=2>00 0D
+   <td><font size=2>04 0D
+   <td><font size=2>08 0D
+   </tr>
+<tr>
+   <td><font size=2>80 0D
+   <td><font size=2>84 0D
+   <td><font size=2>88 0D
+   </tr>
+</table>
+<p><br><br><br>
+<u><b>Item's type (bytes 10 to 13)</b></u> :<br>
+<p>
+It's not complete. I update the values when I find them (but I don't put many time into it).<br>
+If the item is in the belt, byte 10 have its bits 0 and 1 set, so you have to substract 3 to find the original value.
+<p>
+<font color=white><b>POTIONS</b></font>
+<table border=1 cellpadding=4 cellspacing=0 width=300>
+   <col width=95>
+   <col width=200>
+<tr>
+   <td>
+       <font size=2>
+       A0 C1 C5 80<br>
+       A0 C1 C9 80<br>
+       A0 C1 CD 80<br>
+       A0 C1 D1 80<br>
+       A0 C1 D5 80<br>
+       </font>
+   <td>
+       <font size=2>
+       Minor Healing Potion<br>
+       Light Healing Potion<br>
+       Healing Potion<br>
+       Greater Healing Potion<br>
+       Super Healing Potion<br>
+       </font>
+       </tr>
+<tr>
+   <td>
+       <font size=2>
+       B4 C1 C5 80<br>
+       B4 C1 C9 80<br>
+       B4 C1 CD 80<br>
+       B4 C1 D1 80<br>
+       B4 C1 D5 80<br>
+       </font>
+   <td>
+       <font size=2>
+       Minor Mana Potion<br>
+       Light Mana Potion<br>
+       Mana Potion<br>
+       Greater Mana Potion<br>
+       Super Mana Potion<br>
+       </font>
+       </tr>
+<tr>
+   <td>
+       <font size=2>
+       C8 D9 CD 81<br>
+       C8 D9 B1 81<br>
+       </font>
+   <td>
+       <font size=2>
+       Rejuvenation potion<br>
+       Full Rejuvenation potion<br>
+       </font>
+       </tr>
+<tr>
+   <td>
+       <font size=2>
+       D8 C1 CD 81<br>
+       E4 C1 CD 81<br>
+       DC B5 CD 81<br>
+       </font>
+   <td>
+       <font size=2>
+       Stamina potion<br>
+       Antidote potion<br>
+       Thawing potion<br>
+       </font>
+       </tr>
+</table>
+<p><br>
+<font color=white><b>SCROLLS AND MISCELLANEOUS</b></font>
+<table border=1 cellpadding=4 cellspacing=0 width=300>
+   <col width=95>
+   <col width=200>
+<tr>
+   <td>
+       <font size=2>
+       D0 CD 80 81<br>
+       A4 CD 8D 81<br>
+       </font>
+   <td>
+       <font size=2>
+       Scroll of Town Portal<br>
+       Scroll of Identify
+       </font>
+       </tr>
+<tr>
+   <td>
+       <font size=2>
+       C4 95 E5 81<br>
+       B4 CD CD 81<br>
+       </font>
+   <td>
+       <font size=2>
+       Khalim's Eye<br>
+       Mephisto's Soulstone
+       </font>
+       </tr>
+</table>
+<p><br>
+<font color=white><b>GEMS</b></font>
+<table border=1 cellpadding=4 cellspacing=0 width=300>
+   <col width=95>
+   <col width=200>
+<tr>
+   <td>
+       <font size=2>
+       9C 8D D9 81<br>
+       9C 99 D9 81<br>
+       9C CD D9 81<br>
+       9C E9 D9 81<br>
+       9C C1 D9 81<br>
+       </font>
+   <td>
+       <font size=2>
+       Chipped Amethyst<br>
+       Flawed Amethyst<br>
+       Amethyst<br>
+       Flawless Amethyst<br>
+       Perfect Amethyst<br>
+       </font>
+       </tr>
+<tr>
+   <td>
+       <font size=2>
+       9C 8D E5 81<br>
+       9C 99 E5 81<br>
+       9C CD E5 81<br>
+       9C CD 9D 81<br>
+       9C C1 E5 81<br>
+       </font>
+   <td>
+       <font size=2>
+       Chipped Topaz<br>
+       Flawed Topaz<br>
+       Topaz <br>
+       Flawless Topaz<br>
+       Perfect Topaz<br>
+       </font>
+       </tr>
+<tr>
+   <td>
+       <font size=2>
+       9C 8D 89 81<br>
+       9C 99 89 81<br>
+       9C CD 89 81<br>
+       9C B1 89 81<br>
+       9C C1 89 81<br>
+       </font>
+   <td>
+       <font size=2>
+       Chipped Saphirre<br>
+       Flawed Saphirre<br>
+       Saphirre<br>
+       Flawless Saphirre<br>
+       Perfect Saphirre<br>
+       </font>
+       </tr>
+<tr>
+   <td>
+       <font size=2>
+       9C 8D 9D 81<br>
+       9C 99 9D 81<br>
+       9C CD 9D 81<br>
+       9C B1 9D 81<br>
+       9C C1 9D 81<br>
+       </font>
+   <td>
+       <font size=2>
+       Chipped Emerald<br>
+       Flawed Emerald<br>
+       Emerald<br>
+       Flawless Emerald<br>
+       Perfect Emerald<br>
+       </font>
+       </tr>
+<tr>
+   <td>
+       <font size=2>
+       9C 8D C9 81<br>
+       9C 99 C9 81<br>
+       9C CD C9 81<br>
+       9C B1 C9 81<br>
+       9C C1 C9 81<br>
+       </font>
+   <td>
+       <font size=2>
+       Chipped Ruby<br>
+       Flawed Ruby<br>
+       Ruby<br>
+       Flawless Ruby<br>
+       Perfect Ruby<br>
+       </font>
+       </tr>
+<tr>
+   <td>
+       <font size=2>
+       9C 8D DD 81<br>
+       9C 99 DD 81<br>
+       9C CD DD 81<br>
+       9C B1 DD 81<br>
+       9C C1 DD 81<br>
+       </font>
+   <td>
+       <font size=2>
+       Chipped Diamond<br>
+       Flawed Diamond<br>
+       Diamond<br>
+       Flawless Diamond<br>
+       Perfect Diamond<br>
+       </font>
+       </tr>
+<tr>
+   <td>
+       <font size=2>
+       CC AD 8D 81<br>
+       CC AD 99 81<br>
+       CC AD D5 81<br>
+       CC AD B1 81<br>
+       CC AD E9 81<br>
+       </font>
+   <td>
+       <font size=2>
+       Chipped Skull<br>
+       Flawed Skull<br>
+       Skull<br>
+       Flawless Skull<br>
+       Perfect Skull<br>
+       </font>
+       </tr>
+</table>
+<p><br><br>
+Back to <a href="part_4.html"><b>Part 4</b></a> Items
+</td></tr></table>

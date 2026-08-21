@@ -1,0 +1,91 @@
+<head>
+<body bgColor=black text=#cccc99 link=#189bd8 vLink=#189bd8 aLink=silver background="../../backgrnd/infos.png">
+<style type="text/css">BODY {background-attachment:fixed;}</style>
+<table width=546><tr><td>
+<font face=verdana size=2>
+<font color=white><br><h3>DIALOGUE STATE WITH NPC</h3></font>
+<br>
+It seems that theses datas are used for keeping the state of your dialog with NPC (Non Player Characters). I didn't have time to analyse it all yet.
+<p>
+There are 2 datas for each difficulty's level. Each of these data are <font color=white><b>8 bytes</b></font> size. Only the first 4 bytes of the datas are used (1 byte per act, I'm almost sure), and the 4 last bytes are always set to zero (reserved for futur use ?) .
+<p>
+Here are the offsets where you can find them :
+<p><br>
+<table width=350 border=1 cellpadding=5 cellspacing=0>
+   <col width=60 valign=top>
+   <col width=70 valign=top align=right>
+   <col width=90 valign=top align=right>
+   <col width=70 valign=top align=right>
+<tr>
+   <td>&nbsp
+   <td><font color=white size=2><b>Normal</b></font>
+   <td><font color=white size=2><b>Nightmare</b></font>
+   <td><font color=white size=2><b>Hell</b></font>
+   </tr>
+<tr>
+   <td><font color=white size=2><b>
+       Data 1<br>
+       Data 2<br></b></font>
+   <td><font size=2>
+       200h<br>
+       218h<br>
+   <td><font size=2>
+       208h<br>
+       220h<br>
+   <td><font size=2>
+       210h<br>
+       228h<br>
+</table>
+<p><br><br>
+Not exhaustive description of the lowest byte of <font color=white><b>Data 1</b></font> (byte at offset 200h) :
+<p>
+<table border=0 cellpadding=2 cellspacing=0>
+   <col align=right width=50>
+   <col align=center width=20>
+   <col size=300 width=300>
+<tr>
+   <td><font size=2>Bit 0</td>
+   <td><font size=2>:</td>
+   <td><font size=2>?</td>
+   </tr>
+<tr>
+   <td><font size=2>Bit 1</td>
+   <td><font size=2>:</td>
+   <td><font size=2>Gheed introduction</td>
+   </tr>
+<tr>
+   <td><font size=2>Bit 2</td>
+   <td><font size=2>:</td>
+   <td><font size=2>Akara introduction</td>
+   </tr>
+<tr>
+   <td><font size=2>Bit 3</td>
+   <td><font size=2>:</td>
+   <td><font size=2>Kashia introduction</td>
+   </tr>
+<tr>
+   <td><font size=2>Bit 4</td>
+   <td><font size=2>:</td>
+   <td><font size=2>?</td>
+   </tr>
+<tr>
+   <td><font size=2>Bit 5</td>
+   <td><font size=2>:</td>
+   <td><font size=2>Charsi introduction</td>
+   </tr>
+<tr>
+   <td><font size=2>Bit 6</td>
+   <td><font size=2>:</td>
+   <td><font size=2>?</td>
+   </tr>
+<tr>
+   <td><font size=2>Bit 7</td>
+   <td><font size=2>:</td>
+   <td><font size=2>Something (but not for cain I think)</td>
+   </tr>
+</table>
+<p>
+For the introduction bits : if it's cleared, the NPC will give you his introduction speech the first time you'll speak to him. If it's set, he already gave you. The proof : after a bit is set, clear it, and the NPC will introduce himself again.
+<p><br>
+Back to <a href="part_1.html#unknownquestsdatas"><b>Part 1</b></a>
+</td></tr></table>

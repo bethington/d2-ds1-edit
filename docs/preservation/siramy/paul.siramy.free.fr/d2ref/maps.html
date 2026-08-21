@@ -1,0 +1,62 @@
+<head>
+<body bgColor=black text=#cccc99 link=#189bd8 vLink=#189bd8 aLink=silver background="../backgrnd/infos.png">
+<style type="text/css">BODY {background-attachment:fixed;}</style>
+<table width=546><tr><td>
+<font face=verdana size=2>
+<font color=white><br><h3>AGENCEMENT DES CARTES</h3></font>
+<p align=justify>Cette donnée est la <font color=white><b>graine aléatoire</b></font> que vous avez quand vous commencez une nouvelle partie. Vous pouvez la voir quand vous ouvrez vos fichiers texte de débogage (dans votre répertoire "Diablo II", quelque chose comme "D2010528.txt") à la ligne où apparait "Seed:", suivi d'un nombre décimal.
+<p align=justify>
+On peut considérer qu'elle est un <font color=white><b>numéro d'identification de carte</b></font> parcequ'elle détermine l'agencement des cartes que vous avez dans les actes de votre niveau de difficulté actuel. Si vous prenez cette valeur d'un autre joueur, vous jouerez avec exactement les mêmes cartes que lui. Cette valeur ne semble décidément pas être un tableau (avec 1 octet pour chaque acte) parceque quelque soit l'octet que vous changez, l'acte 1 n'est pas le même.
+<p align=justify>
+Le fichier avec l'extension MAP fait systématiquement 24 octets. Il est composé de 6 données de 4 octets chacunes :
+<ul>
+   <li>Entête de signature (0000000Bh)
+   <li>Prochain emplacement à utiliser (de 0 à 3)
+   <li>Emplacement 0 de numéro d'identification de carte
+   <li>Emplacement 1 de numéro d'identification de carte
+   <li>Emplacement 2 de numéro d'identification de carte
+   <li>Emplacement 3 de numéro d'identification de carte
+</ul>
+<p align=justify>L'emplacement <font color=white><b>n</b></font> correspond au fichier avec l'extension MA<font color=white><b>n</b></font>. Ces fichiers augmentent en taille chaque fois que vous révélez de nouvelles portions de la carte. Quand vous commencez une nouvelle partie, un numéro d'identification de carte aléatoire vous est donnée. Il est écrit dans votre fichier D2S à l'offset <font color=white><b>07Eh</b></font>. Le fichier MAP ressemble alors à ceci :
+<ul>
+   <li>0000000Bh
+   <li>00000001h
+   <li>votre numéro d'identification de carte
+   <li>00000000h
+   <li>00000000h
+   <li>00000000h
+</ul>
+<p align=justify>Quand vous commencerez une nouvelle partie en niveau de difficulté Cauchemar (en tuant Diablo), vous aurez un nouveau numéro d'identification de carte, qui viendra écraser l'ancien numéro que vous aviez dans votre fichier D2S. La donnée <b>Prochain emplacement à utiliser</b> sera incrémentée de 1, et l' <b>Emplacement 1</b> sera égal à votre nouveau numéro d'identification de carte.
+<p align=justify>
+Note à propos de l'incrément : la valeur de <b>Prochain emplacement à utiliser</b> ne peut être comprise qu'entre 0 et 3. Donc, si l'incrément donne 4, elle revient à 0. Par conséquent vous ne pouvez avoir qu'un maximum de 4 fichiers avec l'extension MA<font color=white><b>n</b></font> : de MA0 à MA3.
+<p align=justify>
+A ce point, vous pouvez penser qu'en rejouant en difficulté Normale vous garderez vos anciennes cartes. C'est faux : <b>CHAQUE</b> fois que vous jouez dans un niveau de difficulté différent de celui de votre dernière sauvegarde, vous avez une nouvelle carte.
+<p align=justify>
+Le fichier MA0 est présent, le numéro d'identification de carte correspondant est écrit dans le fichier MAP, mais c'est <b>UN AUTRE</b> numéro d'identification de carte que vous aurez, et vous utiliserez donc l'emplacement 2, avec le fichier MA2. Si vous essayez alors de rejouer en difficulté Cauchemar, ce sera encore (pour la 4ème fois) un autre numéro d'identification de carte que vous aurez. On peut donc se demander quel est l'intérêt de garder les anciennes cartes dans 3 emplacements, puisqu'elles ne peuvent pas être réutilisées par le jeu. Tout ce dont on a besoin pour le faire est bien là, mais le mécanisme n'est pas implémenté. Pour pouvoir jouer en gardant un certain fun peut être ?
+<p align=justify>
+Vous pouvez en fait réutiliser vos anciennes cartes, mais vous devez le faire manuellement. Mettez juste dans la donnée <b>agencement des cartes</b> (à l'offset 07Eh), un des numéros d'identification de carte que vous avez dans le fichier MAP. C'est tout. Vous pouvez même avoir les cartes de quelqu'un d'autre. Un exemple :
+<p align=justify>
+Vous voulez jouer dans les mêmes cartes qu'un ami. Vous voulez également les mêmes portions de carte qu'il a révélé. Voici la méthode :
+<p align=justify>
+<u>Prenez son numéro d'identification de carte</u>
+<ul>
+   <li>Ouvrez le fichier D2S de votre ami
+   <li>Prenez les 4 octets qui commencent à l'offset 07Eh (<b>agencement des cartes</b>)
+</ul>
+<u>Prenez son fichier MA<font color=white><b>n</b></font></u>
+<ul>
+   <li>Ouvrez son fichier MAP
+   <li>Cherchez dans quel emplacement se trouve le numéro d'identification précédent
+   <li>Copiez son fichier MA<font color=white><b>n</b></font> correspondant pour qu'il devienne votre fichier MA0
+</ul>
+<u>Modifiez votre numéro d'identification de carte</u>
+<ul>
+   <li>Ouvrez votre fichier MAP
+   <li>Mettez dans l'emplacement 0 le nouveau numéro d'identification
+   <li>Ouvrez votre fichier D2S
+   <li>Mettez ce nouveau numéro d'identification dans la donnée <b>agencement des cartes</b>
+</ul>
+C'est fait. Maintenant, vous avez les mêmes cartes que votre ami, et toutes les portions de cartes qu'il avait révélées.
+<p align=justify><br>
+Retour à la <a href="part_1.html#mapslayout"><b>Partie 1</b></a>
+</td></tr></table>

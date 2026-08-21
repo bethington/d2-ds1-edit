@@ -1,0 +1,18 @@
+<head>
+<body bgColor=black text=#cccc99 link=#189bd8 vLink=#189bd8 aLink=silver background="../backgrnd/infos.png">
+<style type="text/css">BODY {background-attachment:fixed;}</style>
+<table width=546><tr><td>
+<font face=verdana size=2>
+<font color=white><br><h3>NIVEAU DU JOUEUR (COPIE)</h3></font>
+Cette valeur semble être le niveau du joueur. C'est un peu ça, mais ce n'est pas la véritable valeur. Ce n'est qu'une copie d'une donnée qui est bien plus loin dans le fichier (dans les données de statut, plus précisément).
+<p align=justify>
+Quand vous lancez le jeu, dans le menu, vous choisissez le personnage que vous vous voulez jouer. A ce moment le niveau du joueur est indiqué. La donnée <b>niveau du joueur (copie)</b> est utilisée ici : c'est ELLE qui est lue pendant que vous êtes dans le menu.
+<p align=justify>
+Si vous essayez de changer cette valeur, tout semblera aller bien tant que vous resterez dans le menu du choix du personnage, mais si vous commencez de jouer, et que vous regardez vos statut, vous verrez que votre niveau est le même qu'avant votre modification. C'est parceque vous n'avez pas changé la BONNE valeur.
+<p align=justify>
+Le VERITABLE niveau du joueur est un peu compliqué à trouver. Il fait partie des DONNEES DE STATUT, et par conséquent, il n'a pas d'offset fixe, pour la bonne raison que certaines des données de statut peuvent ne pas être présente.
+<p align=justify>
+Allez voir la <a href="part_2.html"><b>partie 2</b></a> pour une description des données de statut.<br>
+<p align=justify><br>
+Retour à la <a href="part_1.html#fakeplayerlevel"><b>Partie 1</b></a>
+</td></tr></table>

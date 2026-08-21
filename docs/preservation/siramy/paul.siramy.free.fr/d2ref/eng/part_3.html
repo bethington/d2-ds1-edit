@@ -1,0 +1,670 @@
+<head>
+<body bgColor=black text=#cccc99 link=#189bd8 vLink=#189bd8 aLink=silver background="../../backgrnd/infos.png">
+<style type="text/css">BODY {background-attachment:fixed;}</style>
+<table width=546><tr><td>
+<font face=verdana size=2>
+<font color=white><br><h3>FILE DESCRIPTION <font size=2> &nbsp (Part 3, with interesting datas to modify : skills level)</font></h3></font>
+<p><br><br>
+Just after the <b>statut datas</b>, we found the <font color=white><b>Skill header</b></font>. It's equal to <font color=white><b>6669h</b></font>. If we don't find this value, it may be the cause of the <b>reserved flag</b> in the <b>statut datas</b> : if it is NOT equal to zero, then this may be a version problem.
+<p>
+We then find the skills data. It's an array of 30 bytes. Each skill use 1 byte, ranging from 0 to 20 (14h). Their order is not what you could think : the 10 first skills are NOT the 10 skills you find on <b>Skill Tree</b> #1. The primary key of the order is the <b>minimum level required</b>, and the secondary key is the <b>Skill Tree</b> : Skill Tree #3, then #2, and finaly #1.
+<p>
+For each character in the following tables, there are 2 columns. The first one is the name of the skill at the given relative offset, and the second is a code : a letter followed by a number. The letter indicate the <b>Skill Tree</b> where the skill is, and the number is the <b>minimum level required</b>. Here is the correspondig Skill Tree / letters :
+<p>
+<table border=1 cellpadding=5 cellspacing=0 width=650>
+<tr>
+   <td>&nbsp</td>
+   <td><center><font color=white size=2><b>A</b></font></center></td>
+   <td><center><font color=white size=2><b>B</b></font></center></td>
+   <td><center><font color=white size=2><b>C</b></font></center></td>
+   </tr>
+<tr>   
+      <td>
+          <font color=white size=2><b>
+          Amazon<br>
+          Sorceress<br>
+          Necromancer<br>
+          Paladin<br>
+          Barbarian<br>
+          Druid<br>
+          Assassin<br>
+          <b></font></td>
+      <td>
+          <font size=2>
+          Javelin And Spear Skills<br>
+          Cold Spells<br>
+          Summoning Spells<br>
+          Defensive Auras<br>
+          Warcries<br>
+          Elemental<br>
+          Martial Arts<br>
+          </font></td>
+      <td>
+          <font size=2>
+          Passive And Magic Skills<br>
+          Lightning Spells<br>
+          Poison And Bone Spells<br>
+          Offensive Auras<br>
+          Combat Masteries<br>
+          Shape Shifting<br>
+          Shadow Disciplines<br>
+          </font></td>
+      <td>
+          <font size=2>
+          Bow And Crossbow Skills<br>
+          Fire Spells<br>
+          Curses<br>
+          Combat Skills<br>
+          Combat Skills<br>
+          Summoning<br>
+          Traps<br>
+          </font></td>
+</table>
+<p>
+Since we don't known the offset where the data start, the offsets given below are RELATIVE. For instance, if the offset of the Skill Header is <b>26Dh</b>, then the start of the Skills Data is <b>26Fh</b>. It will be the base. If the player is an Amazon, we know that the <b>Critical Strike</b> skill is at the offset <b>272h</b> (<b>26Fh + 3</b>), and the last skill (<b>Lightning Fury</b>) is at the offset <b>28Ch</b> (<b>26Fh + 29</b>).
+<p>
+Here are the skills for the Amazon, the Sorceress and the Necromancer :
+<p>
+<table border=1 cellpadding=5 cellspacing=0 width=560>
+   <col align=right>
+<tr>
+   <td>&nbsp</td>
+   <td colspan=2><center><font color=white size=2><b>Amazon</b></font></center></td>
+   <td colspan=2><center><font color=white size=2><b>Sorceress</b></font></center></td>
+   <td colspan=2><center><font color=white size=2><b>Necromancer</b></font></center></td>
+   </tr>
+<tr>
+   <td>
+       <font color=white size=2><b>
+       0<br>
+       1<br>
+       2<br>
+       3<br>
+       4<br>
+       5<br>
+       6<br>
+       7<br>
+       8<br>
+       9<br>
+       10<br>
+       11<br>
+       12<br>
+       13<br>
+       14<br>
+       15<br>
+       16<br>
+       17<br>
+       18<br>
+       19<br>
+       20<br>
+       21<br>
+       22<br>
+       23<br>
+       24<br>
+       25<br>
+       26<br>
+       27<br>
+       28<br>
+       29<br>
+       </b></font></td>
+   <td>
+       <font size=2>
+       Magic Arrow<br>
+       Fire Arrow<br>
+       Inner Sight<br>
+       Critical Strike<br>
+       Jab<br>
+       Cold Arrow<br>
+       Multiple Shot<br>
+       Dodge<br>
+       Power Strike<br>
+       Poison Javelin<br>
+       Exploding Arrow<br>
+       Slow Missiles<br>
+       Avoid<br>
+       Impale<br>
+       Lightning Bolt<br>
+       Ice Arrow<br>
+       Guided Arrow<br>
+       Penetrate<br>
+       Charged Bolt<br>
+       Plague Javelin<br>
+       Strafe<br>
+       Immolation Arrow<br>
+       Decoy<br>
+       Evade<br>
+       Fend<br>
+       Freezing Arrow<br>
+       Valkyrie<br>
+       Pierce<br>
+       Lightning Strike<br>
+       Lightning Fury<br>
+       </font></td>
+   <td align=right>
+       <font color=a0a0a0 size=2>
+       C01<br>
+       C01<br>
+       B01<br>
+       B01<br>
+       A01<br>
+       C06<br>
+       C06<br>
+       B06<br>
+       A06<br>
+       A06<br>
+       C12<br>
+       B12<br>
+       B12<br>
+       A12<br>
+       A12<br>
+       C18<br>
+       C18<br>
+       B18<br>
+       A18<br>
+       A18<br>
+       C24<br>
+       C24<br>
+       B24<br>
+       B24<br>
+       A24<br>
+       C30<br>
+       B30<br>
+       B30<br>
+       A30<br>
+       A30<br>
+       </font></td>
+   <td>
+       <font size=2>
+       Fire Bolt<br>
+       Warmth<br>
+       Charged Bolt<br>
+       Ice Bolt<br>
+       Frozen Armor<br>
+       Inferno<br>
+       Static Field<br>
+       Telekinesis<br>
+       Frost Nova<br>
+       Ice Blast<br>
+       Blaze<br>
+       Fire Ball<br>
+       Nova<br>
+       Lightning<br>
+       Shiver Armor<br>
+       Fire Wall<br>
+       Enchant<br>
+       Chain Lightning<br>
+       Teleport<br>
+       Glacial Spike<br>
+       Meteor<br>
+       Thunder Storm<br>
+       Energy Shield<br>
+       Blizzard<br>
+       Chilling Armor<br>
+       Fire Mastery<br>
+       Hydra<br>
+       Lightning Mastery<br>
+       Frozen Orb<br>
+       Cold Mastery<br>
+       </font></td>
+   <td align=right>
+       <font color=a0a0a0 size=2>
+       C01<br>
+       C01<br>
+       B01<br>
+       A01<br>
+       A01<br>
+       C06<br>
+       B06<br>
+       B06<br>
+       A06<br>
+       A06<br>
+       C12<br>
+       C12<br>
+       B12<br>
+       B12<br>
+       A12<br>
+       C18<br>
+       C18<br>
+       B18<br>
+       B18<br>
+       A18<br>
+       C24<br>
+       B24<br>
+       B24<br>
+       A24<br>
+       A24<br>
+       C30<br>
+       C30<br>
+       B30<br>
+       A30<br>
+       A30<br>
+       </font></td>
+   <td>
+       <font size=2>
+       Amplify Damage<br>
+       Teeth<br>
+       Bone Armor<br>
+       Skeleton Mastery<br>
+       Raise Skeleton<br>
+       Dim Vision<br>
+       Weaken<br>
+       Poison Dagger<br>
+       Corpse Explosion<br>
+       Clay Golem<br>
+       Iron Maiden<br>
+       Terror<br>
+       Bone Wall<br>
+       Golem Mastery<br>
+       Raise Skeletal mage<br>
+       Confuse<br>
+       Life Tap<br>
+       Poison Explosion<br>
+       Bone Spear<br>
+       Blood Golem<br>
+       Attract<br>
+       Decrepify<br>
+       Bone Prison<br>
+       Summon Resist<br>
+       Iron Golem<br>
+       Lower Resist<br>
+       Poison Nova<br>
+       Bone Spirit<br>
+       Fire Golem<br>
+       Revive<br>
+       </font></td>
+   <td align=right>
+       <font color=a0a0a0 size=2>
+       C01<br>
+       B01<br>
+       B01<br>
+       A01<br>
+       A01<br>
+       C06<br>
+       C06<br>
+       B06<br>
+       B06<br>
+       A06<br>
+       C12<br>
+       C12<br>
+       B12<br>
+       A12<br>
+       A12<br>
+       C18<br>
+       C18<br>
+       B18<br>
+       B18<br>
+       A18<br>
+       C24<br>
+       C24<br>
+       B24<br>
+       A24<br>
+       A24<br>
+       C30<br>
+       B30<br>
+       B30<br>
+       A30<br>
+       A30<br>
+       </font></td>
+</table>
+<p><br>
+Here are the skills for the Paladin, the Barbarian and the Druid :
+<p>
+<table border=1 cellpadding=5 cellspacing=0 width=562>
+   <col align=right>
+<tr>
+   <td>&nbsp</td>
+   <td colspan=2><center><font color=white size=2><b>Paladin</b></font></center></td>
+   <td colspan=2><center><font color=white size=2><b>Barbarian</b></font></center></td>
+   <td colspan=2><center><font color=white size=2><b>Druid</b></font></center></td>
+   </tr>
+<tr>
+   <td>
+       <font color=white size=2><b>
+       0<br>
+       1<br>
+       2<br>
+       3<br>
+       4<br>
+       5<br>
+       6<br>
+       7<br>
+       8<br>
+       9<br>
+       10<br>
+       11<br>
+       12<br>
+       13<br>
+       14<br>
+       15<br>
+       16<br>
+       17<br>
+       18<br>
+       19<br>
+       20<br>
+       21<br>
+       22<br>
+       23<br>
+       24<br>
+       25<br>
+       26<br>
+       27<br>
+       28<br>
+       29<br>
+       </b></font></td>
+   <td>
+       <font size=2>
+       Sacrifice<br>
+       Smite<br>
+       Might<br>
+       Prayer<br>
+       Resist Fire<br>
+       Holy Bolt<br>
+       Holy Fire<br>
+       Thorns<br>
+       Defiance<br>
+       Resist Cold<br>
+       Zeal<br>
+       Charge<br>
+       Blessed Aim<br>
+       Cleansing<br>
+       Resist Lightning<br>
+       Vengeance<br>
+       Blessed Hammer<br>
+       Concentration<br>
+       Holy Freeze<br>
+       Vigor<br>
+       Conversion<br>
+       Holy Shield<br>
+       Holy Shock<br>
+       Sanctuary<br>
+       Meditation<br>
+       Fist of the Heavens<br>
+       Fanaticism<br>
+       Conviction<br>
+       Redemption<br>
+       Salvation<br>
+       </font></td>
+   <td align=right>
+       <font color=a0a0a0 size=2>
+       C01<br>
+       C01<br>
+       B01<br>
+       A01<br>
+       A01<br>
+       C06<br>
+       B06<br>
+       B06<br>
+       A06<br>
+       A06<br>
+       C12<br>
+       C12<br>
+       B12<br>
+       A12<br>
+       A12<br>
+       C18<br>
+       C18<br>
+       B18<br>
+       B18<br>
+       A18<br>
+       C24<br>
+       C24<br>
+       B24<br>
+       B24<br>
+       A24<br>
+       C30<br>
+       B30<br>
+       B30<br>
+       A30<br>
+       A30<br>
+       </font></td>
+   <td>
+       <font size=2>
+       Bash<br>
+       Sword Mastery<br>
+       Axe Mastery<br>
+       Mace Mastery<br>
+       Howl<br>
+       Find Potions<br>
+       Leap<br>
+       Double Swing<br>
+       Pole Mastery<br>
+       Throwing Mastery<br>
+       Spear Mastery<br>
+       Taunt<br>
+       Shout<br>
+       Stun<br>
+       Double Throw<br>
+       Increase Stamina<br>
+       Find Item<br>
+       Leap Attack<br>
+       Concentrate<br>
+       Iron Skin<br>
+       Batlle Cry<br>
+       Frenzy<br>
+       Increase Speed<br>
+       Battle Orders<br>
+       Grim Ward<br>
+       Whirl Wind<br>
+       Berserk<br>
+       Natural Resistances<br>
+       War Cry<br>
+       Battle Command<br>
+       </font></td>
+   <td align=right>
+       <font color=a0a0a0 size=2>
+       C01<br>
+       B01<br>
+       B01<br>
+       B01<br>
+       A01<br>
+       A01<br>
+       C06<br>
+       C06<br>
+       B06<br>
+       B06<br>
+       B06<br>
+       A06<br>
+       A06<br>
+       C06<br>
+       C12<br>
+       B12<br>
+       A12<br>
+       C18<br>
+       C18<br>
+       B18<br>
+       A18<br>
+       C24<br>
+       B24<br>
+       A24<br>
+       A24<br>
+       C30<br>
+       C30<br>
+       B30<br>
+       A30<br>
+       A30<br>
+       </font></td>
+   <td>
+       <font size=2>
+       Raven<br>
+       Poison Creeper<br>
+       Werewolf<br>
+       Lycantropy<br>
+       Fire Storm<br>
+       Oak Sage<br>
+       Spirit Wolf<br>
+       Werebear<br>
+       Molten Boulder<br>
+       Artic Blast<br>
+       Carrion Vine<br>
+       Feral Rage<br>
+       Maul<br>
+       Fissure<br>
+       Cyclone armor<br>
+       Heart of Wolverine<br>
+       Direwolf<br>
+       Rabies<br>
+       Fire Claws<br>
+       Twister<br>
+       Solar Creeper<br>
+       Hunger<br>
+       Shock Wave<br>
+       Volcano<br>
+       Tornado<br>
+       Spirit of Barbs<br>
+       Summon Grizzly<br>
+       Fury<br>
+       Armageddon<br>
+       Hurricane<br>
+       </font></td>
+   <td align=right>
+       <font color=a0a0a0 size=2>
+       C01<br>
+       C01<br>
+       B01<br>
+       B01<br>
+       A01<br>
+       C06<br>
+       C06<br>
+       B06<br>
+       A06<br>
+       A06<br>
+       C12<br>
+       B12<br>
+       B12<br>
+       A12<br>
+       A12<br>
+       C18<br>
+       C18<br>
+       B18<br>
+       B18<br>
+       A18<br>
+       C24<br>
+       B24<br>
+       B24<br>
+       A24<br>
+       A24<br>
+       C30<br>
+       C30<br>
+       B30<br>
+       A30<br>
+       A30<br>
+       </font></td>
+</table>
+<p><br>
+And here are the skills for the Assassin :
+<p>
+<table border=1 cellpadding=5 cellspacing=0 width=214>
+   <col align=right>
+<tr>
+   <td>&nbsp</td>
+   <td colspan=2><center><font color=white size=2><b>Assassin</b></font></center></td>
+   </tr>
+<tr>
+   <td>
+       <font color=white size=2><b>
+       0<br>
+       1<br>
+       2<br>
+       3<br>
+       4<br>
+       5<br>
+       6<br>
+       7<br>
+       8<br>
+       9<br>
+       10<br>
+       11<br>
+       12<br>
+       13<br>
+       14<br>
+       15<br>
+       16<br>
+       17<br>
+       18<br>
+       19<br>
+       20<br>
+       21<br>
+       22<br>
+       23<br>
+       24<br>
+       25<br>
+       26<br>
+       27<br>
+       28<br>
+       29<br>
+       </b></font></td>
+   <td>
+       <font size=2>
+       Fire Blast<br>
+       Claw Mastery<br>
+       Psychic Hammer<br>
+       Tiger Strike<br>
+       Dragon Talon<br>
+       Shock Webs<br>
+       Blade Sentinel<br>
+       Burst of Speed<br>
+       Fist of Fire<br>
+       Dragon Claw<br>
+       Charged Bolt Sentry<br>
+       Wake of Fire<br>
+       Weapon Block<br>
+       Cloack of Shadows<br>
+       Cobra Strike<br>
+       Blade Fury<br>
+       Fade<br>
+       Shadow Warrior<br>
+       Claws of Thunder<br>
+       Dragon Tail<br>
+       Lightning Sentry<br>
+       Wake of Inferno<br>
+       Mind Blast<br>
+       Blades of Ice<br>
+       Dragon Flight<br>
+       Death Sentry<br>
+       Blade Shield<br>
+       Venom<br>
+       Shadow master<br>
+       Phoenix Strike<br>
+       </font></td>
+   <td align=right>
+       <font color=a0a0a0 size=2>
+       C01<br>
+       B01<br>
+       B01<br>
+       A01<br>
+       A01<br>
+       C06<br>
+       C06<br>
+       B06<br>
+       A06<br>
+       A06<br>
+       C12<br>
+       C12<br>
+       B12<br>
+       B12<br>
+       A12<br>
+       C18<br>
+       B18<br>
+       B18<br>
+       A18<br>
+       A18<br>
+       C24<br>
+       C24<br>
+       B24<br>
+       A24<br>
+       A24<br>
+       C30<br>
+       C30<br>
+       B30<br>
+       B30<br>
+       A30<br>
+       </font></td>
+</table>
+<p><br>
+Go to <a href="part_4.html"><b>Part 4</b></a> : Items<br>
+<br>
+Back to <a href="part_1.html"><b>Part 1</b></a> : Easy Hacking<br>
+Back to <a href="part_2.html"><b>Part 2</b></a> : Statut Datas<br>
+Go to <a href="part_5.html"><b>Part 5</b></a> : Corpse & Mercenary<br>
+Back to <a href="index.html"><b>Menu page</b></a>
+</td></tr></table>

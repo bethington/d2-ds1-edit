@@ -1,0 +1,84 @@
+<head>
+   <title>D2S Unofficial Documentation</title>
+   <meta name="Description"            value="Diablo II D2S file format unofficial documentation">
+   <meta name="Keywords"               value="D2S, Diablo, II, 2, savegame, save, savegames, saves, file, format, documentation, doc, description, desc, reference, ref, guide, unofficial, cheat, cheating, cheats, hint, hints, patch, patching, patchs, modify, modifying, modification, modifications">
+   <meta name="Author"                 value="Paul SIRAMY">
+   <meta name="Identifier-URL"         value="http://paul.siramy.free.fr/d2ref/eng/index.html">
+   <meta name="Date-Creation-yyyymmdd" value="20010509">
+   <meta name="Date-Revision-yyyymmdd" value="20011208">
+   <meta name="Reply-to"               value="paul.siramy@free.fr">
+   <meta name="revisit-after"          value="7">
+   <meta name="Generator"              value="Notepad">
+</head>
+<body bgColor=black text=#cccc99 link=#189bd8 vLink=#189bd8 aLink=silver background="../../backgrnd/infos.png">
+<style type="text/css">BODY {background-attachment:fixed;}</style>
+<table width=546><tr>
+    <td> <font face=arial> 
+      <table width=100% border=0>
+        <col width=33%> <col width=34%> <col width=33%> 
+        <tr> 
+          <td align="right"> 
+            <h5><a href="../index.html">Version Francaise</a></h5>
+          </td>
+        </tr>
+      </table>
+      </font>
+      <center>
+        <font face="Times New Roman, Times, serif" size="7" color="gold">D</font><font face="Times New Roman, Times, serif" size="6">2S, 
+        <font color="gold"> <font size="7">U</font></font>nofficial <font size="7" color="gold">D</font>ocumentation</font><font face="arial"><br>
+        <br>
+        <font size=2>Last update : <font color=white>07-28-2001</font> <a href="history.html">check 
+        the history</a></font></font> 
+      </center>
+<font face=verdana size=2>
+<br><br><br><font color=white>
+      <h3><a name=#download></a><font color="gold">DOWNLOAD</font></h3>
+      </font>
+<p align="justify">You can find the ZIP version of this doc <b><a href="d2ref.zip">here</a></b>, so you can take all your time to read it (123 KB).
+<p align="justify">
+The source of the work-in-progress program that I use is <b><a href="v.c">here</a></b> (57 KB, uncompressed).
+<p align="justify"><br><br><font color=white>
+   <h3><a name=#introduction></a><font color="gold">INTRODUCTION</font></h3>
+   </font>
+<p align="justify">
+This page is dedicated to the description of the structure of the <font color=white><b>D2S</b></font> file, as far as I can understand it. I originally wanted to make a program that could allow you to edit all things in your <font color=white><b>Diablo II</b></font> savegames (stats, skills, quests, waypoint, mercenary, items, ...)
+<p align="justify">
+It exists a lot of programs on Internet that lets you edit this things already. If I wanted to make my own, it's because most of them didn't worked mith my personnal savegames (version problem). Also, it's just fun to understand how your favorite game works <b>:)</b>
+<p align="justify">
+By the time I was trying to gain knowledge, by searching documentations on internet, I saw theses docs were most of the time : <b>rare</b>, <b>incomplete</b>, sometimes <b>not accurate</b>, and <b>hard to understand</b> certain passages. The first thing to do was to acquire a knowledge of the <font color=white><b>D2S</b></font> file as complete as possible. So, I started to make my own documentation. It's the most difficult quest I have ever had in this game <b>;)</b> . This doc is the result of many hours (weeks ?) trying to verify the docs I had, and figure out the rest.
+<p align="justify">
+Today I think I can only maintain an html reference, because it is already such lot of works...
+<p align="justify">
+<p align="justify"><br><br><font color=white>
+      <h3><a name=#credits></a><font color="gold">CREDITS</font></h3>
+      </font>
+I especially want to thanks <font color=white><b>The Diablo 2 Save Game Mapping Project</b></font> created by :
+<ul><ul type=square>
+   <li>Lee Hamel (Juicy)
+   <li>Glenn C. (Mephiston)
+   <li>Terje B. (Instant)
+   <li>Mike Harrison (Polaris)
+   <li>IceTeaMan
+   <li>Sephiroth
+</ul></ul>
+They released their <font color=white><b>D2S</b></font> file documentation with an editor called <font color=white><b>Juicy's Diablo 2 Save Game Editor</b></font>. It had made my life a LOT more easier. You should check
+<a href="http://www.cs.pdx.edu/~hamell"><b>Lee's Funk and Juice Hut</b></a> for last updates of the editor.
+<p align="justify"><br><br>
+I also want to give a BIG thanks to <font color=white><b>Jamella</b></font>, for his editor, and the release of the source. You can check the last version of his editor at <a href="http://jamella.cjb.net"><b>Jamella home page</b></a>.
+<p align="justify"><br><br>
+Another great program to use is the <a href="http://user.cs.tu-berlin.de/~mickyk/cv.html"><b>CV5</b></a> program by <font color=white><b>TheTelamon</b></font>. You can navigate trough the datas of your <font color=white><b>MPQ</b></font> files, and even extract them.
+<p align="justify"><br><br><br><font color=white>
+      <h3><a name=#contactauthor></a><font color="gold">CONTACT THE AUTHOR</font></h3>
+      </font>
+<p align="justify">
+You had pointed a mistake in the doc ? You want to add your own infos ? You had the courage to point out all my spelling error ? Whatever your raisons are, you can contact me at <a href="mailto:paul.siramy@free.fr">paul.siramy@free.fr</a>.
+<p align="justify"><br><br><font color=white>
+      <h3><a name=#startread></a><font color="gold">START READING</font></h3>
+      </font>
+You should start with <a href="part_1.html"><b>Part 1</b></a> : Easy Hacking
+<p align="justify">
+Go to <a href="part_2.html"><b>Part 2</b></a> : Statut Datas<br>
+Go to <a href="part_3.html"><b>Part 3</b></a> : Skill Levels<br>
+Go to <a href="part_4.html"><b>Part 4</b></a> : Items<br>
+Go to <a href="part_5.html"><b>Part 5</b></a> : Corpse & Mercenary
+</font></td></tr></table>

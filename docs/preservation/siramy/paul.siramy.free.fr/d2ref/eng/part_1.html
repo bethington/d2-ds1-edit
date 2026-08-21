@@ -1,0 +1,312 @@
+<head>
+<body bgColor=black text=#cccc99 link=#189bd8 vLink=#189bd8 aLink=silver background="../../backgrnd/infos.png">
+<style type="text/css">BODY {background-attachment:fixed;}</style>
+<table width=546><tr><td>
+<font face=verdana size=2>
+<font color=white><br><h3>FILE DESCRIPTION <font size=2> &nbsp (Part 1, where hacking is easy)</font></h3></font>
+First, you should check the <a href="datatype.html"><b>data types</b></a> section.<br>
+<p>
+<table border=0 cols=5 cellspacing=0 cellpadding=5 width=600>
+   <col align=right>
+   <col>
+   <col align=right>
+   <col>
+   <col>
+<tr valign=bottom>
+   <td><font face = verdana size=2 color=white><b>Offset                </b></font></td>
+   <td><font face = verdana size=2 color=white><b>Description           </b></font></td>
+   <td><font face = verdana size=2 color=white><b>Total<br>size         </b></font></td>
+   <td><font face = verdana size=2 color=white><b>Type                  </b></font></td>
+   <td><font face = verdana size=2 color=white><b>Values / Related links</b></font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>0000h</font></td>
+   <td><font face = verdana size=2 color=cccc99>Signature header</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>8</font></td>
+   <td><font face = verdana size=2 color=cccc99>Header</font></td>
+   <td><font face = verdana size=2 color=cccc99><a href="signatur.html" name="signature">Signature's versions</a></font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>0008h</font></td>
+   <td><font face = verdana size=2 color=cccc99>Player name</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>16</font></td>
+   <td><font face = verdana size=2 color=cccc99>String</font></td>
+   <td><font face = verdana size=2 color=cccc99><a href="name.html" name="playername">Name constraints</a></font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>0018h</font></td>
+   <td><font face = verdana size=2 color=cccc99>Hardcore flag</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>1</font></td>
+   <td><font face = verdana size=2 color=cccc99>Bitfield</font></td>
+   <td><font face = verdana size=2 color=cccc99><a href="hardcore.html" name="hardcoreflag">Hardcore values</a></font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>0019h</font></td>
+   <td><font face = verdana size=2 color=cccc99>Number of acts passed</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>1</font></td>
+   <td><font face = verdana size=2 color=cccc99>Value</font></td>
+   <td><font face = verdana size=2 color=cccc99><a href="title.html" name="numberofacts">Various impacts</a></font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>001Ah</font></td>
+   <td><font face = verdana size=2 color=cccc99>Player's configuration I or II</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>2</font></td>
+   <td><font face = verdana size=2 color=cccc99>Value</font></td>
+   <td><font face = verdana size=2 color=cccc99><a href="playconf.html" name="playconf">Configuration's value</a></font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>001Ch</font></td>
+   <td><font face = verdana size=2 color=cccc99>Unknown</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>2</font></td>
+   <td><font face = verdana size=2 color=cccc99>?</font></td>
+   <td><font face = verdana size=2 color=cccc99><a href="unknown1.html" name="unknown1">Value's versions</a></font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>001Eh</font></td>
+   <td><font face = verdana size=2 color=cccc99>Unknown header</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>4</font></td>
+   <td><font face = verdana size=2 color=cccc99>Header</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>10 00 82 00</font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>0022h</font></td>
+   <td><font face = verdana size=2 color=cccc99>Player class</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>2</font></td>
+   <td><font face = verdana size=2 color=cccc99>Value</font></td>
+   <td><font face = verdana size=2 color=cccc99><a href="class.html" name="playerclass">Class value</a></font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>0024h</font></td>
+   <td><font face = verdana size=2 color=cccc99>Player level (copy)</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>2</font></td>
+   <td><font face = verdana size=2 color=cccc99>Value</font></td>
+   <td><font face = verdana size=2 color=cccc99><a href="levlcopy.html" name="fakeplayerlevel">A tricky data</a></font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>0026h</font></td>
+   <td><font face = verdana size=2 color=cccc99>Player apparence in menu</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>32</font></td>
+   <td><font face = verdana size=2 color=cccc99>Structure</font></td>
+   <td><font face = verdana size=2 color=cccc99><a href="menulook.html" name="playerlook">Esthetic use</a></font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>0046h</font></td>
+   <td><font face = verdana size=2 color=cccc99>Shortcuts, F1 to F8</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>16</font></td>
+   <td><font face = verdana size=2 color=cccc99>Array</font></td>
+   <td><font face = verdana size=2 color=cccc99><a href="shortcut.html" name="shortcuts">Useless</a></font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>0056h</font></td>
+   <td><font face = verdana size=2 color=cccc99>Skill left hand</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>1</font></td>
+   <td><font face = verdana size=2 color=cccc99>Value</font></td>
+   <td><font face = verdana size=2 color=cccc99><a href="handskil.html" name="handskill">Useless</a></font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>0057h</font></td>
+   <td><font face = verdana size=2 color=cccc99>Skill right hand</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>1</font></td>
+   <td><font face = verdana size=2 color=cccc99>Value</font></td>
+   <td><font face = verdana size=2 color=cccc99><a href="handskil.html" name="">Useless</a></font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>0058h</font></td>
+   <td><font face = verdana size=2 color=cccc99>Save location</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>2</font></td>
+   <td><font face = verdana size=2 color=cccc99>Value</font></td>
+   <td><font face = verdana size=2 color=cccc99><a href="location.html" name="savelocation">Location coding</a></font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>005Ah</font></td>
+   <td><font face = verdana size=2 color=cccc99>Unknown reserved</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>36</font></td>
+   <td><font face = verdana size=2 color=cccc99>Reserved</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>.</font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>007Eh</font></td>
+   <td><font face = verdana size=2 color=cccc99>Maps layout</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>4</font></td>
+   <td><font face = verdana size=2 color=cccc99>Value</font></td>
+   <td><font face = verdana size=2 color=cccc99><a href="maps.html" name="mapslayout">Choose your maps</a></font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>0082h</font></td>
+   <td><font face = verdana size=2 color=cccc99>Unknown header</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>8</font></td>
+   <td><font face = verdana size=2 color=cccc99>Header</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>57 6F 6F 21 06 00 00 00</font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>008Ah</font></td>
+   <td><font face = verdana size=2 color=cccc99>Normal quests data</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>96</font></td>
+   <td><font face = verdana size=2 color=cccc99>Structure</font></td>
+   <td><font face = verdana size=2 color=cccc99><a href="quests.html" name="normalquests">Quests structure</a></font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>00EAh</font></td>
+   <td><font face = verdana size=2 color=cccc99>Nightmare quests data</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>96</font></td>
+   <td><font face = verdana size=2 color=cccc99>Structure</font></td>
+   <td><font face = verdana size=2 color=cccc99><a href="quests.html" name="">Quests structure</a></font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>014Ah</font></td>
+   <td><font face = verdana size=2 color=cccc99>Hell quests data</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>96</font></td>
+   <td><font face = verdana size=2 color=cccc99>Structure</font></td>
+   <td><font face = verdana size=2 color=cccc99><a href="quests.html" name="">Quests structure</a></font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>01AAh</font></td>
+   <td><font face = verdana size=2 color=cccc99>Unknown header</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>10</font></td>
+   <td><font face = verdana size=2 color=cccc99>Header</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>00 00 57 53 01 00 00 00 50 00</font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>01B4h</font></td>
+   <td><font face = verdana size=2 color=cccc99>Waypoints header</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>2</font></td>
+   <td><font face = verdana size=2 color=cccc99>Header</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>02 01</font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>01B6h</font></td>
+   <td><font face = verdana size=2 color=cccc99>Normal waypoints</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>5</font></td>
+   <td><font face = verdana size=2 color=cccc99>Bitfield</font></td>
+   <td><font face = verdana size=2 color=cccc99><a href="waypoint.html" name="waypoints">Bitfield values</a></font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>01BBh</font></td>
+   <td><font face = verdana size=2 color=cccc99>Unknown reserved</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>17</font></td>
+   <td><font face = verdana size=2 color=cccc99>Reserved</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>.</font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>01CCh</font></td>
+   <td><font face = verdana size=2 color=cccc99>Waypoints header</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>2</font></td>
+   <td><font face = verdana size=2 color=cccc99>Header</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>02 01</font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>01CEh</font></td>
+   <td><font face = verdana size=2 color=cccc99>Nightmare waypoints</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>5</font></td>
+   <td><font face = verdana size=2 color=cccc99>Bitfield</font></td>
+   <td><font face = verdana size=2 color=cccc99><a href="waypoint.html" name="">Bitfield values</a></font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>01D3h</font></td>
+   <td><font face = verdana size=2 color=cccc99>Unknown reserved</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>17</font></td>
+   <td><font face = verdana size=2 color=cccc99>Reserved</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>.</font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>01E4h</font></td>
+   <td><font face = verdana size=2 color=cccc99>Waypoints header</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>2</font></td>
+   <td><font face = verdana size=2 color=cccc99>Header</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>02 01</font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>01E6h</font></td>
+   <td><font face = verdana size=2 color=cccc99>Hell waypoints</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>5</font></td>
+   <td><font face = verdana size=2 color=cccc99>Bitfield</font></td>
+   <td><font face = verdana size=2 color=cccc99><a href="waypoint.html" name="">Bitfield values</a></font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>01EBh</font></td>
+   <td><font face = verdana size=2 color=cccc99>Unknown reserved</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>17</font></td>
+   <td><font face = verdana size=2 color=cccc99>Reserved</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>.</font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>01FCh</font></td>
+   <td><font face = verdana size=2 color=cccc99>NPC statut header</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>4</font></td>
+   <td><font face = verdana size=2 color=cccc99>Header</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>01 77 34 00</font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>0200h</font></td>
+   <td><font face = verdana size=2 color=cccc99>Dialogue state with NPC</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>48</font></td>
+   <td><font face = verdana size=2 color=cccc99>Structure</font></td>
+   <td><font face = verdana size=2 color=cccc99><a href="unknownq.html" name="unknownquestsdatas">Little description</a></font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>0230h</font></td>
+   <td><font face = verdana size=2 color=cccc99>Statut header</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>2</font></td>
+   <td><font face = verdana size=2 color=cccc99>Header</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>67 66</font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>0232h</font></td>
+   <td><font face = verdana size=2 color=cccc99>Stat / skill flag</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>1</font></td>
+   <td><font face = verdana size=2 color=cccc99>Bitfield</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>Explained in Part 2</font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>0233h</font></td>
+   <td><font face = verdana size=2 color=cccc99>Xp / gold / stash flag</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>1</font></td>
+   <td><font face = verdana size=2 color=cccc99>Bitfield</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>Explained in Part 2</font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>0234h</font></td>
+   <td><font face = verdana size=2 color=cccc99>Reserved flag ?</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>1</font></td>
+   <td><font face = verdana size=2 color=cccc99>Reserved</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>Explained in Part 2</font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>0235h</font></td>
+   <td><font face = verdana size=2 color=cccc99>Strength</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>4</font></td>
+   <td><font face = verdana size=2 color=cccc99>Value</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>Explained in Part 2</font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>0239h</font></td>
+   <td><font face = verdana size=2 color=cccc99>Energy</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>4</font></td>
+   <td><font face = verdana size=2 color=cccc99>Value</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>Explained in Part 2</font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>023Dh</font></td>
+   <td><font face = verdana size=2 color=cccc99>Dexterity</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>4</font></td>
+   <td><font face = verdana size=2 color=cccc99>Value</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>Explained in Part 2</font></td>
+   </tr>
+<tr>
+   <td><font face = verdana size=2 color=a0a0a0>0241h</font></td>
+   <td><font face = verdana size=2 color=cccc99>Vitality</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>4</font></td>
+   <td><font face = verdana size=2 color=cccc99>Value</font></td>
+   <td><font face = verdana size=2 color=a0a0a0>Explained in Part 2</font></td>
+   </tr>
+</table>
+<p><br><br>
+Now, all the easy hacking is finished. For now, statuts datas will be present, or not, depending of the 2 <font color=white><b>statut flags</b></font>. These flags are : <font color=white><b>Stat / Skill flag</b></font> at offset <font color=white><b>232h</b></font>, and <font color=white><b>Xp / Gold / Stash flag</b></font> at offset <font color=white><b>233h</b></font>.
+<p><br>
+All of this is explained on <a href="part_2.html"><b>Part 2</b></a> : Statut Datas
+<p>
+Go to <a href="part_3.html"><b>Part 3</b></a> : Skill Levels<br>
+Go to <a href="part_4.html"><b>Part 4</b></a> : Items<br>
+Go to <a href="part_5.html"><b>Part 5</b></a> : Corpse & Mercenary<br>
+Back to <a href="index.html"><b>Menu page</b></a>
+</td></tr></table>

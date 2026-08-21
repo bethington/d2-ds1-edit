@@ -1,0 +1,151 @@
+<head>
+<body bgColor=black text=#cccc99 link=#189bd8 vLink=#189bd8 aLink=silver background="../backgrnd/infos.png">
+<style type="text/css">BODY {background-attachment:fixed;}</style>
+<table width=546><tr><td>
+<font face=verdana size=2>
+<font color=white><br><h3>PORTAILS</h3></font>
+<br>
+Cette donnée est un champ de bits de 4 octets. Il y a une donnée pour chacun des 3 niveau de difficulté. Voici les offsets :
+<p>
+<table width=350 border=1 cellpadding=5 cellspacing=0>
+   <col width=60 valign=top>
+   <col width=70 valign=top align=right>
+   <col width=90 valign=top align=right>
+   <col width=70 valign=top align=right>
+<tr>
+   <td>&nbsp
+   <td><font color=white size=2><b>Normal</b></font>
+   <td><font color=white size=2><b>Cauchemar</b></font>
+   <td><font color=white size=2><b>Enfer</b></font>
+   </tr>
+<tr>
+   <td><font color=white size=2><b>
+       Octet 1<br>
+       Octet 2<br>
+       Octet 3<br>
+       Octet 4<br></b></font>
+   <td><font size=2>
+       1B6h<br>
+       1B7h<br>
+       1B8h<br>
+       1B9h<br>
+   <td><font size=2>
+       1CEh<br>
+       1CFh<br>
+       1D0h<br>
+       1D1h<br>
+   <td><font size=2>
+       1E6h<br>
+       1E7h<br>
+       1E8h<br>
+       1E9h<br>
+</table>
+<p><br>
+Vous pouvez accéder à un portail si le bit correspondant est posé. Puisqu'il y a 9 portails par actes, et qu'il y a 8 bits par octet, je préfère donner un numéro à chaque bit. Connaissant un numéro, on peut en déduire l'octet où il est, ainsi que le bit à l'intérieur.
+<ul>
+   <li><font color=white><b>Octet 1</b></font> : Bits de <font color=white><b>0</b></font> à <font color=white><b>7</b></font>
+   <li><font color=white><b>Octet 2</b></font> : Bits de <font color=white><b>8</b></font> à <font color=white><b>15</b></font>
+   <li><font color=white><b>Octet 3</b></font> : Bits de <font color=white><b>16</b></font> à <font color=white><b>23</b></font>
+   <li><font color=white><b>Octet 4</b></font> : Bits de <font color=white><b>24</b></font> à <font color=white><b>31</b></font>
+</ul>
+<p><br>
+Voici les numéros de bits utilisés pour chaque portails :
+<p>
+<table cellpadding=5 cellspacing=0 border=1 width=741>
+   <col valign=top>
+   <col valign=top align=right>
+   <col valign=top>
+   <col valign=top align=right>
+   <col valign=top>
+   <col valign=top align=right>
+<tr>
+   <td><font color=white size=2>Acte I</font>
+   <td><font color=white size=2>Bit</font>
+   <td><font color=white size=2>Acte II</font>
+   <td><font color=white size=2>Bit</font>
+   <td><font color=white size=2>Acte III</font>
+   <td><font color=white size=2>Bit</font>
+   </tr>
+<tr>
+   <td><font size=2>
+       Le Camp des Rogues<br>
+       Les Plaines gelées<br>
+       Le Champ de pierres<br>
+       Le Bois obscur<br>
+       Le Marais sombre<br>
+       Le Cloître extérieur<br>
+       La Prison Niv 1<br>
+       Le Cloître intérieur<br>
+       Les Catacombes Niv 2<br></font>
+   <td><font size=2 color=a0a0a0>
+       0<br>
+       1<br> 
+       2<br>
+       3<br> 
+       4<br>
+       5<br> 
+       6<br>
+       7<br> 
+       8<br></font>
+   <td><font size=2>
+       Lut Gholein<br>
+       Les Egouts Niv 2<br>
+       Les Collines arides<br>
+       Les Couloirs des morts Niv 2<br>
+       L'Oasis lointaine<br>
+       La Ville oubliée<br>
+       Les Caves du Palais Niv 1<br>
+       Le Sanctuaire des Arcanes<br>
+       Le Canyon des Mages<br></font>
+   <td><font size=2 color=a0a0a0>
+       9<br>
+       10<br> 
+       11<br>
+       12<br>
+       13<br> 
+       14<br>
+       15<br> 
+       16<br>
+       17<br></font>
+   <td><font size=2>
+       Les Quais de Kurast<br>
+       La Forêt de l'Araignée<br>
+       Le Grand marais<br>
+       La Jungle de l'Ecorcheur<br>
+       Kurast - La ville basse<br>
+       Le Bazar de Kurast<br>
+       Kurast - La ville haute<br>
+       Travincal<br>
+       La Prison de la Haine Niv 2<br></font>
+   <td><font size=2 color=a0a0a0>
+       18<br>
+       19<br>
+       20<br> 
+       21<br>
+       22<br>
+       23<br> 
+       24<br>
+       25<br> 
+       26<br></font>
+</table>
+<p><br>
+<table cellpadding=5 cellspacing=0 border=1 width=220>
+   <col valign=top>
+   <col valign=top align=right>
+<tr>
+   <td><font color=white size=2>Acte IV</font>
+   <td><font color=white size=2>Bit</font>
+   </tr>
+<tr>
+   <td><font size=2>
+       La Fort. de Pandémonium<br>
+       La Ville des damnés<br>
+       La Rivière de feu<br></font>
+   <td><font size=2 color=a0a0a0>
+       27<br>
+       28<br> 
+       29<br></font>
+</table>
+<p><br>
+Retour à la <a href="part_1.html#waypoints"><b>Partie 1</b></a>
+</td></tr></table>

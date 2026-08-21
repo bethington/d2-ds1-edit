@@ -1,0 +1,18 @@
+<head>
+<body bgColor=black text=#cccc99 link=#189bd8 vLink=#189bd8 aLink=silver background="../../backgrnd/infos.png">
+<style type="text/css">BODY {background-attachment:fixed;}</style>
+<table width=546><tr><td>
+<font face=verdana size=2>
+<font color=white><br><h3>PLAYER LEVEL COPY</h3></font>
+This value seems to be the level of the player. Well, sort of. But it's not the true value. It's just a copy of a data which is far away in the file (in the statut datas, more precisely).
+<p>
+When you open a game, in the menu, you choose the character that you want to play. At this moment the player's level is indicate. The <b>player level copy</b> value is used there :  THIS is the value that is read while in the menu.
+<p>
+If you try to change this value, it seems OK while still in the file menu, but if you begin to play, and then check your statut, you'll see that your level is the same as before your patch. That's because you have not change the RIGHT value.
+<p>
+The TRUE player level is a bit complicated to find. It is a part of the STATUT DATAS, and so, it have no fixed offset, due to the fact that some of the statut datas may not be present.
+<p>
+Check the <a href="part_2.html"><b>part 2</b></a> for a description of the statut datas.<br>
+<p><br>
+Back to <a href="part_1.html#fakeplayerlevel"><b>Part 1</b></a>
+</td></tr></table>

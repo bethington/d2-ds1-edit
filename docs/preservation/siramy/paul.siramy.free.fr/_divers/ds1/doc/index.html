@@ -1,0 +1,2937 @@
+<HTML>
+<HEAD>
+<TITLE>DS1 Editor - Documentation</TITLE>
+   <meta name="Description"            value="Diablo II Map Editor - Documentation">
+   <meta name="Keywords"               value="Diablo, II, 2, ds1, map, level, edit, editor, ds1edit, win_ds1edit, win_ds1edit.exe, documentation, documentations, tutorial, tutorials">
+   <meta name="Author"                 value="Paul SIRAMY">
+   <meta name="Identifier-URL"         value="http://paul.siramy.free.fr/_divers/ds1/doc/index.html">
+   <meta name="Date-Creation-yyyymmdd" value="20030220">
+   <meta name="Date-Revision-yyyymmdd" value="20060305">
+   <meta name="Reply-to"               value="siramy_paul@yahoo.com">
+   <meta name="revisit-after"          value="7">
+</HEAD>
+<body bgColor=black text=#cccc99 link=#189bd8 vLink=#189bd8 aLink=silver>
+<font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b><font size="7"> 
+<font color="#FFCC00">D<font size="6">iablo II MAP Editor - Documentation</font></font></font></b></font><font face="Verdana, Arial, Helvetica, sans-serif"><br>
+</font> 
+<hr>
+<p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Back to the main 
+  <a href="http://paul.siramy.free.fr/_divers/ds1/dl_ds1edit.html"><b>Download 
+  Page</b></a></font></p>
+<p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">This is not a complete 
+  tutorial explaining all you need to know, but at least I hope it'll cover the 
+  most basic questions anyone can have concerning the use of my DS1 Editor, and 
+  some more general wondering on Map Concepts.</font></p>
+<p>&nbsp;</p>
+<p><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>Other Docs</b></font></p>
+<ul>
+  <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="tut01/index.html"><b>Tutorial 
+    1</b></a> : advanced map editing stuff (Warps / Map Resizing / Walkable infos 
+    / House with Roofs)<br>
+    <b> <font color="gold"> - IN CONSTRUCTION -</font></b></font></li>
+</ul>
+<p>&nbsp;</p>
+<p><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b>Revision History</b></font></p>
+<ul>
+  <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">05 
+    March 2006</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+    : Deletion of Tiles and Objects are now using the <b><font color="gold">DEL</font></b> 
+    keys. <b><font color="gold">CTRL</font></b> + <b><font color="gold">X</font></b> 
+    is now for Cut'n Paste</font></li>
+  <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">14 
+    November 2005</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+    : Added Tile Grid (<b><font color="gold">G</font></b>) and BIG Screenshot 
+    (<b><font color="gold">SHIFT</font></b> + <b><font color="gold">P</font></b>)</font></li>
+  <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">19 
+    Jully 2004</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+    : Added <b><font color="gold">Tilde</font></b> and <b><font color="gold">CTRL</font></b> 
+    + <b><font color="gold">1</font></b> ~ <b><font color="gold">CTRL</font></b> 
+    + <b> <font color="gold">0</font></b> sections, to support the edition of 
+    up to 100 ds1</font></li>
+  <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">26 
+    March 2004</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+    : Improved the Advanced tile editing (bitfield) window</font></li>
+  <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">10 
+    March 2004</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+    : Added Paths Editing</font></li>
+  <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">29 
+    Jully 2003</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+    : Started Tutorial 1</font></li>
+  <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">22 
+    June 2003</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+    : Added exemples for the <b><font color="gold">mod_dir</font></b> line in 
+    the <b><font color="gold">Ds1edit.ini</font></b>, thanks to <b><font color="white">NewbieModder</font></b>.</font></li>
+</ul>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b><font size="5"><a name="inside_zip"></a>What's 
+  inside the win_ds1edit.zip</font></b></font></p>
+<table width="640" border="0">
+  <tr> 
+    <td width="21%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">win_ds1edit.exe</font></td>
+    <td width="79%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">The 
+      editor itself</font></td>
+  </tr>
+  <tr> 
+    <td width="21%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">*.bat</font></td>
+    <td width="79%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">The 
+      BATCH files that launch the editor and give it parameters</font></td>
+  </tr>
+  <tr> 
+    <td width="21%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">*.ds1</font></td>
+    <td width="79%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">The 
+      Map themselves</font></td>
+  </tr>
+  <tr> 
+    <td width="21%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Ds1edit.ini</font></td>
+    <td width="79%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">The 
+      configuration file of the editor</font></td>
+  </tr>
+  <tr> 
+    <td width="21%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">demo.ini</font></td>
+    <td width="79%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">An 
+      exemple to show how opening severall ds1 in the editor at once </font></td>
+  </tr>
+  <tr> 
+    <td width="21%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Readme.txt</font></td>
+    <td width="79%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">The 
+      basic doc</font></td>
+  </tr>
+  <tr> 
+    <td width="21%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\</font></td>
+    <td width="79%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Contains 
+      some ressources necessary for the editor</font></td>
+  </tr>
+  <tr> 
+    <td width="21%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Pcx\</font></td>
+    <td width="79%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Contains 
+      some graphical ressources for the editor</font></td>
+  </tr>
+  <tr> 
+    <td width="21%">&nbsp;</td>
+    <td width="79%">&nbsp;</td>
+  </tr>
+  <tr> 
+    <td width="21%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\tmp\</font></td>
+    <td width="79%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Directory 
+      for temporary Undo datas</font></td>
+  </tr>
+  <tr> 
+    <td width="21%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\gamma.dat</font></td>
+    <td width="79%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Tables 
+      of Gamma correction, ressource of the editor</font></td>
+  </tr>
+  <tr> 
+    <td width="21%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\ds1edit.dt1</font></td>
+    <td width="79%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Description 
+      of the Special Tiles used by the game (not complete)</font></td>
+  </tr>
+  <tr> 
+    <td width="21%">&nbsp;</td>
+    <td width="79%">&nbsp;</td>
+  </tr>
+  <tr> 
+    <td width="21%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\obj.txt</font></td>
+    <td width="79%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">A 
+      tabulated Text File that can be open in Excel, datas of objects spawnable 
+      in a map. This file is needed in order to have animations and name of the 
+      objects in the editor, and is subject to be updated every now and then</font></td>
+  </tr>
+</table>
+<p>&nbsp;</p>
+<p><font face="Verdana, Arial, Helvetica, sans-serif" size="5"><b><br>
+  </b></font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b><font size="5"><a name="installing"></a></font></b></font><font face="Verdana, Arial, Helvetica, sans-serif" size="5"><b>Installing 
+  the Editor</b></font></p>
+<ol>
+  <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Extract the 
+    <b> <font color="gold">win_ds1edit.zip</font></b> somewhere on your hard disk, 
+    its location is not important. Then, extract the <b><font color="gold">alleg403.zip</font></b> 
+    in that directory (the <b><font color="gold">alleg40.dll</font></b> must be 
+    at the same place of the <b><font color="gold">win_ds1edit.exe</font></b>).<br>
+    <br>
+    <br>
+    </font></li>
+  <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Now, edit <b><font color="gold">Ds1edit.ini</font></b>.</font> 
+    <br>
+    <br>
+    <ol>
+      <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Edit the 
+        <font color="gold"> <b>d2char</b></font>, <b><font color="gold">d2data</font></b>, 
+        <b> <font color="gold">d2exp</font></b> and <b><font color="gold">patch_d2</font></b> 
+        lines in order to indicate the place where your corresponding MPQ are.<br>
+        <br>
+        </font></li>
+      <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">The <b><font color="gold">mod_dir</font></b> 
+        works the same way as when making a Mod using the -direct -txt method. 
+        It is optional. If you're using a modified data\global\excel\LvlTypes.txt 
+        for you Mod for instance, you don't have to put it in patch_d2.mpq each 
+        time you're modifying it, just use that mod_dir line to indicates to the 
+        editor that you have a Mod directory. All files in the Mod directory are 
+        the one the editor take by default (if present). It'll search them in 
+        the usual MPQ only if it don't find them first in the Mod Directory.<br>
+        <br>
+        <br>
+        For instance, if you have your .TXT files in <b><font color="white">C:\Program 
+        Files\Diablo II\data\global\excel\</font></b>, the <b><font color="gold">mod_dir</font></b> 
+        path would be :<br>
+        <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mod_dir = C:\Program Files\diablo 
+        II<br>
+        <br>
+        <br>
+        <br>
+        If you have your .TXT files in <b><font color="white">H:\game\Diablo II\d2 
+        mods\my_mod\data\global\excel\</font></b>, the <b><font color="gold">mod_dir</font></b> 
+        path would be :<br>
+        <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mod_dir = H:\game\Diablo 
+        II\d2 mods\my_mod<br>
+        <br>
+        <br>
+        <br>
+        </font></li>
+      <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">If you want 
+        to work in another screen mode, edit the <b><font color="gold">full_screen</font></b>, 
+        <b> <font color="gold">screen_width</font></b>, <b><font color="gold">screen_height</font></b> 
+        and <b><font color="gold">screen_depth</font></b> lines. Try to not use 
+        a mode below 800*600 tough. The screen_depth has no influence on the quality 
+        of the images (yet), so leave it to 8.<br>
+        <br>
+        </font></li>
+      <li> 
+        <div align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">If 
+          you want to increase your fps, and assuming that your video card and 
+          monitor can support it, you can ask to use a different monitor refresh 
+          rate. For instance when editing Tristram, and with the refresh rate 
+          set to 60, I have an average of 35 fps. Since I know that my video card 
+          have a mode of 800*600 256 colors at 120 Hz, I change that <b><font color="gold">refresh_rate</font></b> 
+          line to be 120, and then when editing Tristram again, I now have an 
+          average of 69 fps. Keep in mind than the game is using a rate of 25 
+          fps in any case tough. If the editor can't find a mode matching your 
+          refresh rate, it'll take a default one, usually 60hZ. The value that 
+          is really used is indicated in the editor, at the bottom / right corner<br>
+          <br>
+          <img src="refresh_rate.gif" width="226" height="86"> <br>
+          <br>
+          <br>
+          </font></div>
+      </li>
+      <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">There are 
+        other options in the ds1edit.ini, but they're user preferences, not essential 
+        configuration to make the editor works. Just read the comments in the 
+        .ini to know what you can change.</font></li>
+    </ol>
+    <p>&nbsp;</p>
+  </li>
+  <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Now you're ready. 
+    Just launch a .bat (like <b><font color="gold">Tristram.bat</font></b>) and 
+    the editor will first load the datas it needs (essentially from the MPQ), 
+    and then allow you to edit Tiles of Tristram, or editing Objects (click on 
+    the images to enlarge them) :<br>
+    <br>
+    </font> 
+    <table width="640" border="0" height="201">
+      <tr valign="top"> 
+        <td width="11%"> 
+          <div align="center"></div>
+        </td>
+        <td width="41%"> 
+          <div align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif"><a href="loading_big.gif"><img src="loading_small.gif" width="219" height="141" border="0"></a></font></div>
+        </td>
+        <td width="6%"> 
+          <div align="center"></div>
+        </td>
+        <td width="42%"> 
+          <div align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif"><a href="load_done_big.gif"><img src="load_done_small.gif" width="200" height="150" border="0"></a></font></div>
+        </td>
+      </tr>
+      <tr valign="top"> 
+        <td width="11%" height="31">&nbsp;</td>
+        <td width="41%" height="31"> 
+          <div align="center"> 
+            <p><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Command 
+              line output of the Editor while loading its various datas</font></p>
+          </div>
+        </td>
+        <td width="6%" height="31"> 
+          <div align="center"></div>
+        </td>
+        <td width="42%" height="31"> 
+          <div align="center"> 
+            <p><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Ready 
+              to work</font></p>
+          </div>
+        </td>
+      </tr>
+    </table>
+    <font face="Verdana, Arial, Helvetica, sans-serif" size="2"> <br>
+    <br>
+    </font></li>
+</ol>
+<p><br>
+  <br>
+  <br>
+  <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b><font size="5"><a name="commands"></a></font></b></font><font face="Verdana, Arial, Helvetica, sans-serif" size="5"><b>Working 
+  with the Editor</b></font></p>
+<p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">This editor is 
+  using essentially the keyboard and the mouse together. There's no menus, all 
+  of the command are done by the keyboard. In this documentation, you can click 
+  on almost all images to enlarge them. <br>
+  </font></p>
+<table width="750" border="0">
+  <tr valign="top"> 
+    <td colspan="2" height="2"> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%"><font face="Verdana, Arial, Helvetica, sans-serif" size="3" color="gold"><b>ESC</b></font></td>
+    <td width="81%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Quit 
+      the Editor. For confirmation, a window will appear to ask you to save or 
+      not the current ds1 you're editing.</font></td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%"><font face="Verdana, Arial, Helvetica, sans-serif" size="3" color="gold"><b>TAB</b></font></td>
+    <td width="81%"> 
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Change current 
+        Editing Mode (Tile / Objects / Paths). The current mode is writen on the 
+        bottom / right corner.</font></p>
+      <table width="100%" border="0" height="154">
+        <tr valign="top"> 
+          <td width="7%" height="2">&nbsp;</td>
+          <td width="46%" height="2" valign="middle"> 
+            <div align="center"><img src="mode_tiles.gif" width="94" height="7"></div>
+          </td>
+          <td width="4%" height="2" valign="middle"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="2" valign="middle"> 
+            <div align="center"><img src="mode_objects.gif" width="110" height="8"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%">&nbsp;</td>
+          <td width="46%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="tab_tile_big.gif"><img src="tab_tile_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="tab_obj_big.gif"><img src="tab_obj_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="30">&nbsp;</td>
+          <td width="46%" height="30"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Editing 
+              Tiles</font></p>
+          </td>
+          <td width="4%" height="30"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="30"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Editing 
+              Objects</font></p>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="30">&nbsp;</td>
+          <td width="46%"><br>
+            <br>
+            <br>
+          </td>
+          <td width="4%">&nbsp;</td>
+          <td width="43%">&nbsp;</td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="2">&nbsp;</td>
+          <td colspan="3" height="2" valign="middle"> 
+            <div align="center"></div>
+            <div align="center"></div>
+            <div align="center"><img src="mode_paths.gif" width="94" height="7"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%">&nbsp;</td>
+          <td colspan="3"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="tab_path_big.gif"><img src="tab_path_small.gif" width="200" height="150" border="0"></a></font></div>
+            <div align="center"></div>
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%">&nbsp;</td>
+          <td colspan="3"> 
+            <div align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Editing 
+              Paths </font></div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%" height="389"><font face="Verdana, Arial, Helvetica, sans-serif" size="3" color="gold"><b>F1</b></font><font face="Verdana, Arial, Helvetica, sans-serif" size="3">, 
+      <b> <font color="gold">F2</font></b></font></td>
+    <td width="81%" height="389"> 
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Toggle Floor 
+        layers 1 and 2 :</font></p>
+      <table width="100%" border="0" height="189">
+        <tr valign="top"> 
+          <td width="7%">&nbsp;</td>
+          <td width="46%" valign="middle"> 
+            <div align="center"><img src="f1_green.gif" width="14" height="7">&nbsp;&nbsp;<img src="f2_green.gif" width="14" height="7"></div>
+          </td>
+          <td width="4%" valign="middle"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" valign="middle"> 
+            <div align="center"><img src="f1_red.gif" width="14" height="7">&nbsp;&nbsp;<img src="f2_green.gif" width="14" height="7"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%">&nbsp;</td>
+          <td width="46%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="f1onf2on_big.gif"><img src="f1onf2on_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="f1offf2on_big.gif"><img src="f1offf2on_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="21">&nbsp;</td>
+          <td width="46%" height="21"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">F1 
+              and F2 activate</font></p>
+          </td>
+          <td width="4%" height="21"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="21"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">F1 
+              disable</font></p>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="30">&nbsp;</td>
+          <td width="46%"><br>
+            <br>
+            <br>
+          </td>
+          <td width="4%">&nbsp;</td>
+          <td width="43%">&nbsp;</td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="2">&nbsp;</td>
+          <td width="46%" height="2" valign="middle"> 
+            <div align="center"><img src="f1_green.gif" width="14" height="7">&nbsp;&nbsp;<img src="f2_red.gif" width="14" height="7"></div>
+          </td>
+          <td width="4%" height="2" valign="middle"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="2" valign="middle"> 
+            <div align="center"><img src="f1_red.gif" width="14" height="7">&nbsp;&nbsp;<img src="f2_red.gif" width="14" height="7"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="30">&nbsp;</td>
+          <td width="46%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="f1onf2off_big.gif"><img src="f1onf2off_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="f1offf2off_big.gif"><img src="f1offf2off_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="12">&nbsp;</td>
+          <td width="46%" height="12"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">F2 
+              disable</font></p>
+          </td>
+          <td width="4%" height="12"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="12"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Both 
+              F1 and F2 disable</font></p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%" height="236"><font face="Verdana, Arial, Helvetica, sans-serif" size="3" color="gold"><b>F3</b></font></td>
+    <td width="81%" height="236"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Toggle 
+      Animations layer (3 modes : none, freeze, animate). Objects can be hidden 
+      by walls so you may miss some of them, but in the Object Editing Mode this 
+      problem can't occur, since they all have a &quot;Label&quot; which is draw 
+      on top of the Tiles. Exemples of the 3 possible modes :<br>
+      <br>
+      </font> 
+      <table width="100%" border="0" height="184">
+        <tr valign="top"> 
+          <td width="5%" height="2">&nbsp;</td>
+          <td width="32%" height="2" valign="middle"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="f3_2.gif" width="38" height="7"></font></div>
+          </td>
+          <td width="30%" height="2" valign="middle"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="f3_1.gif" width="39" height="7"></font></div>
+          </td>
+          <td width="33%" height="2" valign="middle"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="f3_0.gif" width="38" height="7"></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="5%" height="140">&nbsp;</td>
+          <td width="32%" height="140"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="cain_animated.gif" width="131" height="184"></font></div>
+          </td>
+          <td width="30%" height="140"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="cain_inanimated.gif" width="131" height="184"></font></div>
+          </td>
+          <td width="33%" height="140"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="cain_none.gif" width="131" height="184"></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="5%" height="2">&nbsp;</td>
+          <td width="32%" height="2"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Animate</font></p>
+          </td>
+          <td width="30%" height="2"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Freeze</font></div>
+          </td>
+          <td width="33%" height="2"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">None</font></p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%" height="153"><font color="gold" size="3" face="Verdana, Arial, Helvetica, sans-serif"><b>F4</b></font></td>
+    <td width="81%" height="153"> 
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Toggle Object 
+        infos layer. 4 modes : none, &quot;Type,Id&quot;, Animation Speed, Name 
+        in Obj.txt :</font></p>
+      <table width="100%" border="0" height="95">
+        <tr valign="middle"> 
+          <td width="19%" height="9"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="f4_0.gif" width="22" height="8"></font></div>
+          </td>
+          <td width="25%" height="9"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="f4_1.gif" width="22" height="8"></font></div>
+          </td>
+          <td width="25%" height="9"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="f4_2.gif" width="22" height="8"></font></div>
+          </td>
+          <td width="25%" height="9"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="f4_3.gif" width="22" height="8"></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="19%" height="69"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="f4_none.gif" width="136" height="101"></font></div>
+          </td>
+          <td width="25%" height="69"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="f4_typeid.gif" width="136" height="101"></font></div>
+          </td>
+          <td width="25%" height="69"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="f4_speed.gif" width="136" height="101"></font></div>
+          </td>
+          <td width="25%" height="69"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="f4_name.gif" width="136" height="101"></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="19%" height="21"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">None</font></p>
+          </td>
+          <td width="25%" height="21"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Type,ID</font></div>
+          </td>
+          <td width="25%" height="21"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Animation 
+              Speed</font></div>
+          </td>
+          <td width="25%" height="21"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Name 
+              in Obj.txt</font></p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%"><font color="gold" size="3" face="Verdana, Arial, Helvetica, sans-serif"><b>R</b></font></td>
+    <td width="81%"><font size="2" face="Verdana, Arial, Helvetica, sans-serif" color="gold"><b>R</b></font><font size="2" face="Verdana, Arial, Helvetica, sans-serif">efresh 
+      the obj.txt. It'll read it again, and then update all the animations. Usefull 
+      while editing the Data\obj.txt to see immediatly the modification results 
+      in the editor<br>
+      <br>
+      </font> 
+      <table width="63%" border="0">
+        <tr valign="top"> 
+          <td width="20%"> 
+            <div align="center"></div>
+          </td>
+          <td width="37%" valign="middle"> 
+            <div align="center"><img src="r_before.gif" width="135" height="31"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><img src="r_img_before.gif" width="90" height="81"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="20%"> 
+            <div align="center"></div>
+          </td>
+          <td colspan="2"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Current 
+              animations in the Editor, the animation use the Direction 0 by default</font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="20%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+              <br>
+              </font></div>
+          </td>
+          <td colspan="2"> 
+            <div align="center"><br>
+              <br>
+              <br>
+            </div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="20%"> 
+            <div align="center"></div>
+          </td>
+          <td width="37%" valign="middle"> 
+            <div align="center"><img src="r_after.gif" width="135" height="31"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><img src="r_img_after.gif" width="90" height="81"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="20%"> 
+            <div align="center"></div>
+          </td>
+          <td colspan="2"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Changing 
+              a value in Data\obj.txt, and result after a Refresh in the Editor</font></div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%" height="229"><font size="3" face="Verdana, Arial, Helvetica, sans-serif" color="gold"><b>F5</b></font><font size="3" face="Verdana, Arial, Helvetica, sans-serif">, 
+      <font color="gold"><b>F6</b></font>, <b><font color="gold">F7</font></b>, 
+      <b> <font color="gold">F8</font></b></font></td>
+    <td width="81%" height="229"> 
+      <p><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Toggle wall 
+        layers. Like for the Floor layers, you can toggle all wall layers. <b><font color="gold">F5</font></b> 
+        is for the <b></b>Wall layer 1, <b> <font color="gold">F6</font></b> for 
+        the Wall layer 2, and so on :</font></p>
+      <table width="100%" border="0" height="189">
+        <tr valign="top"> 
+          <td width="7%">&nbsp;</td>
+          <td width="46%" valign="middle"> 
+            <div align="center"><img src="w1_green.gif" width="14" height="7">&nbsp;&nbsp;<img src="w2_green.gif" width="14" height="7">&nbsp;&nbsp;<img src="w3_green.gif" width="14" height="7">&nbsp;&nbsp;<img src="w4_green.gif" width="15" height="7"></div>
+          </td>
+          <td width="4%" valign="middle"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" valign="middle"> 
+            <div align="center"><img src="w1_green.gif" width="14" height="7">&nbsp;&nbsp;<img src="w2_green.gif" width="14" height="7">&nbsp;&nbsp;<img src="w3_red.gif" width="14" height="7">&nbsp;&nbsp;<img src="w4_green.gif" width="15" height="7"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%">&nbsp;</td>
+          <td width="46%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="w3on_big.gif"><img src="w3on_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="w3off_big.gif"><img src="w3off_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="2">&nbsp;</td>
+          <td width="46%" height="2"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">With 
+              the Wall layer 3 activate</font></p>
+          </td>
+          <td width="4%" height="2"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="2"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">With 
+              the Wall layer 3 disable</font></p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%" height="296"><font size="3" face="Verdana, Arial, Helvetica, sans-serif" color="gold"><b>F9</b></font></td>
+    <td width="81%" height="296"> 
+      <p><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Toggle Special 
+        Tiles drawing priority. 2 modes : draw like walls, or draw on top of all 
+        gfx (like roofs). It allows to see Special Tiles hidden by Walls. On the 
+        2 precedent images you can see that the upper Green Special Tile is only 
+        visible when the Wall layer 3 is disable. That's because for this screenshots 
+        the Special Tiles drawing priority was set to draw Special Tiles * like 
+        walls *, thus the upper Green tiles was hidden. Now, let's hit the <b><font color="gold">F9</font></b> 
+        key and here's what we have :</font></p>
+      <table width="100%" border="0" height="189">
+        <tr valign="top"> 
+          <td width="7%" height="2"> 
+            <div align="center"></div>
+          </td>
+          <td width="46%" height="2" valign="middle"> 
+            <div align="center"><img src="spl_red.gif" width="21" height="8"></div>
+          </td>
+          <td width="4%" height="2" valign="middle"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="2" valign="middle"> 
+            <div align="center"><img src="spl_green.gif" width="21" height="8"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%"> 
+            <div align="center"></div>
+          </td>
+          <td width="46%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="w3on_big.gif"><img src="w3on_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="f9on_big.gif"><img src="f9on_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="2"> 
+            <div align="center"></div>
+          </td>
+          <td width="46%" height="2"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Special 
+              Tiles draw like Walls</font></p>
+          </td>
+          <td width="4%" height="2"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="2"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Special 
+              Tiles draw like Roofs</font></p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%" height="240"><font face="Verdana, Arial, Helvetica, sans-serif" size="3" color="gold"><b>F10</b></font></td>
+    <td width="81%" height="240"> 
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Toggle npc's 
+        paths layer (<b>not yet editable</b>). The NPC in the game will only use 
+        the points on the Pink lines (and randomly), and they'll never go back 
+        to their original starting position.</font></p>
+      <table width="100%" border="0" height="189">
+        <tr valign="top"> 
+          <td width="7%" height="2"> 
+            <div align="center"></div>
+          </td>
+          <td width="46%" height="2" valign="middle"> 
+            <div align="center"><img src="path_green.gif" width="31" height="8"></div>
+          </td>
+          <td width="4%" height="2" valign="middle"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="2" valign="middle"> 
+            <div align="center"><img src="path_red.gif" width="31" height="8"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%"> 
+            <div align="center"></div>
+          </td>
+          <td width="46%"> 
+            <div align="center"><a href="f10on_big.gif"><img src="f10on_small.gif" width="200" height="150" border="0"></a></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="f10off_big.gif"><img src="f10off_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="2"> 
+            <div align="center"></div>
+          </td>
+          <td width="46%" height="2"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Lots 
+              of NPC paths in Lut Gholein</font></p>
+          </td>
+          <td width="4%" height="2"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="2"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">NPC 
+              paths hidden</font></p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%" height="616"><font face="Verdana, Arial, Helvetica, sans-serif" size="3" color="gold"><b>F11</b></font></td>
+    <td width="81%" height="616"> 
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Toggle the 
+        Shadow Layer. There are 4 Shadow modes : Disable, &quot;As-is&quot; (solid, 
+        original colors), White (all pixels are replace by White pixels), and 
+        Transparent (this is the default value). In the game you have the choice 
+        between 2 quality for the Shadows, in the editor their correspondances 
+        are the &quot;As-is&quot; and the Translucent modes.</font></p>
+      <table width="100%" border="0" height="189">
+        <tr valign="top"> 
+          <td width="7%" height="2">&nbsp;</td>
+          <td width="46%" height="2" valign="middle"> 
+            <div align="center"><img src="shad_red.gif" width="31" height="7"></div>
+          </td>
+          <td width="4%" height="2" valign="middle"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="2" valign="middle"> 
+            <div align="center"><img src="shad_grey.gif" width="31" height="7"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%">&nbsp;</td>
+          <td width="46%"> 
+            <div align="center"><img src="shad_0.gif" width="170" height="236"></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><img src="shad_1.gif" width="170" height="236"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="21">&nbsp;</td>
+          <td width="46%" height="21"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Disable</font></p>
+          </td>
+          <td width="4%" height="21"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="21"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">&quot;As-is&quot;</font></p>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="30">&nbsp;</td>
+          <td width="46%"> 
+            <div align="center"><br>
+              <br>
+              <br>
+            </div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="9">&nbsp;</td>
+          <td width="46%" height="9" valign="middle"> 
+            <div align="center"><img src="shad_white.gif" width="31" height="7"></div>
+          </td>
+          <td width="4%" height="9" valign="middle"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="9" valign="middle"> 
+            <div align="center"><img src="shad_green.gif" width="31" height="7"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="30">&nbsp;</td>
+          <td width="46%"> 
+            <div align="center"><img src="shad_2.gif" width="170" height="236"></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><img src="shad_3.gif" width="170" height="236"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="12">&nbsp;</td>
+          <td width="46%" height="12"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">White, 
+              that way it's far easier<br>
+              to see them in some case,<br>
+              like when there's no Floor layer</font></p>
+          </td>
+          <td width="4%" height="12"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="12"> 
+            <p align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Translucent</font></p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%" height="470"><font face="Verdana, Arial, Helvetica, sans-serif" size="3" color="gold"><b>SPACE</b></font></td>
+    <td width="81%" height="470"> 
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Toggle walkable 
+        info layer, 3 states : disable (default), simple infos (walkable &amp; 
+        jump infos only), complete infos. In this state a little help window appear 
+        at the bottom / right corner (it's toggleable by the <b><font color="gold">T</font></b> 
+        key).</font></p>
+      <table width="100%" border="0" height="189">
+        <tr valign="top"> 
+          <td width="7%">&nbsp;</td>
+          <td width="46%"> 
+            <div align="center"><a href="walkinfo0_big.gif"><img src="walkinfo0_small.gif" width="200" height="150" border="0"></a></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><a href="walkinfo1_big.gif"><img src="walkinfo1_small.gif" width="200" height="150" border="0"></a></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="21">&nbsp;</td>
+          <td width="46%" height="21"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">No 
+              walkable infos</font></p>
+          </td>
+          <td width="4%" height="21"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="21"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Simple 
+              walkable infos</font></p>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="30">&nbsp;</td>
+          <td width="46%"> 
+            <div align="center"><br>
+              <br>
+              <br>
+            </div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="30">&nbsp;</td>
+          <td width="46%"> 
+            <div align="center"><a href="walkinfo2a_big.gif"><img src="walkinfo2a_small.gif" width="200" height="150" border="0"></a></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><a href="walkinfo2b_big.gif"><img src="walkinfo2b_small.gif" width="200" height="150" border="0"></a></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="12">&nbsp;</td>
+          <td width="46%" height="12"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Complete 
+              walkable infos,<br>
+              help window activate</font></p>
+          </td>
+          <td width="4%" height="12"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="12"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Complete 
+              walkable infos,<br>
+              help window disable</font></p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%"> 
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="3" color="gold"><b>G</b></font></p>
+      <p><b><font face="Verdana, Arial, Helvetica, sans-serif" size="3" color="gold">Shift</font></b><font face="Verdana, Arial, Helvetica, sans-serif" size="3"> 
+        + </font><b><font face="Verdana, Arial, Helvetica, sans-serif" size="3" color="gold">G</font></b></p>
+    </td>
+    <td width="81%"> 
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Toggle the 
+        Tile Grid state between the 3 available : disabled, over floors but under 
+        walls, and over floors and walls. If the <b><font color="gold">Shift</font></b> 
+        key is pressed it do the same but in reverse order.</font></p>
+      <table width="100%" border="0" height="154">
+        <tr valign="top"> 
+          <td width="7%">&nbsp;</td>
+          <td width="46%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="tilegrid1_big.gif"><img src="tilegrid1_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="tilegrid2_big.gif"><img src="tilegrid2_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="30">&nbsp;</td>
+          <td width="46%" height="30"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Tile 
+              Grid disabled</font></p>
+          </td>
+          <td width="4%" height="30"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="30"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Tile 
+              Grid over floors, but under walls</font></p>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="30">&nbsp;</td>
+          <td width="46%"><br>
+            <br>
+            <br>
+          </td>
+          <td width="4%">&nbsp;</td>
+          <td width="43%">&nbsp;</td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%">&nbsp;</td>
+          <td colspan="3"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="tilegrid3_big.gif"><img src="tilegrid3_small.gif" width="200" height="150" border="0"></a></font></div>
+            <div align="center"></div>
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%">&nbsp;</td>
+          <td colspan="3"> 
+            <div align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Tile 
+              Grid over floors and walls</font></div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%"><font face="Verdana, Arial, Helvetica, sans-serif" size="3" color="gold"><b>Shift</b></font><font face="Verdana, Arial, Helvetica, sans-serif" size="3"> 
+      + <b><font color="gold">F1</font></b>~<b><font color="gold">F2</font></b><br>
+      </font><font face="Verdana, Arial, Helvetica, sans-serif" size="3" color="gold"><b>Shift</b></font><font face="Verdana, Arial, Helvetica, sans-serif" size="3"> 
+      + <b><font color="gold">F5</font></b>~<b><font color="gold">F8</font></b></font><font face="Verdana, Arial, Helvetica, sans-serif" size="3"> 
+      <br>
+      <b><font color="gold">Shift</font></b> + <b><font color="gold">F11</font></b></font></td>
+    <td width="81%"> 
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">View only 
+        this layer. It's an easy way to check which tiles are on which layers 
+        : Press <b><font color="gold">Shift</font></b>, then press <b><font color="gold">F1</font></b> 
+        to see what are the Tiles of the Floor layer 1, keep <b><font color="gold">Shift</font></b> 
+        press and type <b><font color="gold">F2</font></b> and you're now viewing 
+        only the Tiles of the Floor layer 2, and so on.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">It's especially 
+        usefull if you want to select some Walls but without Floors that are below 
+        for instance : press <b><font color="gold">Shift</font></b> and hit the 
+        <b><font color="gold">F5</font></b> key, and you're now able to select 
+        only the tiles that are on the wall layer 1, without the floors.</font></p>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%"><font face="Verdana, Arial, Helvetica, sans-serif" size="3" color="gold"><b>Ctrl</b></font><font face="Verdana, Arial, Helvetica, sans-serif" size="3"> 
+      + <b><font color="gold">F1</font></b>~<b><font color="gold">F2</font></b><br>
+      </font><font face="Verdana, Arial, Helvetica, sans-serif" size="3" color="gold"><b>Ctrl</b></font><font face="Verdana, Arial, Helvetica, sans-serif" size="3"> 
+      + <b><font color="gold">F5</font></b>~<b><font color="gold">F8</font></b> 
+      <br>
+      </font><font face="Verdana, Arial, Helvetica, sans-serif" size="3" color="gold"><b>Ctrl</b></font><font face="Verdana, Arial, Helvetica, sans-serif" size="3"> 
+      + <b><font color="gold">F11</font></b></font></td>
+    <td width="81%"> 
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">That's the 
+        reverse of the precedent command : it will make all layers visible, except 
+        the one you have the key on.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">The Shift 
+        + ... and the Ctrl + ... commands are shortcuts, since you can achieve 
+        the same results by pressing where needed the keys F1, F2, F5, F6, F7, 
+        F8 and / or F11. But it's more simple and quicker that way.</font></p>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%"><font face="Verdana, Arial, Helvetica, sans-serif" size="3" color="gold"><b>Backspace</b></font></td>
+    <td width="81%"> 
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Reset all 
+        layers states to their default value. So if you're lost in knowing what 
+        layers are disable, just press this key and all Floor / Walls / Shadow 
+        layers will become visible again.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">I'm usually 
+        using it that way : Shift + ... to view only 1 layer, then I select the 
+        tiles I want on that layer, then I press Backspace to view back all layers.</font></p>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%"><font face="Verdana, Arial, Helvetica, sans-serif" size="3" color="gold"><b>Tilde</b></font></td>
+    <td width="81%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">That's 
+      the key that is on the upper/left corner of your keyboard. It toggles (hide 
+      / show) an optional 2nd row to the menu bar. This row display the current 
+      SET (group) of DS1, the current DS1 index that you are on, and the full 
+      path of this DS1 (see below).</font></td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%"><font face="Verdana, Arial, Helvetica, sans-serif" size="3" color="gold"><b>CTRL 
+      + 0 </b></font><font face="Verdana, Arial, Helvetica, sans-serif" size="3">~<br>
+      <b><font color="gold">CTRL + 9</font></b></font></td>
+    <td width="81%"> 
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">0 ~ 9 are 
+        the keys that are in the upper part of your keyboard, not in the keypad.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">When more 
+        than 10 DS1 are loaded (via a .ini) the editor split them into 10 different 
+        SETS, from SET 1 (CTRL + 1) to SET 10 (CTRL + 0). In each SET you have 
+        the usual 10 slots of DS1. SET 1 contain DS1 #1 to #10, SET 2 contains 
+        DS1 #11 to #20 ... up to SET 10 that contains DS1 #91 to #100.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> For instance, 
+        to copy tiles from DS1 #22 to DS1 #84 you'll do :</font></p>
+      <ul>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="gold"><b>CTRL 
+          + 3</b></font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+          (enter SET 3, it contains DS1 #21 to #30)</font></li>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="gold"><b>2</b></font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+          (activate DS1 2 of SET 3, so it's DS1 index : 10*(3-1)+2 = 20 + 2 = 
+          22)</font></li>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">select 
+          your tiles and copy them (<b><font color="gold">CTRL + C</font></b>)</font></li>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="gold"><b>CTRL 
+          + 9</b></font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+          (enter SET 9, it contains DS1 #81 to #90)</font></li>
+        <li><b><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="gold">4</font></b><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+          (activate DS1 4 of SET 9, so it's DS1 index : 10*(9-1)+4 = 80 + 4 = 
+          84)</font></li>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">place 
+          your tiles</font></li>
+      </ul>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> Note : when 
+        more than 10 DS1 are loaded, the menu bar contains 2 rows, as an<br>
+        additional row appear to help you to navigate through the different DS1s. 
+        This 2nd row display the current SET (group) of DS1, the current DS1 index 
+        that you are on, and the full path of this DS1.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">When is it 
+        usefull to load that many DS1 ? Well, a maze of an area is composed of 
+        usually 72 DS1, so this is the time to use this functionallity. Onyx used 
+        84 DS1 for his replacment of the Act 3 dungeon ;)</font></p>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%"><font face="Verdana, Arial, Helvetica, sans-serif" size="3" color="gold"><b>0 
+      </b></font><font face="Verdana, Arial, Helvetica, sans-serif" size="3">~ 
+      <b><font color="gold">9</font></b></font></td>
+    <td width="81%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">That's 
+      the keys that are in the upper part of your keyboard, not in the keypad. 
+      It makes you switch between all the 10 possible maps of the current SET 
+      (group) of ds1, assuming you are using the multiple-ds1 editing fonctionality 
+      of the editor. Check the README.txt that is in the zip of the editor for 
+      details on how loading more than one map at once.</font></td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%"><font face="Verdana, Arial, Helvetica, sans-serif" size="3" color="gold"><b>F12</b></font><font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      <b><font color="gold">Shift</font></b> + <b><font color="gold">F12</font></b></font></td>
+    <td width="81%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">More 
+      (or Less if Shift is pressed) Gamma Correction. In dark areas you may want 
+      to increase that value (act 3 usually), while in the bright areas you may 
+      want to decrease it (Act 2). The default value is 1.00 and it is the value 
+      to use to display all images in their original colors. Depending of your 
+      video card / monitor / video mode / your own eyes / or whatever else, you'll 
+      find a value that fit your needs in most of the case. In order to avoid 
+      you to change that value each time you're launching the editor, edit the 
+      <b>ds1edit.ini</b> configuration file, at the line <b>gamma_correction</b>.</font></td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%"> 
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="3" color="gold"><b>Up</b></font><font face="Verdana, Arial, Helvetica, sans-serif" size="3">, 
+        <b> <font color="gold">Down</font></b>, <b><font color="gold">Left</font></b>, 
+        <b> <font color="gold">Right</font></b></font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="3" color="gold"><b>Mouse 
+        </b></font><font face="Verdana, Arial, Helvetica, sans-serif" size="3">on 
+        the borders of the screen</font></p>
+    </td>
+    <td width="81%"> 
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">You can scroll 
+        the main editing window by pressing the arrow keys. And you can also place 
+        your mouse exactly on the 4 sides of the screen to achieve almost the 
+        same result.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">The scrolling 
+        speed when using the arrow keys is in the <b>ds1edit.ini</b>, as long 
+        as the scrolling speed when using the mouse. If your computer is too old 
+        / too powerfull, or simply if you don't like the default scrolling speeds, 
+        adjust these values in the .ini to fit your needs.</font></p>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%"> 
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="3" color="gold"><b>+</b></font><font face="Verdana, Arial, Helvetica, sans-serif" size="3">, 
+        <b> <font color="gold">-</font></b> (keypad)</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="3"><b><font color="gold">-</font></b>, 
+        <b><font color="gold">=</font></b></font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="3"><b><font color="gold">Mouse 
+        wheel</font></b></font></p>
+    </td>
+    <td width="81%"> 
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Hit the <b><font color="gold">+</font></b> 
+        and <b><font color="gold">-</font></b> keys to zoom in or out. You can 
+        only use the internal zooms (which are powers of 2) : <b>1:1</b>, <b>1:2</b>, 
+        <b>1:4</b>, <b>1:8</b> and <b>1:16</b>. You can use both the keys on the 
+        keypad, and / or the keys between the keys <b><font color="gold">0</font></b> 
+        and the <b><font color="gold">Backspace</font></b>. With these keys, the 
+        zoom is always done on the Tile / Sub-Tile which is at the center of the 
+        screen.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">You can also 
+        use the <b><font color="gold">Mouse Wheel</font></b> for zooming : roll 
+        it forward and you're zooming IN, roll it backward and you're zooming 
+        OUT.</font></p>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%"> 
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="3" color="gold"><b>C</b></font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="3" color="gold"><b>Mouse<br>
+        button 3</b></font></p>
+    </td>
+    <td width="81%"> 
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Center the 
+        map to the Tile (or the Sub-Tile) the mouse is pointing. It also automatically 
+        set the zoom to the value defined in <b>ds1edit.ini</b> right after (check 
+        the line <b>center_zoom</b> in that .ini)</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">You can also 
+        use the Mouse button 3, which should be the Roller while you're pressing 
+        -&nbsp;not&nbsp;rolling&nbsp;- it. Press the Mouse Roller, then roll it 
+        either forward or backward, and you're zooming <b>and</b> centering the 
+        map to the Tile / Sub-Tile the mouse is on.</font></p>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%"><font face="Verdana, Arial, Helvetica, sans-serif" size="3" color="gold"><b>Home</b></font></td>
+    <td width="81%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">At 
+      any moment, if you're lost in the map (than can happen if you're playing 
+      with both scrolling and zooming), hit the <b>Home</b> key and you'll be 
+      on the center of the map again. </font></td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%"> 
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="3" color="gold"><b>P</b></font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="3" color="gold"><b>Shift</b></font><font face="Verdana, Arial, Helvetica, sans-serif" size="3"> 
+        + </font><font face="Verdana, Arial, Helvetica, sans-serif" size="3" color="gold"><b>P</b></font></p>
+    </td>
+    <td width="81%"> 
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="gold"><b>P</b></font><font face="Verdana, Arial, Helvetica, sans-serif" size="2">rintscreen 
+        (makes a screenshot). They're .pcx, </font><font face="Verdana, Arial, Helvetica, sans-serif" size="2">and 
+        have names like &quot;<b>screenshot-00037.pcx</b>&quot;. They're created 
+        into the directory of the editor. The editor will never erased a previous 
+        screenshot, it'll always search for the next unused number.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">If the <b><font color="gold">Shift</font></b> 
+        key is pressed, it'll make a BIG screenshot, and you'll have the <b>entire</b> 
+        map in 1 image. Note that this big screenshot takes care of the current 
+        zoom and various graphical layer state. In addition, the format of this 
+        screenshot is in .BMP instead of .PCX, because of the .PCX image dimensions 
+        limitations.</font></p>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%" height="2257"><font size="3" face="Verdana, Arial, Helvetica, sans-serif" color="gold"><b>Left 
+      Click<br>
+      </b></font></td>
+    <td width="81%" height="2257"> 
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Maintain 
+        the Left Mouse button pressed, and you're now <b>selecting an area of 
+        Tiles</b> : move the mouse around and you'll change the Tiles that will 
+        be selected.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">When you're 
+        releasing the mouse button, different actions can be made, depending of 
+        the key that is pressed :</font></p>
+      <table width="100%" border="0">
+        <tr> 
+          <td width="6%">&nbsp;</td>
+          <td width="9%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">no 
+            key</font></td>
+          <td width="85%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">: 
+            make a new selection</font></td>
+        </tr>
+        <tr> 
+          <td width="6%">&nbsp;</td>
+          <td width="9%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b><font color="gold">Shift</font></b></font></td>
+          <td width="85%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">: 
+            add the area to the previous selection</font></td>
+        </tr>
+        <tr> 
+          <td width="6%">&nbsp;</td>
+          <td width="9%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b><font color="gold">Ctrl</font></b></font></td>
+          <td width="85%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">: 
+            remove the area from the previous selection</font></td>
+        </tr>
+        <tr> 
+          <td width="6%">&nbsp;</td>
+          <td width="9%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b><font color="gold">H</font></b></font></td>
+          <td width="85%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">: 
+            hide the current visible Tiles of the area (usefull to see behind)</font></td>
+        </tr>
+      </table>
+      <p><font size="2" face="Verdana, Arial, Helvetica, sans-serif">The selection 
+        is based on <b><font color="gold">what you're seeing</font></b>. By changing 
+        the Layer's state (using the keys <b><font color="gold">F1</font></b>, 
+        <b><font color="gold">F2</font></b>, <b><font color="gold">F5</font></b>, 
+        <b><font color="gold">F6</font></b>, <b><font color="gold">F7</font></b>, 
+        <b><font color="gold">F8</font></b>, <b><font color="gold">F11</font></b>), 
+        you can select / deselect a Floor, a Wall, a Shadow, multiple Floors / 
+        Walls / Shadows, etc...</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Tip : you 
+        can press the left button, then toggle your layers, then make your area 
+        selection just like you want, then toggle the layers visibility, press 
+        an action key to make a command (<b><font color="gold">Shift</font></b>, 
+        <b> <font color="gold">Ctrl</font></b> or <b><font color="gold">H</font></b>) 
+        and released the left button only at the end. Most of the command still 
+        work while selecting an area.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Hidding Tiles 
+        is safe. They're not deleted from the map, this is just a temporay state 
+        : press the <b><font color="gold">S</font></b> key (like <b>'S'</b>how), 
+        and all the hidding tiles of the map will be visible again. Hidding Tiles 
+        is usefull to see what are the other Tiles that are behind. Note that 
+        even if they're hidden, they can still be selected / deselected when making 
+        an area : the selection process of the Tiles is based on the global Layer 
+        visibility only, not the Hidden state of individual Tiles.<br>
+        </font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Let's exercise 
+        a little :</font></p>
+      <table width="100%" border="0" height="189">
+        <tr valign="top"> 
+          <td width="4%">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="area0_big.gif"><img src="area0_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="area1_big.gif"><img src="area1_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="21">&nbsp;</td>
+          <td width="49%" height="21"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">We 
+              already have a selection composed of 2 parts (the blue Tiles), and 
+              are now selecting a new area (the orange Tiles)</font></p>
+          </td>
+          <td width="4%" height="21"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="21"> 
+            <p align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">If 
+              when releasing the Left mouse button no key is pressed, then the 
+              area will become a <b>New</b> selection</font></p>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="30">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+              <br>
+              <br>
+              </font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="30">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="area2_big.gif"><img src="area2_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="area3_big.gif"><img src="area3_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="12">&nbsp;</td>
+          <td width="49%" height="12"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Let's 
+              come back in past and let's press the <b><font color="gold">Shift</font></b> 
+              key instead of having no key when releasing the Left mouse button 
+              : we're adding the area to the existing selection</font></p>
+          </td>
+          <td width="4%" height="12"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="12"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Now, 
+              let's delete from the selection the Floor Tiles that are under the 
+              vehicle. Press <b><font color="gold">Shift</font></b> + <b><font color="gold">F1</font></b> 
+              to only see the Floor layer 1. Then makes an area that includes 
+              that Tiles...</font></p>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="30">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+              <br>
+              <br>
+              </font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="30">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="area4_big.gif"><img src="area4_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="area5_big.gif"><img src="area5_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="12">&nbsp;</td>
+          <td width="49%" height="12"> 
+            <p align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">... 
+              and press <b> <font color="gold">Ctrl</font></b> before releasing 
+              the Left mouse button : you have excluded the current Tiles of that 
+              area from the selection (but only the ones on the Floor layer 1, 
+              since only this layer was visible)</font></p>
+          </td>
+          <td width="4%" height="12"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="12"> 
+            <p align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Now, 
+              press <b><font color="gold">Shift</font></b> + <b><font color="gold">F5</font></b> 
+              to only see the Wall layer 1. Then select a new Tile of that layer, 
+              press <b><font color="gold">Shift</font></b>, release the Left mouse 
+              button and... </font></p>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="30">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+              <br>
+              <br>
+              </font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="30">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="area6_big.gif"><img src="area6_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="area7_big.gif"><img src="area7_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="12">&nbsp;</td>
+          <td width="49%" height="12"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">...and 
+              you have added a new Wall (but not the Floor) to the selection. 
+              Press <b><font color="gold">Backspace</font></b> to view all layers 
+              : you can see that the vehicle don't have its Floor tiles selected, 
+              since we have excluded them from the selection just before.</font></p>
+          </td>
+          <td width="4%" height="12"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="12"> 
+            <div align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Now 
+              let's try to Hide some Tiles. Make this area but<i> keep the Left 
+              mouse button pressed for now</i>.</font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="12">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+              <br>
+              <br>
+              </font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="12">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="area8_big.gif"><img src="area8_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="area9_big.gif"><img src="area9_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="73">&nbsp;</td>
+          <td width="49%" height="73"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Now, 
+              press <b><font color="gold">Shift</font></b> + <b><font color="gold">F5</font></b> 
+              to see only the Wall layer 1. What ? Yes, keep the Left mouse button 
+              pressed. Yes you can. As for me, I can press the <b><font color="gold">Right 
+              Shift</font></b> + <b><font color="gold">F1</font></b> while using 
+              only my Left hand.</font></p>
+          </td>
+          <td width="4%" height="73"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="73"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Now, 
+              press the <b><font color="gold">H</font></b> button and release 
+              the Left mouse button : you have Hide some Tiles. But since only 
+              the Wall layer 1 was visible, the *&nbsp;Floor&nbsp;* Tiles were 
+              not hiden.</font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="12">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+              <br>
+              <br>
+              </font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="12">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="area10_big.gif"><img src="area10_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="area6_big.gif"><img src="area6_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="12">&nbsp;</td>
+          <td width="49%" height="12"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">As 
+              a proof, just hit the <b><font color="gold">Backspace</font></b> 
+              key, to make all layers visible again : only the Tiles on the Wall 
+              layer 1 of your last area are hidden, not the Floor Tiles.</font></p>
+          </td>
+          <td width="4%" height="12"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="12"> 
+            <div align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Now, 
+              just press the <b><font color="gold">S</font></b> key, and the hidden 
+              Tiles are visible again : they were not deleted from the map.</font></div>
+          </td>
+        </tr>
+      </table>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+        <br>
+        To be honest, the possibility to change the Layers visibilty while making 
+        an area was not done on purpose, it's a side effect that you can use, 
+        but I don't think someone will really need it. It can be usefull in some 
+        cases, but not often. So just remember these important points&nbsp;:</font></p>
+      <ul>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> Selecting 
+          Tiles : press the Left mouse button, make your area, press a command 
+          Key (if needed), and release the button.<br>
+          <br>
+          </font></li>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">At any 
+          moment, if you're lost in your layers visibility and or / hidden Tiles, 
+          press <b><font color="gold">Backspace</font></b> then <b><font color="gold">S</font></b> 
+          : all Tiles are now visible again.</font></li>
+      </ul>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%" height="2173"><font size="3" face="Verdana, Arial, Helvetica, sans-serif" color="gold"><b>I</b></font></td>
+    <td width="81%" height="2173"> 
+      <p><font size="2" face="Verdana, Arial, Helvetica, sans-serif">A powerfull 
+        command : select all <b><font color="gold">I</font></b>dentical tiles 
+        in the map, as the ones you're clicking the mouse onto.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Choose a 
+        Floor, press the <b><font color="gold">I</font></b> key and maintened 
+        it pressed, click on the floor, and all the same floors on the whole map 
+        are selected (even if they're on another layers). This can work even if 
+        there are several tiles on the cell, in that case you'll have a selection 
+        composed of several type of tiles.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> Another 
+        usefull thing is that you can still use the <b><font color="gold">Shift</font></b> 
+        and <b><font color="gold">Ctrl</font></b> key to respectively add all 
+        these tiles to the current selection, or delete them all from the selection 
+        : choose a cell which have only 1 floor, select all the same floors with 
+        the <b><font color="gold">I</font></b> key. Now, choose another floor, 
+        but press <b><font color="gold">Shift</font></b> + <b><font color="gold">I</font></b> 
+        : you'll have in your large selection 2 type of Floors now. Press <b><font color="gold">Ctrl</font></b> 
+        + <b><font color="gold">I</font></b> and click on one floor of the selection, 
+        and you'll have only 1 type of floor in the selection.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">The Tiles 
+        types that will be searched are based on the visibility of the layers, 
+        but the search (in the whole map) to select them is done disregarding 
+        the Layer visibility, and even on hidden tiles.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">This command 
+        is also usefull to have an idea about the density of some tiles in the 
+        map. Tip : you can keep the <b><font color="gold">I</font></b> key pressed 
+        while moving the mouse on different Tiles... you'll make new selection 
+        each time very quickly, thus you'll be able to analyse their density very 
+        quickly. </font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">But let's 
+        make some exercises, to help you clarify how this command is working :</font></p>
+      <table width="100%" border="0" height="1718">
+        <tr valign="top"> 
+          <td width="4%" height="135">&nbsp;</td>
+          <td width="49%" height="135"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="i0_big.gif"><img src="i0_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+          <td width="4%" height="135"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="135"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="i1_big.gif"><img src="i1_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="51">&nbsp;</td>
+          <td width="49%" height="51"> 
+            <p align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Let's 
+              say that we already have a selection. Now, go on another Floor Tile, 
+              press the <b><font color="gold">I</font></b> key, maintained it 
+              pressed, and now click on the Left mouse button...</font></p>
+          </td>
+          <td width="4%" height="51"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="51"> 
+            <p align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">... 
+              you obtain a New selection, composed of all the Floor Tiles on this 
+              map that are exactly the same as the one you requested.</font></p>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="30">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+              <br>
+              <br>
+              </font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="30">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="i2_big.gif"><img src="i2_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="i3_big.gif"><img src="i3_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="12">&nbsp;</td>
+          <td width="49%" height="12"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Now 
+              press <b><font color="gold">Shift</font></b> + <b><font color="gold">F5</font></b> 
+              to view only the Wall layer 1. Then go on a Tile of this layer...</font></p>
+          </td>
+          <td width="4%" height="12"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="12"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">... 
+              press <b><font color="gold">Shift</font></b> + <b><font color="gold">I</font></b> 
+              and click on the Left mouse button : you have added all the Tiles 
+              on the map of that Type to your previous selection...</font></p>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="30">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+              <br>
+              <br>
+              </font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="30">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="i4_big.gif"><img src="i4_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="i5_big.gif"><img src="i5_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="12">&nbsp;</td>
+          <td width="49%" height="12"> 
+            <p align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">... 
+              but since only the Wall layer 1 was visible, you only added the 
+              Wall Tile, not the Floor Tile that was under, as an hit on the <b><font color="gold">Backspace</font></b> 
+              key will confirm you. Now, go on a Floor Tile of the selection...</font></p>
+          </td>
+          <td width="4%" height="12"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="12"> 
+            <p align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">... 
+              press <b><font color="gold">Ctrl</font></b> + <b><font color="gold">I</font></b>, 
+              and click on the Left mouse button : you have removed all the Floor 
+              Tiles of that type from the selection.</font></p>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="30">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+              <br>
+              <br>
+              </font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="30">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="i6_big.gif"><img src="i6_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="i7_big.gif"><img src="i7_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="12">&nbsp;</td>
+          <td width="49%" height="12"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Now 
+              let's go elsewhere, exactly here, where there are 3 Tiles in that 
+              cell : a Floor on the <b><font color="#00FF00">f1</font></b> layer, 
+              a Stone Wall on the <b><font color="#00FF00">w1</font></b> layer, 
+              and the Left part of a Tree on the <b><font color="#00FF00">w2</font></b> 
+              layer. Press <b><font color="gold">I</font></b> and click on the 
+              left mouse button...</font></p>
+          </td>
+          <td width="4%" height="12"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="12"> 
+            <div align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">... 
+              you have made a New selection, composed of 3 different types of 
+              Tiles, because there were 3 kind of Tiles on your cell, and all 
+              3 were visible when you asked to select the <b>I</b>dentical Tiles.</font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="12">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+              <br>
+              <br>
+              </font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="12">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="i8_big.gif"><img src="i8_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="i9_big.gif"><img src="i9_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="73">&nbsp;</td>
+          <td width="49%" height="73"> 
+            <p align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Now, 
+              press <b><font color="gold">Shift</font></b> + <b><font color="gold">F5</font></b> 
+              to view only the Wall layer 1, go on the Middle part of the Tree, 
+              press <b><font color="gold">Shift</font></b> + <b><font color="gold">I</font></b> 
+              and click on the Left mouse button...</font></p>
+          </td>
+          <td width="4%" height="73"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="73"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">... 
+              you have added all the middle part of this Tree to the selection, 
+              on the whole map. Add again the Right part of the Tree (<b><font color="gold">Shift</font></b> 
+              + <b><font color="gold">I</font></b> on the Tile of the Right part) 
+              ...</font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="12">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+              <br>
+              <br>
+              </font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="12">&nbsp;</td>
+          <td colspan="3"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="i10_big.gif"><img src="i10_small.gif" width="200" height="150" border="0"></a></font></div>
+            <div align="center"></div>
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="42">&nbsp;</td>
+          <td colspan="3" height="42"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">... 
+              press <b><font color="gold">Backspace</font></b> to view all layers, 
+              and<br>
+              check at the opposite of the map : as<br>
+              expected you have added all the identical<br>
+              Trees </font><font size="2" face="Verdana, Arial, Helvetica, sans-serif">of 
+              that map to your selection, and<br>
+              only the Tree, not its Floor Tile.</font></p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%"><font size="3" face="Verdana, Arial, Helvetica, sans-serif" color="gold"><b>Ctrl</b></font><font size="3" face="Verdana, Arial, Helvetica, sans-serif"> 
+      + <b><font color="gold">S</font></b></font></td>
+    <td width="81%"><font size="2" face="Verdana, Arial, Helvetica, sans-serif" color="gold"><b>S</b></font><font size="2" face="Verdana, Arial, Helvetica, sans-serif">ave 
+      the map (the .DS1), in its current state. Incremental backups. First, it 
+      rename the current .DS1 to the first free name with numbers it found, then 
+      it save the current map.</font> 
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> For instance, 
+        say that you are editing the map <b>duriel.ds1</b> for the first time. 
+        When you'll ask to save it, it'll rename <b>duriel.ds1</b> to <b>duriel-000.ds1</b> 
+        and save the current state of the map into the file <b>duriel.ds1</b>.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> Next time 
+        you'll make a save, it'll rename <b>duriel.ds1</b> to <b>duriel-001.ds1</b> 
+        and save the current state of the map into the file <b>duriel.ds1</b>.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> So, the 
+        <b>duriel-000.ds1</b> is always you original .ds1, and the next numbers 
+        are the following versions. Your last version is always the <b>duriel.ds1</b>, 
+        without the numbers in the name. Numbers are for backups.</font></p>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%"><font face="Verdana, Arial, Helvetica, sans-serif" size="3" color="gold"><b>Ctrl</b></font><font face="Verdana, Arial, Helvetica, sans-serif" size="3"> 
+      + <b><font color="gold">U</font></b></font></td>
+    <td width="81%"> 
+      <p><font size="2" face="Verdana, Arial, Helvetica, sans-serif" color="gold"><b>U</b></font><font size="2" face="Verdana, Arial, Helvetica, sans-serif">ndo 
+        the precedent <b><font color="#FFFFFF">Tiles</font></b> modifications, 
+        up to the very start. Note that when you make some multiple undo and then 
+        start to make new modifications, the undo buffers are reseted : the ones 
+        you have just used to get back to the current state of the map are lost. 
+        Also you can't undo an undo : there's only 1 way of undo.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">The editor 
+        is using its directory <b>data\tmp</b> to store temporary files. They're 
+        small and are deleted when you're exiting the editor.</font></p>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%" height="625"><font size="3" face="Verdana, Arial, Helvetica, sans-serif" color="gold"><b>N</b></font></td>
+    <td width="81%" height="625"> 
+      <p><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Use a </font> 
+        <font size="2" face="Verdana, Arial, Helvetica, sans-serif" color="gold"><b>N</b></font><font size="2" face="Verdana, Arial, Helvetica, sans-serif">ight 
+        preview. 2 modes : lowest quality, better quality. This is just a toy 
+        for now, as it don't support any ambient light level / light radius modifications, 
+        but it can help you to figure how a map will look in Dark Areas (llike 
+        Caves, Crypts, or simply an outdoor area at Night time).</font></p>
+      <p><font size="2" face="Verdana, Arial, Helvetica, sans-serif">While in 
+        Tile / Object / Path mode, press <b><font color="gold">N</font></b> and 
+        you're in the Night preview lowest quality (Night 1). Press again <b><font color="gold">N</font></b> 
+        and this time you're in the better quality (Night 2). To exit one of the 
+        2 Night preview modes, presse <b><font color="gold">Tab</font></b>, or 
+        press <b><font color="gold">N</font></b> until you go back to the original 
+        editing mode.</font></p>
+      <table width="100%" border="0" height="189">
+        <tr valign="top"> 
+          <td width="7%">&nbsp;</td>
+          <td width="46%"> 
+            <div align="center"><a href="night0_big.gif"><img src="night0_small.gif" width="200" height="150" border="0"></a></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><a href="night1_big.gif"><img src="night1_small.gif" width="200" height="150" border="0"></a></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="21">&nbsp;</td>
+          <td width="46%" height="21"> 
+            <p align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">In 
+              an editing mode</font></p>
+          </td>
+          <td width="4%" height="21"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="21"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Press 
+              <b> <font color="gold">N</font></b> and you're in the Night preview 
+              mode, lowest quality</font></p>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="30">&nbsp;</td>
+          <td width="46%"> 
+            <div align="center"><br>
+              <br>
+              <br>
+            </div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="30">&nbsp;</td>
+          <td colspan="3"> 
+            <div align="center"><a href="night2_big.gif"><img src="night2_small.gif" width="200" height="150" border="0"></a></div>
+            <div align="center"></div>
+            <div align="center"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="9">&nbsp;</td>
+          <td colspan="3" height="9"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Press 
+              <b> <font color="gold">N</font></b> again and you're in the<br>
+              Night preview mode, better quality</font></p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%" height="667"><font size="3" face="Verdana, Arial, Helvetica, sans-serif" color="gold"><b>Ctrl</b></font><font size="3" face="Verdana, Arial, Helvetica, sans-serif"> 
+      + <b><font color="gold">C</font></b></font></td>
+    <td width="81%" height="667"><font size="2" face="Verdana, Arial, Helvetica, sans-serif" color="gold"><b>C</b></font><font size="2" face="Verdana, Arial, Helvetica, sans-serif">opy 
+      the current selection. Right after you have pressed these keys, a preview 
+      appear, folowing your mouse mouvements. The <b><font color="red">Red</font></b> 
+      part of this preview tell that you will erase previous tiles at that particular 
+      place, <b><font color="#00FF00">Green</font></b> part indicate that the 
+      tiles are the same or there were no tiles before.</font> 
+      <p><font size="2" face="Verdana, Arial, Helvetica, sans-serif">If you try 
+        to copy / paste some tiles from a ds1 to another, you can expect big distorsions. 
+        If you want to avoid them, only copy / paste between ds1 that have the 
+        exact same ID (in <b>data\global\excel\lvlTypes.txt</b>), and the exact 
+        same DEF (in <b>data\global\excel\lvlPrest.txt</b>). This is the way the 
+        game use tiles that make difficult the use of certain tiles in another 
+        .DS1.</font></p>
+      <table width="100%" border="0" height="189">
+        <tr valign="top"> 
+          <td width="7%">&nbsp;</td>
+          <td width="46%"> 
+            <div align="center"><a href="copy0_big.gif"><img src="copy0_small.gif" width="200" height="150" border="0"></a></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><a href="copy1_big.gif"><img src="copy1_small.gif" width="200" height="150" border="0"></a></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="21">&nbsp;</td>
+          <td width="46%" height="21"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">First, 
+              select this Tent.<br>
+              Then press <b><font color="gold">Ctrl</font></b> + <b><font color="gold">C</font></b> 
+              ... </font></p>
+          </td>
+          <td width="4%" height="21"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="21"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">... 
+              and a preview of the selection appear, following your mouse movments. 
+              If we place the Tent here, some Tiles will be deleted, as the Red 
+              Tiles are indicating</font></p>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="30">&nbsp;</td>
+          <td width="46%"> 
+            <div align="center"><br>
+              <br>
+              <br>
+            </div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="30">&nbsp;</td>
+          <td width="46%"> 
+            <div align="center"><a href="copy2_big.gif"><img src="copy2_small.gif" width="200" height="150" border="0"></a></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><a href="copy3_big.gif"><img src="copy3_small.gif" width="200" height="150" border="0"></a></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="12">&nbsp;</td>
+          <td width="46%" height="12"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">But 
+              here it'll be fine, since all Tiles are Green. Let's click the Left 
+              mouse button</font></p>
+          </td>
+          <td width="4%" height="12"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="12"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">The 
+              result after the copy/paste</font></p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%" height="667"><font size="3" face="Verdana, Arial, Helvetica, sans-serif" color="gold"><b>Ctrl</b></font><font size="3" face="Verdana, Arial, Helvetica, sans-serif"> 
+      + <b><font color="gold">X</font></b></font></td>
+    <td width="81%" height="667"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Cut'n 
+      paste.</font> <font size="2" face="Verdana, Arial, Helvetica, sans-serif">Almost 
+      the same as <b><font color="gold">Ctrl</font></b> + <b><font color="gold">C</font></b>, 
+      except that this time you're NOT moving a COPY, but the ORIGINAL selection 
+      of tiles.</font> 
+      <p>&nbsp;</p>
+      <table width="100%" border="0" height="189">
+        <tr valign="top"> 
+          <td width="7%">&nbsp;</td>
+          <td width="46%"> 
+            <div align="center"><a href="cut0_big.gif"><img src="cut0_small.gif" width="200" height="150" border="0"></a></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><a href="cut1_big.gif"><img src="cut1_small.gif" width="200" height="150" border="0"></a></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="21">&nbsp;</td>
+          <td width="46%" height="21"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Select 
+              this Tree and its shadow.<br>
+              Then press <b><font color="gold">Ctrl</font></b> + <b><font color="gold">X</font></b> 
+              ... </font></p>
+          </td>
+          <td width="4%" height="21"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="21"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">... 
+              and a preview of the selection appear, following your mouse movments. 
+              If we place the Tree here, some Tiles will be deleted, as the Red 
+              Tiles are indicating</font></p>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="30">&nbsp;</td>
+          <td width="46%"> 
+            <div align="center"><br>
+              <br>
+              <br>
+            </div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="30">&nbsp;</td>
+          <td width="46%"> 
+            <div align="center"><a href="cut2_big.gif"><img src="cut2_small.gif" width="200" height="150" border="0"></a></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><a href="cut3_big.gif"><img src="cut3_small.gif" width="200" height="150" border="0"></a></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="12">&nbsp;</td>
+          <td width="46%" height="12"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">But 
+              here it'll be fine, since all Tiles are Green. Let's click the Left 
+              mouse button</font></p>
+          </td>
+          <td width="4%" height="12"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="12"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">The 
+              result after the cut'n paste</font></p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%" height="1316"> 
+      <p><font size="3" face="Verdana, Arial, Helvetica, sans-serif" color="gold"><b>DEL</b></font><font size="3" face="Verdana, Arial, Helvetica, sans-serif"> 
+        (keyboard)<br>
+        </font><font size="3" face="Verdana, Arial, Helvetica, sans-serif" color="gold"><b> 
+        DEL</b></font><font size="3" face="Verdana, Arial, Helvetica, sans-serif"> 
+        (keypad)</font></p>
+    </td>
+    <td width="81%" height="1316"> 
+      <p><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Select some 
+        tiles, even in different layers, then press </font><font size="3" face="Verdana, Arial, Helvetica, sans-serif" color="gold"><b>DEL</b></font><font size="2" face="Verdana, Arial, Helvetica, sans-serif"> 
+        to delete them.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">After a Copy, 
+        a Deletion or a modification of the Selection, if you want to cancel your 
+        actions and come to a precedent state, don't forget to use the <b><font color="gold">Ctrl</font></b> 
+        + <b><font color="gold">U</font></b> (Undo) feature.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">As an exercice 
+        that combine both Copy and Deletion, let's increase the size of the Baal 
+        Throne Room :</font></p>
+      <table width="100%" border="0" height="189">
+        <tr valign="top"> 
+          <td width="4%">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="throne0_big.gif"><img src="throne0_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="throne1_big.gif"><img src="throne1_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="21">&nbsp;</td>
+          <td width="49%" height="21"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Select 
+              this border</font></p>
+          </td>
+          <td width="4%" height="21"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="21"> 
+            <p align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Press 
+              <b><font color="gold">Ctrl</font></b> + <b><font color="gold">C</font></b> 
+              to copy it, then place the preview here</font></p>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="30">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+              <br>
+              <br>
+              </font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="30">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="throne2_big.gif"><img src="throne2_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="throne3_big.gif"><img src="throne3_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="12">&nbsp;</td>
+          <td width="49%" height="12"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif" color="gold"><b>Click</b></font><font size="2" face="Verdana, Arial, Helvetica, sans-serif"> 
+              on the <b><font color="gold">Left mouse button</font></b> to drop 
+              the preview in place</font></p>
+          </td>
+          <td width="4%" height="12"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="12"> 
+            <p align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Now 
+              reselect the previous border</font></p>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="30">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+              <br>
+              <br>
+              </font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="30">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="throne4_big.gif"><img src="throne4_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="throne5_big.gif"><img src="throne5_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="12">&nbsp;</td>
+          <td width="49%" height="12"> 
+            <p align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">And 
+              press <b><font color="gold">DEL</font></b> to delete it</font></p>
+          </td>
+          <td width="4%" height="12"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="12"> 
+            <p align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Select 
+              these 2 &quot;lines&quot; of Tiles</font></p>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="30">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+              <br>
+              <br>
+              </font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="30">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="throne6_big.gif"><img src="throne6_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="throne7_big.gif"><img src="throne7_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="12">&nbsp;</td>
+          <td width="49%" height="12"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif"><b><font color="gold">Ctrl</font></b> 
+              + <b><font color="gold">C</font></b> to copy it a first time here</font></p>
+          </td>
+          <td width="4%" height="12"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="12"> 
+            <div align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Immediatly 
+              after having drop the preview, press again <b><font color="gold">Ctrl</font></b> 
+              + <b><font color="gold">C</font></b> to copy it a second time here</font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="12">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+              <br>
+              <br>
+              </font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="12">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><a href="throne8_big.gif"><img src="throne8_small.gif" width="200" height="150" border="0"></a></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="throne9_big.gif"><img src="throne9_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="2">&nbsp;</td>
+          <td width="49%" height="2"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Press 
+              <b><font color="gold">Ctrl</font></b> + <b><font color="gold">C</font></b> 
+              again for a last copy here</font></p>
+          </td>
+          <td width="4%" height="2"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="2"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">That's 
+              done, you now have a bigger Throne Room. Of course it's far from 
+              perfect, just check the Walls on the upper/right border : they're 
+              not making a good sequence of Tiles.</font></div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%" height="200"><font face="Verdana, Arial, Helvetica, sans-serif" size="3">&quot;Weird&quot; 
+      Tiles </font></td>
+    <td width="81%" height="200"> 
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Sometimes 
+        you may see some Tiles with numbers in there, at zoom 1:1. That's the 
+        way the editor show you that there ARE Tiles somewhere, but they have 
+        a Flag that make them invisible in the game. That's also to allow you 
+        to select them.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">It can be 
+        some Tiles that are on each side of a River, or tiles to block your way 
+        like in Haroggath. But you can also see them on almost ALL maps of the 
+        game, at the far Top and Bottom corner, like in the screenshot below. 
+        I strongly recommand to leave these last ones in the map, as it seems 
+        they're used by the game.</font></p>
+      <table width="100%" border="0" height="154">
+        <tr valign="top"> 
+          <td width="7%">&nbsp;</td>
+          <td width="46%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="unktil0_big.gif"><img src="unktil0_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="unktil1_big.gif"><img src="unktil1_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="5">&nbsp;</td>
+          <td width="46%" height="5"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Invisible 
+              Tiles near a River</font></p>
+          </td>
+          <td width="4%" height="5"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="5"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Invisible 
+              Tiles on each side of a Map</font></p>
+          </td>
+        </tr>
+      </table>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+        &quot;Weird&quot; Tiles are mostly unknown in fact, so don't play with 
+        them.</font></p>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%"><font size="3" face="Verdana, Arial, Helvetica, sans-serif" color="gold"><b>Ctrl</b></font><font size="3" face="Verdana, Arial, Helvetica, sans-serif"> 
+      + <b><font color="gold">Shift</font><font size="3" face="Verdana, Arial, Helvetica, sans-serif"> 
+      + <b><font color="gold">Right Click</font></b></font></b></font></td>
+    <td width="81%"> 
+      <p><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Advanced 
+        tile editing. <b><font color="#FF0000">Warning</font></b> : NO UNDO IS 
+        POSSIBLE !</font></p>
+      <p><font size="2" face="Verdana, Arial, Helvetica, sans-serif">There are 
+        2 possible windows. It depends if you have a selection of tiles (even 
+        just 1 tile of 1 layer) or not. In the case there's a selection, the possible 
+        bits to edit are restricted to the tiles inside that selection.</font></p>
+      <ul>
+        <li><font size="2" face="Verdana, Arial, Helvetica, sans-serif">When there's 
+          no tile selected at all, in the Tile Editing mode, press the <b><font color="gold">Ctrl</font></b> 
+          and the <b><font color="gold">Shift</font></b> key, then click on the 
+          <b> <font color="gold">Right mouse button</font></b>, and this window 
+          appear :</font></li>
+      </ul>
+      <p align="center"><a href="bitfield_big.gif"><img src="bitfield_small.gif" width="200" height="150" border="0"></a> 
+      </p>
+      <blockquote> 
+        <p><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Here you 
+          can change all the internal datas of the Tiles, even some unknown. Usually 
+          you'll only edit the <b><font color="#FFFFFF">Hidden</font></b> or the 
+          <b> <font color="#FFFFFF">Unwalkable</font></b> bits for a particular 
+          Tile.</font></p>
+        <p><font size="2" face="Verdana, Arial, Helvetica, sans-serif">For instance 
+          in the screenshot, if the Vis special tile on the W1 layer has the Hidden 
+          bit set, this is because this warp is not part of the Vis special tile, 
+          and therefore the Vis has no graphics, at all. In order to don't see 
+          a Green Tile in the game, we tell the game this tile is invisible.</font></p>
+        <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">If you 
+          set the Unwalkable bit to 1, then the entire Tile becomes unwalkable, 
+          This is usefull to makes floor unwalkable without having to play with 
+          DT1 walkable infos.<br>
+          &nbsp; </font></p>
+      </blockquote>
+      <ul>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">When there's 
+          a selection, the window that will appear is globaly the same, but there 
+          are more colors.</font> 
+          <blockquote> 
+            <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b><font color="#FFFFFF">0</font></b> 
+              or <b><font color="#FFFFFF">1</font></b> indicates that all tiles 
+              are using the same bit value.</font></p>
+            <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b><font color="#0099FF">0</font></b> 
+              or <b><font color="#0099FF">1</font></b> indicates that some tiles 
+              are using a 0, others a 1. If you don't edit this kind of bit, the 
+              tiles keep their original values. If you edit it, all tiles will 
+              use your new values (and the bit will no longer be <b><font color="#0099FF">blue</font></b> 
+              but <b><font color="#FFFFFF">white</font></b> as well).</font></p>
+            <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b><font color="#009933">-</font></b> 
+              indicates that this bit is not editable, since no tile in the selection 
+              is on this layer</font></p>
+            <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Let's 
+              say that we want to make several tiles unwalkable at once :</font></p>
+          </blockquote>
+        </li>
+      </ul>
+      <table width="100%" border="0" height="189">
+        <tr valign="top"> 
+          <td width="7%">&nbsp;</td>
+          <td width="46%"> 
+            <div align="center"><a href="bitfieldv2a_big.gif"><img src="bitfieldv2a_small.gif" width="200" height="150" border="0"></a></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><a href="bitfieldv2b_big.gif"><img src="bitfieldv2b_small.gif" width="200" height="150" border="0"></a></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="21">&nbsp;</td>
+          <td width="46%" height="21"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Select 
+              the 3 groups of tiles, then press the <b><font color="gold">Space</font></b> 
+              key to see the walkable infos. Here these 3 groups are walkable 
+              for now. Now, press the <b><font color="gold">Ctrl</font></b> and 
+              the <b><font color="gold">Shift</font></b> key, then click on the 
+              <b> <font color="gold">Right mouse button</font></b>...</font></p>
+          </td>
+          <td width="4%" height="21"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="21"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">...and 
+              this new window appear. Set the <b><font color="#FFFFFF">Walkable</font></b> 
+              bit to <b><font color="#00FF00">1</font></b> for the <b><font color="#FFFFFF">F1</font></b> 
+              layer, and click on the <b><font color="#FFFFFF">OK</font></b> button 
+              (or press the<font color="gold"> <b>Enter</b></font> key).</font></p>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="30">&nbsp;</td>
+          <td width="46%"> 
+            <div align="center"><br>
+              <br>
+              <br>
+            </div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="30">&nbsp;</td>
+          <td colspan="3"> 
+            <div align="center"><a href="bitfieldv2c_big.gif"><img src="bitfieldv2c_small.gif" width="200" height="150" border="0"></a></div>
+            <div align="center"></div>
+            <div align="center"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="7%" height="12">&nbsp;</td>
+          <td colspan="3" height="12"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">This 
+              has set all the tiles on the <b><font color="#FFFFFF">F1</font></b> 
+              layer of the selection to have the bit <b><font color="#FFFFFF">Walkable</font></b> 
+              set to <b><font color="#00FF00">1</font></b>, so all the 3 groups 
+              are now unwalkable.</font></p>
+            <div align="center"></div>
+            <p align="center">&nbsp;</p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2"> <font face="Verdana, Arial, Helvetica, sans-serif" size="3"><br>
+      </font> 
+      <hr>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td width="19%" height="803"><font face="Verdana, Arial, Helvetica, sans-serif" size="3">Path 
+      Editing</font></td>
+    <td width="81%" height="803"> 
+      <p><font size="2" face="Verdana, Arial, Helvetica, sans-serif">The paths 
+        editing is still very basic, but with patience it's posible to do what 
+        you want.</font></p>
+      <p><font size="2" face="Verdana, Arial, Helvetica, sans-serif">In short 
+        : you select 1 and only 1 object in the Object Editing mode. It can be 
+        either a Type 1 or a Type 2 object, but only Type 1 (Monster / NPC) objects 
+        can use paths in the game. You then click on the <font color="#00FF00">ALL 
+        NEW</font> button to delete the current paths and create new ones, by 
+        clicking on the map. To change the (hardcoded) &quot;Action&quot; (animation 
+        and / or sound) that the NPC will do at a particular place, click on the 
+        <font color="#00FF00">(Enter) SET ACTION</font> button and type a number 
+        in the keypad, then press the <b><font color="gold">Enter</font></b> key 
+        and the next paths that you'll place will use that new Action value. When 
+        you have finished, click on the <font color="#00FF00">OK</font> button, 
+        and the NPC have now whole new Paths.</font></p>
+      <table width="100%" border="0" height="189">
+        <tr valign="top"> 
+          <td width="4%">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="pathedit1_big.gif"><img src="pathedit1_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="pathedit2_big.gif"><img src="pathedit2_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="21">&nbsp;</td>
+          <td width="49%" height="21"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Select 
+              1 and only 1 object in the Object Editing mode (either the Label 
+              or the Feet of the object will work), then press <b><font color="gold">TAB</font></b> 
+              to go into the Path editing mode.</font></p>
+          </td>
+          <td width="4%" height="21"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="21"> 
+            <p align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">You 
+              can still use the usual layer toggle and <b><font color="gold">Space</font></b> 
+              key if you want. Click on the <font color="#00FF00">ADD NEW</font> 
+              button and now click some times on the ground, this create new paths.</font></p>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="30">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+              <br>
+              <br>
+              </font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="30">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="pathedit3_big.gif"><img src="pathedit3_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="pathedit4_big.gif"><img src="pathedit4_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="12">&nbsp;</td>
+          <td width="49%" height="12"> 
+            <p align="center"><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Click 
+              on the <font color="#00FF00">(Enter) SET ACTION</font> button, this 
+              open a window where you type a number that will be used as the default 
+              values for the next paths to adds. Press <b><font color="gold">Enter</font></b> 
+              to close the window.</font></p>
+          </td>
+          <td width="4%" height="12"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="12"> 
+            <p align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Continue 
+              to click on the ground : as you see the new paths are using that 
+              new Action default value.</font></p>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="30">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+              <br>
+              <br>
+              </font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="30">&nbsp;</td>
+          <td width="49%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="pathedit5_big.gif"><img src="pathedit5_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+          <td width="4%"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%"> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><a href="pathedit6_big.gif"><img src="pathedit6_small.gif" width="200" height="150" border="0"></a></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td width="4%" height="12">&nbsp;</td>
+          <td width="49%" height="12"> 
+            <p align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Continue 
+              to adds paths and to change the Action values, until you consider 
+              that you have finished to add new paths.</font></p>
+          </td>
+          <td width="4%" height="12"> 
+            <div align="center"></div>
+          </td>
+          <td width="43%" height="12"> 
+            <p align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">At 
+              any moment, if you're not satisfy with your changes, click on the 
+              <font color="#00FF00">CANCEL</font> button to restore the original 
+              NPC paths. If it's good for you, click on the <font color="#00FF00">OK</font> 
+              button, it saves your paths editing and assign them to the NPC.</font></p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr valign="top"> 
+    <td colspan="2" height="2">&nbsp;</td>
+  </tr>
+</table>
+<p>&nbsp;</p>

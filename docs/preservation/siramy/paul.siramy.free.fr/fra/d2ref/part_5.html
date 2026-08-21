@@ -1,0 +1,64 @@
+<html>
+<head>
+<body bgColor=black text=#cccc99 link=#189bd8 vLink=#189bd8 aLink=silver background="../../common/backgrnd/03.png">
+<font face=verdana size=2>
+<font color=white><br><h3>DESCRIPTION DE FICHIER<font size=2> &nbsp (Partie 5, Cadavre & Mercenaire)<br>(depuis le patch 1.08)</font></h3></font>
+Juste après les <b>Objets</b> nous trouvons l'état du <b>cadavre</b>, les données du <b>mercenaire</b>, et depuis le patch 1.08 de bizzares <b>données inconnues</b>. Jusqu'au patch 1.06 c'était facile, mais le patch 1.08 a introduit une structure un peu plus complexe (essentiellement due au fait que l'on peut équiper les mercenaires dans l' <b>Expansion set : Lord of Destruction</b>).
+<p>
+Cette page expliquera le patch 1.08 (de même que l'extension) mais, si vous le voulez, vous pouvez encore lire comment c'était <a href="part_5b.html">avant le patch 1.08</a>.
+<p><br>
+<u><font color=white><b>CADAVRE</b></font></u>
+<p>
+Juste après le dernier objet de l'inventaire du joueur, on trouve l'état du <b>Cadavre</b>.
+<ul>
+   <li>Si le joueur est en vie, cet état est représenté par les octets <font color=white><b>4A 4D 00 00</b></font>
+   <li>Si le joueur est mort, ces octets ne sont "simplement" pas présent !
+</ul>
+<p><br><br><br>
+<u><font color=white><b>MERCENAIRE</b></font></u>
+<p>
+Juste après, nous trouvons la (nouvelle) structure de mercenaire.
+<ul>
+   <li>Si le joueur n'a JAMAIS pris de mercenaire, nous trouvons seulement l'octet <font color=white><b>00</b></font>, et se sera TOUT pour les <b>données du mercenaire</b><p>
+   <li>Si le joueur a un mercenaire (vivant ou mort), nous trouvons les octets <font color=white><b>4A 4D 00 00</b></font> (oui, c'est la même séquence d'octets que pour <b>l'état du cadavre</b>, et cela peut être trompeur, tout spécialement si le joueur est mort), suivis d'autres données :
+   <ul><ul>
+      <p>
+      <li>Tout d'abord nous trouvons 2 octets qui indiquent si le mercenaire est vivant ou mort :
+      <ul><ul>
+         <li>Si le mercenaire est mort, nous trouvons les octets <font color=white><b>01 00</b></font>
+         <li>Si le mercenaire est vivant, nous trouvons les octets <font color=white><b>00 00</b></font>
+      </ul></ul>
+      <p>
+      <li>Les 8 octets suivants decrivent le mercenaire : son nom, son type, et l'aptitude qu'il maîtrise. Je ne sais pas vraiment comment ça marche (et pour dire la vérité, je pense que ce n'est pas important)
+      <p>
+      <li>Les 4 octets suivants sont son nombre de points d'expérience total. Les connaissant, on peut en déduire son niveau, et par conséquent ses points de statuts (comme la force, la défense, la dextérité et ainsi de suite)
+      <p>
+      <li>Les 4 octets suivants indiquent le nombre d'objets dont le mercenaire est équipé (entre 0 et 4). <font color=white><b>4A 4D 04 00</b></font> signifie qu'il y a 4 objets, et <font color=white><b>4A 4D 00 00</b></font> qu'il n'y en a aucun. Note : dans le patch 1.08 on ne peut pas équiper le mercenaire (nous avons besoin du pack d'extension), donc nous trouverons toujours <font color=white><b>4A 4D 00 00</b></font>. Ce n'est que dans l'extension que l'on peut trouver d'autres valeurs.
+      <p>
+      <li>Juste après, il y a un nombre variable d'octets : ce sont les objets que le mercenaire porte. Chaque objet commence par les octets <font color=white><b>4A 4D 10 00</b></font> (ce qui semblent être une constante dans le format des objets). Evidemment, si ce n'est pas une sauvegarde de jeu qui utilise l'extension, ces octets ne sont pas là (du tout).
+   </ul></ul>
+</ul>
+<a name=warning>
+<p><br><br><br>
+<font color=#ff2010><b>Je viens juste de trouver que les données inconnues suivantes sont utilisées pour les racourcis-clavier additionnels de l'extension. Si le joueur utilise plus que les raccourcis F1 à F8 habituels, le format change, donc ce que je décris ci-dessous est incorrect. J'analyserai plus tard.</b></font>
+<p>
+<u><font color=white><b>DONNEES INCONNUES 1</b></font></u>
+<p>
+Les <b>données du mercenaire</b> sont maintenant finies, mais pas le fichier. Nous trouvons 8 curieuses séquences d'octets. Les 2 premiers octets de chaque séquence sont <font color=white><b>FF 00</b></font> et les 4 suivants sont <i>tirés d'octets précédents dans le fichier !</i> Ils sont pris exactement <font color=white><b>4A</b></font> octets avant (74 en décimal). Quelques examples :<p>
+<ul>
+   <li>Si les <b>données inconnues 1</b> commencent en <font color=white><b>987</b></font>, alors les octets sont pris depuis <font color=white><b>93D</b></font> (987 - 4A = 93D)
+   <li>Si les <b>données inconnues 1</b> commencent en <font color=white><b>73B</b></font>, alors les octets sont pris depuis <font color=white><b>6F1</b></font> (73B - 4A = 6F1)
+</ul>
+Et ils suivent un shéma de répétition : 4 octets pris, 2 octets sautés, 4 octets pris, 2 octets sautés, et ainsi de suite. Bizzare. Quelle utilité ? Une forme de protection ? Imposible : c'est trop évident.
+<p>
+C'est comme si un bloc entier de 48 octets était pris depuis les 76 octets précédents, puis que 8 séquences d'octets <font color=white><b>FF 00</b></font> étaient collées dedans à intervalles réguliers, et que le bloc résultant était finalement recopié tel quel dans le fichier.
+<p><br><br><br>
+<u><font color=white><b>DONNEES INCONNUES 2</b></font></u>
+<p>
+Et finalement nous trouvons 8 autres octets. Avec le patch 1.08 sans l'extension ils sont toujours égaux à <font color=white><b>00 00 00 00 00 00 00 00</b></font>, mais avec l'extension, ils peuvent changer. Par exemple, j'ai trouvé les valeurs <font color=white><b>00 00 00 00 DC 00 00 00</b></font>. Je n'ai pas encore compris ce que cela pouvait être.
+<p><br><br><br>
+Retour à la <a href="part_1.html"><b>Partie 1</b></a> : Modifications faciles<br>
+Retour à la <a href="part_2.html"><b>Partie 2</b></a> : Données de Statut<br>
+Retour à la <a href="part_3.html"><b>Partie 3</b></a> : Niveaux d'aptitude<br>
+Retour à la <a href="part_4.html"><b>Partie 4</b></a> : Objets<br>
+Retour à la <a href="index.html"><b>Page de menu</b></a>

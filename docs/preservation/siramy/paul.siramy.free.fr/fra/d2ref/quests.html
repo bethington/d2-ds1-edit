@@ -1,0 +1,146 @@
+<html>
+<head>
+<body bgColor=black text=#cccc99 link=#189bd8 vLink=#189bd8 aLink=silver background="../../common/backgrnd/03.png">
+<font face=verdana size=2>
+<font color=white><br><h3>STRUCTURE DES QUETES</h3></font>
+<p>
+Cette structure fait 96 octets.
+<p>
+4 octets sont réservés pour activer les Quêtes et les Portails d'un acte<br>
+2 octets sont assignés à chaque Quête<br>
+32 octets sont réservés pour des données inconnues d'un acte<br>
+<p>
+Si vous voulez consulter les <font color=white><b>Offsets des Quêtes</b></font>, c'est <a href="quests_2.html"><b>ici</b></a>
+<p><br><br>
+<font color=white><b>L'activation des Quêtes et des portails</b></font> se fait avec cette valeur :<br>
+<ul>
+   <li>Acte 1 en difficultée Normale : 0001012Ah (dans l'ordre du fichier : : <font color=white><b>2A 01 01 00</b></font>)<br>
+   <li>Autre cas : 00010000h (dans l'ordre du fichier : <font color=white><b>00 00 01 00</b></font>)
+</ul>
+<br>
+<font color=white><b>Détail de la structure</b></font> :
+<ul>
+   <li>Acte 1 (total de 16 octets)
+   <ul type=square>
+      <li>Quêtes et Portails activés (4 octets)
+      <li>Quête 1 : Le Repaire du Mal
+      <li>Quête 2 : Le Cimetière des Soeurs
+      <li>Quête 5 : Outils du commerce
+      <li>Quête 3 : A la recherche de Cain
+      <li>Quête 4 : La Tour oubliée
+      <li>Quête 6 : Le Carnage des Soeurs
+   </ul>
+   <br>
+   <li>Acte 2 (total de 16 octets)
+   <ul type=square>
+      <li>Quêtes et Portails activés (4 octets)
+      <li>Quête 1 : Le Repaire de Radament
+      <li>Quête 2 : Le Bâton Horadrim
+      <li>Quête 3 : Le Soleil Maudit
+      <li>Quête 4 : Le Sanctuaire des Arcanes
+      <li>Quête 5 : Invocation
+      <li>Quête 6 : Les Sept Tombeaux
+   </ul>
+   <br>
+   <li>Acte 3 (total de 16 octets)
+   <ul type=square>
+      <li>Quêtes et Portails activés (4 octets)
+      <li>Quête 1 : L'Oiseau de Feu
+      <li>Quête 2 : Anciennes croyances
+      <li>Quête 3 : La Volonté de Khalim
+      <li>Quête 4 : Livre de Lam Esen
+      <li>Quête 5 : Le Temple noirci
+      <li>Quête 6 : Le Gardien
+   </ul>
+   <br>
+   <li>Acte 4 (total de 16 octets)
+   <ul type=square>
+      <li>Quêtes et Portails activés (4 octets)
+      <li>Quête 1 : L'Ange déchu
+      <li>Quête 3 : Epilogue de la terreur
+      <li>Quête 2 : La Forge de l'Enfer
+      <li>Quêtes reservées 4 à 6 (6 octets)
+   </ul>
+   <br>
+   <li>Données de Quêtes inconnues (32 octets)
+</ul>
+<p><br><br>
+<font color=white><b>Assignation des bits</b></font><br>
+Comme il est dit plus haut, chaque Quête fait 2 octets. Ce sont des champs de bits.<br>
+<p>
+<u>Dans le 1er octet</u> :
+<ul>
+   <li>Bit 0: Quête terminée 1 (mono joueur)
+   <li>Bit 1: Récompense disponible
+   <li>Bit 2: Quête commencée
+   <li>Bit 3: Stage 4 terminé
+   <li>Bit 4: Stage 1 terminé
+   <li>Bit 5: Stage 2 terminé
+   <li>Bit 6: Stage 3 terminé
+   <li>Bit 7: 
+</ul>
+<u>Dans le 2nd octet</u> :
+<ul>
+   <li>Bit 0: 
+   <li>Bit 1: 
+   <li>Bit 2: Stage 5 terminé
+   <li>Bit 3: Stage 6 terminé
+   <li>Bit 4: Quête terminée 2 (mono joueur) (La Quête à déjà disparue de la fenêtre des Quêtes)
+   <li>Bit 5: 
+   <li>Bit 6: 
+   <li>Bit 7: Quête terminée (multi joueur) (La Quête disparaitra dans un nuage de feu)
+</ul>
+(le bit 0 est le bit de poid faible, le bit 7 le bit de poid fort)<p>
+Pour indiquer qu'une Quête est terminée et que la récompense a été prise,<br>
+mettez la valeur <font color=white><b>1C7Dh</b></font> dans la Quête (le 1er octet est <font color=white><b>7Dh</b></font> et le 2ème est <font color=white><b>1Ch</b></font>).
+<p>
+Pour indiquer qu'une Quête est terminée et que la récompense n'a pas été prise,<br>
+mettez la valeur <font color=white><b>1C7Fh</b></font> dans la Quête (le 1er octet est <font color=white><b>7Fh</b></font> et le 2ème est <font color=white><b>1Ch</b></font>).
+<p><br><br>
+<p>
+<font color=white><b>Niveau secret des Vaches</b></font> (l'information est dans l'Acte I, Quête 3. Non vérifié)
+<p>
+<table width=400 border=1 cellpadding=5 cellspacing=0>
+   <col width=200 valign=top>
+   <col width=70 valign=top align=right>
+   <col width=90 valign=top align=right>
+   <col width=70 valign=top align=right>
+<tr>
+   <td>&nbsp
+   <td><font color=white size=2><b>Normal</b></font>
+   <td><font color=white size=2><b>Cauchemar</b></font>
+   <td><font color=white size=2><b>Enfer</b></font>
+   </tr>
+<tr>
+   <td><font color=white size=2><b>
+       Offset<br>
+       <br>
+       Disponible<br>
+       Non disponible<br>
+       Roi des Vaches tué<br></b></font>
+   <td><font size=2>
+       0094h<br>
+       <br>
+       0E90h<br>
+       0D98h<br>
+       0D9Ch<br>
+   <td><font size=2>
+       00F4h<br>
+       <br>
+       0D10h<br>
+       ?<br>
+       ?<br>
+   <td><font size=2>
+       0154h<br>
+       <br>
+       ?<br>
+       ?<br>
+       ?<br>
+</table>
+<p><br><br>
+<font color=white><b>Envoûter</b></font><br>
+Dans la Quête 5 de l'Acte I il est question d'un marteau de forgeron, et comme récompense vous avez la possibilité d'envoûter un Objet.
+Mettre le bit 1 du 1er octet de la Quête 5 de l'Acte I (à n'importe quel niveau de difficulté) vous autorise à envoûter un objet.
+<p><br><br>
+Si vous voulez consulter les <font color=white><b>Offsets des Quêtes</b></font>, c'est <a href="quests_2.html"><b>ici</b></a><br>
+Retour à la <a href="part_1.html#normalquests"><b>Partie 1</b></a>

@@ -1,0 +1,1212 @@
+<HTML>
+<HEAD>
+<TITLE>Ds1 Editor - Tutorial 1</TITLE>
+   <meta name="Description"            value="Diablo II Map Editor - Tutorial 1">
+   <meta name="Keywords"               value="Diablo, II, 2, ds1, map, level, edit, editor, ds1edit, win_ds1edit, win_ds1edit.exe, documentation, documentations, tutorial, tutorials">
+   <meta name="Author"                 value="Paul SIRAMY">
+   <meta name="Identifier-URL"         value="http://paul.siramy.free.fr/_divers/ds1/doc/tut01/index.html">
+   <meta name="Date-Creation-yyyymmdd" value="20030729">
+   <meta name="Date-Revision-yyyymmdd" value="20040701">
+   <meta name="Reply-to"               value="siramy_paul@yahoo.com">
+   <meta name="revisit-after"          value="7">
+</HEAD>
+<body bgColor=black text=#cccc99 link=#189bd8 vLink=#189bd8 aLink=silver>
+<font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b><font size="7"> 
+</font></b></font> <font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b><font size="7"><font color="#FFCC00" size="6">Ds1 
+Editor </font><font color="#FFCC00"> <font size="6"> - Tutorial 1</font></font></font></b></font><font face="Verdana, Arial, Helvetica, sans-serif"><br>
+</font> 
+<hr>
+<table width="640" border="0">
+  <tr> 
+    <td> 
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Back to the 
+        main <a href="http://paul.siramy.free.fr/_divers/ds1/doc/index.html"><b> 
+        Documentation Page</b></a></font></p>
+      <p>&nbsp;</p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b><font size="6">Overview</font></b></font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">This tutorial 
+        will explain step by step how to work with some <font color="#FFFF00">advanced</font> 
+        stuff of Map Editing :</font></p>
+      <ul>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Adding 
+          3 different kind of <font color="#FF9900">Warps</font> between levels</font></li>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Adding 
+          a <font color="#FF9900">house</font> with Roofs that disapear when the 
+          player enter it</font></li>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FF9900">Resizing</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+          a preset level</font></li>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Deals 
+          with <font color="#FF9900">walkable infos</font> of some tiles</font></li>
+      </ul>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">It was made 
+        with the <font color="#FFFF00">Patch 1.10 Beta</font>.</font></p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b><font size="6">Get 
+        all the files</font></b></font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">First, let's 
+        extract these files from the MPQs :</font></p>
+      <ul>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">from <font color="#FFFF00">Patch_D2.mpq</font> 
+          : </font> 
+          <ul>
+            <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Excel\<font color="#33FFFF">Levels.txt</font></font></li>
+            <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Excel\<font color="#33FFFF">LvlPrest.txt</font></font></li>
+            <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Excel\<font color="#33FFFF">LvlTypes.txt</font></font></li>
+            <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Excel\<font color="#33FFFF">Objects.txt</font></font><font color="#33FFFF"><br>
+              <br>
+              &nbsp; </font></font></li>
+          </ul>
+        </li>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">from <font color="#FFFF00">D2Exp.mpq</font> 
+          : </font> 
+          <ul>
+            <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Excel\<font color="#33FFFF">LvlWarp.txt</font></font></li>
+            <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Excel\<font color="#33FFFF">ObjType.txt</font></font></li>
+            <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Tiles\Act1\Town\<font color="#33FFFF">TownE1.ds1</font></font></font></li>
+            <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Tiles\Act1\Tristram\<font color="#33FFFF">Tri_Town4.ds1</font></font></font></li>
+            <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Tiles\Act2\Town\<font color="#33FFFF">LutN.ds1</font></font> 
+              <font color="#33FFFF"><br>
+              <br>
+              </font></font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><font color="#33FFFF"><br>
+              </font></font></li>
+          </ul>
+        </li>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">from <font color="#FFFF00">D2Data.mpq</font> 
+          :</font> 
+          <ul>
+            <li><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Data\Global\Tiles\Act1\Barracks\<font color="#33FFFF">JailEWarpNext.ds1</font></font></li>
+            <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Tiles\Act1\Caves\<font color="#33FFFF">CaveDR1.ds1</font></font></li>
+            <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Tiles\Act1\Caves\<font color="#33FFFF">CaveEDown1.ds1</font></font></li>
+            <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Tiles\Act1\Caves\<font color="#33FFFF">CaveESpec.ds1</font></font></li>
+            <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Tiles\Act1\Caves\<font color="#33FFFF">CaveNSpec.ds1</font></font></li>
+            <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Tiles\Act1\Caves\<font color="#33FFFF">CaveSSpec.ds1</font></font></li>
+            <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Tiles\Act1\Caves\<font color="#33FFFF">CaveWSpec.ds1</font></font></li>
+            <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Tiles\Act1\Graveyard\<font color="#33FFFF">Gravey.ds1</font></font></li>
+            <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data\Global\Tiles\Act1\Outdoors\<font color="#33FFFF">Cott1.ds1</font></font> 
+            </li>
+          </ul>
+        </li>
+      </ul>
+      <p><br>
+        <font face="Verdana, Arial, Helvetica, sans-serif" size="2">If you prefer 
+        to don't extract them yourself, then take this zip : <a href="txt_and_ds1.zip"><b>txt_and_ds1.zip</b></a> 
+        (68 KB), it has them all.</font></p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="5"><b><font size="6">Create 
+        a new Mod directory</font></b></font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Now, prepare 
+        a new Mod directory : in your <font color="#FFFF00">Diablo II</font> directory, 
+        if you already have a <font color="#FFFF00">Data</font> directory, then 
+        rename it to something else (like <font color="#FFFF00">my_old_data</font><font size="2" face="Verdana, Arial, Helvetica, sans-serif"> 
+        for instance). Now, create a <font color="#FFFF00">Data</font> directory, 
+        inside this one create a <font color="#FFFF00">Global</font> directory, 
+        inside this one create an <font color="#FFFF00">Excel</font> directory 
+        as well as a <font color="#FFFF00">Tiles</font> directory. Your <font color="#FFFF00">Diablo 
+        II</font> directory should now looks like :</font></font></p>
+      <ul>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Diablo 
+          II</font> 
+          <ul>
+            <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Data</font> 
+              <ul>
+                <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Global</font> 
+                  <ul>
+                    <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Excel</font></li>
+                    <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">Tiles</font></li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ul>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Put the 6<font color="#33FFFF"> 
+        .txt</font> in this <font color="#FFFF00">Excel</font> directory (<font color="#33FFFF">Levels.txt</font>, 
+        <font color="#33FFFF">LvlPrest.txt</font>, <font color="#33FFFF">LvlTypes.txt</font>, 
+        <font color="#33FFFF">LvlWarp.txt</font>, <font color="#33FFFF">Objects.txt</font> 
+        and <font color="#33FFFF">ObjType.txt</font>). They are the .txt that 
+        you'll edit later. Now in this <font color="#00FF00">Tiles</font> directory, 
+        create <font color="#FFFF00">Act1</font>, and inside this directory create 
+        <font color="#FFFF00">Town</font> and <font color="#FFFF00">Graveyard</font>. 
+        Your <font color="#00FF00">Tiles</font> directory should now looks like 
+        this :</font></p>
+      <ul>
+        <li><font size="2" face="Verdana, Arial, Helvetica, sans-serif" color="#00FF00">Tiles</font><font size="2" face="Verdana, Arial, Helvetica, sans-serif"> 
+          </font> 
+          <ul>
+            <li><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Act1 
+              </font> 
+              <ul>
+                <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Graveyard</font></li>
+                <li><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Town</font></li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ul>
+      <p><font size="2" face="Verdana, Arial, Helvetica, sans-serif">You'll put 
+        later <font color="#33FFFF">TownE1.ds1</font> in the <font color="#FFFF00">Town</font> 
+        directory and <font color="#33FFFF">Gravey.ds1</font> in the <font color="#FFFF00">Graveyard</font> 
+        directory<font face="Verdana, Arial, Helvetica, sans-serif" size="2">, 
+        but just left them for now.</font></font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> Now that 
+        we have a Mod Directory, update the <font color="#33FFFF">Ds1edit.ini</font> 
+        of the Ds1 Editor : the line <font color="#FF9900">mod_dir</font> should 
+        now point to your <font color="#FF9900">Diablo II</font> directory, like 
+        for instance :</font></p>
+      <blockquote> 
+        <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFFFF">mod_dir 
+          = C:\Program Files\Diablo II</font></p>
+      </blockquote>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">This way 
+        the Ds1 Editor is now able to use the exact same <font color="#33FFFF">.txt</font> 
+        than the game.</font></p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="5"><b><font size="6"> 
+        1 ds1 for the 4 Town Variations</font></b></font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">We'll now 
+        avoid us some works, as we just want to edit 1 ds1 of the Rogue Encampment, 
+        not to do the same changments in all the 4 variations (North, South, East 
+        and West). So, let's open (from your Mod Directory) the file <font color="#33FFFF">LvlPrest.txt</font> 
+        in Excel. The line <font color="#FF9900">Act 1 - Town 1</font> has 4 different 
+        files in the columns <font color="#00FF00">File1</font> to <font color="#00FF00">File4</font>, 
+        they are :</font></p>
+      <ul>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">File1</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+          = <font color="#FFFFFF">Act1/Town/TownN1.ds1</font></font></li>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">File2</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+          = <font color="#FFFFFF">Act1/Town/TownE1.ds1</font></font></li>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">File3</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+          = <font color="#FFFFFF">Act1/Town/TownS1.ds1</font></font></li>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">File4</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+          = <font color="#FFFFFF">Act1/Town/TownW1.ds1</font></font></li>
+      </ul>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Copy / paste 
+        the <font color="#00FF00">File2</font> value into the <font color="#00FF00">File1</font>, 
+        <font color="#00FF00">File3</font> and <font color="#00FF00">File4</font> 
+        columns. Now, whichever the orientation the game will want the Town to 
+        be, it'll take in all case the ds1 <font color="#FFFFFF">Act1/Town/TownE1.ds1, 
+        </font>the one we'll edit soon. Save, and close <font color="#33FFFF">LvlPrest.txt</font>.</font></p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="5"><b><font size="6">A 
+        new Trap Door</font></b></font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Before trying 
+        to make a new trap Door, check that tutorial I made for the Phrozen Keep:<br>
+        &nbsp;&nbsp;&nbsp;<a href="http://paul.siramy.free.fr/_divers2/tut_any_units_ds1/" target="ps_tut">Adding 
+        ANY Monsters and ANY Objects to a DS1 (by Paul Siramy)</a><br>
+        This is an easier alternative, if you're using the patch 1.10.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">But If you 
+        prefer to go the hard way : in the win_ds1edit directory, put the file 
+        <font color="#33FFFF">LutN.ds1</font> and let's make a .bat to open it 
+        with the editor.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFF00">Lut_Gholein.bat</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+        :</font></p>
+      <blockquote> 
+        <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFFFF">@echo 
+          off<br>
+          win_ds1edit LutN.ds1 12 301 &gt; log.txt<br>
+          &nbsp; </font></p>
+      </blockquote>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Launch the 
+        </font><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFF00">Lut_Gholein.bat</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2">. 
+        If all was correct you're now able to view the Act 2 Town. Go to the upper 
+        part of the Town, near <font color="#FFFFFF">Greiz</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+        :</font></font></p>
+      <table border="0" cellspacing="0" cellpadding="4">
+        <tr valign="bottom" align="center"> 
+          <td width="50%"> <font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;<img src="tut01_01.gif" width="270" height="315"><br>
+            </font></td>
+          <td><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="tut01_02.gif" width="270" height="315"> 
+            </font></td>
+        </tr>
+        <tr valign="top" align="center"> 
+          <td width="50%"> <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Here 
+            is the <font color="#FFFF00">Trap Door</font> that we'll use in the 
+            Rogue Encampment and the Graveyard to connect them.</font></td>
+          <td> <font face="Verdana, Arial, Helvetica, sans-serif" size="2">This 
+            Warp is composed of 2 elements : an <font color="#FFFF00">invisible 
+            Vis</font> (here the Vis 2), and the <font color="#FFFF00">Trap Door</font> 
+            object over it, right in the middle.</font></td>
+        </tr>
+      </table>
+      <p><br>
+      </p>
+      <p> <font face="Verdana, Arial, Helvetica, sans-serif" size="2">There's 
+        just 1 problem : the <font color="#FFFF00">Trap Door</font> is an object 
+        of <font color="#00FF00">Act 2</font>, and we want to use it in <font color="#00FF00">Act 
+        1</font>. We'll solve this by using an object of Act 1 and replace it 
+        by the Trap Door datas. We'll use the <font color="#FFFF00">Inactive Cairn 
+        Stone</font>. Of course that means that if you don't edit the file <font color="#FFFFFF">Data\Global\Tiles\Act1\Outdoors\Cairn2.ds1</font> 
+        then when the player will go into the <font color="#FFFFFF">Stony Fields</font> 
+        he'll find a <font color="#FFFF00">Trap Door</font> instead of the <font color="#FFFF00">Stone</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2">, 
+        so you'd better have to edit the ds1 and remove that object :</font></font></p>
+      <p align="center"><img src="tut01_03.gif" width="362" height="190"></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> We won't 
+        do the change in this tutorial, as it is left as an excercise to the reader, 
+        but to help you a bit, this .ds1 LvlType.txt ID is <font color="#00FF00">2</font>, 
+        and its LvlPrest.txt DEF is <font color="#00FF00">160</font>.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Now, let's 
+        edit our .txt :</font></p>
+      <ul>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">As you 
+          can see on a precedent screenshot the <font color="#FFFF00">Trap Door</font> 
+          is ID <font color="#FF9900">74</font>. So, in <font color="#33FFFF">Objects.txt</font>, 
+          let's go to the line that has ID 74. It's the line 76 in MS-Excel, its 
+          name is <font color="#FFFFFF">TrappDoor</font>, so no error, that's 
+          the good one.The <font color="#FFFF00">Inactive Cairn Stone</font> is 
+          ID <font color="#FF9900">22</font> (<font color="#FFFFFF">StoneTheta</font>), 
+          so copy the entire row of the Trap Door and paste it over this row that 
+          have ID 22.</font></li>
+      </ul>
+      <ul>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Now in 
+          <font color="#33FFFF">ObjType.txt</font>, copy the <font color="#FFFF00">Trap 
+          Door</font> row onto the <font color="#FFFF00">Stone 6</font> row (line 
+          76 onto line 24 in MS-Excel). Save and Close <font color="#33FFFF">ObjType.txt</font>.</font></li>
+      </ul>
+      <ul>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Finally, 
+          in the <font color="#33FFFF">data\obj.txt</font> that you'll find in 
+          the <font color="#33FF00">win_ds1edit</font> directory, made the corresponding 
+          changes. You don't *have* to do it to make it works in the game, but 
+          it's better if we're in sync. A search for &quot;<font color="#FFFFFF">Trap 
+          Door</font>&quot; in obj.txt gives the line <font color="#00FF00">272</font> 
+          (<font color="#FF9900">Trap Door (74)</font>), and a search for &quot;<font color="#FFFFFF">Theta</font>&quot; 
+          gives the line <font color="#00FF00">73</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+          (<font color="#FF9900">Cairn Stone, Theta (inactive) (22)</font>). So, 
+          copy the entire row 272 onto the row 73, and don't forget to change 
+          these columns back to their original values :</font></font></li>
+      </ul>
+      <blockquote> 
+        <ul>
+          <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">Act</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;&nbsp; 
+            = <font color="#FF9900">&nbsp;1</font></font></li>
+          <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">Type</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+            = <font color="#FF9900">&nbsp;2</font></font></li>
+          <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">Id</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+            &nbsp;&nbsp;&nbsp;&nbsp;= <font color="#FF9900">11</font></font></li>
+        </ul>
+        <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Close and 
+          save <font color="#33FFFF">obj.txt</font>.</font></p>
+      </blockquote>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+        You now have a working <font color="#FFFF00">Trap Door</font> in <font color="#00FF00">Act 
+        1</font>, but no more <font color="#FFFF00">Inactive Cairn Stone</font>.</font></p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="5"><b> <font size="6">Trap 
+        Door in Town and Graveyard</font></b></font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">In the win_ds1edit 
+        directory, put the files <font color="#33FFFF">Gravey.ds1</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+        and <font color="#33FFFF">TownE1.ds1</font>. Let's make 2 .bat to open 
+        them with the editor.</font></font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFF00">Graveyard.bat</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+        :</font></p>
+      <blockquote> 
+        <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFFFF">@echo 
+          off<br>
+          win_ds1edit Gravey.ds1 2 108 &gt; log.txt<br>
+          &nbsp; </font></p>
+      </blockquote>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFF00">TownE1.bat</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+        :</font></p>
+      <blockquote> 
+        <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFFFF">@echo 
+          off<br>
+          win_ds1edit TownE1.ds1 1 1 &gt; log.txt</font></p>
+      </blockquote>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+        Launch the </font><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFF00">Graveyard.bat</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+        and you're now editing the Graveyard<font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+        :</font></font></p>
+      <table border="0" cellspacing="0" cellpadding="4">
+        <tr valign="bottom" align="center"> 
+          <td width="50%"> <font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;<img src="tut01_04.gif" width="316" height="345"><br>
+            </font></td>
+          <td><img src="tut01_05.gif" width="315" height="345"></td>
+        </tr>
+        <tr valign="top" align="center"> 
+          <td width="50%"> <font face="Verdana, Arial, Helvetica, sans-serif" size="2">First, 
+            press the <font color="#FF9900">Space</font> key, in order to be able 
+            to view the walkables infos, this help to choose a good place. We'll 
+            place our Trap Door here, at Cell <font color="#FFFFFF">5, 2</font> 
+            (check the coordinates on the bottom / left corner of the screen).</font></td>
+          <td> <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FF9900">Right-click</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2">, 
+            press the <font color="#FFFF00">Wall 1</font> button, click on the 
+            <font color="#FFFF00">Special</font> button, choose a <font color="#FFFFFF">Vis 
+            7</font> and press the <font color="#FFFF00">OK</font> button. It 
+            has a problem tough : to avoid a Green Tile to appear in the game, 
+            we have to make this one Invisible, since it don't use any graphics.</font></td>
+        </tr>
+        <tr valign="top" align="center"> 
+          <td width="50%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+            &nbsp; </font></td>
+          <td><font face="Verdana, Arial, Helvetica, sans-serif" size="2"></font></td>
+        </tr>
+        <tr valign="top" align="center"> 
+          <td colspan="2" valign="bottom"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="tut01_06.gif" width="464" height="245"></font></td>
+        </tr>
+        <tr valign="top" align="center"> 
+          <td colspan="2" valign="top"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Press 
+            <font color="#FF9900">Shift + Ctrl + Right-click</font> and we're 
+            in the <font color="#00FF00">Expert Tile Editing window</font>. Here, 
+            since<br>
+            our <font color="#FFFFFF">Vis</font> is on the Wall Layer 1, we set 
+            the <font color="#FFFFFF">Hidden</font> bit of the line <font color="#FFFF00">W1</font> 
+            to <font color="#FF9900">1</font>. Then press <font color="#FFFF00">OK</font>.<br>
+            We now have an invisible Vis in the game, so the infamous Green Tile 
+            won't appear.<br>
+            All that left is to place the Trap Door object itself onto this Special 
+            Tile. </font></td>
+        </tr>
+        <tr valign="top" align="center"> 
+          <td width="50%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+            &nbsp; </font></td>
+          <td><font face="Verdana, Arial, Helvetica, sans-serif" size="2"></font></td>
+        </tr>
+        <tr valign="bottom" align="center"> 
+          <td width="50%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="tut01_07.gif" width="266" height="270"></font></td>
+          <td><img src="tut01_08.gif" width="224" height="312"></td>
+        </tr>
+        <tr valign="top" align="center"> 
+          <td width="50%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Press 
+            <font color="#FF9900">Tab</font> to go in Objects Editing mode, place 
+            the cursor in the middle of the Tile, press <font color="#FF9900">Insert</font> 
+            and change the new object (with a <font color="#FF9900">right-click</font> 
+            on the label) to be the <font color="#FFFF00">Trap Door</font> we 
+            have made before (<font color="#FFFFFF">Act 1</font>, <font color="#FFFFFF">Type 
+            2</font>, <font color="#FFFFFF">Id 11</font> in the ds1).<br>
+            Press <font color="#FF9900">Ctrl + S</font> to Save, then <font color="#FF9900">Esc</font> 
+            to Quit.</font></td>
+          <td><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Here 
+            are 2 screenshots of this<br>
+            new Warp, in-game.</font></td>
+        </tr>
+      </table>
+      <p><br>
+      </p>
+      <p> <font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFF00">Note</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+        : that's because the Trap Door in <font color="#33FFFF">Objects.txt</font> 
+        has the column <font color="#00FF00">OpenWarp</font> set to <font color="#FF9900">1</font> 
+        that we can read the warp destination, but it isn't required : if you 
+        set this column to <font color="#FF9900">0</font>, then the trap Door 
+        will still work, but when selected its description will stay &quot;<font color="#FFFFFF">Trap 
+        Door</font>&quot; instead of &quot;<font color="#FFFFFF">To The Rogue 
+        Encampment</font>&quot;, which can be usefull if you want to easily hide 
+        the destination name.</font> </p>
+      <p align="left">&nbsp;</p>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Now, 
+        let's do the same for the Rogue Encampment. Launch the </font><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFF00">TownE1.bat</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+        :</font></p>
+      <table border="0" cellspacing="0" cellpadding="4">
+        <tr valign="bottom" align="center"> 
+          <td width="50%"> <font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;<img src="tut01_09.gif" width="273" height="272"><br>
+            </font></td>
+          <td><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="tut01_10.gif" width="254" height="244"></font></td>
+        </tr>
+        <tr valign="top" align="center"> 
+          <td width="50%"> <font face="Verdana, Arial, Helvetica, sans-serif" size="2">Go 
+            to Cell <font color="#FFFFFF">25, 20</font>, and as for the Graveyard 
+            place a <font color="#FFFFFF">Vis 7</font> there, makes it invisible, 
+            place the Trap Door object over it, Save and Quit.</font></td>
+          <td> <font face="Verdana, Arial, Helvetica, sans-serif" size="2">This 
+            will be our Trap Door warp in Town.</font></td>
+        </tr>
+      </table>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+        Since we'll test soon that these 2 trap Doors are working, copy <font color="#33FFFF">TownE1.ds1</font> 
+        into your <font color="#00FF00">Mod directory</font>, at the location 
+        <font color="#FFFFFF">Data\Global\Tiles\Act1\Town</font>, and <font color="#33FFFF">Gravey.ds1</font> 
+        at the location <font color="#FFFFFF">Data\Global\Tiles\Act1\Graveyard</font>.</font></p>
+      <p align="left">&nbsp;</p>
+      <p align="left">&nbsp;</p>
+      <p align="left">&nbsp;</p>
+      <p align="left"><font size="2" face="Verdana, Arial, Helvetica, sans-serif"><font size="5"><b><font size="6">Connect 
+        Act 1 Town to Graveyard</font></b></font></font></p>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Here's 
+        now your</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+        </font><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="gold"><font color="#00FF00">Golden 
+        Rule</font></font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+        :<br>
+        <br>
+        </font> 
+      <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+        </font></div>
+      <font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+      <hr align="center">
+      <div align="center"><b><font color="gold" size="3">All the Vis present in 
+        the ds1 MUST be defined in Levels.txt</font></b><br>
+      </div>
+      </font> 
+      <hr>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">If 
+        we were trying our Mod now, before any <font color="#33FFFF">Levels.txt</font> 
+        editing, this Assertation would arise :</font></p>
+      <blockquote> 
+        <table border="1" cellspacing="0" cellpadding="10">
+          <tr> 
+            <td><font color="#FFFFFF" face="Verdana, Arial, Helvetica, sans-serif" size="2">Assertion 
+              Failure<br>
+              Location : D2Common\DATATBLS\LvlTbls.cpp, line #1047<br>
+              Expression : Error in DRLG related to stairs that connect levels</font></td>
+          </tr>
+        </table>
+      </blockquote>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">If this assert 
+        appear, check carefully all your ds1, write down the Vis numbers they're 
+        using, and in <font color="#33FFFF">Levels.txt</font> check that all of 
+        these Vis are linked to the correct level, using the correct Vis.</font></p>
+      <p>&nbsp;</p>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">So, 
+        </font><font face="Verdana, Arial, Helvetica, sans-serif" size="2">now 
+        let's edit <font color="#33FFFF">Levels.txt</font>, in order to link these 
+        2 Trap Doors together. Go to your <font color="#00FF00">Mod directory</font>, 
+        and open <font color="#33FFFF">Data\Global\Excel\Levels.txt</font> there 
+        in Excel.</font></p>
+      <ul>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">The <font color="#FFFF00">Rogue 
+          Encampmen</font>t is the line with Id <font color="#FF9900">1</font> 
+          &quot;Act 1 - Town&quot;, as you can verify if you check the column 
+          <font color="#00FF00">LevelName</font> btw.</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+          &nbsp;<br>
+          </font></li>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">The <font color="#FFFF00">Graveyard</font> 
+          is the line with Id <font color="#FF9900">17</font> &quot;Act 1 - Graveyard&quot;<br>
+          </font></li>
+      </ul>
+      <p>&nbsp;</p>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">If 
+        you don't link the Levels together correctly, this assertion can popup 
+        :</font></p>
+      <blockquote> 
+        <table border="1" cellspacing="0" cellpadding="10">
+          <tr> 
+            <td><font color="#FFFFFF" face="Verdana, Arial, Helvetica, sans-serif" size="2">Assertion 
+              Failure<br>
+              Location : D2Common\DRLG\DrlgRoom.cpp, line #604<br>
+              Expression : hDungeonRoomOther</font></td>
+          </tr>
+        </table>
+      </blockquote>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">With this 
+        one check in <font color="#33FFFF">Levels.txt</font> that you don't have 
+        linked a Vis to the wrong other Level : to be correctly linked, 2 levels 
+        must referenced each others. If you link the Vis 7 of Act 1 Town incorrectly 
+        to the Crypt, instead of the Graveyard, then this error appear since the 
+        Crypt is not referencing Act 1 Town in all its Vis.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFF00">Note</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+        : this can also have another meanings, as this part of code seems to make 
+        several type of checks. You need to know that the last column and the 
+        last row of tiles in a ds1 are not used by the game (they're overlapped 
+        by their adjacent ds1 at run-time). So if you try to put the Trap Door 
+        in the Cell <font color="#FFFFFF">24, 0</font> of the Graveyard (the far 
+        right corner), since it's a forbiden place, the game can't place the Vis 
+        here, and this Assertion comes.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">In addition, 
+        some Warps are composed of more than 1 Tile, like the stairs of the Caves 
+        for instance, so even if the Vis itself is not on a forbidden place, maybe 
+        one of the tiles that are changed at run-time for making the cave stairs 
+        hilighten *are* on such a forbidden place. So, as another rule :</font><br>
+      <hr align="center">
+      <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><b><font color="gold" size="3">Don't 
+        place Vis too close of the Borders of the ds1</font></b><br>
+        </font></div>
+      <hr>
+      <p>&nbsp;</p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">What we want 
+        is to connect our 2 levels together, using our new Vis. Here, we have 
+        created the exact same Vis number (<font color="#FF9900">7</font>) in 
+        the 2 ds1, but it's not required, it just helps us to keep things organized.</font></p>
+      <ul>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">In the 
+          <font color="#00FF00">Vis7</font> column of the &quot;Act 1 - Town&quot; 
+          line, put the <font color="#00FF00">Id</font> of the Graveyard (<font color="#FF9900">17</font>).</font></li>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">In the 
+          <font color="#00FF00">Vis7</font> column of the &quot;Act 1 - Graveyard&quot; 
+          line, put the <font color="#00FF00">Id</font> of the Act 1 Town (<font color="#FF9900">1</font>).</font></li>
+      </ul>
+      <p>&nbsp;</p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">This has 
+        taken care of the link between the 2 levels, but not the warps themselves. 
+        <font color="#FFFF00">Vis</font> are for the logical connection between 
+        levels (the columns <font color="#00FF00">Vis0</font> to <font color="#00FF00">Vis7</font>), 
+        but all of these Vis have their corresponding <font color="#FFFF00">Warp</font> 
+        columns (<font color="#00FF00">Warp0</font> to <font color="#00FF00">Warp7</font>). 
+        These Warps columns are ID of a line in <font color="#33FFFF">LvlWarp.txt</font>. 
+        1 Warp in this .txt define the orientation of the warp, the area where 
+        the mouse must be in order to activate the warp, and it indicate if the 
+        game must replace some tiles at run-time to hilight the warp.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">For us, it's 
+        easy. Since we have used the Trap Door of Lut Gholein, we just have to 
+        use the same Warp index. Check in <font color="#33FFFF">Levels.txt</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+        the line &quot;Act 2 - Town&quot; (Id 40). The Invisilbe Vis under the 
+        Trap Door was a <font color="#00FF00">Vis 2</font>, so get the value in 
+        the <font color="#00FF00">Warp 2</font> column, here <font color="#FF9900">19</font>. 
+        </font></font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">So, 
+        for the Act 1 Town and the Graveyard, put <font color="#FF9900">19</font> 
+        in the columns <font color="#00FF00">Warp7</font> of these 2 levels.</font></font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">If you forgot 
+        to set a <font color="#00FF00">Warp</font> column (and therefore left 
+        it to <font color="#FF9900">-1</font>), then you can have this assertion 
+        : </font></p>
+      <blockquote> 
+        <table border="1" cellspacing="0" cellpadding="10">
+          <tr> 
+            <td><font color="#FFFFFF" face="Verdana, Arial, Helvetica, sans-serif" size="2">Assertion 
+              Failure<br>
+              Location : D2Common\DRLG\DrlgVer.cpp, line #109<br>
+              Expression : FALSE</font></td>
+          </tr>
+        </table>
+      </blockquote>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">If you have 
+        a <font color="#00FF00">Vis</font>, then you must fill its corresponding 
+        <font color="#00FF00">Warp</font> column as well.</font></p>
+      <p align="left">&nbsp;</p>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">We 
+        have added Warps to the 2 ds1, we have filled their Vis and Warp columns, 
+        now we can test. Just use the usual <font color="#FFFF00">-direct -txt</font> 
+        method, and with any Player go in the Act 1 Town, and the Trap Doors should 
+        work in both ways, without any warning or error. Don't try to go outside 
+        of the Town tough, since you're likely to have a bridge that go to a black 
+        wall : we have forced the use of only 1 ds1 for the 4 Town variations, 
+        so there's only 1 possible way... But there's a trap Door anyway, so you 
+        can escape.</font></p>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">This 
+        zip contains the files necessary to test our modifications so far : <b><a href="trap_door.zip">trap_door.zip</a></b> 
+        (52 KB). You'll find the ds1 of the <font color="#FFFFFF">Rogue Encampment</font> 
+        and the <font color="#FFFFFF">Graveyard</font>, and the <font color="#FFFFFF">4 
+        .txt</font> of the game we have modified. It's a normal Mod that needs 
+        the -direct -txt method.</font></p>
+      <p align="left">&nbsp;</p>
+      <p align="left">&nbsp;</p>
+      <p align="left"><font size="2" face="Verdana, Arial, Helvetica, sans-serif"><font size="5"><b><font size="6"><a name="new_tent_warp"></a>A 
+        new Tent Warp</font></b></font></font></p>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">This 
+        is taken from an idea of <font color="#FFFF00">Kingpin</font>, from <a href="http://d2mods.com/forum/viewtopic.php?t=14484" target="kingpin_tent"><b>this 
+        topic</b></a> in a Phrozen Keep forum.</font></p>
+      <table border="0" cellspacing="0" cellpadding="8">
+        <tr valign="top" align="left"> 
+          <td><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="tut01_11.gif" width="189" height="213"></font></td>
+          <td> 
+            <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">As 
+              you see it's possible to make Warps from any elements of the maps. 
+              Here, not only we will recreate this warp, but we'll also improve 
+              it, as we'll make our own warp settings : area where the mouse must 
+              be to activate the warp, exact position of the warp to enter it, 
+              and location where the player is heading to when he 's coming out 
+              of the tent.</font></p>
+            <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">To 
+              make our own warp, we'll use <font color="#33FFFF">LvlWarp.txt</font>. 
+              We can add our own warps in this file, and once you understand what 
+              the columns are for it's not very hard to make them.</font></p>
+          </td>
+        </tr>
+      </table>
+      <p align="left">&nbsp;</p>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">But 
+        before doing any .txt editing, let's find what will be our settings for 
+        this warp.</font></p>
+      <table border="0" cellspacing="0" cellpadding="8" width="100%">
+        <tr valign="bottom" align="center"> 
+          <td width="50%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="tut01_12.gif" width="190" height="178"></font></td>
+          <td> 
+            <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="tut01_13.gif" width="190" height="178"></font></p>
+          </td>
+        </tr>
+        <tr valign="top" align="center"> 
+          <td width="50%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">First, 
+            let's use the Ds1 Editor. Place a Hidden Vis 6 <font color="#FFFF00">of 
+            orientation 11</font> on the Wall layer 2, exactly here. Move the 
+            Rogue and the Torch objects to somewhere else, Save, press the <font color="#FF9900">P</font> 
+            key to take a screenshot, and Quit.</font></td>
+          <td> 
+            <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Open 
+              this screenshot in an image editor, like <font color="#FFFF00">Paint 
+              Shop Pro</font>. In the game a Tile is a group of 5 x 5 sub-tiles, 
+              as this screenshot show.<br>
+              <br>
+              </font><font face="Verdana, Arial, Helvetica, sans-serif" size="2">We 
+              now have to decide which sub-tile will be our base : this is the 
+              sub-tile where the player appear when he exit the warp. </font></p>
+          </td>
+        </tr>
+        <tr valign="top" align="center"> 
+          <td width="50%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+            &nbsp; </font></td>
+          <td><font face="Verdana, Arial, Helvetica, sans-serif" size="2"></font></td>
+        </tr>
+        <tr valign="bottom" align="center"> 
+          <td width="50%"><img src="tut01_14.gif" width="190" height="178"></td>
+          <td><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="tut01_15.gif" width="190" height="178"></font></td>
+        </tr>
+        <tr valign="top" align="center"> 
+          <td width="50%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">It's 
+            better if we choose the center of the tent entrance, on the ground 
+            level, so, here, let's choose this one, at coordinate <font color="#FFFF00">2,1</font> 
+            in the <font color="#FFFFFF">sub-tile coordinates system</font> of 
+            this Tile.<br>
+            <font color="#FF9900"> <br>
+            Note</font> : this sub-tile can be far away of the <font color="#FFFFFF">Vis</font>, 
+            not necessary inside the Special Tile. The warp <font color="#FFFFFF">Act 
+            2 Sewer Dock to Town</font> is like that.</font></td>
+          <td><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Let's 
+            define the sensitive area we want for the tent warp. We draw a box 
+            that include exactly the tent entrance.</font></td>
+        </tr>
+        <tr valign="top" align="center"> 
+          <td width="50%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+            &nbsp; </font></td>
+          <td><font face="Verdana, Arial, Helvetica, sans-serif" size="2"></font></td>
+        </tr>
+        <tr valign="bottom" align="center"> 
+          <td width="50%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="tut01_16.gif" width="190" height="178"></font></td>
+          <td><img src="tut01_17.gif" width="190" height="178"></td>
+        </tr>
+        <tr valign="top" align="center"> 
+          <td width="50%"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">If 
+            we take the <font color="#FFFFFF">bottom</font> of the Base sub-tile 
+            as a reference, and consider it the base of the mouse coordinates 
+            system, then the upper&nbsp;/&nbsp;left corner of the mouse area is 
+            the point <font color="#00FF00">A</font>, at coordinates <font color="#FFFF00">-20, 
+            -111</font>, in pixels.</font></td>
+          <td><font face="Verdana, Arial, Helvetica, sans-serif" size="2">The 
+            Width (<font color="#00FF00">W</font>) and the Height (<font color="#00FF00">H</font>) 
+            of<br>
+            the box is <font color="#FFFF00">46 x 112</font> pixels.</font></td>
+        </tr>
+        <tr valign="top" align="center"> 
+          <td width="50%"><br>
+            &nbsp; </td>
+          <td><font face="Verdana, Arial, Helvetica, sans-serif" size="2"></font></td>
+        </tr>
+        <tr valign="bottom" align="center"> 
+          <td colspan="2"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="tut01_18.gif" width="190" height="178"></font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"></font></td>
+        </tr>
+        <tr valign="top" align="center"> 
+          <td colspan="2"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">The 
+            last data we need is the <font color="#00FF00">location</font> from 
+            the <font color="#CCCCCC"><b>base</b></font> where the player<br>
+            will head to, when he'll exit the tent. Here, we'll make him walk 
+            to<br>
+            sub-tile <font color="#FFFF00">0, 5</font> <font color="#FF9900">from 
+            the base</font>. We can make it far away, but in any case<br>
+            the Player has the possibility to stop the auto-walk by clicking elsewhere.</font></td>
+        </tr>
+      </table>
+      <p align="left">&nbsp;</p>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">We 
+        can now edit <font color="#33FFFF">LvlWarp.txt</font>, since we have all 
+        the infos we need to make a new warp.</font></p>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">In 
+        this file, if we check carefully, we'll see that all warps have the column 
+        <font color="#00FF00">Direction</font> set to <font color="#FF9900">b</font>, 
+        except some of the <font color="#FFFF00">Expansion</font>, which have 
+        <font color="#FF9900">l</font> and <font color="#FF9900">r</font>. Coincidently, 
+        the warps that don't have <font color="#FF9900">b</font> are a pair of 
+        warps with the same <font color="#00FF00">Id</font>, but one with <font color="#00FF00">Direction</font> 
+        <font color="#FF9900">l</font>, the other with <font color="#FF9900">r</font>. 
+        </font><font face="Verdana, Arial, Helvetica, sans-serif" size="2">So, 
+        <font color="#FF9900"> l</font> stands for <font color="#FF9900">Left</font>, 
+        <font color="#FF9900">r</font> for <font color="#FF9900">Right</font>, 
+        and <font color="#FF9900">b</font> for <font color="#FF9900">Both</font>. 
+        </font><font face="Verdana, Arial, Helvetica, sans-serif" size="2">The 
+        <font color="#FFFFFF">Orientation</font> of the <font color="#FFFFFF">Vis</font> 
+        (<font color="#FF9900">10</font> or <font color="#FF9900">11</font>), 
+        will be used by the game to know which one of these 2 lines it'll use 
+        : if the Vis is an Orientation 10, this will be the line with the <font color="#FF9900">l</font> 
+        Direction, else if it's a Vis of Orientation 11, the game will choose 
+        the line with the <font color="#FF9900">r</font> Direction.</font></p>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Note 
+        : if you create a Warp that don't use the Direction <font color="#FF9900">b</font>, 
+        then be sure to make 2 lines in <font color="#33FFFF">LvlWarp.txt</font> 
+        for this warp Id, one for the Left, one for the Right, else this assertion 
+        (that we already described before) will arise :</font></p>
+      <blockquote> 
+        <table border="1" cellspacing="0" cellpadding="10">
+          <tr> 
+            <td><font color="#FFFFFF" face="Verdana, Arial, Helvetica, sans-serif" size="2">Assertion 
+              Failure<br>
+              Location : D2Common\DATATBLS\LvlTbls.cpp, line #1047<br>
+              Expression : Error in DRLG related to stairs that connect levels</font></td>
+          </tr>
+        </table>
+      </blockquote>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">This 
+        time it's indicating that it can't find the warp data in <font color="#33FFFF">LvlWarp.txt</font>, 
+        either because the <font color="#00FF00">Id</font> is just not present, 
+        or because the expected <font color="#00FF00">Direction</font> is not 
+        present.</font></p>
+      <p>&nbsp;</p>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">To 
+        create a new warp, go to the bottom of the file, and in the first empty 
+        row edit the columns like this :</font></p>
+      <table border="0" cellspacing="0" cellpadding="4">
+        <tr> 
+          <td> 
+            <div align="left">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
+          </td>
+          <td> 
+            <div align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00"> 
+              Name</font></div>
+          </td>
+          <td> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;=&nbsp;</font></div>
+          </td>
+          <td> 
+            <div align="left"><font color="#FF9900" face="Verdana, Arial, Helvetica, sans-serif" size="2">Act 
+              1 Small Tent R</font></div>
+          </td>
+          <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+          <td> 
+            <div align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">OffsetX</font></div>
+          </td>
+          <td> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;=&nbsp;</font></div>
+          </td>
+          <td> 
+            <div align="left"><font color="#FF9900" face="Verdana, Arial, Helvetica, sans-serif" size="2">2</font></div>
+          </td>
+        </tr>
+        <tr> 
+          <td> 
+            <div align="left"></div>
+          </td>
+          <td> 
+            <div align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00"> 
+              Id</font></div>
+          </td>
+          <td> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;=&nbsp;</font></div>
+          </td>
+          <td> 
+            <div align="left"><font color="#FF9900" face="Verdana, Arial, Helvetica, sans-serif" size="2">83</font></div>
+          </td>
+          <td>&nbsp;</td>
+          <td> 
+            <div align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">OffsetY</font></div>
+          </td>
+          <td> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;=&nbsp;</font></div>
+          </td>
+          <td> 
+            <div align="left"><font color="#FF9900" face="Verdana, Arial, Helvetica, sans-serif" size="2">1</font></div>
+          </td>
+        </tr>
+        <tr> 
+          <td> 
+            <div align="left"></div>
+          </td>
+          <td> 
+            <div align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00"> 
+              SelectX</font></div>
+          </td>
+          <td> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;=&nbsp;</font></div>
+          </td>
+          <td> 
+            <div align="left"><font color="#FF9900" face="Verdana, Arial, Helvetica, sans-serif" size="2">-20</font></div>
+          </td>
+          <td>&nbsp;</td>
+          <td> 
+            <div align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">LitVersion</font></div>
+          </td>
+          <td> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;=&nbsp;</font></div>
+          </td>
+          <td> 
+            <div align="left"><font color="#FF9900" face="Verdana, Arial, Helvetica, sans-serif" size="2">0</font></div>
+          </td>
+        </tr>
+        <tr> 
+          <td> 
+            <div align="left"></div>
+          </td>
+          <td> 
+            <div align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">SelectY</font></div>
+          </td>
+          <td> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;=&nbsp;</font></div>
+          </td>
+          <td> 
+            <div align="left"><font color="#FF9900" face="Verdana, Arial, Helvetica, sans-serif" size="2">-111</font></div>
+          </td>
+          <td>&nbsp;</td>
+          <td> 
+            <div align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">Tiles</font></div>
+          </td>
+          <td> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;=&nbsp;</font></div>
+          </td>
+          <td> 
+            <div align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FF9900">2</font></div>
+          </td>
+        </tr>
+        <tr> 
+          <td> 
+            <div align="left"></div>
+          </td>
+          <td> 
+            <div align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">SelectDX</font></div>
+          </td>
+          <td> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;=&nbsp;</font></div>
+          </td>
+          <td> 
+            <div align="left"><font color="#FF9900" face="Verdana, Arial, Helvetica, sans-serif" size="2">46</font></div>
+          </td>
+          <td>&nbsp;</td>
+          <td> 
+            <div align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">Direction</font></div>
+          </td>
+          <td> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;=&nbsp;</font></div>
+          </td>
+          <td> 
+            <div align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FF9900">b</font></div>
+          </td>
+        </tr>
+        <tr> 
+          <td> 
+            <div align="left"></div>
+          </td>
+          <td> 
+            <div align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">SelectDY</font></div>
+          </td>
+          <td> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;=&nbsp;</font></div>
+          </td>
+          <td> 
+            <div align="left"><font color="#FF9900" face="Verdana, Arial, Helvetica, sans-serif" size="2">112</font></div>
+          </td>
+          <td>&nbsp;</td>
+          <td> 
+            <div align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">Beta</font></div>
+          </td>
+          <td> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;=&nbsp;</font></div>
+          </td>
+          <td> 
+            <div align="left"><font color="#FF9900" face="Verdana, Arial, Helvetica, sans-serif" size="2">0</font></div>
+          </td>
+        </tr>
+        <tr> 
+          <td> 
+            <div align="left"></div>
+          </td>
+          <td> 
+            <div align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">ExitWalkX</font></div>
+          </td>
+          <td> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;=&nbsp;</font></div>
+          </td>
+          <td> 
+            <div align="left"><font color="#FF9900" face="Verdana, Arial, Helvetica, sans-serif" size="2">0</font></div>
+          </td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+        </tr>
+        <tr> 
+          <td> 
+            <div align="left"></div>
+          </td>
+          <td> 
+            <div align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">ExitWalkY</font></div>
+          </td>
+          <td> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">&nbsp;=&nbsp;</font></div>
+          </td>
+          <td> 
+            <div align="left"><font color="#FF9900" face="Verdana, Arial, Helvetica, sans-serif" size="2">5</font></div>
+          </td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+        </tr>
+      </table>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">The 
+        column <font color="#00FF00">Name</font> is not used by the game, but 
+        it's better to have a good description.</font></p>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Here 
+        we have set the column <font color="#00FF00">Direction</font> to <font color="#FF9900">b</font>, 
+        because even if we know that it is definitively for a Right entrance, 
+        it'll avoid some possible assertion later, if you use this warp ID with 
+        a Vis of Orientation 10 by mistake for instance.</font></p>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">The 
+        column <font color="#00FF00">LitVersion</font> is used by the game to 
+        know if it has to replace some tiles of a warp at run-time by their hilightened 
+        version. Si</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2">nce 
+        we don't have such graphics for our tent, we set it to <font color="#FF9900">0</font>, 
+        this avoid some glitchs, like part of the tent changing to mud when the 
+        mouse is over the entrance. Anyway, the hilight process is hardcoded, 
+        and linked to the warp Id, so unless you're doing DLL editing, never use 
+        a LitVersion of 1 when you create warps with a new Id.</font></p>
+      <p align="left">&nbsp;</p>
+      <p align="left">&nbsp;</p>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="5"><b><font size="6"><a name="one_way_warp"></a>1-way 
+        Warp to Tristram</font></b></font></p>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">We'll 
+        make the Tent connected to Tristram, but without turning back, just to 
+        show that it's possible (and easy) to do.</font></p>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">First, 
+        put the <font color="#FFFFFF">Tri_Town4.ds1</font> in the Ds1 Editor directory, 
+        and make this .bat ;</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFF00">Tristram.bat</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+        :</font></p>
+      <blockquote> 
+        <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFFFF">@echo 
+          off<br>
+          win_ds1edit Tri_Town4.ds1 11 300 &gt; log.txt</font></p>
+      </blockquote>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><br>
+        Launch it, and </font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+        at cell coordinates <font color="#FFFF00">10, 38</font> place an <font color="#FFFFFF">Hidden</font> 
+        <font color="#FFFFFF">Vis 6</font> on Wall layer 1, delete the Fallen 
+        object that's near, then place 1 non-selectable object on the Vis (here, 
+        just a light), and just for fun place some Fog Water around the Vis like 
+        in this exemple, to make it looks like a special area :</font></p>
+      <p align="center"><img src="tut01_19.gif" width="530" height="291"></p>
+      <p>&nbsp;</p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">As you have 
+        noticed, it's the same process as the Trap Doors we have created before, 
+        except that the Object on the Vis is different. If you don't put any Object 
+        on the Vis, then the Warp will still work, but it'll be selectable by 
+        the Player, something we don't want here. So we place an object, but the 
+        trick is that the object is not selectable, so despite the Warp IS working, 
+        since the Player is unable to select the object, he can't activate this 
+        side of the Warp, so it's a 1-way warp :</font></p>
+      <p align="center"><img src="tut01_20.gif" width="459" height="281"></p>
+      <p align="left">&nbsp;</p>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Now, 
+        let's test our new Warps, from the Rogue Encampment to Tristram. Open 
+        <font color="#33FFFF">Levels.txt</font> in Excel. The Act 1 Town is still 
+        the Level Id 1, Tristram is the Level Id 38, we have used 2 Vis 6, for 
+        the Warp 6 in Town we have created our own Warp, and for Tristram the 
+        Vis 6 will be like the Trap Door.</font></p>
+      <ul>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Act 1 
+          - Town : </font> 
+          <ul>
+            <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">Vis6</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+              = <font color="#FF9900">38</font> (to Tristram)</font></li>
+            <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#00FF00">Warp6</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+              = <font color="#FF9900">83</font> (our new Tent entrance warp Id 
+              from <font color="#33FFFF">LvlWarp.txt</font>)<br>
+              <br>
+              </font></li>
+          </ul>
+        </li>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Tristram 
+          :</font> 
+          <ul>
+            <li><font color="#00FF00" size="2" face="Verdana, Arial, Helvetica, sans-serif">Vis6</font><font size="2" face="Verdana, Arial, Helvetica, sans-serif"> 
+              = <font color="#FF9900">1</font> (to Town)</font></li>
+            <li><font color="#00FF00" size="2" face="Verdana, Arial, Helvetica, sans-serif">Warp6</font><font size="2" face="Verdana, Arial, Helvetica, sans-serif"> 
+              = <font color="#FF9900">19</font> (Trap Door)</font></li>
+          </ul>
+        </li>
+      </ul>
+      <p align="left">&nbsp;</p>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">In 
+        your <font color="#00FF00">Mod directory</font> :</font></p>
+      <ul>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> in the 
+          <font color="#FFFFFF">Data\Global\Tiles\Act1</font> directory, create 
+          the <font color="#FFFF00">Tristram</font> directory and place <font color="#FFFFFF">Tri_Town4.ds1</font> 
+          inside.<br>
+          <br>
+          </font></li>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Place 
+          the new version of <font color="#FFFFFF">TownE1.ds1</font> in <font color="#FFFFFF">Data\Global\Tiles\Act1\Town</font>.<br>
+          <br>
+          </font></li>
+        <li><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><font color="#33FFFF">LvlWarp.txt</font> 
+          should be in your <font color="#FFFFFF">Data\Global\Excel</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+          directory.</font></font></li>
+      </ul>
+      <p align="left">&nbsp;</p>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">You 
+        can now test this Mod, and the Rogue encampment's Tent to Tristram's Fog 
+        Warp. The Trap Door between the Town and the Graveyard is of course still 
+        working. </font></p>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">This 
+        zip contains the files necessary to test our modifications so far : <b><a href="tent.zip">tent.zip</a></b> 
+        (56.1 KB). You'll find the files of the trap_door.zip with the new and 
+        updated files we have made since.</font></p>
+      <p align="left">&nbsp;</p>
+      <p align="left">&nbsp;</p>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="5"><b><font size="6"><a name="new_house"></a>A 
+        new House in Town</font></b></font></p>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">We'll 
+        add a House in the Rogue Encampment, one with Roofs that disapear when 
+        you walk inside. It's not very hard, but we have to take care of some 
+        details else it won't work.</font></p>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">First, 
+        don't build them from scratch, always take a model, because in order to 
+        have Roofs that disapear, you have to use and place specific special tiles, 
+        and the details of how these ones are working is still unknown. So, we'll 
+        take the file <font color="#FFFFFF">Data\Global\Tiles\Act1\Outdoors\Cott1.ds1</font> 
+        as a model.</font></p>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Since 
+        we want to copy / paste the house in another ds1, we have to load 2 ds1 
+        at once in the ds1 editor, which is done by a .ini that we use as a parameter 
+        to win_ds1edit.exe :</font></p>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFF00">Cottage 
+        and Town.bat</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+        :</font></p>
+      <blockquote> 
+        <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFFFF">@echo 
+          off<br>
+          win_ds1edit cottage_town.ini &gt; log.tx</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFFFF">t<br>
+          &nbsp; </font></p>
+      </blockquote>
+      <p align="left"><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFF00">cottage_town.ini</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+        :</font></p>
+      <blockquote> 
+        <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFFFF">2 
+          47 Cott1.ds1<br>
+          1 1 TownE1.ds1<br>
+          </font></p>
+      </blockquote>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Place <font color="#33FFFF">Cott1.ds1</font>, 
+        this <font color="#33FFFF">.ini</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+        and this <font color="#33FFFF">.bat</font> in the directory of the ds1 
+        editor, then launch the .bat. Select the house, press the keys <font color="#FF9900">Ctrl 
+        + C</font> to copy it, press the key <font color="#FF9900">2</font> to 
+        view the 2nd ds1 and ... damn, where's the house ? What are these weird 
+        tiles ?</font></font></p>
+      <table border="0" cellspacing="0" cellpadding="8">
+        <tr valign="bottom"> 
+          <td> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="tut01_21.gif" width="264" height="270"></font></div>
+          </td>
+          <td> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="tut01_22.gif" width="322" height="270"></font></div>
+          </td>
+        </tr>
+        <tr valign="top"> 
+          <td> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Select 
+              the house, and copy it</font></div>
+          </td>
+          <td> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Try 
+              to paste it in the other ds1,<br>
+              and bad things happens</font></div>
+          </td>
+        </tr>
+      </table>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">We forgot 
+        to edit <font color="#33FFFF">LvlTypes.txt</font> : This file contains 
+        several lists of DT1, and our Rogue Encampment don't use yet the graphics 
+        of the Cottage house. Before beeing able to use the cottage tiles, we 
+        have to include them to the list of the active DT1 of this ds1.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Take <font color="#33FFFF">LvlTypes.txt</font> 
+        and place it into the <font color="#FFFFFF">Data\Global\Excel</font> directory 
+        of your <font color="#00FF00">Mod directory</font>. Then open it with 
+        Excel. The Rogue Encampment ds1 is using the LvlType 1. It already have 
+        some DT1 like Act1/Town/Floor.dt1, Act1/Town/Fence.dt1, Act1/Town/trees.dt1... 
+        but nowhere a cottage.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">The Cott1.ds1 
+        is using the LvlType 2 (Wilderness), and here we can find a cottage : 
+        the column <font color="#00FF00">File25</font> of the LvlType 2 row has 
+        the dt1 <font color="#FFFFFF">Act1/Outdoors/Cottages.dt1</font>. Copy 
+        this filename, and paste it into a free slot of the LvlType 1 row, here 
+        in the <font color="#00FF00">File7</font> column, you can now save and 
+        close this file.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">We have added 
+        a gfx to the DT1 list of the Town... but it won't use it yet. We have 
+        just added the *possibility* for this ds1 to use it, we didn't set the 
+        ds1 parameters to actually use it. This is done in <font color="#33FFFF">LvlPrest.txt</font>, 
+        with the column <font color="#00FF00">Dt1Mask</font>. This column is a 
+        bitfield. We currently find the value <font color="#FF9900">959</font>. 
+        In binary this value is <font color="#FF9900">1110111111</font>. There 
+        are 32 bits maximum, and we have 32 columns File, from <font color="#00FF00">File1</font> 
+        to <font color="#00FF00">File32</font>, each bit indicate if the ds1 is 
+        using the filename in the corresponding column. If we read the bits from 
+        the lowest to the highest (from right to left), we'll find that this ds1 
+        is using the columns <font color="#00FF00">File1</font> to <font color="#00FF00">File10</font>, 
+        except the <font color="#00FF00">File7</font> (which had a 0 before we 
+        add our cottage dt1 in there, so that's why).</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Let's add 
+        the column File7 to this Dt1Mask. Each column is a power of 2. File1=1, 
+        File2=2, File3=4, File4=8, File5=16, File6=32 and finally <font color="#00FF00">File7</font>=<font color="#FF9900">64</font>. 
+        So we add 64 to 959, and our new value is <font color="#FF9900">1023</font>. 
+        Replace 959 by 1023 in LvlPrest.txt, save and close the file. If you don't 
+        like doing it manually, you can use this tool to help you : <b><a href="http://phrozenkeep.hugelaser.com/filecenter/dload.php?action=file&file_id=129" target="dt1mask_maker">dt1mask 
+        Maker v1.0</a></b>.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Now we're 
+        ready. Launch again the </font><font face="Verdana, Arial, Helvetica, sans-serif" size="2" color="#FFFF00">Cottage 
+        and Town.bat</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2">, 
+        make some place in Town, copy/paste the house (floor + walls + special 
+        tiles) into town, save, quit, and we're done with the editor :</font></p>
+      <table border="0" cellspacing="0" cellpadding="8">
+        <tr> 
+          <td> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="tut01_23.gif" width="280" height="260"></font></div>
+          </td>
+          <td> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="tut01_24.gif" width="280" height="260"></font></div>
+          </td>
+        </tr>
+        <tr> 
+          <td> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Near 
+              Charsi, remove the Vehicle, the Rogue and the Chicken, to make some 
+              place</font></div>
+          </td>
+          <td> 
+            <div align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2">You 
+              can now safely copy / paste the house right there.</font></div>
+          </td>
+        </tr>
+      </table>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">Save and 
+        quit, and place the new <font color="#33FFFF">TownE1.ds1</font><font face="Verdana, Arial, Helvetica, sans-serif" size="2"> 
+        into your <font color="#00FF00">Mod directory</font>, at its usual <font color="#FFFFFF">Data\Global\Tiles\Act1\Town</font> 
+        place. We can now test the house in game :</font></font></p>
+      <p align="center"><font face="Verdana, Arial, Helvetica, sans-serif" size="2"><img src="tut01_25.gif" width="303" height="242"><br>
+        Hmmm, the house is there but the Roofs are not disapearing...</font></p>
+      <blockquote> 
+        <div align="left"></div>
+      </blockquote>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">It seems 
+        we forgot something but what ? Open <font color="#33FFFF">LvlPrest.txt</font>, 
+        make a search for &quot;<font color="#FFFFFF">cottage</font>&quot;, and 
+        you'll find the line <font color="#FFFFFF">Act 1 - Cottages 1</font> at 
+        <font color="#00FF00">Def</font> <font color="#FF9900">47</font>. If we 
+        now compare 2 columns, the <font color="#00FF00">Pops</font> and <font color="#00FF00">PopPad</font>, 
+        we'll see that the <font color="#FFFF00">Town</font> is not using them, 
+        while the <font color="#FFFF00">Cottage house</font> does. Just copy/paste 
+        these 2 values in the row of Town (<font color="#00FF00">Pops</font> = 
+        <font color="#FF9900">2</font> and <font color="#00FF00">PopPad </font>= 
+        <font color="#FF9900">-4</font>), and the house will finally works as 
+        expected :</font></p>
+      <p align="center"><img src="tut01_26.gif" width="364" height="273"></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">The meaning 
+        of the columns <font color="#00FF00">Pops</font> and <font color="#00FF00">PopPad</font> 
+        is not well know, but at least it's clear they have something to do with 
+        Areas of Tiles that disapear when the player walk somewhere (presence 
+        and count of areas / special tiles). That's why it's important to always 
+        follow a model, because we can't yet guess these values from scratch.</font></p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">This zip 
+        contains the files necessary to test our modifications so far : <b><a href="house.zip">house.zip</a></b> 
+        (58.3 KB).</font></p>
+      <p>&nbsp;</p>
+      <p><font face="Verdana, Arial, Helvetica, sans-serif" size="2">To be continued....</font></p>
+    </td>
+  </tr>
+</table>
+<p>&nbsp;</p>

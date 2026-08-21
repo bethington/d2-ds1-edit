@@ -1,0 +1,65 @@
+<head>
+<body bgColor=black text=#cccc99 link=#189bd8 vLink=#189bd8 aLink=silver background="../../backgrnd/infos.png">
+<style type="text/css">BODY {background-attachment:fixed;}</style>
+<table width=546><tr><td>
+<font face=verdana size=2>
+<font color=white><br><h3>PLAYER APPARENCE IN MENU</h3></font>
+This data is a structure : it is divided into many sub-datas. The 32 bytes of this structure are composing the look of your player while in file menu. Changing some of them may product various effect, but you must remember : all of them are <font color=white><b>only esthetic</b></font>, because when you begining to play, your player looks like always, and when you SAVE AND QUIT, the look that you have choose is replaced by the normal one. This REAL look, as you may have notice, is determine by only 4 items you are wearing :
+<ul>
+   <li>Helm
+   <li>Weapon(s)
+   <li>Shield
+   <li>Armor
+</ul>
+<p>
+At this point, you must known that some sprites in the game are, in fact, composed of many smaller sprite. That's the case for the characters you played, the monsters, and the missiles. The first half of the structure is used for the parts of the body, while the second half is used for their colors (it will be more exact to speak of TINT).
+<p>
+All datas are 1 byte size, exept for the <b>reserved</b> parts, which are 6 bytes size each. You can check <font color=white><b>d2data.mpq/data/global/excel/composit.txt</b></font> file, and the <font color=white><b>d2char.mpq/data/global/chars/am/</b></font> directory. If you wonder how you can do this, check <a href="http://user.cs.tu-berlin.de/~mickyk/cv.html">the CV5 program</a>. Here is the structure sub-datas (along with their offsets), in the exact order they appeared in the file :
+<ul>
+   <li>026h : Head
+   <li>027h : Torso
+   <li>028h : Legs
+   <li>029h : Right arm
+   <li>02Ah : Left arm
+   <li>02Bh : Right hand
+   <li>02Ch : Left hand
+   <li>02Dh : Shield
+   <li>02Eh : Right shoulder
+   <li>02Fh : Left shoulder
+   <li>030h : Reserved (6 bytes)
+   <p>
+   <li>036h : Head tint
+   <li>037h : Torso tint
+   <li>038h : Legs tint
+   <li>039h : Right arm tint
+   <li>03Ah : Left arm tint
+   <li>03Bh : Right hand tint
+   <li>03Ch : Left hand tint
+   <li>03Dh : Shield tint
+   <li>03Eh : Right shoulder tint
+   <li>03Fh : Left shoulder tint
+   <li>040h : Reserved tint  (6 bytes)
+</ul>
+There are some constraints. The <b>Left hand</b> (offset 02Ch) and the <b>Shield</b> (offset 02Dh) couldn't be present at the same time. Some configuration for a player class may not work for another class. Some values do nothing...
+<p>
+All the following example values are valid with the amazon (and before the patch 1.08) :
+<ul>
+   <li>Some value for the Head (offset 026h) : 03h make the Head invisible, 04h, 06h, 08h, 09h, 0Ah are different helms.<p>
+   <li>Some value for the Torso (offset 027h) : 01h, 02h, 03h are different armors, 04h make the Torso invisible.<p>
+   <li>For the 02Ch and 02Dh offsets (Left hand and Shield), a value of FFh means "nothing". If you put a value in offset 02Ch, you must put FFh in offset 02Dh (reverse is true too). Here are some examples for the offsets 02Bh, 02Ch and 02Dh :
+   <ul><ul>
+      <li>67h FFh 1Dh : broadsword and triangular shield
+      <li>67h FFh 1Eh : broadsword and rectangular shield
+      <li>01h 4Ch FFh : an arc (stand in both hand)
+   </ul></ul>
+</ul>
+<p>
+Here is a strange effect that you can easily make :<br>
+<table width=550>
+<tr>
+   <td><img src="invisibl.png" height=78 width=60 alt="Invisible man">
+   <td><font size=2 face=verdana>An invisible man ! With only his weapon, shield, helm and left shoulder visible. It's fun, but when you go out of the file menu, as said before, all the apparence come back to normal.</font>
+</table>
+<p><br>
+Back to <a href="part_1.html#playerlook"><b>Part 1</b></a>
+</td></tr></table>

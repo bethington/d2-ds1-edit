@@ -1,0 +1,91 @@
+<head>
+<body bgColor=black text=#cccc99 link=#189bd8 vLink=#189bd8 aLink=silver background="../backgrnd/infos.png">
+<style type="text/css">BODY {background-attachment:fixed;}</style>
+<table width=546><tr><td>
+<font face=verdana size=2>
+<font color=white><br><h3>ETAT DES DIALOGUES AVEC LES PNJ</h3></font><br>
+Il semblerait que ces données soit utilisées pour conserver l'état des dialogues avec les PNJ (Personnages Non Joueurs). Je n'ai pas eu le temps de tout analyser encore.
+<p>
+Il y a 2 données pour chaque niveau de difficultés. Chacune de ces données fait <font color=white><b>8 octets</b></font>. Seul les 4 premiers octets sont utilisés (1 octet par acte, j'en suis pratiquement sûr), les 4 autres sont toujours égal à zéro (réservés pour un usage future ?) .
+<p>
+Voici les offsets où vous pouvez les trouver :
+<p><br>
+<table width=370 border=1 cellpadding=5 cellspacing=0>
+   <col width=90 valign=top>
+   <col width=70 valign=top align=right>
+   <col width=90 valign=top align=right>
+   <col width=70 valign=top align=right>
+<tr>
+   <td>&nbsp
+   <td><font color=white size=2><b>Normal</b></font>
+   <td><font color=white size=2><b>Cauchemar</b></font>
+   <td><font color=white size=2><b>Enfer</b></font>
+   </tr>
+<tr>
+   <td><font color=white size=2><b>
+       Donnée 1<br>
+       Donnée 2<br></b></font>
+   <td><font size=2>
+       200h<br>
+       218h<br>
+   <td><font size=2>
+       208h<br>
+       220h<br>
+   <td><font size=2>
+       210h<br>
+       228h<br>
+</table>
+<p><br><br>
+Description non-exhaustive de l'octet de poid faible de la <font color=white><b>Donnée 1</b></font> (octet à l'offset 200h) :
+<p>
+<table border=0 cellpadding=2 cellspacing=0>
+   <col align=right width=50>
+   <col align=center width=20>
+   <col size=300 width=300>
+<tr>
+   <td><font size=2>Bit 0</td>
+   <td><font size=2>:</td>
+   <td><font size=2>?</td>
+   </tr>
+<tr>
+   <td><font size=2>Bit 1</td>
+   <td><font size=2>:</td>
+   <td><font size=2>Introduction de Gheed</td>
+   </tr>
+<tr>
+   <td><font size=2>Bit 2</td>
+   <td><font size=2>:</td>
+   <td><font size=2>Introduction d'Akara</td>
+   </tr>
+<tr>
+   <td><font size=2>Bit 3</td>
+   <td><font size=2>:</td>
+   <td><font size=2>Introduction de Kashia</td>
+   </tr>
+<tr>
+   <td><font size=2>Bit 4</td>
+   <td><font size=2>:</td>
+   <td><font size=2>?</td>
+   </tr>
+<tr>
+   <td><font size=2>Bit 5</td>
+   <td><font size=2>:</td>
+   <td><font size=2>Introduction de Charsi</td>
+   </tr>
+<tr>
+   <td><font size=2>Bit 6</td>
+   <td><font size=2>:</td>
+   <td><font size=2>?</td>
+   </tr>
+<tr>
+   <td><font size=2>Bit 7</td>
+   <td><font size=2>:</td>
+   <td><font size=2>Quelque chose (mais pas pour Cain je pense)</td>
+   </tr>
+</table>
+<p>
+Pour les bits d'introduction : s'il est absent, le PNJ vous donnera son discours d'introduction la première fois que vous lui parlerez. S'il est posé, il vous l'a déjà donné. La preuve : après que le bit soit posé, enlevez-le, et le PNJ recommencera son discours.
+<p>
+<p><br>
+Retour à la <a href="part_1.html#unknownquestsdatas"><b>Partie 1</b></a>
+</td></tr></table>

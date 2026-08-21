@@ -1,0 +1,87 @@
+<head>
+   <title>D2S, Documentation Non officielle</title>
+   <meta name="Description"            value="Documentation non officielle du format de fichier D2S de Diablo II">
+   <meta name="Keywords"               value="D2S, Diablo, II, 2, sauvegarde, sauvegardes, fichier, format, documentation, doc, description, desc, reference, référence, ref, guide, non, officiel, officielle, non-officiel, non-officielle, tricher, triche, triches, truc, trucs, astuce, astuces, modifier, modification, modifications">
+   <meta name="Author"                 value="Paul SIRAMY">
+   <meta name="Identifier-URL"         value="http://paul.siramy.free.fr/d2ref/index.html">
+   <meta name="Date-Creation-yyyymmdd" value="20010509">
+   <meta name="Date-Revision-yyyymmdd" value="20011208">
+   <meta name="Reply-to"               value="paul.siramy@free.fr">
+   <meta name="revisit-after"          value="7">
+   <meta name="Generator"              value="Notepad">
+</head>
+<body bgColor=black text=#cccc99 link=#189bd8 vLink=#189bd8 aLink=silver background="../backgrnd/infos.png">
+<style type="text/css">BODY {background-attachment:fixed;}</style>
+<table width=546>
+<tr>
+    <td><font face=arial> 
+      <table width=100% border=0>
+        <col width=33%> <col width=34%> <col width=33%> 
+        <tr> 
+          <td align="right"> 
+            <h5><a href="eng/index.html">English version</a></h5>
+          </td>
+        </tr>
+      </table>
+      </font>
+      <center>
+        <font face="Times New Roman, Times, serif" size="7" color="gold">D</font><font face="Times New Roman, Times, serif" size="6">2S, 
+        <font color="gold"> <font size="7">D</font></font>ocumentation <font size="7" color="gold">N</font>on 
+        <font color="gold"> <font size="7">O</font></font>fficielle</font><font face="arial"><br>
+        <br>
+        <font size=2>Dernière mise à jour : <font color=white>18-07-2001</font> 
+        <a href="history.html">consulter l'historique</a></font></font> 
+      </center>
+<font face=verdana size=2>
+<br><br><br><font color=white>
+      <h3><a name=#download></a><font color="gold">TELECHARGER</font></h3>
+      </font> 
+      <p align=justify>Vous pouvez obtenir la <b><a href="d2ref.zip">version ZIP</a></b> de cette doc, vous aurez ainsi tout votre temps pour la lire (125 Ko).</p>
+<p align=justify>
+Vous pouvez également avoir le <b><a href="v.c">code source</a></b> du programme que j'utilise (57 Ko, non-compressé).
+</p>
+<br><br><font color=white>
+      <h3><a name=#introduction></a><font color="gold">INTRODUCTION</font></h3>
+      </font> 
+      <p align=justify>Cette page est dédiée à la description de la structure du fichier <font color=white><b>D2S</b></font>, pour ce que j'arrive à en comprendre. Au départ je voulais faire un programme qui permettrait d'éditer n'importe quoi dans les sauvegardes de <font color=white><b>Diablo II</b></font> (statuts, aptitudes, quêtes, portails, mercenaires, objets, ...)
+<p align=justify>
+Il existe un grand nombre de programmes sur Internet qui permettent déjà de faire cela. Si j'ai voulu faire le mien, c'est parceque la plupart d'entre eux ne marchaient pas avec mes sauvegardes personnelles (problème de version). Et puis, je trouve simplement intéressant de savoir comment fonctionne mon jeu favori <b>:)</b>
+<p align=justify>
+A l'époque où je cherchais à rassembler de la documentation à ce sujet sur Internet, je me suis rendu compte que ces docs étaient la plupart du temps : <b>rares</b>, <b>incomplètes</b>, quelquefois <b>imprécises</b>, et <b>difficiles à comprendre</b> pour certains passages. La première chose à faire était de construire une base de connaissances sur les fichiers D2S aussi complète que possible. J'ai donc commençé de faire ma propre documentation. C'est la quête la plus difficile que j'ai jamais eu dans ce jeu <b>;)</b> . Cette doc est le résultat de plusieurs heures (semaines ?) passées à vérifier les docs que j'avaient, et à deviner le reste.
+<p align=justify>
+Aujourd'hui, je pense que je ne peux que maintenir une référence html, parce que cela représente déjà tant de travail...
+<p align=justify>
+<br><br><font color=white>
+      <h3><a name=#credits></a><font color="gold">REMERCIEMENTS</font></h3>
+      </font> 
+      <p align=justify>Je tient tout spécialement à remercier <font color=white><b>The Diablo 2 Save Game Mapping Project</b></font> créé par :
+<ul><ul type=square>
+   <li>Lee Hamel (Juicy)
+   <li>Glenn C. (Mephiston)
+   <li>Terje B. (Instant)
+   <li>Mike Harrison (Polaris)
+   <li>IceTeaMan
+   <li>Sephiroth
+</ul></ul>
+<p align=justify>Ils ont publié leur documentation sur le format de fichier <font color=white><b>D2S</b></font> avec un éditeur appelé <font color=white><b>Juicy's Diablo 2 Save Game Editor</b></font>. Cela a rendu mes recherches BEAUCOUP plus faciles. Vous pouvez allez voir <a href="http://www.cs.pdx.edu/~hamell"><b>Lee's Funk and Juice Hut</b></a> pour les dernières mises à jour de l'éditeur.
+<p align=justify>
+<p align=justify><br><br>
+Je tiens également à donner un ENORME merci à <font color=white><b>Jamella</b></font>, pour son éditeur, et pour la publication de son code source. Vous pouvez allez voir la dernière version de l'éditeur à <a href="http://jamella.cjb.net"><b>Jamella home page</b></a>.
+<p align=justify><br><br>
+Un autre programme génial à utiliser est <a href="http://user.cs.tu-berlin.de/~mickyk/cv.html"><b>CV5</b></a>, par <font color=white><b>TheTelamon</b></font>. Vous pouvez naviguer à travers les données de vos fichiers <font color=white><b>MPQ</b></font>, et même les extraire.
+<br><br><br>
+<font color=white>
+      <h3><a name=#contactauthor></a><font color="gold">CONTACTER L'AUTEUR</font></h3>
+      </font> 
+      <p align=justify>Vous avez relevé une erreur dans la doc ? Vous voulez ajouter vos propres infos ? Vous avez le courage de pointer toutes mes fôtes d'aurtografe ? Quelques soient vos raisons, vous pouvez me contacter à <a href="mailto:paul.siramy@free.fr">paul.siramy@free.fr</a>.
+<p align=justify><br><br>
+<font color=white>
+      <h3><a name=#startread></a><font color="gold">COMMENCER DE LIRE</font></h3>
+      </font>
+Vous devriez commencer par la <a href="part_1.html"><b>Partie 1</b></a> : Modifications faciles
+<p align=justify>
+Aller à la <a href="part_2.html"><b>Partie 2</b></a> : Données de Statut<br>
+Aller à la <a href="part_3.html"><b>Partie 3</b></a> : Niveaux d'aptitudes<br>
+Aller à la <a href="part_4.html"><b>Partie 4</b></a> : Objets<br>
+Aller à la <a href="part_5.html"><b>Partie 5</b></a> : Cadavre & Mercenaire<br><br>
+</font></td></tr></table>

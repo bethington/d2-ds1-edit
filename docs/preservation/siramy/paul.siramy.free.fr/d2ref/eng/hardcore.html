@@ -1,0 +1,35 @@
+<head>
+<body bgColor=black text=#cccc99 link=#189bd8 vLink=#189bd8 aLink=silver background="../../backgrnd/infos.png">
+<style type="text/css">BODY {background-attachment:fixed;}</style>
+<table width=546><tr><td>
+<font face=verdana size=2>
+<font color=white><br><h3>HARDCORE FLAG</h3></font>
+This flag indicate if the player is in hardcore mode, and / or if he is alive.<br>
+Since the Expansion "Lord of Destruction", it also indicate if the savegame is in expansion mode.
+<p>
+Bit 2 : is set when in hardcore mode, otherwise is cleared (normal mode)<br>
+Bit 3 : is set if the player has died before, is cleared if he is alive<br>
+Bit 5 : is set if in expansion (either converted or newly created savegame), is cleared otherwise
+<p>
+Possible values of the entire flag and their meaning :
+<ul>
+   <li>00h : normal mode, never died
+   <li>04h : hardcore mode, alive
+   <li>08h : normal mode, has died before
+   <li>0Ch : hardcore mode, died
+   <p>
+   <li>20h : expansion, normal mode, never died
+   <li>24h : expansion, hardcore mode, alive
+   <li>28h : expansion, normal mode, has died before
+   <li>2Ch : expansion, hardcore mode, died
+</ul>
+Note : when the player is in hardcore mode AND is died, there is NO <b>current life</b> statut data.
+<p>
+To resurect a died hardcore player, you only need to change the value from <b>0Ch</b> to <b>04h</b> (or from <b>2Ch</b> to <b>24h</b> if it's an expansion savegame). When you'll restart the game, your life will be equal to 1 due to the <b>current life</b> statut data problem, but you can easily fill it up. Don't forget to take your corpse, to get back your equiped items. Now, you are an hardcore fully alive player.
+<p>
+Hint : at all time you can switch from a mode to another one. So you can make a strong character in normal mode, and then switch to the hardcore mode. The reverse is true too : if you experience problems killing a boss in hardcore, you can switch to normal mode. After you have killed it, you can again switch to the hardcore mode.
+<p>
+Despite what I wrote just above, I consider that switching from one mode to another is an <font color=white><b>unforgivable misdeed</b></font> !
+<p><br>
+Back to <a href="part_1.html#hardcoreflag"><b>Part 1</b></a>
+</td></tr></table>

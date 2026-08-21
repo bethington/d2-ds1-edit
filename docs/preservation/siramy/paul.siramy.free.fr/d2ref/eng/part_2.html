@@ -1,0 +1,197 @@
+<head>
+<body bgColor=black text=#cccc99 link=#189bd8 vLink=#189bd8 aLink=silver background="../../backgrnd/infos.png">
+<style type="text/css">BODY {background-attachment:fixed;}</style>
+<table width=546><tr><td>
+<font face=verdana size=2>
+<font color=white><br><h3>FILE DESCRIPTION <font size=2> &nbsp (Part 2, where we meet volatile datas)</font></h3></font>
+<p><br><br><br>
+<u><font color=white><b>QUICK OVERVIEW</b></font></u>
+<p>
+All the status datas are somewhat <font color=white><b>optional</b></font>. Wheter one is present or not, depends of <font color=white><b>one bit</b></font> of the <font color=white><b>status flags</b></font>. Because of that, it's impossible to give explicit offsets where the datas can be find.
+<p>
+For instance, when you go up a level, you have 5 statut points and 1 skill point to dispatch. But most of the time you have no statut points : the <b>statut points</b> data will not be equal to zero : the corresponding bit will be cleared, and the data will not be present <b>at all !</b>
+<p>
+Another easy example : if all your gold is in your stash, then the <b>stash</b> data will be present, but the <b>gold</b> data will be absent. Here is a last (but tricky) example : if the player is in hardcore mode AND is dead, then the <b>current life</b> data will be absent.
+<p><br><br><br>
+<u><font color=white><b><u>BITS DESCRIPTION</u></b></font></u>
+<p>
+At the moment, only the first 2 flags are used. It's provide a total of 16 bits, and all of them corresponds to a data. That's the reason why I called the byte which follow the fisrt 2 flags, the <b>reserved flag</b>. It's always set to zero, like if Blizzard projected to use it as another flag.
+<p>
+The flags are named after the datas that are most likely to be absent.
+<p>
+The 1st flag (at the offset <font color=white><b>232h</b></font>) is the <font color=white><b>Stat / Skill flag</b></font>. The corresponding datas are :
+<table cols=4 width=250 border=0 cellspacing=0>
+   <col width=40  valign=top>
+   <col width=35  valign=top>
+   <col width=15  valign=top>
+   <col width=150 valign=top>
+<tr>
+   <td>&nbsp
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 0</font>
+   <td>:
+   <td><font size=2>Strength</font>
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 1</font>
+   <td>:
+   <td><font size=2>Energy</font>
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 2</font>
+   <td>:
+   <td><font size=2>Dexterity</font>
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 3</font>
+   <td>:
+   <td><font size=2>Vitality</font>
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 4</font>
+   <td>:
+   <td><font size=2>Stat points</font>
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 5</font>
+   <td>:
+   <td><font size=2>Skill points</font>
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 6</font>
+   <td>:
+   <td><font size=2>Life current</font>
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 7</font>
+   <td>:
+   <td><font size=2>Life max</font>
+   </tr>
+</table>
+<p><br>
+<a name="2ndflag">
+The 2nd flag (at the offset <font color=white><b>233h</b></font>) is the <font color=white><b>Xp / Gold / Stash flag</b></font>. The corresponding datas are :
+<table cols=4 width=250 border=0 cellspacing=0>
+   <col width=40  valign=top>
+   <col width=35  valign=top>
+   <col width=15  valign=top>
+   <col width=150 valign=top>
+<tr>
+   <td>&nbsp
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 0</font>
+   <td>:
+   <td><font size=2>Mana current</font>
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 1</font>
+   <td>:
+   <td><font size=2>Mana max</font>
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 2</font>
+   <td>:
+   <td><font size=2>Stamina current</font>
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 3</font>
+   <td>:
+   <td><font size=2>Stamina max</font>
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 4</font>
+   <td>:
+   <td><font size=2>True player level</font>
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 5</font>
+   <td>:
+   <td><font size=2>Experience</font>
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 6</font>
+   <td>:
+   <td><font size=2>Gold</font>
+   </tr>
+<tr>
+   <td>
+   <td><font size=2>Bit 7</font>
+   <td>:
+   <td><font size=2>Gold in stash</font>
+   </tr>
+</table>
+<p>
+The bit 0 is the lowest bit and the bit 7 is the highest bit, of course.
+<p><br><br><br>
+<u><font color=white><b><u>READING DATAS</u></b></font></u>
+<p>
+It will be perfect if all the datas will be the same size. Well, it isn't. Some must be read with 4 bytes, some with 2 bytes, and it exists 2 tricky datas of 1 byte each. Let's check it.
+<p>
+In general, all the datas are <font color=white><b>4 bytes</b></font> size. Like always, they are in the Intel's order. Starting with offset <font color=white><b>235h</b></font>, here is the datas that you can find, but <font color=white><b>ONLY</b></font> if their flag's bit are set !
+<ul>
+   <li>Strength
+   <li>Energy
+   <li>Dexterity
+   <li>Vitality
+   <li>Stat points
+   <li>Skill points
+</ul>
+Now here comes a trick. There is a byte that we must skip. Most of the time it's equal to zero, but not always. I don't figure out what it means.
+<ul>
+   <li>Unknown tricky byte
+</ul>
+<p>
+Now we can continue with the normal reading of datas, with an exeption : this datas are <font color=white><b>2 bytes</b></font>. Just after are <font color=white><b>another 2 bytes</b></font> with sometimes zero, sometimes funny values. Again, I don't figure out what they means. It seems they appears when some current datas are greater than the max data. For instance when <b>Life current</b> is greater than <b>Life max</b> (due to magical items).
+<ul>
+   <li>Life current
+   <li>?
+   <li>Life max
+   <li>?
+   <li>Mana current
+   <li>?
+   <li>Mana max
+   <li>?
+   <li>Stamina current
+   <li>?
+</ul>
+Another trick. The <b>Stamina max</b> data have a size of 2 bytes (it's OK), but it is <font color=white><b>not followed by 2 bytes</b></font>, only by <font color=white><b>1 byte</b></font>. Could it be that the previous tricky byte (between <b>Skill points</b> and <b>Life current</b> datas) is, in fact, one part of the unknown data which follow the <b>Stamina max</b> data ? I don't known.
+<ul>
+   <li>Stamina max
+   <li>?
+</ul>
+<p>
+After that, all the datas are again <font color=white><b>4 bytes</b></font> size.
+<ul>
+   <li>True player level (1)
+   <li>Experience
+   <li>Gold
+   <li>Gold in stash
+</ul>
+(1) Note about the <b>True player level</b> : since the copy of this value at the offset <font color=white><b>024h</b></font> is only 2 bytes size, it's not wise to put a value greater than 65535 (FFFFh). A value greater than 99 (63h) is not wise at all btw <b>:)</b>
+<p><br><br>
+After all these volatile datas, we normaly find the <font color=white><b>Skill header</b></font>, which is equal to <font color=white><b>6669h</b></font>. If not, well, it may be the cause of the <b>reserved flag</b>. If it is not equal to zero, then it is a version problem. But if it's zero, we don't know.
+<p><br>
+All of this is explained on <a href="part_3.html"><b>Part 3</b></a> : Skill Levels.
+<p>
+Back to <a href="part_1.html"><b>Part 1</b></a> : Easy Hacking<br>
+Go to <a href="part_4.html"><b>Part 4</b></a> : Items<br>
+Go to <a href="part_5.html"><b>Part 5</b></a> : Corpse & Mercenary<br>
+Back to <a href="index.html"><b>Menu page</b></a>
+</td></tr></table>
