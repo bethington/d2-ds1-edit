@@ -238,25 +238,6 @@ target_include_directories(test_rgba_cache PRIVATE
 )
 add_test(NAME rgba_cache COMMAND test_rgba_cache)
 
-# Copy Allegro DLLs next to test executables so they can find them at runtime
-if(WIN32 AND DEFINED ALLEGRO5_BIN_DIR AND EXISTS "${ALLEGRO5_BIN_DIR}")
-    add_custom_command(TARGET test_rgba_cache POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${ALLEGRO5_BIN_DIR}"
-            "$<TARGET_FILE_DIR:test_rgba_cache>"
-        COMMENT "Copying Allegro DLLs to test output directory"
-    )
-endif()
-
-if(WIN32 AND DEFINED ALLEGRO5_BIN_DIR AND EXISTS "${ALLEGRO5_BIN_DIR}")
-    add_custom_command(TARGET test_asset_export_smoke POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${ALLEGRO5_BIN_DIR}"
-            "$<TARGET_FILE_DIR:test_asset_export_smoke>"
-        COMMENT "Copying Allegro DLLs for test_asset_export_smoke"
-    )
-endif()
-
 # Phase 2: DT1 sub-tile decoder tests (no Allegro dependency)
 add_executable(test_dt1_decode test_dt1_decode.c ../src/core/dt1_decode.c)
 target_link_libraries(test_dt1_decode PRIVATE unity)
@@ -291,14 +272,6 @@ target_include_directories(test_project PRIVATE
 target_compile_definitions(test_project PRIVATE DS1EDIT_VERSION_STR="${PROJECT_VERSION}")
 add_test(NAME project COMMAND test_project)
 
-if(WIN32 AND DEFINED ALLEGRO5_BIN_DIR AND EXISTS "${ALLEGRO5_BIN_DIR}")
-    add_custom_command(TARGET test_project POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${ALLEGRO5_BIN_DIR}"
-            "$<TARGET_FILE_DIR:test_project>"
-        COMMENT "Copying Allegro DLLs for test_project"
-    )
-endif()
 
 # Input edge detection and modal isolation. Guards the two rules the old
 # Allegro 4 spin-waits enforced by blocking -- fire once per press, and do not
@@ -310,3 +283,27 @@ target_include_directories(test_input_edges PRIVATE
     ${CMAKE_SOURCE_DIR}/src/mpq
 )
 add_test(NAME input_edges COMMAND test_input_edges)
+
+# Copy the Allegro DLLs next to the test executables so they run from the
+# build tree.
+#
+# This has to happen exactly once, and before anything links. Each of these
+# tests used to copy the whole directory itself in POST_BUILD, all into this
+# same destination, while vcpkg's z-applocal read and wrote the same files
+# during every Allegro-linking link step. Under Ninja those overlapped and the
+# Windows build failed with "open_for_read(...allegro-5.2.dll): permission
+# denied" -- on test_input_edges, the one target that had no copy of its own.
+if(WIN32 AND DEFINED ALLEGRO5_BIN_DIR AND EXISTS "${ALLEGRO5_BIN_DIR}")
+    add_custom_target(test_allegro_dlls
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${ALLEGRO5_BIN_DIR}"
+            "${CMAKE_CURRENT_BINARY_DIR}"
+        COMMENT "Copying Allegro DLLs to the test output directory"
+    )
+
+    foreach(_t test_rgba_cache test_asset_export_smoke test_project test_input_edges)
+        if(TARGET ${_t})
+            add_dependencies(${_t} test_allegro_dlls)
+        endif()
+    endforeach()
+endif()
