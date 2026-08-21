@@ -91,5 +91,11 @@ assets/editor/cmap*.bin
 assets/editor/gamma.dat
 assets/excel/*.txt
 
+# Vanilla game tables extracted by tools/d2mpq.py for fact-checking the book.
+# Verbatim Blizzard data -- the reader is ours, the data is not. Regenerate on
+# demand from your own installation:  python tools/d2mpq.py tables 1.13c
+# See docs/vanilla-data.md.
+/.vanilla-cache/
+
 # Undo scratch, created at runtime.
 /tmp/
