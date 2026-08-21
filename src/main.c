@@ -924,7 +924,7 @@ int main(int argc, char *argv[])
 #endif
 {
    int i, mpq_num = 0, mod_num = 0, ds1_idx = 0;
-   char *ininame = "ds1edit.ini";
+   char *ininame = DS1EDIT_INI_NAME;
    static char tmp[512];
    static char tmp2[512];
 
@@ -998,8 +998,8 @@ int main(int argc, char *argv[])
       }
    }
 
-   // check if ds1edit.ini exists
-   sprintf(tmp, "ds1edit.ini");
+   // check if the config file exists
+   sprintf(tmp, DS1EDIT_INI_NAME);
    if (a5_file_exists(tmp) == 0)
    {
       ini_create(tmp);

@@ -14,7 +14,7 @@
 #include "core/compose_presets.h"
 
 // ==========================================================================
-// create a new ds1edit.ini
+// create a new config file
 void ini_create(char *ininame)
 {
    FILE *out;
@@ -227,8 +227,8 @@ void ini_create(char *ininame)
        out);
 
    fclose(out);
-   printf("new ds1edit.ini was created\n");
-   fprintf(stderr, "new ds1edit.ini was created\n");
+   printf("new %s was created\n", ininame);
+   fprintf(stderr, "new %s was created\n", ininame);
 }
 
 // ==========================================================================
@@ -340,7 +340,7 @@ void ini_read(char *ininame)
    char tmp[256], *buf, **tmpptr;
 
    printf("ini_read()\n");
-   fprintf(stderr, "ini_read(), load ds1edit.ini\n");
+   fprintf(stderr, "ini_read(), load %s\n", ininame);
    fflush(stdout);
    fflush(stderr);
 
