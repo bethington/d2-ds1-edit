@@ -6,6 +6,7 @@
 #include "error.h"
 #include "dialogs.h"
 #include "misc.h"
+#include "ui/input.h"
 
 
 // ==========================================================================
@@ -136,6 +137,9 @@ int wmsg_main(WMSG_S * wmsg)
    // main loop
    while ( ! done)
    {
+      input_pump();
+      if (a5_display_closed)
+         done = TRUE;
       // handle keyboard shortcuts
       i = 0;
       while ((wmsg->button[i].text != NULL) && ( ! done) )
@@ -204,10 +208,8 @@ int wmsg_main(WMSG_S * wmsg)
             border = wmsg->button[i].on.border;
 
             // mouse button pressed
-            if (mb)
+            if (mouse_hit(1))
             {
-               while (mb)
-               { al_rest(0.01); al_get_mouse_state(&a5_ms_state); mb = a5_mouse_b; }
                done = TRUE;
                ret  = i;
             }

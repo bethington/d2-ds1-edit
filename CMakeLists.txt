@@ -213,6 +213,7 @@ set(SOURCES
     src/editor/paths.c
     src/editor/undo.c
     # ui/
+    src/ui/input.c
     src/ui/interface.c
     src/ui/dialogs.c
     src/ui/edit_window.c

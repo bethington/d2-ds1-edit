@@ -731,6 +731,11 @@ typedef struct GLB_DS1EDIT_S
    RGBA_PALETTE  dummy_pal;
    int           pal_loaded[ACT_MAX];
    ALLEGRO_BITMAP * mouse_cursor[MOD_MAX];
+   /* The same artwork handed to the OS compositor. A software cursor drawn
+      into our own frame always trails the real pointer by a frame, which is
+      plainly visible over a remote session. NULL entries fall back to the
+      software path. */
+   ALLEGRO_MOUSE_CURSOR * hw_cursor[MOD_MAX];
    WIN_PREVIEW_S win_preview;
    WIN_EDIT_S    win_edit;
    ALLEGRO_BITMAP * big_screen_buff; // for safety about cliping

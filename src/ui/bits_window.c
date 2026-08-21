@@ -6,6 +6,7 @@
 #include "core/ds1.h"
 #include "ui/bits_window.h"
 #include "misc.h"
+#include "ui/input.h"
 
 
 // ==========================================================================
@@ -136,6 +137,12 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
    // main loop
    while ( ! done)
    {
+      input_pump();
+      if (a5_display_closed)
+      {
+         save = FALSE;   /* window close reads as cancel */
+         done = TRUE;
+      }
 
       // OK button
       c1 = c_darkgreen;
@@ -146,18 +153,14 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
          c1 = c_lightgreen;
          c2 = c_white;
          c3 = c_black;
-         if (mb & 1)
+         if (mouse_hit(1))
          {
             // OK button selected
             save = TRUE;
             done = TRUE;
-            while (a5_mouse_b & 1)
-            {
-               al_rest(0.01); al_get_mouse_state(&a5_ms_state);
-            }
          }
       }
-      if (key_pressed(KEY_ENTER) || key_pressed(KEY_ENTER_PAD))
+      if (key_hit(KEY_ENTER) || key_hit(KEY_ENTER_PAD))
       {
          save = TRUE;
          done = TRUE;
@@ -175,18 +178,14 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
          c1 = c_lightgreen;
          c2 = c_white;
          c3 = c_black;
-         if (mb & 1)
+         if (mouse_hit(1))
          {
             // CANCEL button selected
             save = FALSE;
             done = TRUE;
-            while (a5_mouse_b & 1)
-            {
-               al_rest(0.01); al_get_mouse_state(&a5_ms_state);
-            }
          }
       }
-      if (key_pressed(KEY_ESC))
+      if (key_hit(KEY_ESC))
       {
          save = FALSE;
          done = TRUE;
@@ -214,7 +213,7 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
                     (my >= y) && (my <= y+9) )
                {
                   c  = c_red;
-                  if (mb & 1)
+                  if (mouse_hit(1))
                   {
                      if (val[b] & (1 << i))
                      {
@@ -225,11 +224,6 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
                      {
                         // change to 1
                         val[b] = val[b] + (1 << i);
-                     }
-                     while (mb & 1)
-                     {
-                        al_rest(0.01); al_get_mouse_state(&a5_ms_state); // wait until no mouse button pressed
-                        mb = a5_mouse_b;
                      }
                      switch(b)
                      {
@@ -276,7 +270,7 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
                     (my >= y) && (my <= y+9) )
                {
                   c  = c_red;
-                  if (mb & 1)
+                  if (mouse_hit(1))
                   {
                      if (shad[b] & (1 << i))
                      {
@@ -287,11 +281,6 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
                      {
                         // change to 1
                         shad[b] = shad[b] + (1 << i);
-                     }
-                     while (mb & 1)
-                     {
-                        al_rest(0.01); al_get_mouse_state(&a5_ms_state); // wait until no mouse button pressed
-                        mb = a5_mouse_b;
                      }
                      switch(b)
                      {
@@ -339,7 +328,7 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
                     (my >= y) && (my <= y+9) )
                {
                   c  = c_red;
-                  if (mb & 1)
+                  if (mouse_hit(1))
                   {
                      if (val[b] & (1 << i))
                      {
@@ -350,11 +339,6 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
                      {
                         // change to 1
                         val[b] = val[b] + (1 << i);
-                     }
-                     while (mb & 1)
-                     {
-                        al_rest(0.01); al_get_mouse_state(&a5_ms_state); // wait until no mouse button pressed
-                        mb = a5_mouse_b;
                      }
                      switch(b)
                      {
@@ -390,7 +374,7 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
                  (my >= y) && (my <= y+9) )
             {
                c  = c_red;
-               if (mb & 1)
+               if (mouse_hit(1))
                {
                   if (w_ptr[n].orientation & (1 << i))
                   {
@@ -401,11 +385,6 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
                   {
                      // change to 1
                      w_ptr[n].orientation = w_ptr[n].orientation + (1 << i);
-                  }
-                  while (mb & 1)
-                     {
-                        al_rest(0.01); al_get_mouse_state(&a5_ms_state); // wait until no mouse button pressed
-                     mb = a5_mouse_b;
                   }
                }
             }
@@ -433,7 +412,7 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
                  (my >= y) && (my <= y+9) )
             {
                c  = c_red;
-               if (mb & 1)
+               if (mouse_hit(1))
                {
                   if (tag_dw & (1 << i))
                   {
@@ -444,11 +423,6 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
                   {
                      // change to 1
                      tag_dw = tag_dw + (1 << i);
-                  }
-                  while (mb & 1)
-                     {
-                        al_rest(0.01); al_get_mouse_state(&a5_ms_state); // wait until no mouse button pressed
-                     mb = a5_mouse_b;
                   }
                   t_ptr->num = tag_dw;
                }
@@ -511,13 +485,11 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
       ds1_make_prop_2_block(ds1_idx);
    }
 
-   if (key_pressed(KEY_ESC))
+   if (key_hit(KEY_ESC))
    {
-      while (key_pressed(KEY_ESC)) { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
    }
-   if (key_pressed(KEY_ENTER) || key_pressed(KEY_ENTER_PAD))
+   if (key_hit(KEY_ENTER) || key_hit(KEY_ENTER_PAD))
    {
-      while (key_pressed(KEY_ENTER) || key_pressed(KEY_ENTER_PAD)) { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
    }
 
    // end
@@ -929,6 +901,12 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
    // main loop
    while ( ! done)
    {
+      input_pump();
+      if (a5_display_closed)
+      {
+         save = FALSE;   /* window close reads as cancel */
+         done = TRUE;
+      }
 
       // OK button
       c1 = c_darkgreen;
@@ -939,18 +917,14 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
          c1 = c_lightgreen;
          c2 = c_white;
          c3 = c_black;
-         if (mb & 1)
+         if (mouse_hit(1))
          {
             // OK button selected
             save = TRUE;
             done = TRUE;
-            while (a5_mouse_b & 1)
-            {
-               al_rest(0.01); al_get_mouse_state(&a5_ms_state);
-            }
          }
       }
-      if (key_pressed(KEY_ENTER) || key_pressed(KEY_ENTER_PAD))
+      if (key_hit(KEY_ENTER) || key_hit(KEY_ENTER_PAD))
       {
          save = TRUE;
          done = TRUE;
@@ -968,18 +942,14 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
          c1 = c_lightgreen;
          c2 = c_white;
          c3 = c_black;
-         if (mb & 1)
+         if (mouse_hit(1))
          {
             // CANCEL button selected
             save = FALSE;
             done = TRUE;
-            while (a5_mouse_b & 1)
-            {
-               al_rest(0.01); al_get_mouse_state(&a5_ms_state);
-            }
          }
       }
-      if (key_pressed(KEY_ESC))
+      if (key_hit(KEY_ESC))
       {
          save = FALSE;
          done = TRUE;
@@ -1013,7 +983,7 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
                    (ptr_wbitsdata->bit_type_f[n][b][i] != WBITSTYPE_UNKNOWN))
                {
                   c  = c_red;
-                  if (mb & 1)
+                  if (mouse_hit(1))
                   {
                      if (val[b] & (1 << i))
                      {
@@ -1024,11 +994,6 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
                      {
                         // change to 1
                         val[b] = val[b] + (1 << i);
-                     }
-                     while (mb & 1)
-                     {
-                        al_rest(0.01); al_get_mouse_state(&a5_ms_state); // wait until no mouse button pressed
-                        mb = a5_mouse_b;
                      }
                      switch(b)
                      {
@@ -1090,7 +1055,7 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
                    (ptr_wbitsdata->bit_type_s[n][b][i] != WBITSTYPE_UNKNOWN))
                {
                   c  = c_red;
-                  if (mb & 1)
+                  if (mouse_hit(1))
                   {
                      if (shad[b] & (1 << i))
                      {
@@ -1101,11 +1066,6 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
                      {
                         // change to 1
                         shad[b] = shad[b] + (1 << i);
-                     }
-                     while (mb & 1)
-                     {
-                        al_rest(0.01); al_get_mouse_state(&a5_ms_state); // wait until no mouse button pressed
-                        mb = a5_mouse_b;
                      }
                      switch(b)
                      {
@@ -1168,7 +1128,7 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
                    (ptr_wbitsdata->bit_type_w[n][b][i] != WBITSTYPE_UNKNOWN))
                {
                   c  = c_red;
-                  if (mb & 1)
+                  if (mouse_hit(1))
                   {
                      if (val[b] & (1 << i))
                      {
@@ -1179,11 +1139,6 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
                      {
                         // change to 1
                         val[b] = val[b] + (1 << i);
-                     }
-                     while (mb & 1)
-                     {
-                        al_rest(0.01); al_get_mouse_state(&a5_ms_state); // wait until no mouse button pressed
-                        mb = a5_mouse_b;
                      }
                      switch(b)
                      {
@@ -1234,7 +1189,7 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
                 (ptr_wbitsdata->bit_type_w[n][4][i] != WBITSTYPE_UNKNOWN))
             {
                c  = c_red;
-               if (mb & 1)
+               if (mouse_hit(1))
                {
                   if (ptr_wbitsdata->mix_w[n].orientation & (1 << i))
                   {
@@ -1247,11 +1202,6 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
                      // change to 1
                      ptr_wbitsdata->mix_w[n].orientation =
                         ptr_wbitsdata->mix_w[n].orientation + (1 << i);
-                  }
-                  while (mb & 1)
-                     {
-                        al_rest(0.01); al_get_mouse_state(&a5_ms_state); // wait until no mouse button pressed
-                     mb = a5_mouse_b;
                   }
 
                   if (ptr_wbitsdata->bit_type_w[n][4][i] == WBITSTYPE_DIFFERENT)
@@ -1295,7 +1245,7 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
                 (ptr_wbitsdata->bit_type_t[n][i] != WBITSTYPE_UNKNOWN))
             {
                c  = c_red;
-               if (mb & 1)
+               if (mouse_hit(1))
                {
                   if (tag_dw & (1 << i))
                   {
@@ -1306,11 +1256,6 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
                   {
                      // change to 1
                      tag_dw = tag_dw + (1 << i);
-                  }
-                  while (mb & 1)
-                     {
-                        al_rest(0.01); al_get_mouse_state(&a5_ms_state); // wait until no mouse button pressed
-                     mb = a5_mouse_b;
                   }
 
                   ptr_wbitsdata->mix_t[n].num = tag_dw;
@@ -1364,13 +1309,11 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
       ds1_make_prop_2_block(ds1_idx);
    }
 
-   if (key_pressed(KEY_ESC))
+   if (key_hit(KEY_ESC))
    {
-      while (key_pressed(KEY_ESC)) { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
    }
-   if (key_pressed(KEY_ENTER) || key_pressed(KEY_ENTER_PAD))
+   if (key_hit(KEY_ENTER) || key_hit(KEY_ENTER_PAD))
    {
-      while (key_pressed(KEY_ENTER) || key_pressed(KEY_ENTER_PAD)) { al_rest(0.01); al_get_keyboard_state(&a5_kb_state); }
    }
 
    // end

@@ -1668,8 +1668,23 @@ void misc_draw_screen(int mx, int my)
    else
       props_panel_draw_tab(disp_h);
 
-   if (mouse_sprite != NULL)
+   /* Hand the pointer to the compositor when we can: an OS cursor tracks the
+      real device instead of lagging our frame rate. Only draw it ourselves if
+      that cursor could not be created. */
+   if (glb_ds1edit.hw_cursor[glb_ds1edit.mode] != NULL)
+   {
+      static int last_cursor_mode = -1;
+      if (last_cursor_mode != glb_ds1edit.mode)
+      {
+         al_set_mouse_cursor(a5_display,
+                             glb_ds1edit.hw_cursor[glb_ds1edit.mode]);
+         last_cursor_mode = glb_ds1edit.mode;
+      }
+   }
+   else if (mouse_sprite != NULL)
+   {
       al_draw_bitmap(mouse_sprite, (float)mx, (float)my, 0);
+   }
    al_flip_display();
 }
 

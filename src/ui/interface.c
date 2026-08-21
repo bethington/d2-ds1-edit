@@ -24,6 +24,7 @@
 #include "ui/preset_picker.h"
 #include "core/export_common.h"
 #include "core/palette.h"
+#include "ui/input.h"
 
 typedef struct
 {
@@ -213,20 +214,15 @@ void interfac_user_handler(int start_ds1_idx)
       preset_picker_handle_shortcut();
 
       /* Sidebar toggle: [ (left bracket) key */
-      if (key_pressed(KEY_LBRACKET))
+      if (key_hit(KEY_LBRACKET))
       {
          glb_ds1edit.sidebar_visible = !glb_ds1edit.sidebar_visible;
-         while (key_pressed(KEY_LBRACKET))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
       }
 
       /* Properties panel: ] (right bracket) opens+focuses.
        * If closed: open and focus. If open but unfocused: focus. If focused: close.
        * Ctrl+] cycles Properties/Tiles tabs instead. */
-      if (key_pressed(KEY_RBRACKET) && !glb_ds1edit.props_panel.editing)
+      if (key_hit(KEY_RBRACKET) && !glb_ds1edit.props_panel.editing)
       {
          int ctrl_held = key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL);
          if (ctrl_held)
@@ -257,11 +253,6 @@ void interfac_user_handler(int start_ds1_idx)
             glb_ds1edit.props_panel_visible = FALSE;
             glb_ds1edit.props_panel.has_focus = FALSE;
          }
-         while (key_pressed(KEY_RBRACKET))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
       }
 
       /* Sidebar: handle click on collapsed tab to expand */
@@ -269,11 +260,6 @@ void interfac_user_handler(int start_ds1_idx)
           a5_mouse_x < 16) /* collapsed tab width */
       {
          glb_ds1edit.sidebar_visible = TRUE;
-         while (a5_mouse_b)
-         {
-            al_rest(0.01);
-            al_get_mouse_state(&a5_ms_state);
-         }
       }
 
       /* Properties panel: handle click on collapsed tab to expand */
@@ -283,11 +269,6 @@ void interfac_user_handler(int start_ds1_idx)
              a5_mouse_x > pp_disp_w - 16)
          {
             glb_ds1edit.props_panel_visible = TRUE;
-            while (a5_mouse_b)
-            {
-               al_rest(0.01);
-               al_get_mouse_state(&a5_ms_state);
-            }
          }
       }
 
@@ -303,7 +284,7 @@ void interfac_user_handler(int start_ds1_idx)
          }
 
          /* Mouse click in sidebar */
-         if (a5_mouse_b & 1)
+         if (mouse_hit(1))
          {
             int click_result = area_browser_sidebar_click(
                 a5_mouse_x, a5_mouse_y,
@@ -340,26 +321,16 @@ void interfac_user_handler(int start_ds1_idx)
                 * load now happens on the click that actually wants one. */
             }
 
-            while (a5_mouse_b & 1)
-            {
-               al_rest(0.01);
-               al_get_mouse_state(&a5_ms_state);
-            }
          }
 
          /* Right-click in sidebar — context menu for backup entries */
-         if (a5_mouse_b & 2)
+         if (mouse_hit(2))
          {
             AREA_BROWSER_S *rc_ab = &glb_ds1edit.area_browser;
             int rc_gi = rc_ab->selected_group;
             int rc_ei = rc_ab->selected_entry;
 
             /* Wait for button release */
-            while (a5_mouse_b & 2)
-            {
-               al_rest(0.01);
-               al_get_mouse_state(&a5_ms_state);
-            }
 
             /* Show context menu if right-clicked on a backup entry */
             if (rc_gi >= 0 && rc_gi < rc_ab->group_count &&
@@ -390,8 +361,13 @@ void interfac_user_handler(int start_ds1_idx)
                {
                   int mx, my;
 
-                  al_get_keyboard_state(&a5_kb_state);
-                  al_get_mouse_state(&a5_ms_state);
+                  /* This popup runs its own loop, so it has to refresh input
+                     itself -- polling alone would leave key_hit/mouse_hit
+                     holding whatever the main loop last saw, and the menu
+                     would act on a click that happened before it opened. */
+                  input_pump();
+                  if (a5_display_closed)
+                     menu_done = 1;
                   mx = al_get_mouse_state_axis(&a5_ms_state, 0);
                   my = al_get_mouse_state_axis(&a5_ms_state, 1);
 
@@ -431,7 +407,7 @@ void interfac_user_handler(int start_ds1_idx)
                   al_rest(0.02);
 
                   /* Click selects item */
-                  if (al_mouse_button_down(&a5_ms_state, 1))
+                  if (mouse_hit(1))
                   {
                      if (menu_sel >= 0)
                      {
@@ -449,22 +425,12 @@ void interfac_user_handler(int start_ds1_idx)
                      }
                      menu_done = 1;
                      /* Wait for release */
-                     while (al_mouse_button_down(&a5_ms_state, 1))
-                     {
-                        al_rest(0.01);
-                        al_get_mouse_state(&a5_ms_state);
-                     }
                   }
                   /* Right-click or Escape cancels */
-                  if (al_mouse_button_down(&a5_ms_state, 2) ||
+                  if (mouse_hit(2) ||
                       al_key_down(&a5_kb_state, ALLEGRO_KEY_ESCAPE))
                   {
                      menu_done = 1;
-                     while (al_mouse_button_down(&a5_ms_state, 2))
-                     {
-                        al_rest(0.01);
-                        al_get_mouse_state(&a5_ms_state);
-                     }
                   }
                }
             }
@@ -543,7 +509,7 @@ void interfac_user_handler(int start_ds1_idx)
             }
 
             /* Mouse click in panel */
-            if (a5_mouse_b & 1)
+            if (mouse_hit(1))
             {
                int pp_result = props_panel_click(
                    a5_mouse_x, a5_mouse_y,
@@ -555,21 +521,11 @@ void interfac_user_handler(int start_ds1_idx)
                else
                   glb_ds1edit.props_panel.has_focus = TRUE;
 
-               while (a5_mouse_b & 1)
-               {
-                  al_rest(0.01);
-                  al_get_mouse_state(&a5_ms_state);
-               }
             }
 
             /* Consume right-click in panel */
-            if (a5_mouse_b & 2)
+            if (mouse_hit(2))
             {
-               while (a5_mouse_b & 2)
-               {
-                  al_rest(0.01);
-                  al_get_mouse_state(&a5_ms_state);
-               }
             }
          }
       }
@@ -775,14 +731,9 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       // zoom — keyboard (+/- keys): zoom around screen center
-      if ((key_pressed(KEY_MINUS_PAD) || key_pressed(KEY_MINUS)) &&
+      if ((key_hit(KEY_MINUS_PAD) || key_hit(KEY_MINUS)) &&
           glb_ds1[ds1_idx].cur_zoom < ZM_116)
       {
-         while (key_pressed(KEY_MINUS_PAD) || key_pressed(KEY_MINUS))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
          glb_ds1[ds1_idx].own_wpreview.x0 = glb_ds1edit.win_preview.x0;
          glb_ds1[ds1_idx].own_wpreview.y0 = glb_ds1edit.win_preview.y0;
          glb_ds1[ds1_idx].own_wpreview.w = glb_ds1edit.win_preview.w;
@@ -791,14 +742,9 @@ void interfac_user_handler(int start_ds1_idx)
          glb_ds1edit.win_preview.x0 = glb_ds1[ds1_idx].own_wpreview.x0;
          glb_ds1edit.win_preview.y0 = glb_ds1[ds1_idx].own_wpreview.y0;
       }
-      if ((key_pressed(KEY_PLUS_PAD) || key_pressed(KEY_EQUALS)) &&
+      if ((key_hit(KEY_PLUS_PAD) || key_hit(KEY_EQUALS)) &&
           glb_ds1[ds1_idx].cur_zoom > ZM_21)
       {
-         while (key_pressed(KEY_PLUS_PAD) || key_pressed(KEY_EQUALS))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
          glb_ds1[ds1_idx].own_wpreview.x0 = glb_ds1edit.win_preview.x0;
          glb_ds1[ds1_idx].own_wpreview.y0 = glb_ds1edit.win_preview.y0;
          glb_ds1[ds1_idx].own_wpreview.w = glb_ds1edit.win_preview.w;
@@ -904,99 +850,54 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       // DS1 file navigation (arrow keys, PgUp/PgDn, Home/End)
-      if (key_pressed(KEY_UP))
+      if (key_hit(KEY_UP))
       {
          int nav_idx = area_browser_nav_up();
          if (nav_idx >= 0 && glb_ds1edit.has_loaded_ds1)
             ds1_idx = nav_idx;
-         while (key_pressed(KEY_UP))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
       }
-      if (key_pressed(KEY_DOWN))
+      if (key_hit(KEY_DOWN))
       {
          int nav_idx = area_browser_nav_down();
          if (nav_idx >= 0 && glb_ds1edit.has_loaded_ds1)
             ds1_idx = nav_idx;
-         while (key_pressed(KEY_DOWN))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
       }
-      if (key_pressed(KEY_LEFT))
+      if (key_hit(KEY_LEFT))
       {
          area_browser_nav_left();
-         while (key_pressed(KEY_LEFT))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
       }
-      if (key_pressed(KEY_RIGHT))
+      if (key_hit(KEY_RIGHT))
       {
          int nav_idx = area_browser_nav_right();
          if (nav_idx >= 0 && glb_ds1edit.has_loaded_ds1)
             ds1_idx = nav_idx;
-         while (key_pressed(KEY_RIGHT))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
       }
-      if (key_pressed(KEY_PGUP) && !(key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)))
+      if (key_hit(KEY_PGUP) && !(key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)))
       {
          area_browser_nav_pgup();
-         while (key_pressed(KEY_PGUP))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
       }
-      if (key_pressed(KEY_PGDN) && !(key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)))
+      if (key_hit(KEY_PGDN) && !(key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)))
       {
          area_browser_nav_pgdn();
-         while (key_pressed(KEY_PGDN))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
       }
-      if (key_pressed(KEY_HOME) && !(key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT)))
+      if (key_hit(KEY_HOME) && !(key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT)))
       {
          int nav_idx = area_browser_nav_home();
          if (nav_idx >= 0 && glb_ds1edit.has_loaded_ds1)
             ds1_idx = nav_idx;
-         while (key_pressed(KEY_HOME))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
       }
-      if (key_pressed(KEY_END))
+      if (key_hit(KEY_END))
       {
          int nav_idx = area_browser_nav_end();
          if (nav_idx >= 0 && glb_ds1edit.has_loaded_ds1)
             ds1_idx = nav_idx;
-         while (key_pressed(KEY_END))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
       }
 
       // Delete key — backup and remove current DS1 file
-      if (key_pressed(KEY_DEL) && glb_ds1edit.has_loaded_ds1 &&
+      if (key_hit(KEY_DEL) && glb_ds1edit.has_loaded_ds1 &&
           glb_ds1edit.area_browser.selected_group >= 0 &&
           glb_ds1edit.area_browser.selected_entry >= 0)
       {
-         while (key_pressed(KEY_DEL))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
 
          {
             int gi = glb_ds1edit.area_browser.selected_group;
@@ -1014,17 +915,12 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       // Insert key — create new DS1 or clone current
-      if (key_pressed(KEY_INSERT) &&
+      if (key_hit(KEY_INSERT) &&
           glb_ds1edit.area_browser.selected_group >= 0)
       {
          int gi = glb_ds1edit.area_browser.selected_group;
          AREA_GROUP_S *ins_g = &glb_ds1edit.area_browser.groups[gi];
 
-         while (key_pressed(KEY_INSERT))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
 
          if (ins_g->entry_count > 0)
          {
@@ -1111,117 +1007,62 @@ void interfac_user_handler(int start_ds1_idx)
             }
          }
       }
-      if (key_pressed(KEY_F1))
+      if (key_hit(KEY_F1))
       {
-         while (key_pressed(KEY_F1))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
          glb_ds1[ds1_idx].floor_layer_mask[0] = 1 - glb_ds1[ds1_idx].floor_layer_mask[0];
       }
-      if (key_pressed(KEY_F2))
+      if (key_hit(KEY_F2))
       {
-         while (key_pressed(KEY_F2))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
          glb_ds1[ds1_idx].floor_layer_mask[1] = 1 - glb_ds1[ds1_idx].floor_layer_mask[1];
       }
-      if (key_pressed(KEY_F5))
+      if (key_hit(KEY_F5))
       {
-         while (key_pressed(KEY_F5))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
          glb_ds1[ds1_idx].wall_layer_mask[0] = 1 - glb_ds1[ds1_idx].wall_layer_mask[0];
       }
-      if (key_pressed(KEY_F6))
+      if (key_hit(KEY_F6))
       {
-         while (key_pressed(KEY_F6))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
          glb_ds1[ds1_idx].wall_layer_mask[1] = 1 - glb_ds1[ds1_idx].wall_layer_mask[1];
       }
-      if (key_pressed(KEY_F7))
+      if (key_hit(KEY_F7))
       {
-         while (key_pressed(KEY_F7))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
          glb_ds1[ds1_idx].wall_layer_mask[2] = 1 - glb_ds1[ds1_idx].wall_layer_mask[2];
       }
-      if (key_pressed(KEY_F8))
+      if (key_hit(KEY_F8))
       {
-         while (key_pressed(KEY_F8))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
          glb_ds1[ds1_idx].wall_layer_mask[3] = 1 - glb_ds1[ds1_idx].wall_layer_mask[3];
       }
 
       // special tiles layer
-      if (key_pressed(KEY_F9))
+      if (key_hit(KEY_F9))
       {
-         while (key_pressed(KEY_F9))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
          glb_ds1[ds1_idx].special_layer_mask = 1 - glb_ds1[ds1_idx].special_layer_mask;
       }
 
       // animation layer
-      if (key_pressed(KEY_F3))
+      if (key_hit(KEY_F3))
       {
-         while (key_pressed(KEY_F3))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
          glb_ds1[ds1_idx].animations_layer_mask++;
          if (glb_ds1[ds1_idx].animations_layer_mask == 3)
             glb_ds1[ds1_idx].animations_layer_mask = 0;
       }
 
       // objects layer
-      if (key_pressed(KEY_F4) && (glb_ds1edit.mode != MOD_O))
+      if (key_hit(KEY_F4) && (glb_ds1edit.mode != MOD_O))
       {
-         while (key_pressed(KEY_F4))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
          glb_ds1[ds1_idx].objects_layer_mask++;
          if (glb_ds1[ds1_idx].objects_layer_mask >= OL_MAX)
             glb_ds1[ds1_idx].objects_layer_mask = OL_NONE;
       }
 
       // paths layer
-      if (key_pressed(KEY_F10) && (glb_ds1edit.mode != MOD_P))
+      if (key_hit(KEY_F10) && (glb_ds1edit.mode != MOD_P))
       {
-         while (key_pressed(KEY_F10))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
          glb_ds1[ds1_idx].paths_layer_mask = 1 - glb_ds1[ds1_idx].paths_layer_mask;
       }
 
       // shadow mode
-      if (key_pressed(KEY_F11))
+      if (key_hit(KEY_F11))
       {
-         while (key_pressed(KEY_F11))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
          if (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT))
          {
             glb_ds1[ds1_idx].shadow_layer_mask[0]--;
@@ -1237,24 +1078,14 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       // walkable infos
-      if (key_pressed(KEY_SPACE))
+      if (key_hit(KEY_SPACE))
       {
-         while (key_pressed(KEY_SPACE))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
          glb_ds1[ds1_idx].walkable_layer_mask++;
          if (glb_ds1[ds1_idx].walkable_layer_mask >= 3)
             glb_ds1[ds1_idx].walkable_layer_mask = 0;
       }
-      if (key_pressed(KEY_T))
+      if (key_hit(KEY_T))
       {
-         while (key_pressed(KEY_T))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
          glb_ds1[ds1_idx].subtile_help_display =
              1 - glb_ds1[ds1_idx].subtile_help_display;
       }
@@ -1287,14 +1118,9 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       // Home (center the map)
-      if (key_pressed(KEY_HOME) && (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT)))
+      if (key_hit(KEY_HOME) && (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT)))
       {
          // Shift+Home: center map view
-         while (key_pressed(KEY_HOME))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
          cx = glb_ds1[ds1_idx].width / 2 + 1;
          cy = glb_ds1[ds1_idx].height / 2;
          dx = (cy * -glb_ds1[ds1_idx].tile_w / 2) + (cx * glb_ds1[ds1_idx].tile_w / 2);
@@ -1304,13 +1130,8 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       // Backspace (show all layers)
-      if (key_pressed(KEY_BACKSPACE))
+      if (key_hit(KEY_BACKSPACE))
       {
-         while (key_pressed(KEY_BACKSPACE))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
          for (i = 0; i < FLOOR_MAX_LAYER; i++)
             glb_ds1[ds1_idx].floor_layer_mask[i] = 1;
          for (i = 0; i < WALL_MAX_LAYER; i++)
@@ -1320,7 +1141,7 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       // P ('P'rintscreen = screenshot)
-      if (key_pressed(KEY_P))
+      if (key_hit(KEY_P))
       {
          if ((key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT)))
          {
@@ -1350,11 +1171,6 @@ void interfac_user_handler(int start_ds1_idx)
 
                // free temp bitmap
                al_destroy_bitmap(glb_ds1edit.screen_buff);
-            }
-            while ((key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT)))
-            {
-               al_rest(0.01);
-               al_get_keyboard_state(&a5_kb_state);
             }
             glb_ds1edit.screen_buff = old_screen_buff;
          }
@@ -1387,26 +1203,16 @@ void interfac_user_handler(int start_ds1_idx)
                al_save_bitmap(tmp, glb_ds1edit.screen_buff);
             }
          }
-         while (key_pressed(KEY_P))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
 
          // the buffer was saved
          glb_ds1edit.screenshot_num++;
       }
 
       // S
-      if (key_pressed(KEY_S) && (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)))
+      if (key_hit(KEY_S) && (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)))
       {
          // CTRL + S : save the ds1, in the current state, incremental save
          ds1_save(ds1_idx, FALSE);
-         while (key_pressed(KEY_S))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
          ret = msg_save_main();
          switch (ret)
          {
@@ -1420,14 +1226,9 @@ void interfac_user_handler(int start_ds1_idx)
             break;
          }
       }
-      if (key_pressed(KEY_S) && (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT)) && glb_ds1edit.mode == MOD_T)
+      if (key_hit(KEY_S) && (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT)) && glb_ds1edit.mode == MOD_T)
       {
          // Shift+S : show all previously hidden tiles
-         while (key_pressed(KEY_S))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
          edittile_unhide_all(ds1_idx);
       }
 
@@ -1463,21 +1264,11 @@ void interfac_user_handler(int start_ds1_idx)
                                          cy - paste_pos.start_y,
                                          &paste_pos);
 
-                  while (key_pressed(KEY_C))
-                  {
-                     al_rest(0.01);
-                     al_get_keyboard_state(&a5_kb_state);
-                  }
                }
             }
             else
             {
                // Center to mouse in TILE mode
-               while (key_pressed(KEY_C))
-               {
-                  al_rest(0.01);
-                  al_get_keyboard_state(&a5_kb_state);
-               }
                cx++;
                dx = (cy * -glb_ds1[ds1_idx].tile_w / 2) + (cx * glb_ds1[ds1_idx].tile_w / 2);
                dy = (cy * glb_ds1[ds1_idx].tile_h / 2) + (cx * glb_ds1[ds1_idx].tile_h / 2);
@@ -1497,14 +1288,9 @@ void interfac_user_handler(int start_ds1_idx)
          }
          else
          {
-            if (!key_pressed(KEY_LCONTROL) && !key_pressed(KEY_RCONTROL))
+            if (!key_hit(KEY_LCONTROL) && !key_hit(KEY_RCONTROL))
             {
                // Center to mouse in OBJECT / PATH mode
-               while (key_pressed(KEY_C))
-               {
-                  al_rest(0.01);
-                  al_get_keyboard_state(&a5_kb_state);
-               }
                cx /= 5;
                cy /= 5;
                cx++;
@@ -1556,11 +1342,6 @@ void interfac_user_handler(int start_ds1_idx)
                                       cx - paste_pos.start_x,
                                       cy - paste_pos.start_y,
                                       &paste_pos);
-               while (key_pressed(KEY_X))
-               {
-                  al_rest(0.01);
-                  al_get_keyboard_state(&a5_kb_state);
-               }
             }
          }
       }
@@ -1573,11 +1354,6 @@ void interfac_user_handler(int start_ds1_idx)
             if (paste_pos.start == FALSE)
             {
                edittile_delete_selected_tiles(ds1_idx);
-               while (key_pressed(KEY_DEL) || key_pressed(KEY_DEL_PAD))
-               {
-                  al_rest(0.01);
-                  al_get_keyboard_state(&a5_kb_state);
-               }
             }
          }
       }
@@ -1590,17 +1366,12 @@ void interfac_user_handler(int start_ds1_idx)
             if (paste_pos.start == FALSE)
             {
                undo_apply_tile_buffer(ds1_idx);
-               while (key_pressed(KEY_U))
-               {
-                  al_rest(0.01);
-                  al_get_keyboard_state(&a5_kb_state);
-               }
             }
          }
       }
 
       // G : toggle tile grid
-      if (key_pressed(KEY_G))
+      if (key_hit(KEY_G))
       {
          if (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT))
             glb_ds1edit.display_tile_grid--;
@@ -1610,11 +1381,6 @@ void interfac_user_handler(int start_ds1_idx)
             glb_ds1edit.display_tile_grid = TG_MAX - 1;
          if (glb_ds1edit.display_tile_grid >= TG_MAX)
             glb_ds1edit.display_tile_grid = TG_OFF;
-         while (key_pressed(KEY_G))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
       }
 
       // changing current ds1
@@ -1624,103 +1390,53 @@ void interfac_user_handler(int start_ds1_idx)
       {
          if (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
          {
-            if (key_pressed(KEY_1))
+            if (key_hit(KEY_1))
             {
-               while (key_pressed(KEY_1) || key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
-               {
-                  al_rest(0.01);
-                  al_get_keyboard_state(&a5_kb_state);
-               }
                glb_ds1edit.ds1_group_idx = 0;
                group_changed = TRUE;
             }
-            else if (key_pressed(KEY_2))
+            else if (key_hit(KEY_2))
             {
-               while (key_pressed(KEY_2) || key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
-               {
-                  al_rest(0.01);
-                  al_get_keyboard_state(&a5_kb_state);
-               }
                glb_ds1edit.ds1_group_idx = 1;
                group_changed = TRUE;
             }
-            else if (key_pressed(KEY_3))
+            else if (key_hit(KEY_3))
             {
-               while (key_pressed(KEY_3) || key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
-               {
-                  al_rest(0.01);
-                  al_get_keyboard_state(&a5_kb_state);
-               }
                glb_ds1edit.ds1_group_idx = 2;
                group_changed = TRUE;
             }
-            else if (key_pressed(KEY_4))
+            else if (key_hit(KEY_4))
             {
-               while (key_pressed(KEY_4) || key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
-               {
-                  al_rest(0.01);
-                  al_get_keyboard_state(&a5_kb_state);
-               }
                glb_ds1edit.ds1_group_idx = 3;
                group_changed = TRUE;
             }
-            else if (key_pressed(KEY_5))
+            else if (key_hit(KEY_5))
             {
-               while (key_pressed(KEY_5) || key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
-               {
-                  al_rest(0.01);
-                  al_get_keyboard_state(&a5_kb_state);
-               }
                glb_ds1edit.ds1_group_idx = 4;
                group_changed = TRUE;
             }
-            else if (key_pressed(KEY_6))
+            else if (key_hit(KEY_6))
             {
-               while (key_pressed(KEY_6) || key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
-               {
-                  al_rest(0.01);
-                  al_get_keyboard_state(&a5_kb_state);
-               }
                glb_ds1edit.ds1_group_idx = 5;
                group_changed = TRUE;
             }
-            else if (key_pressed(KEY_7))
+            else if (key_hit(KEY_7))
             {
-               while (key_pressed(KEY_7) || key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
-               {
-                  al_rest(0.01);
-                  al_get_keyboard_state(&a5_kb_state);
-               }
                glb_ds1edit.ds1_group_idx = 6;
                group_changed = TRUE;
             }
-            else if (key_pressed(KEY_8))
+            else if (key_hit(KEY_8))
             {
-               while (key_pressed(KEY_8) || key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
-               {
-                  al_rest(0.01);
-                  al_get_keyboard_state(&a5_kb_state);
-               }
                glb_ds1edit.ds1_group_idx = 7;
                group_changed = TRUE;
             }
-            else if (key_pressed(KEY_9))
+            else if (key_hit(KEY_9))
             {
-               while (key_pressed(KEY_9) || key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
-               {
-                  al_rest(0.01);
-                  al_get_keyboard_state(&a5_kb_state);
-               }
                glb_ds1edit.ds1_group_idx = 8;
                group_changed = TRUE;
             }
-            else if (key_pressed(KEY_0))
+            else if (key_hit(KEY_0))
             {
-               while (key_pressed(KEY_0) || key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
-               {
-                  al_rest(0.01);
-                  al_get_keyboard_state(&a5_kb_state);
-               }
                glb_ds1edit.ds1_group_idx = 9;
                group_changed = TRUE;
             }
@@ -1750,105 +1466,55 @@ void interfac_user_handler(int start_ds1_idx)
          }
 
          // swap to a different ds1 ?
-         if (key_pressed(KEY_1) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10].name))
+         if (key_hit(KEY_1) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10].name))
          {
             old_ds1_idx = ds1_idx;
             ds1_idx = glb_ds1edit.ds1_group_idx * 10;
-            while (key_pressed(KEY_1))
-            {
-               al_rest(0.01);
-               al_get_keyboard_state(&a5_kb_state);
-            }
          }
-         if (key_pressed(KEY_2) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 1].name))
+         if (key_hit(KEY_2) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 1].name))
          {
             old_ds1_idx = ds1_idx;
             ds1_idx = glb_ds1edit.ds1_group_idx * 10 + 1;
-            while (key_pressed(KEY_2))
-            {
-               al_rest(0.01);
-               al_get_keyboard_state(&a5_kb_state);
-            }
          }
-         if (key_pressed(KEY_3) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 2].name))
+         if (key_hit(KEY_3) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 2].name))
          {
             old_ds1_idx = ds1_idx;
             ds1_idx = glb_ds1edit.ds1_group_idx * 10 + 2;
-            while (key_pressed(KEY_3))
-            {
-               al_rest(0.01);
-               al_get_keyboard_state(&a5_kb_state);
-            }
          }
-         if (key_pressed(KEY_4) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 3].name))
+         if (key_hit(KEY_4) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 3].name))
          {
             old_ds1_idx = ds1_idx;
             ds1_idx = glb_ds1edit.ds1_group_idx * 10 + 3;
-            while (key_pressed(KEY_4))
-            {
-               al_rest(0.01);
-               al_get_keyboard_state(&a5_kb_state);
-            }
          }
-         if (key_pressed(KEY_5) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 4].name))
+         if (key_hit(KEY_5) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 4].name))
          {
             old_ds1_idx = ds1_idx;
             ds1_idx = glb_ds1edit.ds1_group_idx * 10 + 4;
-            while (key_pressed(KEY_5))
-            {
-               al_rest(0.01);
-               al_get_keyboard_state(&a5_kb_state);
-            }
          }
-         if (key_pressed(KEY_6) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 5].name))
+         if (key_hit(KEY_6) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 5].name))
          {
             old_ds1_idx = ds1_idx;
             ds1_idx = glb_ds1edit.ds1_group_idx * 10 + 5;
-            while (key_pressed(KEY_6))
-            {
-               al_rest(0.01);
-               al_get_keyboard_state(&a5_kb_state);
-            }
          }
-         if (key_pressed(KEY_7) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 6].name))
+         if (key_hit(KEY_7) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 6].name))
          {
             old_ds1_idx = ds1_idx;
             ds1_idx = glb_ds1edit.ds1_group_idx * 10 + 6;
-            while (key_pressed(KEY_7))
-            {
-               al_rest(0.01);
-               al_get_keyboard_state(&a5_kb_state);
-            }
          }
-         if (key_pressed(KEY_8) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 7].name))
+         if (key_hit(KEY_8) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 7].name))
          {
             old_ds1_idx = ds1_idx;
             ds1_idx = glb_ds1edit.ds1_group_idx * 10 + 7;
-            while (key_pressed(KEY_8))
-            {
-               al_rest(0.01);
-               al_get_keyboard_state(&a5_kb_state);
-            }
          }
-         if (key_pressed(KEY_9) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 8].name))
+         if (key_hit(KEY_9) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 8].name))
          {
             old_ds1_idx = ds1_idx;
             ds1_idx = glb_ds1edit.ds1_group_idx * 10 + 8;
-            while (key_pressed(KEY_9))
-            {
-               al_rest(0.01);
-               al_get_keyboard_state(&a5_kb_state);
-            }
          }
-         if (key_pressed(KEY_0) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 9].name))
+         if (key_hit(KEY_0) && strlen(glb_ds1[glb_ds1edit.ds1_group_idx * 10 + 9].name))
          {
             old_ds1_idx = ds1_idx;
             ds1_idx = glb_ds1edit.ds1_group_idx * 10 + 9;
-            while (key_pressed(KEY_0))
-            {
-               al_rest(0.01);
-               al_get_keyboard_state(&a5_kb_state);
-            }
          }
       }
 
@@ -1871,13 +1537,8 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       // toggle 2nd row
-      if (key_pressed(KEY_TILDE))
+      if (key_hit(KEY_TILDE))
       {
-         while (key_pressed(KEY_TILDE))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
          if (glb_ds1edit.show_2nd_row == FALSE)
             glb_ds1edit.show_2nd_row = TRUE;
          else
@@ -1885,13 +1546,8 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       // TAB : change edit mode
-      if (key_pressed(KEY_TAB))
+      if (key_hit(KEY_TAB))
       {
-         while (key_pressed(KEY_TAB))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
          if (glb_ds1edit.mode == MOD_L)
             glb_ds1edit.mode = old_mode;
          else
@@ -1919,13 +1575,8 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       // N : Toggle Night mode
-      if (key_pressed(KEY_N))
+      if (key_hit(KEY_N))
       {
-         while (key_pressed(KEY_N))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
          if (glb_ds1edit.mode == MOD_L)
          {
             glb_ds1edit.night_mode++;
@@ -1946,13 +1597,8 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       // R : Refresh obj.txt
-      if (key_pressed(KEY_R))
+      if (key_hit(KEY_R))
       {
-         while (key_pressed(KEY_R))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
 
          // refresh animdata.d2
          animdata_load();
@@ -2160,22 +1806,12 @@ void interfac_user_handler(int start_ds1_idx)
             if (rc_ctrl && rc_shift)
             {
                /* Ctrl+Shift+right-click: advanced bits window (legacy) */
-               while (a5_mouse_b & 2)
-               {
-                  al_rest(0.01);
-                  al_get_mouse_state(&a5_ms_state);
-               }
                wbits_main(ds1_idx, cx, cy);
                al_set_mouse_xy(a5_display, old_mouse_x, old_mouse_y);
             }
             else if (rc_shift)
             {
                /* Shift+right-click: full wedit_test (legacy) */
-               while (a5_mouse_b & 2)
-               {
-                  al_rest(0.01);
-                  al_get_mouse_state(&a5_ms_state);
-               }
                wedit_test(ds1_idx, cx, cy);
                al_set_mouse_xy(a5_display, old_mouse_x, old_mouse_y);
             }
@@ -2191,13 +1827,8 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       // quit
-      if (key_pressed(KEY_ESC) && (glb_ds1[ds1_idx].draw_edit_obj == FALSE))
+      if (key_hit(KEY_ESC) && (glb_ds1[ds1_idx].draw_edit_obj == FALSE))
       {
-         while (key_pressed(KEY_ESC))
-         {
-            al_rest(0.01);
-            al_get_keyboard_state(&a5_kb_state);
-         }
          ret = msg_quit_main();
          switch (ret)
          {
@@ -2295,6 +1926,32 @@ void interfac_user_handler(int start_ds1_idx)
       if (glb_ds1edit.cmd_line.selftest_frames > 0)
       {
          selftest_rendered++;
+
+         /* Drive one resize through the real event path. Nothing else in the
+            project exercises DISPLAY_RESIZE, and a handler that rebuilds the
+            render targets is exactly the kind of thing that works until the
+            day it segfaults. Half way through, so there are frames drawn at
+            both sizes. */
+         if (selftest_rendered == glb_ds1edit.cmd_line.selftest_frames / 2)
+         {
+            ALLEGRO_EVENT rev;
+            int rw = al_get_display_width(a5_display) - 80;
+            int rh = al_get_display_height(a5_display) - 60;
+            fprintf(stdout, "selftest: resizing display to %dx%d\n", rw, rh);
+            fflush(stdout);
+            al_resize_display(a5_display, rw, rh);
+            /* al_resize_display does not post DISPLAY_RESIZE -- that event is
+               for user-driven resizes -- so hand the handler the event the
+               window manager would have sent. This is the path that runs when
+               someone drags the window edge. */
+            memset(&rev, 0, sizeof(rev));
+            rev.display.type = ALLEGRO_EVENT_DISPLAY_RESIZE;
+            rev.display.source = a5_display;
+            rev.display.width = rw;
+            rev.display.height = rh;
+            input_note_event(&rev);
+         }
+
          if (selftest_rendered >= glb_ds1edit.cmd_line.selftest_frames)
          {
             fprintf(stdout, "selftest: rendered %d frame(s), exiting\n",

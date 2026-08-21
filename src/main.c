@@ -57,6 +57,7 @@ October 30 2011 :
 #include "cli/cli.h"
 #include "platform.h"
 #include "ui/ui_assets.h"
+#include "ui/input.h"
 
 
 WRKSPC_DATAS_S glb_wrkspc_datas[WRKSPC_MAX] = // workspace datas saved in .ds1
@@ -879,6 +880,12 @@ static ALLEGRO_DISPLAY * ds1edit_try_create_display(void)
    int w = glb_config.screen.width;
    int h = glb_config.screen.height;
 
+   /* The editor redraws unconditionally every iteration. Without vsync that
+      is whatever the GPU will give -- 120 fps of identical frames on an idle
+      map. SUGGEST rather than REQUIRE: a driver that will not do it should
+      still give us a display. */
+   al_set_new_display_option(ALLEGRO_VSYNC, 1, ALLEGRO_SUGGEST);
+
    if (glb_config.fullscreen == TRUE)
    {
       al_set_new_display_flags(ALLEGRO_FULLSCREEN);
@@ -1662,6 +1669,22 @@ int main(int argc, char *argv[])
    al_register_event_source(a5_event_queue, al_get_keyboard_event_source());
    al_register_event_source(a5_event_queue, al_get_mouse_event_source());
    al_register_event_source(a5_event_queue, al_get_display_event_source(a5_display));
+
+   /* Edge-detected input. Everything that reads a key or a button goes
+      through this; see src/ui/input.h. */
+   input_init();
+
+   /* Promote the per-mode cursor artwork to real OS cursors. Needs the
+      display, so it cannot happen where the bitmaps are loaded. */
+   for (i = 0; i < MOD_MAX; i++)
+   {
+      glb_ds1edit.hw_cursor[i] = NULL;
+      if (glb_ds1edit.mouse_cursor[i] != NULL)
+      {
+         glb_ds1edit.hw_cursor[i] =
+             al_create_mouse_cursor(glb_ds1edit.mouse_cursor[i], 1, 1);
+      }
+   }
 
    // timers (Allegro 5 event-based timers replace the old interrupt callbacks)
    a5_tick_timer = al_create_timer(1.0 / 25.0);

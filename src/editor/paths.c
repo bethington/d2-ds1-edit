@@ -4,6 +4,7 @@
 #include "structs.h"
 #include "editor/paths.h"
 #include "misc.h"
+#include "ui/input.h"
 
 
 // ==============================================================================
@@ -245,121 +246,101 @@ void editpath_enter_action(int ds1_idx, long * paction)
    done = FALSE;
    while ( ! done)
    {
-      if (key_pressed(KEY_ENTER) || key_pressed(KEY_ENTER_PAD))
+      /* Without this the loop spun on a keyboard snapshot that was never
+         refreshed -- it could not see the key that was meant to end it. */
+      input_pump();
+      if (a5_display_closed)
+         done = TRUE;
+
+      if (key_hit(KEY_ENTER) || key_hit(KEY_ENTER_PAD))
       {
-         while (key_pressed(KEY_ENTER) || key_pressed(KEY_ENTER_PAD))
-         {}
          done      = TRUE;
          * paction = lvalue;
       }
-      else if (key_pressed(KEY_ESC))
+      else if (key_hit(KEY_ESC))
       {
-         while (key_pressed(KEY_ESC))
-         {}
          done = TRUE;
       }
-      else if (key_pressed(KEY_MINUS) || key_pressed(KEY_MINUS_PAD) || key_pressed(KEY_EQUALS))
+      else if (key_hit(KEY_MINUS) || key_hit(KEY_MINUS_PAD) || key_hit(KEY_EQUALS))
       {
-         while (key_pressed(KEY_MINUS) || key_pressed(KEY_MINUS_PAD) || key_pressed(KEY_EQUALS))
-         {}
          lvalue = -lvalue;
       }
       else if ((lvalue >= -99999999) && (lvalue <= 99999999))
       {
-         if (key_pressed(KEY_1) || key_pressed(KEY_1_PAD))
+         if (key_hit(KEY_1) || key_hit(KEY_1_PAD))
          {
-            while (key_pressed(KEY_1) || key_pressed(KEY_1_PAD))
-            {}
             lvalue *= 10;
             if (lvalue < 0)
                lvalue -= 1;
             else
                lvalue += 1;
          }
-         else if (key_pressed(KEY_2) || key_pressed(KEY_2_PAD))
+         else if (key_hit(KEY_2) || key_hit(KEY_2_PAD))
          {
-            while (key_pressed(KEY_2) || key_pressed(KEY_2_PAD))
-            {}
             lvalue *= 10;
             if (lvalue < 0)
                lvalue -= 2;
             else
                lvalue += 2;
          }
-         else if (key_pressed(KEY_3) || key_pressed(KEY_3_PAD))
+         else if (key_hit(KEY_3) || key_hit(KEY_3_PAD))
          {
-            while (key_pressed(KEY_3) || key_pressed(KEY_3_PAD))
-            {}
             lvalue *= 10;
             if (lvalue < 0)
                lvalue -= 3;
             else
                lvalue += 3;
          }
-         else if (key_pressed(KEY_4) || key_pressed(KEY_4_PAD))
+         else if (key_hit(KEY_4) || key_hit(KEY_4_PAD))
          {
-            while (key_pressed(KEY_4) || key_pressed(KEY_4_PAD))
-            {}
             lvalue *= 10;
             if (lvalue < 0)
                lvalue -= 4;
             else
                lvalue += 4;
          }
-         else if (key_pressed(KEY_5) || key_pressed(KEY_5_PAD))
+         else if (key_hit(KEY_5) || key_hit(KEY_5_PAD))
          {
-            while (key_pressed(KEY_5) || key_pressed(KEY_5_PAD))
-            {}
             lvalue *= 10;
             if (lvalue < 0)
                lvalue -= 5;
             else
                lvalue += 5;
          }
-         else if (key_pressed(KEY_6) || key_pressed(KEY_6_PAD))
+         else if (key_hit(KEY_6) || key_hit(KEY_6_PAD))
          {
-            while (key_pressed(KEY_6) || key_pressed(KEY_6_PAD))
-            {}
             lvalue *= 10;
             if (lvalue < 0)
                lvalue -= 6;
             else
                lvalue += 6;
          }
-         else if (key_pressed(KEY_7) || key_pressed(KEY_7_PAD))
+         else if (key_hit(KEY_7) || key_hit(KEY_7_PAD))
          {
-            while (key_pressed(KEY_7) || key_pressed(KEY_7_PAD))
-            {}
             lvalue *= 10;
             if (lvalue < 0)
                lvalue -= 7;
             else
                lvalue += 7;
          }
-         else if (key_pressed(KEY_8) || key_pressed(KEY_8_PAD))
+         else if (key_hit(KEY_8) || key_hit(KEY_8_PAD))
          {
-            while (key_pressed(KEY_8) || key_pressed(KEY_8_PAD))
-            {}
             lvalue *= 10;
             if (lvalue < 0)
                lvalue -= 8;
             else
                lvalue += 8;
          }
-         else if (key_pressed(KEY_9) || key_pressed(KEY_9_PAD))
+         else if (key_hit(KEY_9) || key_hit(KEY_9_PAD))
          {
-            while (key_pressed(KEY_9) || key_pressed(KEY_9_PAD))
-            {}
             lvalue *= 10;
             if (lvalue < 0)
                lvalue -= 9;
             else
                lvalue += 9;
          }
-         else if (key_pressed(KEY_0) || key_pressed(KEY_0_PAD))
+         else if (key_hit(KEY_0) || key_hit(KEY_0_PAD))
          {
-            while (key_pressed(KEY_0) || key_pressed(KEY_0_PAD))
-            {}
             lvalue *= 10;
             if (lvalue < 0)
                lvalue -= 0;
@@ -384,8 +365,11 @@ void editpath_enter_action(int ds1_idx, long * paction)
       // draw screen
       if ( ! done)
       {
-         /* vsync removed - handled in misc_draw_screen */
          a5_blit(glb_ds1edit.screen_buff, al_get_backbuffer(a5_display), x1, y1, x1, y1, w, h);
+         /* This loop does not go through misc_draw_screen, so nothing else
+            will present the backbuffer -- without the flip the prompt was
+            drawn and never shown. */
+         al_flip_display();
       }
    }
 
@@ -432,8 +416,6 @@ void editpath_draw(int ds1_idx, int mx, int my, int mb, long tx, long ty)
                   if (editpath_mouse_in(ds1_idx, mx, my) == FALSE)
                   {
                      // wait until left mouse button is not pressed anymore
-                     while (a5_mouse_b & 1)
-                     { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
                      mb = 0;
 
                      // add this sub-tile to the path list of the object
@@ -470,8 +452,6 @@ void editpath_draw(int ds1_idx, int mx, int my, int mb, long tx, long ty)
    if (mb & 1)
    {
       // wait until no mouse button is pressed anymore
-      while (a5_mouse_b & 1)
-      { al_rest(0.01); al_get_mouse_state(&a5_ms_state); }
       mb = 0;
 
       // search which button to update
@@ -568,10 +548,8 @@ void editpath_draw(int ds1_idx, int mx, int my, int mb, long tx, long ty)
       }
    }
 
-   if (key_pressed(KEY_ENTER) || key_pressed(KEY_ENTER_PAD))
+   if (key_hit(KEY_ENTER) || key_hit(KEY_ENTER_PAD))
    {
-      while (key_pressed(KEY_ENTER) || key_pressed(KEY_ENTER_PAD))
-      {}
       editpath_enter_action(ds1_idx, & pwin->curr_action);
    }
 
