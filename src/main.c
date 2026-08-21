@@ -879,6 +879,8 @@ void ds1edit_load_palettes(void)
    printf("\n");
 }
 
+static void ds1edit_report_display_driver(ALLEGRO_DISPLAY *d);
+
 // ==========================================================================
 // Create the display, settling for less if the preferred mode is refused.
 //
@@ -920,6 +922,41 @@ static ALLEGRO_DISPLAY * ds1edit_try_create_display(void)
 
    al_set_new_display_flags(ALLEGRO_WINDOWED);
    return al_create_display(w, h);
+}
+
+
+/* Record which graphics driver the display actually ended up on.
+ *
+ * allegro5.cfg pins this to OpenGL, and when that backend misbehaves the
+ * editor renders its status bar and cursor over an entirely black map, with
+ * no error and a perfectly healthy frame rate. Removing allegro5.cfg fixes it
+ * at once, but nothing on screen or in the logs points that way. This line
+ * does. */
+static void ds1edit_report_display_driver(ALLEGRO_DISPLAY *d)
+{
+   int flags;
+   const char *driver;
+
+   if (d == NULL)
+      return;
+
+   flags = al_get_display_flags(d);
+   if (flags & ALLEGRO_OPENGL)
+      driver = "OpenGL";
+   else if (flags & ALLEGRO_DIRECT3D_INTERNAL)
+      driver = "Direct3D";
+   else
+      driver = "unknown";
+
+   fprintf(stderr,
+           "display: %ix%i, %s driver%s\n",
+           al_get_display_width(d), al_get_display_height(d), driver,
+           (flags & ALLEGRO_FULLSCREEN) ? ", fullscreen" : "");
+   fprintf(stderr,
+           "display: if the map area is black but the status bar draws, the "
+           "graphics driver is the first thing to suspect -- try renaming "
+           "allegro5.cfg, which pins this choice.\n");
+   fflush(stderr);
 }
 
 
@@ -1575,6 +1612,7 @@ int main(int argc, char *argv[])
    if (a5_display == NULL)
    {
       a5_display = ds1edit_try_create_display();
+      ds1edit_report_display_driver(a5_display);
       if (a5_display == NULL)
       {
          sprintf(

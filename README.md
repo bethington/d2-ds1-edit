@@ -172,6 +172,31 @@ patch_d2 = C:\Diablo2\patch_d2.mpq
 
 See the sample file for all available settings (resolution, scroll speed, gamma, etc.).
 
+## Troubleshooting
+
+**The window opens but the map area is black.** The status bar and the mouse
+cursor draw, the frame rate looks normal, and nothing appears in the logs.
+
+This is the graphics driver. `allegro5.cfg` next to the executable pins
+Allegro to OpenGL:
+
+```ini
+[graphics]
+driver=opengl
+```
+
+That pin exists because the Direct3D backend intermittently dropped to 0 fps,
+but on a machine whose OpenGL driver is unhappy it produces exactly the
+symptom above. Rename or delete `allegro5.cfg` to fall back to the platform
+default and the map returns immediately.
+
+The editor prints the driver it ended up on at startup, so check `stderr.txt`
+(or the console) for:
+
+```text
+display: 2560x1440, OpenGL driver
+```
+
 ## Project Structure
 
 See [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for detailed layout.
