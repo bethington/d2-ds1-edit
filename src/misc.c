@@ -13,6 +13,7 @@
 #include "core/mpq_index.h"
 #include "mpq/MpqView.h"
 #include "core/area_browser.h"
+#include "config.h"
 #include "ui/props_panel.h"
 #include "misc.h"
 

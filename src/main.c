@@ -929,6 +929,11 @@ int main(int argc, char *argv[])
    static char tmp2[512];
 
    // init
+#ifdef __APPLE__
+   /* Launched from ds1edit.app the CWD is "/", and every resource path below
+      is relative. Do this first -- it has to precede the INI read. */
+   ds1_mac_fix_working_directory();
+#endif
    srand(time(NULL));
    if (!al_init())
       ds1edit_error("main(), error.\nCan't initialize Allegro 5.");
@@ -1073,7 +1078,8 @@ int main(int argc, char *argv[])
    mod_num = 0;
    if (glb_config.mod_dir[0] != NULL)
    {
-      sprintf(tmp, "%s\\.", glb_config.mod_dir[0]);
+      snprintf(tmp, sizeof(tmp), "%s%s.", glb_config.mod_dir[0], DS1_SEP_STR);
+      ds1_path_normalize(tmp);
       if (a5_file_exists(tmp) == 0)
       {
          sprintf(
@@ -1618,8 +1624,31 @@ int main(int argc, char *argv[])
    // mouse (skip if already installed by area browser)
    if (!al_is_mouse_installed())
    {
+#ifdef __APPLE__
+      /* Allegro's macOS mouse driver counts buttons by enumerating HID
+         devices, and TCC hides every input device from a process without
+         Input Monitoring -- so al_install_mouse() fails on a machine whose
+         trackpad plainly works. Ask first, and if the answer is no, say what
+         to do about it rather than reporting a driver failure. */
+      int mac_hid_ok = ds1_mac_request_input_monitoring();
+#endif
       if (!al_install_mouse())
       {
+#ifdef __APPLE__
+         if (!mac_hid_ok)
+         {
+            sprintf(
+                tmp,
+                "main(), error.\n"
+                "Can't install the Mouse handler.\n\n"
+                "macOS is withholding Input Monitoring from this process, so\n"
+                "Allegro cannot see any mouse. Grant it in System Settings >\n"
+                "Privacy & Security > Input Monitoring (add ds1edit.app with\n"
+                "the + button if it is not listed), then start the editor\n"
+                "again -- a new grant does not reach a running process.");
+            ds1edit_error(tmp);
+         }
+#endif
          sprintf(
              tmp,
              "main(), error.\nCan't install the Mouse handler.");

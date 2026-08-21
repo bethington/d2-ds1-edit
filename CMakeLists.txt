@@ -17,6 +17,33 @@ option(DS1EDIT_PERF_LOG "Enable per-frame perf logging to stderr and perf_log.cs
 # Windows: vcpkg (toolchain set via CMakePresets.json or -DCMAKE_TOOLCHAIN_FILE).
 # Linux/macOS: pkg-config against the distro / Homebrew packages, falling back
 # to a bare find_library sweep if the .pc files are missing.
+# An Allegro installed somewhere other than the system/Homebrew prefix. Set
+# -DDS1EDIT_ALLEGRO_PREFIX=<dir> (or the env var of the same name) and its
+# pkg-config data is searched first.
+#
+# macOS needs this in one specific case: Allegro's mouse driver
+# (src/macosx/qzmouse.m, osx_init_mouse) refuses to install when no HID
+# pointing device is present, and a Mac driven over Screen Sharing -- or any
+# Mac with nothing plugged in -- has no such device even though its cursor
+# works. Mouse events come from Cocoa, not HID, so the check costs the editor
+# a mouse it could have used. Building Allegro with a fallback button count
+# fixes it; see docs/MACOS_HANDOFF.md for the patch.
+set(DS1EDIT_ALLEGRO_PREFIX "$ENV{DS1EDIT_ALLEGRO_PREFIX}"
+    CACHE PATH "Prefix of an Allegro 5 install to prefer over the system one")
+
+if(DS1EDIT_ALLEGRO_PREFIX)
+    if(NOT EXISTS "${DS1EDIT_ALLEGRO_PREFIX}/lib/pkgconfig/allegro-5.pc")
+        message(WARNING
+            "DS1EDIT_ALLEGRO_PREFIX=${DS1EDIT_ALLEGRO_PREFIX} has no "
+            "lib/pkgconfig/allegro-5.pc; falling back to the system Allegro.")
+    else()
+        set(ENV{PKG_CONFIG_PATH}
+            "${DS1EDIT_ALLEGRO_PREFIX}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+        list(PREPEND CMAKE_PREFIX_PATH "${DS1EDIT_ALLEGRO_PREFIX}")
+        message(STATUS "Allegro 5: preferring ${DS1EDIT_ALLEGRO_PREFIX}")
+    endif()
+endif()
+
 if(NOT WIN32)
     find_package(PkgConfig QUIET)
 endif()
@@ -126,6 +153,7 @@ set(SOURCES
     src/error.c
     src/misc.c
     src/platform.c
+    src/mac_platform.c   # self-guarded; compiles to nothing off macOS
     # cli/
     src/cli/cli.c
     # core/
@@ -295,6 +323,12 @@ else()
         endif()
     endif()
 
+    # mac_platform.c calls IOHIDCheckAccess/IOHIDRequestAccess to ask for
+    # Input Monitoring, without which Allegro's mouse driver finds no mouse.
+    if(APPLE)
+        target_link_libraries(ds1edit PRIVATE "-framework IOKit")
+    endif()
+
     target_compile_options(ds1edit PRIVATE
         -Wall
         # The codebase predates a lot of -W pedantry; keep the build readable
@@ -366,6 +400,38 @@ add_custom_command(TARGET ds1edit POST_BUILD
         -P ${CMAKE_SOURCE_DIR}/cmake/copy-if-missing.cmake
     COMMENT "Copying assets to bin/"
 )
+
+# macOS: wrap the same binary in bin/ds1edit.app.
+#
+# The bundle is not a second build -- it is the one ds1edit executable plus an
+# Info.plist. It exists because TCC identifies a bundle by its identifier and
+# shows it by name, so the user can grant ds1edit.app Input Monitoring on its
+# own instead of granting it to whatever terminal happens to launch the CLI
+# binary. Allegro's mouse driver needs that permission to see any mouse
+# (mac_platform.c has the detail).
+#
+# bin/ds1edit stays exactly where it was: the CLI verbs, --headless and the
+# tests all still use it. The bundle chdir's to its own parent at startup, so
+# both entry points read the same bin/assets and bin/Ds1edit.ini.
+if(APPLE)
+    set(DS1EDIT_BUNDLE "${CMAKE_SOURCE_DIR}/bin/ds1edit.app")
+    configure_file(
+        "${CMAKE_SOURCE_DIR}/cmake/macos/Info.plist.in"
+        "${CMAKE_BINARY_DIR}/Info.plist"
+        @ONLY)
+
+    add_custom_command(TARGET ds1edit POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${DS1EDIT_BUNDLE}/Contents/MacOS"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_BINARY_DIR}/Info.plist" "${DS1EDIT_BUNDLE}/Contents/Info.plist"
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "$<TARGET_FILE:ds1edit>" "${DS1EDIT_BUNDLE}/Contents/MacOS/ds1edit"
+        # Ad-hoc signature. TCC keys a grant to the code identity, and an
+        # unsigned bundle gives it nothing stable to hold on to.
+        COMMAND codesign --force --sign - "${DS1EDIT_BUNDLE}"
+        COMMENT "Assembling bin/ds1edit.app"
+        VERBATIM)
+endif()
 
 # Copy required DLLs to output directory (vcpkg puts them next to the libs)
 if(WIN32)
