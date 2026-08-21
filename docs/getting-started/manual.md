@@ -8,7 +8,7 @@ This is not a complete tutorial explaining all you need to know, but at least I 
 
 **Other Docs**
 
-*   [**Tutorial 1**](../tutorials/Tutorial-01-Basic-Map-Editing.md) : advanced map editing stuff (Warps / Map Resizing / Walkable infos / House with Roofs)  
+*   [**Tutorial 1**](../tutorials/01-basic-map-editing.md) : advanced map editing stuff (Warps / Map Resizing / Walkable infos / House with Roofs)  
     **\- IN CONSTRUCTION -**
 
 **Revision History**

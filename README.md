@@ -206,7 +206,7 @@ display: 2560x1440, OpenGL driver
 
 ## Project Structure
 
-See [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for detailed layout.
+See [docs/structure.md](docs/structure.md) for detailed layout.
 
 Key directories:
 - `src/` - C source code organized into `core/`, `render/`, `editor/`, `ui/`, `mpq/`

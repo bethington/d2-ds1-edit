@@ -11,7 +11,6 @@ d2-ds1-edit/
 ├── NOTICE                      # Attribution: Paul Siramy's win_ds1edit, Tom Amigo's MPQ code
 ├── README.md                   # Project overview
 ├── BUILDING.md                 # Build instructions
-├── PROJECT_STRUCTURE.md        # This file
 ├── Ds1edit.ini.sample          # Sample configuration (copy to bin/)
 │
 ├── src/                        # C source and header files
@@ -86,6 +85,7 @@ d2-ds1-edit/
 │   └── *.dll                  # Allegro 5 runtime DLLs
 │
 ├── docs/                       # Documentation
+│   ├── structure.md        # This file
 │
 ├── .vscode/                    # VSCode configuration
 │   ├── launch.json            # Debug + run launch configs

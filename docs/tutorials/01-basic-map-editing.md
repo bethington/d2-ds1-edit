@@ -7,7 +7,7 @@
 > part of Paul Siramy's original release, at
 > <http://paul.siramy.free.fr/_divers/ds1/dl_ds1edit.html>.
 
-Back to the main [**Documentation Page**](../getting-started/DS1-Editor-Complete-Documentation.md)
+Back to the main [**Documentation Page**](../getting-started/manual.md)
 
 **Overview**
 
@@ -91,7 +91,7 @@ Copy / paste the File2 value into the File1, File3 and File4 columns. Now, which
 **A new Trap Door**
 
 Before trying to make a new trap Door, check that tutorial I made for the Phrozen Keep:  
-   [Adding ANY Monsters and ANY Objects to a DS1 (by Paul Siramy)](../guides/Adding-Monsters-And-Objects-Guide.md)  
+   [Adding ANY Monsters and ANY Objects to a DS1 (by Paul Siramy)](../guides/monsters-and-objects.md)  
 This is an easier alternative, if you're using the patch 1.10.
 
 But If you prefer to go the hard way : in the win\_ds1edit directory, put the file LutN.ds1 and let's make a .bat to open it with the editor.

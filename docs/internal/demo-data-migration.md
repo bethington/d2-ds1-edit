@@ -13,7 +13,7 @@ Successfully updated all references from the non-existent `Demo_data` folder to 
 ### ✅ Documentation Files
 - **`README.md`**: Updated directory structure and configuration examples
 - **Test README files**: Updated documentation in test data folders
-- **`PROJECT_STATUS.md`**: Updated project structure references
+- **`project-status.md`**: Updated project structure references
 
 ### ✅ Build Scripts
 - **`package.bat`**: Updated packaging script to use `data` instead of `Demo_data`

@@ -27,7 +27,7 @@ option(DS1EDIT_PERF_LOG "Enable per-frame perf logging to stderr and perf_log.cs
 # Mac with nothing plugged in -- has no such device even though its cursor
 # works. Mouse events come from Cocoa, not HID, so the check costs the editor
 # a mouse it could have used. Building Allegro with a fallback button count
-# fixes it; see docs/MACOS_HANDOFF.md for the patch.
+# fixes it.
 set(DS1EDIT_ALLEGRO_PREFIX "$ENV{DS1EDIT_ALLEGRO_PREFIX}"
     CACHE PATH "Prefix of an Allegro 5 install to prefer over the system one")
 

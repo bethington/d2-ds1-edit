@@ -964,8 +964,11 @@ static void ds1edit_report_display_driver(ALLEGRO_DISPLAY *d)
 // as expected, the start of the prog
 //
 // On macOS the real body runs under al_run_main() so that Allegro owns the
-// application thread; see the note in docs/MACOS_HANDOFF.md. Everywhere else
-// this is an ordinary main().
+// application thread. The build defines ALLEGRO_NO_MAGIC_MAIN, so without
+// this main() would run on the Cocoa main thread -- and al_create_display
+// dispatches display creation synchronously onto that same queue, which
+// deadlocks against itself. libdispatch traps the process there, which the
+// shell reports as "trace trap". Everywhere else this is an ordinary main().
 #ifdef __APPLE__
 static int ds1edit_main(int argc, char *argv[]);
 

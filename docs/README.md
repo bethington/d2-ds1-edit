@@ -7,7 +7,7 @@ DS1Edit is a level editor for Diablo II, allowing creation and modification of g
 ### Build and Setup
 - **[Main README](../README.md)** - Project overview and quick start
 - **[Building](../BUILDING.md)** - Build prerequisites and instructions
-- **[Project Structure](../PROJECT_STRUCTURE.md)** - Directory layout and architecture
+- **[Project Structure](../docs/structure.md)** - Directory layout and architecture
 
 ### User Guides (by Paul Siramy)
 - **[Getting Started](getting-started/)** - First steps with DS1Edit
@@ -15,10 +15,10 @@ DS1Edit is a level editor for Diablo II, allowing creation and modification of g
 - **[Advanced Guides](guides/)** - Adding monsters, objects, and more
 
 ### Technical Reference
-- **[API Reference](reference/API_REFERENCE.md)** - Command-line and configuration reference
-- **[DS1/Maze Format](reference/d2_maze_ds1_docs.md)** - File format specifications and maze generation
-- **[Troubleshooting](reference/TROUBLESHOOTING.md)** - Common issues and solutions
-- **[COF Pipeline](guides/COF-Pipeline-1.13c.md)** - COF animation pipeline, reverse-engineered from the 1.13c DLLs
+- **[API Reference](reference/api.md)** - Command-line and configuration reference
+- **[DS1/Maze Format](reference/maze-and-ds1.md)** - File format specifications and maze generation
+- **[Troubleshooting](reference/troubleshooting.md)** - Common issues and solutions
+- **[COF Pipeline](guides/cof-pipeline-1.13c.md)** - COF animation pipeline, reverse-engineered from the 1.13c DLLs
 
 ### Project Reports
 - Reports in [internal/](internal/) document historical analysis

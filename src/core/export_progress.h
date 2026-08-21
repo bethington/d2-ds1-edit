@@ -6,7 +6,7 @@
 // this with export_task_is_active).
 //
 // Stage weights (per the locked tier-1 model in
-// EXPORT_PROGRESS_AND_ASYNC_UPSCALE_PLAN.md, decision 14):
+// export-progress-plan.md, decision 14):
 //   PREPARE              5%
 //   NATIVE_EXPORT       35%
 //   PACKAGE_UPLOAD      10%

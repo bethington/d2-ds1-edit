@@ -135,4 +135,4 @@ The C implementation can be trusted to accurately decode DS1 files for the Diabl
 - **Validated**: `ds1misc.c` (C DS1 decoder implementation)  
 - **Analysis Tool**: `ds1_analysis/main.go` (Created for live validation)
 - **Test Data**: 8 DS1 files from test data directory
-- **Documentation**: `DS1_DECODING_ANALYSIS.md` (Detailed comparison)
+- **Documentation**: `ds1-decoding.md` (Detailed comparison)
