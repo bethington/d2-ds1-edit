@@ -1314,17 +1314,17 @@ void wedit_tab_tiles(int ds1_idx, BLK_TYP_E t, int x0, int y0, int bt_sel,
                   }
                   if (t == BT_WALL_DOWN)
                   {
-                     a5_textprintf(w->tmp_edit, font, x1 + 2, y1 + 2, 96, "%2i", bt_ptr[bt].main_index);
-                     a5_textprintf(w->tmp_edit, font, x1 + 26, y1 + 2, 96, "%2i", bt_ptr[bt].orientation);
-                     a5_textprintf(w->tmp_edit, font, x1 + 82, y1 + 2, 158, "%2i", bt_ptr[bt].sub_index);
-                     a5_textprintf(w->tmp_edit, font, x1 + 138, y1 + 2, 134, "%2i", bt_ptr[bt].rarity);
+                     a5_textprintf(w->tmp_edit, font, x1 + 2, y1 + 2, 96, "%2i", (int)bt_ptr[bt].main_index);
+                     a5_textprintf(w->tmp_edit, font, x1 + 26, y1 + 2, 96, "%2i", (int)bt_ptr[bt].orientation);
+                     a5_textprintf(w->tmp_edit, font, x1 + 82, y1 + 2, 158, "%2i", (int)bt_ptr[bt].sub_index);
+                     a5_textprintf(w->tmp_edit, font, x1 + 138, y1 + 2, 134, "%2i", (int)bt_ptr[bt].rarity);
                   }
                   else
                   {
-                     a5_textprintf(w->tmp_edit, font, x1 + 2, y1 + m_ptr->max_height + 2, 96, "%2i", bt_ptr[bt].main_index);
-                     a5_textprintf(w->tmp_edit, font, x1 + 26, y1 + m_ptr->max_height + 2, 96, "%2i", bt_ptr[bt].orientation);
-                     a5_textprintf(w->tmp_edit, font, x1 + 82, y1 + m_ptr->max_height + 2, 158, "%2i", bt_ptr[bt].sub_index);
-                     a5_textprintf(w->tmp_edit, font, x1 + 138, y1 + m_ptr->max_height + 2, 134, "%2i", bt_ptr[bt].rarity);
+                     a5_textprintf(w->tmp_edit, font, x1 + 2, y1 + m_ptr->max_height + 2, 96, "%2i", (int)bt_ptr[bt].main_index);
+                     a5_textprintf(w->tmp_edit, font, x1 + 26, y1 + m_ptr->max_height + 2, 96, "%2i", (int)bt_ptr[bt].orientation);
+                     a5_textprintf(w->tmp_edit, font, x1 + 82, y1 + m_ptr->max_height + 2, 158, "%2i", (int)bt_ptr[bt].sub_index);
+                     a5_textprintf(w->tmp_edit, font, x1 + 138, y1 + m_ptr->max_height + 2, 134, "%2i", (int)bt_ptr[bt].rarity);
                   }
                }
             }

@@ -317,6 +317,27 @@ else
 }
 
 
+/* Is `p` still inside the loaded DS1 image?
+ *
+ * These bounds checks were written as
+ *
+ *     (UDWORD) ptr < ((UDWORD) ds1_buff) + ds1_len
+ *
+ * and UDWORD is uint32_t, so on a 64-bit host both addresses were truncated to
+ * their low 32 bits before being compared -- and the sum could wrap on top of
+ * that. Whether the check answered correctly depended on where malloc happened
+ * to place the buffer, and it could be wrong in either direction: report
+ * "past the end" for a pointer that was fine, silently leaving map fields
+ * zeroed, or report "still inside" for one that was not, reading off the end of
+ * the allocation. Comparing the pointers as pointers has neither problem.
+ */
+static int ds1_ptr_in_buffer(const void *p, const void *buf, int len)
+{
+   if (p == NULL || buf == NULL || len <= 0)
+      return 0;
+   return (const unsigned char *) p < (const unsigned char *) buf + len;
+}
+
 // ==========================================================================
 // read a ds1
 //    load the file into memory, then copy the datas into the right structures
@@ -930,8 +951,8 @@ int ds1_read(const char * ds1name, int ds1_idx, int new_width, int new_height)
 		  if (misc_increase_ds1_objects_max(ds1_idx, incr) != 0)
 		  {
 			 free(ds1_buff);
-			 sprintf(tmp, "too many objects (%i), editor max is <%i>\n",
-				glb_ds1[ds1_idx].obj_num, glb_ds1[ds1_idx].current_obj_max);
+			 sprintf(tmp, "too many objects (%li), editor max is <%li>\n",
+				(long) glb_ds1[ds1_idx].obj_num, (long) glb_ds1[ds1_idx].current_obj_max);
 			 ds1edit_error(tmp);
 		  }
 	  }
@@ -1007,7 +1028,7 @@ int ds1_read(const char * ds1name, int ds1_idx, int new_width, int new_height)
       glb_ds1[ds1_idx].group_num = n = * ptr;
       ptr++;
 
-      printf("groups          : %li\n", n);
+      printf("groups          : %li\n", (long) n);
       
       // malloc
       glb_ds1[ds1_idx].group_size = size = n * sizeof(GROUP_S);
@@ -1023,21 +1044,21 @@ int ds1_read(const char * ds1name, int ds1_idx, int new_width, int new_height)
       // fill it
       for (x=0; x<n; x++)
       {
-         if ((UDWORD) ptr < (((UDWORD) ds1_buff) + ds1_len))
+         if (ds1_ptr_in_buffer(ptr, ds1_buff, ds1_len))
             glb_ds1[ds1_idx].group[x].tile_x = * ptr;
          ptr++;
-         if ((UDWORD) ptr < (((UDWORD) ds1_buff) + ds1_len))
+         if (ds1_ptr_in_buffer(ptr, ds1_buff, ds1_len))
             glb_ds1[ds1_idx].group[x].tile_y = * ptr;
          ptr++;
-         if ((UDWORD) ptr < (((UDWORD) ds1_buff) + ds1_len))
+         if (ds1_ptr_in_buffer(ptr, ds1_buff, ds1_len))
             glb_ds1[ds1_idx].group[x].width  = * ptr;
          ptr++;
-         if ((UDWORD) ptr < (((UDWORD) ds1_buff) + ds1_len))
+         if (ds1_ptr_in_buffer(ptr, ds1_buff, ds1_len))
             glb_ds1[ds1_idx].group[x].height = * ptr;
          ptr++;
          if (glb_ds1[ds1_idx].version >= 13)
          {
-            if ((UDWORD) ptr < (((UDWORD) ds1_buff) + ds1_len))
+            if (ds1_ptr_in_buffer(ptr, ds1_buff, ds1_len))
                glb_ds1[ds1_idx].group[x].unk = * ptr;
             ptr++;
          }
@@ -1049,7 +1070,7 @@ int ds1_read(const char * ds1name, int ds1_idx, int new_width, int new_height)
    // now we're on the npc's paths datas
    if (glb_ds1[ds1_idx].version >= 14)
    {
-      if ((UDWORD) ptr < (((UDWORD) ds1_buff) + ds1_len))
+      if (ds1_ptr_in_buffer(ptr, ds1_buff, ds1_len))
          npc = * ptr;
       else
          npc = 0;
@@ -1076,7 +1097,7 @@ int ds1_read(const char * ds1name, int ds1_idx, int new_width, int new_height)
                   last_o = o;
                   nb++;
                   if (nb >= 2)
-                     done = TRUE;
+               done = TRUE;
                }
                o++; // next object
             }
@@ -1096,8 +1117,8 @@ int ds1_read(const char * ds1name, int ds1_idx, int new_width, int new_height)
                       "ds1_read() : WARNING, there are at least 2 objects at the same coordinates for some paths datas.\n"
                );
             }
-            printf("   * Removing %i paths points of 1 object at coordinates (%i, %i)\n",
-               path, x, y);
+            printf("   * Removing %li paths points of 1 object at coordinates (%li, %li)\n",
+               (long) path, (long) x, (long) y);
             fflush(stdout);
 
             // first, delete already assigned paths
@@ -1158,8 +1179,8 @@ int ds1_read(const char * ds1name, int ds1_idx, int new_width, int new_height)
                if (path > WINDS1EDIT_PATH_MAX)
                {
                   free(ds1_buff);
-                  sprintf(tmp, "object %li have too much paths (%i), editor max is %i\n",
-                     o, path, WINDS1EDIT_PATH_MAX);
+                  sprintf(tmp, "object %li have too much paths (%li), editor max is %i\n",
+                     (long) o, (long) path, WINDS1EDIT_PATH_MAX);
                   ds1edit_error(tmp);
                }
 
@@ -1265,7 +1286,17 @@ int ds1_read(const char * ds1name, int ds1_idx, int new_width, int new_height)
                         break;
 
                      case WRKSPC_SAVE_COUNT:
-                        sscanf(cptr + o, "%lu", & glb_ds1[ds1_idx].save_count);
+                        {
+                           /* save_count is UDWORD (32-bit). "%lu" makes sscanf
+                              store an unsigned long, which is 8 bytes here --
+                              writing 4 bytes past the field into whatever
+                              follows it in the struct. Scan into a local of
+                              the width the format actually promises, then
+                              narrow deliberately. */
+                           unsigned long sc = 0;
+                           sscanf(cptr + o, "%lu", & sc);
+                           glb_ds1[ds1_idx].save_count = (UDWORD) sc;
+                        }
                         break;
                   }
                }
@@ -1556,7 +1587,11 @@ void ds1_save(int ds1_idx, int is_tmp_file)
 
             case WRKSPC_SAVE_COUNT :
                glb_ds1[ds1_idx].save_count++;
-               sprintf(tmp, "%s=%lu", glb_wrkspc_datas[i].id, glb_ds1[ds1_idx].save_count);
+               /* save_count is UDWORD; "%lu" reads an 8-byte vararg, so the
+                  value written into the workspace file had four bytes of
+                  whatever followed it in the frame. Promote deliberately. */
+               sprintf(tmp, "%s=%lu", glb_wrkspc_datas[i].id,
+                       (unsigned long) glb_ds1[ds1_idx].save_count);
                fwrite(tmp, strlen(tmp) + 1, 1, out);
                break;
          }

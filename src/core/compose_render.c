@@ -144,10 +144,18 @@ static int load_dc6_layer_for_direction(const char *dc6_path,
    for (f = 0; f < dc6_fpd; f++)
    {
       long off = dc6_fptr[direction * dc6_fpd + f];
-      long *fh = (const int32_t *) (buf + off);
-      long fw  = fh[1], fh_ = fh[2], fox = fh[3], foy = fh[4];
+      /* A DC6 frame header is eight 32-bit fields followed by the RLE data.
+         `fh` was declared `long *` while being assigned an int32_t cast, so on
+         a 64-bit host every field was read 8 bytes wide at twice its offset --
+         fh[1] picked up fields 2 and 3 rather than the width. The data pointer
+         had the same fault from a different direction: 8 * sizeof(long) is 64
+         here, and the header is 32 bytes, so it started half a header past the
+         pixels. dc6.c reads the identical layout correctly; this now matches
+         it. */
+      const int32_t *fh = (const int32_t *) (buf + off);
+      long fox = fh[3], foy = fh[4];
       long flen = fh[7];  /* RLE-compressed length */
-      unsigned char *fdata = (unsigned char *) (buf + off + 8 * sizeof(long));
+      unsigned char *fdata = (unsigned char *) (fh + 8);
       ALLEGRO_BITMAP *frame_bmp;
       ALLEGRO_LOCKED_REGION *lock;
       int x0, y0, y;

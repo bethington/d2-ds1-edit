@@ -1965,13 +1965,13 @@ void wpreview_draw_objects(int ds1_idx)
          y1 = dy - glb_ds1edit.win_preview.y0 - 4;
 
          wpreview_textprintf(x1 + 1, y1 + 1, 0, "%i,%3i",
-                             glb_ds1[ds1_idx].obj[o].type, glb_ds1[ds1_idx].obj[o].id);
+                             (int)glb_ds1[ds1_idx].obj[o].type, (int)glb_ds1[ds1_idx].obj[o].id);
 
          wpreview_textprintf(x1, y1, 11, "%i",
-                             glb_ds1[ds1_idx].obj[o].type);
+                             (int)glb_ds1[ds1_idx].obj[o].type);
 
          wpreview_textprintf(x1 + 8, y1, 255, ",%3i",
-                             glb_ds1[ds1_idx].obj[o].id);
+                             (int)glb_ds1[ds1_idx].obj[o].id);
       }
    }
 }

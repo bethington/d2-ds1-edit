@@ -500,8 +500,8 @@ int ds1_manager_write_backup_json(const char * json_path, int group_idx,
       fprintf(out, "    \"height\": %ld,\n", glb_ds1[ds1_idx].height);
       fprintf(out, "    \"act\": %ld,\n", glb_ds1[ds1_idx].act);
       fprintf(out, "    \"object_count\": %ld,\n", glb_ds1[ds1_idx].obj_num);
-      fprintf(out, "    \"floor_layers\": %ld,\n", glb_ds1[ds1_idx].floor_num);
-      fprintf(out, "    \"wall_layers\": %ld\n", glb_ds1[ds1_idx].wall_num);
+      fprintf(out, "    \"floor_layers\": %ld,\n", (long)glb_ds1[ds1_idx].floor_num);
+      fprintf(out, "    \"wall_layers\": %ld\n", (long)glb_ds1[ds1_idx].wall_num);
       fprintf(out, "  }\n");
    }
    else
