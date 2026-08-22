@@ -328,7 +328,7 @@ per-frame scan is hard-clamped to the first `0x90` (144) entries regardless of w
 `FramesPerDir` says, so frames 144–199 of that sequence can never carry a table-driven
 event no matter what a modder writes into bytes that do not exist.
 
-## Version Differences
+## Version differences
 
 Every claim above was checked against 1.13c. It also holds, unchanged, for 1.09d:
 

@@ -167,7 +167,9 @@ hash bucket table where each bucket holds a variable-length run of records;
 the record stride is `0xA0` (160 bytes), confirmed in the disassembly as
 `count*5, shl 5` (`(count×5)×32 = count×160`) rather than trusted from the
 decompiled C, because this project's decompiler has been caught rendering at
-least one other table's stride wrong in exactly this kind of expression.
+least one other table's stride wrong in exactly this kind of expression. The
+[AnimData.d2 chapter](animdata-d2.md) follows this loader, its hash function,
+and every one of the file's 3,558 records in full.
 
 ## The `.txt`/`.bin` fork — and the trap
 

@@ -680,7 +680,13 @@ is a table compiled into the DLL. From version 6:
 so `objectsTxtId = id < 150 ? table[act * 150 + id] : id - 150`. The table at
 `0x6fdee2c8` is **5 acts × 150 int32**, occupying `0x6fdee2c8`–`0x6fdeee80`
 exactly, with no slack before the next object **[G]**. The `act` index is *not*
-bounds-checked here; only the earlier clamp to 4 keeps it in range.
+bounds-checked here; only the earlier clamp to 4 keeps it in range. The type-1
+lookup through `monpreset.txt` has its own history — a fixed-width hardcoded
+table before patch 1.10, this variable-width one after — and its own hazards for
+an out-of-range id; see [Adding ANY Monsters and ANY Objects to a
+DS1](monsters-and-objects.md), which traces both mechanisms in full, including
+what the pre-1.10 table held in the 37 slots between `MonStats.txt` and the
+superuniques that this table's own act-clamp otherwise papers over.
 
 > **Version note (DS1 file versions ≤ 5):** neither remap runs. A type-1 id is
 > used as-is, and a type-2 id is used as a direct `Objects.txt` index, rejected

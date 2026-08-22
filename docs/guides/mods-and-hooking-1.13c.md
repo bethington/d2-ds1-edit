@@ -1066,6 +1066,14 @@ there, read out of the retail file:
 `0x6fdd2cd3 − 0x6fdd2cb5 = 0x1e` = 30. The patch covers the conditional jump and
 the entire abort block, to the byte.
 
+The `CALL 6fdaef40` two lines above the patch is the same generic table loader
+[Excel tables and data loading](excel-tables-and-data-loading.md) documents in
+depth — the function Ghidra's own export table binds to
+`HasItemType3InInventory`, which parses `Objects.txt` and every other `.txt`
+table the same way. `inventory.txt` goes through the identical
+`.txt`/`.bin`-forked loader; this patch is not about how the table is read, only
+about what stock `D2Common` insists the result must contain.
+
 The function is `LoadInventoryTable` at `6fdd20a0`, and it is genuinely that: the
 `.rdata` immediately below the assert data is the column list of `inventory.txt` —
 **seventy-two names** running from `glovesHeight` at `6fdda3e4` to `invLeft` at

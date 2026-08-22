@@ -581,7 +581,9 @@ are palette *indices*; which palette, and which remapping table on top of it,
 is chosen per component and per blit. That machinery — `LoadPaletteFile`,
 `LoadItemPaletteFile`, `LoadAllItemPaletteTransforms`, and the
 `WithPalette` / `WithChainedTable` / `WithDualTable` blitter variants — is
-[Stage 11 of the COF pipeline chapter](cof-pipeline-1.13c.md#stage-11-palette--color-d2cmpdll)
+[Stage 11 of the COF pipeline chapter](cof-pipeline-1.13c.md#stage-11-palette--colour-d2cmpdll),
+traced and verified byte for byte in the
+[palettes and colour chapter](palettes-and-colour.md),
 and is not repeated here. The only thing the sprite formats contribute is the
 index, and one wrinkle worth naming: a DCC direction's codes are indices into
 *its own* 256-bit-key palette list, resolved back to real palette indices at

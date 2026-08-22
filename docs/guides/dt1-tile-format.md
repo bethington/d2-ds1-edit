@@ -50,7 +50,10 @@
 A `.ds1` file does not contain a single pixel. It is a grid of cells, and each
 cell holds four small numbers and an orientation — a *reference*. The picture
 those numbers refer to lives somewhere else, in a `.dt1`, and the two files know
-about each other only through a three-part key.
+about each other only through a three-part key. [DS1: The Map on Disk](ds1-map-format.md)
+follows the reference side of that key — the cell layout, the object list, the
+warp mechanism — from the other end; this chapter is where the reference
+resolves to pixels.
 
 That key is worth seeing before anything else, because it explains most of the
 format's shape. When this repository resolves a DS1 wall cell to an actual tile,
@@ -1060,6 +1063,27 @@ each case: `write_floor_loop` walks the 25-entry diamond table, while
 | 12 | `0x0C` | 2 | reserved |
 | 14 | `0x0E` | 2 | reserved |
 | 16 | `0x10` | 4 | `data_offset` (relative to `tiles_ptr`) |
+
+---
+
+## Version differences
+
+Every address, offset, and constant in this chapter was verified against
+1.13c alone — `D2CMP.dll`, `D2Client.dll`, `D2Common.dll`, all at their 1.13c
+image bases. No 1.09d or other-patch build was imported for this chapter, so
+unlike most of this book's other chapters, each of which cross-checks 1.09d or
+a second version somewhere in its body, no cross-version comparison is offered
+here. The format's real data —
+**[D]** — was read from this repository's own `assets/` tile tree, not from
+a version-labelled archive chain, and nothing in that tree distinguishes
+game-patch provenance.
+
+---
+
+## Companion report
+
+Every claim in this chapter, its verdict, and everything still open:
+[dt1-tile-format.verification.md](dt1-tile-format.verification.md).
 
 ---
 

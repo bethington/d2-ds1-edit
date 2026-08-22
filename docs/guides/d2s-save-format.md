@@ -602,7 +602,9 @@ He also renders the first Act III quest as "Lam Esen's Tomb". The game calls it
 Lam Esen's **Tome**.
 
 The archive's Act V quest names are blank dots — he asked for them and never got
-them. From `expansionstring.tbl`:
+them. From `expansionstring.tbl` — see [The `.tbl` String
+Tables](tbl-string-tables.md) for how that lookup actually works, key to hash
+bucket to string:
 
 | Slot | Act V |
 |---|---|
@@ -1310,6 +1312,14 @@ format 92; "1.08 and earlier" is format ≤ 89 — Siramy's original scope.
 
 Diablo II: Resurrected (save formats 97–105) exists and is out of this book's
 and the fleet's scope; it is not documented here beyond this line.
+
+---
+
+## Companion report
+
+The full claim ledger — all 580 claims, what settled each one, and the 92
+still unverified — is in
+[d2s-save-format.verification.md](d2s-save-format.verification.md).
 
 ---
 

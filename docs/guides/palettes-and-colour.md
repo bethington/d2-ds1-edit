@@ -409,7 +409,7 @@ arithmetic each function performs around that call:
   matches, writes a glow-type code (1 or 2) that the caller uses to decide
   *whether* a unit glows at all, before any transform table is chosen.
 - **`GetUnitRenderColorByMode`** (`@ 6fb02eb0`) dispatches on a render mode
-  read from the unit: mode 8 routes to a fade-color calculation
+  read from the unit: mode 8 routes to a fade-colour calculation
   (`CalculateFadeColorValues`), modes `0x6B`–`0x6C` route to
   `GetUnitHighlightColor`, and every other mode falls through to a single
   fixed RGB-and-alpha default read from four global bytes

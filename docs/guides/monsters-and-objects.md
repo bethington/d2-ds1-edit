@@ -136,7 +136,10 @@ D2Common resolves first, and the DS1's own Act field picks which act's slice
 applies. That field is present from DS1 version 8 onward, stored zero-based on
 disk, and clamped — `if (act > 4) act = 4` — so a DS1 with an act value above
 4 silently reads Act 5's slice. A DS1 older than version 8 has no Act field at
-all, and the game uses Act 1's.
+all, and the game uses Act 1's. ([DS1: The Map on Disk](ds1-map-format.md)
+covers the on-disk shape of the object record itself — offsets, gates, and
+the four object types the file format allows — this chapter is about what a
+type-1 or type-2 ID resolves *to*.)
 
 For Type 2 units, the table is a literal table: 5 acts × 150 dwords, still
 hardcoded inside `D2Common.dll` at `6fdee2c8`–`6fdeee7f` in 1.13c. Whenever the
@@ -773,7 +776,10 @@ the `monpreset` loader at `6fda5490`.
 ### Table record counts as the game numbers them
 
 The `Expansion` divider line is not a record. Every `Id`/`hcIdx`/`Def` column
-in these files is authored on that basis, and so is every index in the DLL.
+in these files is authored on that basis, and so is every index in the DLL —
+the same counting rule, and the same loader family that parses these tables
+from `Patch_D2.mpq`/`D2Exp.mpq` in the first place, is covered in
+[Excel tables and data loading](excel-tables-and-data-loading.md).
 
 | File | Version | Records | Divider at file line |
 |---|---|---:|---:|

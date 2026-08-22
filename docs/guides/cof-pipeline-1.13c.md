@@ -42,11 +42,11 @@ Example: `data\global\chars\AM\COF\AMTNHTH.cof` = Amazon, Town, Hand-to-Hand
 
 Every character in Diablo II is assembled, never drawn whole. There is no single stored picture of an Amazon standing in town. There is a head, a torso, legs mid-stride, two arms, whatever rides in each hand, and a shield if she carries one -- each authored separately, each stored as its own sprite, each stacked in a fixed order every frame the game paints. The COF file is the assembly instruction. "COF" is Composite Object File, and *composite* is the entire point: the unit on screen is built up, layer over layer, from parts that were made independently so that any one of them can change without touching the rest.
 
-That is why the system exists. If the Amazon equips a different bow, only her hand layer changes and the torso keeps walking. If a dye recolors her armor, only a palette table swaps and the geometry is untouched -- the functions that map equipment to a layer (`GetEquipSlotAnimComponent`), rebuild the layer set when gear changes (`RebuildEquippedVisualComponents`), and recolor a layer per item (`CopyItemColorComponents`) are all in the tables below. Keep the parts separate and every combination of armor, weapon, and color comes almost for free. Fuse them into one image and you would need a distinct animation for every possible loadout -- a combinatorial blowup no disc of the era could hold.
+That is why the system exists. If the Amazon equips a different bow, only her hand layer changes and the torso keeps walking. If a dye recolors her armor, only a palette table swaps and the geometry is untouched -- the functions that map equipment to a layer (`GetEquipSlotAnimComponent`), rebuild the layer set when gear changes (`RebuildEquippedVisualComponents`), and recolor a layer per item (`CopyItemColorComponents`) are all in the tables below. Keep the parts separate and every combination of armor, weapon, and colour comes almost for free. Fuse them into one image and you would need a distinct animation for every possible loadout -- a combinatorial blowup no disc of the era could hold.
 
 A COF names three things -- a token, a mode, and a weapon class -- and from them decides which layers to draw, in what order, and with which animation. The filename carries all three. `AMTNHTH.cof` is `AM` (the Amazon), `TN` (her town mode, the relaxed stance she uses in a town), and `HTH` (hand-to-hand, no weapon drawn). The eleven stages below follow that one file from the instant the game decides "this unit is now in town mode" to the instant her last pixel lands in the frame buffer.
 
-The shape is a straight line with loops hung off it. The path is built and the file loaded (Stage 1). The animation system picks which frame of which sequence is current (Stage 2). The component system walks the COF's layer list and asks, per part, whether it is visible and which sprite it needs (Stage 3). The sprite engine loads and caches those sprites (Stage 4) and decompresses each into per-direction cels, the atomic unit of drawing (Stage 5). The renderer depth-sorts everything and blits it, layer by layer, to the screen (Stage 6). Stages 7 through 11 are the same machinery aimed at special cases: monsters, overlay effects such as auras, the mode changes that force a reload, missiles, and the palette transforms that give one sprite many colors. Read top to bottom, it is a single pass from a state change to a picture.
+The shape is a straight line with loops hung off it. The path is built and the file loaded (Stage 1). The animation system picks which frame of which sequence is current (Stage 2). The component system walks the COF's layer list and asks, per part, whether it is visible and which sprite it needs (Stage 3). The sprite engine loads and caches those sprites (Stage 4) and decompresses each into per-direction cels, the atomic unit of drawing (Stage 5). The renderer depth-sorts everything and blits it, layer by layer, to the screen (Stage 6). Stages 7 through 11 are the same machinery aimed at special cases: monsters, overlay effects such as auras, the mode changes that force a reload, missiles, and the palette transforms that give one sprite many colours. Read top to bottom, it is a single pass from a state change to a picture.
 
 ---
 
@@ -101,7 +101,7 @@ LoadAllGameStateAnimationFrames (6fb1c3b0)
 
 A loaded COF is a static thing. It says which layers exist and how they stack, but not which frame of which cycle is showing right now. That is this stage's work: to move the animation through time.
 
-The clock starts with `SetUnitAnimMode`. When our Amazon steps out of a portal into town, her mode becomes `TN`, and setting that mode is what triggered the COF switch in the first place -- the D2Common side of the boundary telling the D2Client side that a new file is needed. From there the timing comes out of `AnimData.d2`, the table that says how many frames the `AMTNHTH` sequence runs and how fast: `DATATBLS_LoadAnimDataTable` is what put it in memory, and `ANIM_LookupAnimDataByPath` finds the entry for a name like `AMTNHTH` inside it. Objects are timed from a different table -- `GetObjectsTxtRecord` hands back an Objects.txt row, whose per-mode `FrameCnt` and `FrameDelta` columns pace a chest or a door the way AnimData paces a character.
+The clock starts with `SetUnitAnimMode`. When our Amazon steps out of a portal into town, her mode becomes `TN`, and setting that mode is what triggered the COF switch in the first place -- the D2Common side of the boundary telling the D2Client side that a new file is needed. From there the timing comes out of `AnimData.d2`, the table that says how many frames the `AMTNHTH` sequence runs and how fast: `DATATBLS_LoadAnimDataTable` is what put it in memory, and `ANIM_LookupAnimDataByPath` finds the entry for a name like `AMTNHTH` inside it -- the file's own layout, hash function, and what a frame's event byte actually drives are the subject of the [AnimData.d2 chapter](animdata-d2.md). Objects are timed from a different table -- `GetObjectsTxtRecord` hands back an Objects.txt row, whose per-mode `FrameCnt` and `FrameDelta` columns pace a chest or a door the way AnimData paces a character.
 
 Each tick, `UpdateAllAnimationFrames` advances every active unit. `AdvanceAnimFrameWithWrap` steps the frame counter and wraps it back to zero at the end of the sequence, so the town idle loops seamlessly; `AdvanceAnimSubAccumulator` carries the fractional remainder between ticks, so an animation slower than the frame rate still moves smoothly rather than stuttering. When a frame carries an event -- a footstep sound, the instant a missile should launch, the point in a swing where damage lands -- `SetAnimEventFromFrameData` fires it. The long list of `GetAnimDataFrameInfo`, `ExtractAnimFrameData`, and `GetGraphicsMode*` entries below are the small accessors that read individual fields out of these records.
 
@@ -113,9 +113,30 @@ Each tick, `UpdateAllAnimationFrames` advances every active unit. `AdvanceAnimFr
 | `AdvanceAnimFrameWithWrap` | `6fd7f060` | Advances animation frame counter with wrap-around at sequence end |
 | `AdvanceAnimSubAccumulator` | `6fd7f090` | Sub-frame accumulator for smooth animation timing |
 | `UpdateAllAnimationFrames` | `6fd8bbd0` | Per-tick update of all animation frames |
-| `GetAnimDataFrameInfo` | `6fd71fb0`, `6fd8c640`, `6fd91ef0`, `6fd9fe80` | Gets frame info from AnimData.d2 tables (4 instances) |
-| `ExtractAnimFrameData` | `6fd7e6e0`, `6fd9fa30` | Extracts frame data from AnimData records (2 instances) |
+| `GetAnimDataFrameInfo` | `6fd91ef0` | Reads frame info out of an AnimData.d2 record. **One function, not four** — see below |
+| `ExtractAnimFrameData` | `6fd7e6e0` | Extracts four byte fields from a **6-byte-stride** frame array, indexed by an 8.8 fixed-point frame. Not AnimData.d2, whose records are `0xA0` |
 | `SetAnimEventFromFrameData` | `6fd7ee10` | Sets animation event triggers from frame data (sound, missile, etc.) |
+
+> **Three addresses removed from that row, and why it matters.** This table
+> previously listed `6fd71fb0`, `6fd8c640` and `6fd9fe80` alongside `6fd91ef0`
+> as four instances of the same accessor. They are not. Only `6fd91ef0` touches
+> AnimData.d2; the others are unrelated functions that Ghidra labelled
+> identically. Checked directly: `6fd71fb0` is a three-line bit-flag setter
+> (`*p |= mask` / `*p &= ~mask`), and `6fd8c640` sorts a room's unit list and
+> returns the list head at `+0x74`.
+>
+> The cause is worth knowing, because it produces this pattern throughout
+> D2Common. Its asserts push a **blanked filename pointer at `0x6fdda728`
+> shared by 567 call sites**, so anything that attributed functions by the
+> nearest string labelled all 567 the same way — and `6fd8c640`'s comment was
+> then copy-pasted onto `6fd71fb0`, which does something else entirely. Treat a
+> repeated name in this database as a question, not a finding.
+>
+> `ExtractAnimFrameData` lost an address the same way. `6fd9fa30` carries that
+> name and the identical comment, and is not animation code at all: it strides
+> `0x23c` — the Skills table's record size — reads the unit's four base stats
+> and compares them against requirement fields at `+0x176`/`+0x178`/`+0x17a`/
+> `+0x17c`, returning a bool. It is a skill stat-requirement check.
 | `SetAnimFieldPair` | `6fd5dce0`, `6fdce390`, `6fdd2e40` | Sets paired animation fields (3 instances) |
 | `SetUnitAnimData` | `6fd84670` | Sets animation data on a unit |
 | `GetObjectAnimModeRecordByte` | `6fd7ede0` | Gets object animation mode from record |
@@ -157,7 +178,7 @@ Here is where "composite" earns its name. The COF's layer list is the heart of t
 
 For the Amazon in town, hand-to-hand, the visible set is her body -- head, torso, legs, arms -- with empty hands. `RenderUnitComponentLayers` is the function that walks this list, and for each entry it asks two questions. `IsComponentVisibleForUnitType` decides whether the layer should be drawn at all: an unarmed unit skips the weapon-hand layers, and a unit type that never uses a given component skips it too. `GetEquipSlotAnimComponent` maps a piece of equipment back to the component it feeds, which is how putting on a breastplate changes the `TR` layer and nothing else.
 
-The rest of the stage is the plumbing behind those two questions. `GetComponentListMode`, `GetComponentListType`, and `GetComponentListColorIndex` read the mode, type, and palette index out of a component-list entry -- the last of which is how a single torso sprite can be drawn in a dozen armor colors. `RebuildEquippedVisualComponents`, over on the D2Common side, is what fires when gear changes: it recomputes the component set so the next frame draws the new loadout. And because a component can carry sound as well as pixels, `GetComponentSoundIds` and `PlayComponentAnimationSound` tie a footstep or a weapon-whoosh to the exact frame of the exact layer that should make it.
+The rest of the stage is the plumbing behind those two questions. `GetComponentListMode`, `GetComponentListType`, and `GetComponentListColorIndex` read the mode, type, and palette index out of a component-list entry -- the last of which is how a single torso sprite can be drawn in a dozen armor colours. `RebuildEquippedVisualComponents`, over on the D2Common side, is what fires when gear changes: it recomputes the component set so the next frame draws the new loadout. And because a component can carry sound as well as pixels, `GetComponentSoundIds` and `PlayComponentAnimationSound` tie a footstep or a weapon-whoosh to the exact frame of the exact layer that should make it.
 
 ### D2Common.dll
 | Function | Address | Purpose |
@@ -172,7 +193,7 @@ The rest of the stage is the plumbing behind those two questions. `GetComponentL
 | Function | Address | Purpose |
 |----------|---------|---------|
 | `GetComponentAnimationFrame` | `6fad21c0` | Gets the current animation frame for a specific component layer |
-| `GetComponentListColorIndex` | `6fb1d690` | Gets palette transform/color index for a component |
+| `GetComponentListColorIndex` | `6fb1d690` | Gets palette transform/colour index for a component |
 | `GetComponentListMode` | `6fb1d700` | Gets the mode field from a component-list entry |
 | `GetComponentListType` | `6fb1d740` | Gets the type field from a component-list entry |
 | `GetComponentListProperty` | `6fb1d780` | Gets a property from a component-list entry |
@@ -184,7 +205,7 @@ The rest of the stage is the plumbing behind those two questions. `GetComponentL
 | `InvokeComponentHandlersType2` | `6fad13d0` | Invokes type 2 component handlers |
 | `InvokeComponentHandlersType3` | `6fad13c0` | Invokes type 3 component handlers |
 | `GetMonsterSkillComponentIndex` | `6fb779c0` | Gets component index for monster skill effects |
-| `CopyItemColorComponents` | `6fb1d840` | Copies item color/palette data to component |
+| `CopyItemColorComponents` | `6fb1d840` | Copies item colour/palette data to component |
 | `GetRecordSpriteData` | `6fb1d8c0` | Gets sprite data from a component record |
 | `InitializeSpriteDataArrays` | `6fb1d400` | Initializes sprite data arrays for components |
 | `GetGraphicsEffectComponentByIndex` | `6fab1a60` | Gets graphics effect component by index |
@@ -214,7 +235,7 @@ RenderUnitByType (6fb1cc00)
 
 ## Stage 4: Sprite System (D2CMP.dll)
 
-Every visible component the last stage kept needs actual pixels, and those pixels live in sprite files -- `DCC` for the compact, delta-compressed character animations, `DC6` for simpler frames. This is the layer of the pipeline that turns a component's identity into loaded, decoded image data, and it lives entirely in D2CMP.dll, the compression module.
+Every visible component the last stage kept needs actual pixels, and those pixels live in sprite files -- `DCC` for the compact, delta-compressed character animations, `DC6` for simpler frames. This is the layer of the pipeline that turns a component's identity into loaded, decoded image data, and it lives entirely in D2CMP.dll, the compression module. What is actually in those two file formats, byte by byte, is the [sprite formats chapter](sprite-formats-dcc-dc6.md)'s subject; this stage only needs to know that a load produces cached, decoded frames.
 
 The Amazon's torso layer, having survived the visibility check, now needs its sprite. `BuildSpritePath` constructs the file path; `BuildSpriteCacheKey` turns that path into a lookup key; and `LoadOrCreateSpriteEntry` checks the cache before it touches the disk. That ordering is the stage's whole economy: a town full of Amazons sharing a body sprite loads it once and reads it from the cache every time after. Only on a miss does `LoadSpriteDefinition` read the header and `CacheAndInitializeSpriteByType` branch on whether the file is DCC or DC6 and set it up accordingly.
 
@@ -341,7 +362,7 @@ The accessors read the format's fields directly. `GetCelFramesPerDirection` and 
 | `BlitAllCelFrames` | `6fe219c0` | Blits all frames of a cel |
 | `BlitCelFrameClipped` | `6fe21780` | Blits a single cel frame with clipping |
 | `BlitCelFrameHorizontalClipped` | `6fe21890` | Blits cel frame with horizontal clipping |
-| `BlitCelFrameWithSolidColor` | `6fe22480` | Blits cel frame filled with solid color |
+| `BlitCelFrameWithSolidColor` | `6fe22480` | Blits cel frame filled with solid colour |
 | `AddCelFrameToQueue` | `6fe22790` | Adds cel frame to render queue |
 | `CopyCelFramePixelData` | `6fe22380` | Copies cel frame pixel data |
 | `EnumerateCelPixels` | `6fe25b00` | Enumerates all pixels in a cel |
@@ -428,9 +449,9 @@ That is the full round trip: `AMTNHTH.cof` named her, the animation system timed
 ### Unit Draw State
 | Function | Address | Purpose |
 |----------|---------|---------|
-| `ApplyUnitDrawInfo` | `6fb74960` | Applies draw info (position, color, flags) to unit |
+| `ApplyUnitDrawInfo` | `6fb74960` | Applies draw info (position, colour, flags) to unit |
 | `GetUnitDrawInfo` | `6fb560d0` | Gets current draw parameters for a unit |
-| `GetUnitRenderColorByMode` | `6fb02eb0` | Gets palette shift/color based on animation mode |
+| `GetUnitRenderColorByMode` | `6fb02eb0` | Gets palette shift/colour based on animation mode |
 | `SetUnitDrawFlagHigh` | `6fb607e0` | Sets high draw flag on unit |
 | `DrawGraphicsInterface` | `6fabd120` | Low-level graphics interface draw call |
 | `GfxRenderCommand` | `6fabd1c8` | Executes a graphics render command |
@@ -591,11 +612,11 @@ What is distinctive here is motion and variation. `HandleMissileVelocityMode` ti
 
 ---
 
-## Stage 11: Palette & Color (D2CMP.dll)
+## Stage 11: Palette & Colour (D2CMP.dll)
 
-Return, at the very end, to the promise the compositing system made at the start: that one sprite can wear many colors. This is the stage that keeps it. A palette transform is a small table that remaps a sprite's color indices to different ones as it is blitted -- which is how a single torso cel becomes blue armor here and red armor there, and how a unique monster is tinted apart from its base, all without a second copy of a single pixel.
+Return, at the very end, to the promise the compositing system made at the start: that one sprite can wear many colours. This is the stage that keeps it. A palette transform is a small table that remaps a sprite's colour indices to different ones as it is blitted -- which is how a single torso cel becomes blue armor here and red armor there, and how a unique monster is tinted apart from its base, all without a second copy of a single pixel. This section is the address map only; the [palettes and colour chapter](palettes-and-colour.md) is where the `.dat`/`.pl2` byte layouts, the nine generator functions, and the item- and monster-colour mechanisms are traced and verified byte for byte.
 
-`LoadPaletteFile` and `LoadPCXPaletteFromFile` bring these tables in from disk; `LoadItemPaletteFile` and `LoadAllItemPaletteTransforms` load the item-specific transforms that give equipment its color variants. The blitters back in Stage 4 are the consumers -- the `WithPalette`, `WithChainedTable`, and `WithDualTable` variants each expect one of these tables to be resolved and ready. And the color index chosen per component back in Stage 3, by `GetComponentListColorIndex`, is the number that selects among them. The loop closes here: the layer separation Stage 3 established is what makes per-layer recoloring possible, and this stage is where that recoloring is finally supplied.
+`LoadPaletteFile` and `LoadPCXPaletteFromFile` bring these tables in from disk; `LoadItemPaletteFile` and `LoadAllItemPaletteTransforms` load the item-specific transforms that give equipment its colour variants. The blitters back in Stage 4 are the consumers -- the `WithPalette`, `WithChainedTable`, and `WithDualTable` variants each expect one of these tables to be resolved and ready. And the colour index chosen per component back in Stage 3, by `GetComponentListColorIndex`, is the number that selects among them. The loop closes here: the layer separation Stage 3 established is what makes per-layer recoloring possible, and this stage is where that recoloring is finally supplied.
 
 | Function | Address | Purpose |
 |----------|---------|---------|
@@ -692,3 +713,24 @@ Stages 6 and 8 -- is counted as a row twice but as one address. The "none still
 `FUN_*`" claim was checked by listing every `FUN_*` function in each DLL:
 D2Client and D2CMP have none at all, and the 21 that remain in D2Common are all
 outside this document.
+
+---
+
+## Version differences
+
+Every address in this chapter was verified against 1.13c alone. Unlike most of
+this book's other chapters, each of which cross-checks 1.09d or a second
+version somewhere in its body, this chapter's evidence does not extend to any
+other patch. The provenance block's claim --
+that mods of this era ship Blizzard's DLLs unchanged, so these addresses hold
+for any 1.13c-based mod -- is a claim about *mods*, not about other game
+*versions*: whether any address here matches 1.09d or another patch was not
+checked, and no comparison is asserted.
+
+---
+
+## Companion report
+
+Every function-address row, string-table entry, and call-graph edge in this
+chapter, the corrections applied, and what remains open:
+[cof-pipeline-1.13c.verification.md](cof-pipeline-1.13c.verification.md).

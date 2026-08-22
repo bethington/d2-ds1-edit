@@ -482,7 +482,9 @@ with no symptom beyond a slightly emptier town.
 
 The item packet, `0x9C`, is the densest entry here and deserves its
 provenance stated plainly: its trailing bit-stream is **the same encoding a
-`.d2s` save file uses** for one item record, minus the `JM` two-byte marker
+`.d2s` save file uses** for one item record — see [The .d2s Save
+File](d2s-save-format.md), whose §14 documents that record's own field
+widths and version history — minus the `JM` two-byte marker
 that only ever appears as a file-format delimiter — confirmed by comparing
 a captured wire body against the corresponding item's bytes in the
 character's own save file, where the two agree everywhere except the
@@ -577,6 +579,16 @@ into a table. The fact of the runtime patch is independently confirmed by
 the disk-vs-live comparison above; the exact function responsible is not,
 and is left as an open item in the companion report rather than repeated
 here as settled.
+
+A candidate worth checking before that citation is chased further: [How Mods
+Attach to Diablo II](mods-and-hooking-1.13c.md) counts `ProjectDiablo.dll`'s
+own static patch tables independently of this chapter and finds exactly
+**2 records targeting `D2Net.dll`** among the 1,290 total. That chapter does
+not identify what those two records write, and this chapter does not claim
+they are the size-table overrides above — the two findings were reached
+separately and neither confirms the other — but a reader chasing the write
+site has a concrete, small number of records to start from rather than all
+612,009 instructions.
 
 ---
 

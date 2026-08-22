@@ -129,5 +129,14 @@ Contact : [siramy_paul@yahoo.com](mailto:siramy_paul@yahoo.com)
 
 ---
 
+## Version differences
+
+None. This page names no version-scoped format claim — it is a download and
+contact record for a single, specific historical build, and the "Version
+scope" note in the Origin block above already covers what that means for
+reading it today.
+
+---
+
 *Verification report:
 [`siramy-conversions.verification.md`](siramy-conversions.verification.md).*
