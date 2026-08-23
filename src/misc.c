@@ -1642,10 +1642,13 @@ int misc_cmd_line_parse(int argc, char **argv)
 }
 
 // ==========================================================================
+double glb_present_ms = 0.0;
+
 void misc_draw_screen(int mx, int my)
 {
    ALLEGRO_BITMAP *mouse_sprite = glb_ds1edit.mouse_cursor[glb_ds1edit.mode];
    int disp_h = al_get_display_height(a5_display);
+   double start_ms = al_get_time() * 1000.0;
 
    al_set_target_backbuffer(a5_display);
    al_clear_to_color(al_map_rgb(0, 0, 0));
@@ -1686,6 +1689,8 @@ void misc_draw_screen(int mx, int my)
       al_draw_bitmap(mouse_sprite, (float)mx, (float)my, 0);
    }
    al_flip_display();
+
+   glb_present_ms = al_get_time() * 1000.0 - start_ms;
 }
 
 // ==================================================================================

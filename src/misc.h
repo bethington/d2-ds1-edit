@@ -38,6 +38,12 @@ void   misc_draw_mouse_cursor          (int x, int y, int restore_background_fir
 void   misc_set_mouse_cursor           (BITMAP * sprite);
 */
 void   misc_draw_screen                (int mx, int my);
+
+/* Wall time in ms that the last misc_draw_screen() took, present included.
+   wpreview_draw_tiles() calls it, so without this the main loop's "render"
+   figure silently folds compositing and al_flip_display together -- and those
+   two point at completely different bugs. */
+extern double glb_present_ms;
 int    misc_increase_ds1_objects_max   (int ds1_idx, long nb_objects);
 void   ds1edit_recreate_render_targets (void);
 #endif

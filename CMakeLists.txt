@@ -145,6 +145,16 @@ else()
     endif()
 endif()
 
+# GL itself, for the one glGetString(GL_RENDERER) call that reports which GPU
+# the display actually bound. Allegro links GL for its own backend but does not
+# re-export the symbol, so a caller needs it directly. OPTIONAL: a host with no
+# GL development files still builds -- it just cannot name the renderer.
+find_package(OpenGL)
+if(OPENGL_FOUND)
+    target_link_libraries(ds1edit_allegro INTERFACE OpenGL::GL)
+    target_compile_definitions(ds1edit_allegro INTERFACE DS1EDIT_HAVE_GL)
+endif()
+
 # Source files
 set(SOURCES
     src/main.c
@@ -251,6 +261,14 @@ target_include_directories(ds1edit PRIVATE
     ${CMAKE_SOURCE_DIR}/src/mpq
     ${ALLEGRO5_INCLUDE_DIR}
 )
+
+# ds1edit links Allegro directly rather than through ds1edit_allegro, so the
+# GL handle has to be attached here too or ds1edit_report_display_driver()
+# silently compiles out its renderer probe.
+if(OPENGL_FOUND)
+    target_link_libraries(ds1edit PRIVATE OpenGL::GL)
+    target_compile_definitions(ds1edit PRIVATE DS1EDIT_HAVE_GL)
+endif()
 
 # Platform-specific configuration
 if(WIN32)

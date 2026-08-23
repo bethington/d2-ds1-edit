@@ -59,6 +59,25 @@ October 30 2011 :
 #include "ui/ui_assets.h"
 #include "ui/input.h"
 
+/* For glGetString(GL_RENDERER) in ds1edit_report_display_driver(). Safe to
+   include whatever backend the display ends up on; the calls are guarded by
+   ALLEGRO_OPENGL at runtime. DS1EDIT_HAVE_GL comes from CMake's find_package
+   (OpenGL) -- without it we simply do not name the renderer. */
+#ifdef DS1EDIT_HAVE_GL
+#include <allegro5/allegro_opengl.h>
+#endif
+
+#ifdef _WIN32
+/* A laptop with two GPUs hands OpenGL to the integrated one unless the
+   executable says otherwise, and a discrete card that never gets used is
+   indistinguishable from a slow one -- the editor just draws at a fraction of
+   a frame per second with nothing in the logs to say why. Both vendors look
+   for these exported symbols in the .exe itself, which is why they live here
+   rather than in a library. */
+__declspec(dllexport) unsigned long NvOptimusEnablement = 1;
+__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+#endif
+
 
 WRKSPC_DATAS_S glb_wrkspc_datas[WRKSPC_MAX] = // workspace datas saved in .ds1
     {
@@ -518,7 +537,19 @@ void ds1edit_recreate_render_targets(void)
    ALLEGRO_BITMAP *new_screen_buff;
    int old_width;
    int old_height;
+   int prev_flags;
    char tmp[160];
+
+   /* Everything the editor draws is composed into these two surfaces, so if
+      they land in system memory Allegro has to lock the whole destination for
+      every sprite and the frame rate collapses by three orders of magnitude --
+      while still producing a correct picture, which is what makes it so hard
+      to spot. Do not inherit whatever al_set_new_bitmap_flags() happened to be
+      left at: two of this function's callers set VIDEO first and the resize
+      handler in ui/input.c did not, which is one ambient MEMORY flag away from
+      turning every window resize into that collapse. */
+   prev_flags = al_get_new_bitmap_flags();
+   al_set_new_bitmap_flags(ALLEGRO_VIDEO_BITMAP);
 
    old_width = glb_config.screen.width;
    old_height = glb_config.screen.height;
@@ -560,6 +591,19 @@ void ds1edit_recreate_render_targets(void)
 
    glb_ds1edit.big_screen_buff = new_big_screen_buff;
    glb_ds1edit.screen_buff = new_screen_buff;
+
+   al_set_new_bitmap_flags(prev_flags);
+
+   /* A memory render target is a silent thousand-fold slowdown, so say which
+      one we got rather than leaving it to be inferred from the frame rate. */
+   if (al_get_bitmap_flags(new_big_screen_buff) & ALLEGRO_MEMORY_BITMAP)
+   {
+      fprintf(stderr,
+              "render: WARNING -- the render target is a MEMORY bitmap. Every "
+              "sprite will lock it and the editor will draw at a fraction of a "
+              "frame per second.\n");
+      fflush(stderr);
+   }
 
    /* The map viewport has to follow the screen. preview.c clips the tile draw
       to win_preview.w/h, so a viewport left at the old size paints the map
@@ -925,13 +969,43 @@ static ALLEGRO_DISPLAY * ds1edit_try_create_display(void)
 }
 
 
-/* Record which graphics driver the display actually ended up on.
+/* Does this OpenGL renderer string name a software rasterizer?
+ *
+ * "GDI Generic" is Microsoft's OpenGL 1.1 fallback, handed out when no vendor
+ * ICD is installed or when the context could not reach the real card -- over
+ * a remote desktop session, say. Mesa's llvmpipe/softpipe/swrast are the same
+ * situation on Linux. Any of them draw the map correctly, at well under one
+ * frame per second. */
+static int ds1edit_renderer_is_software(const char *renderer)
+{
+   static const char *software[] = {
+       "GDI Generic", "llvmpipe", "softpipe", "swrast", "Software Rasterizer"};
+   size_t i;
+
+   if (renderer == NULL)
+      return 0;
+
+   for (i = 0; i < sizeof(software) / sizeof(software[0]); i++)
+      if (strstr(renderer, software[i]) != NULL)
+         return 1;
+
+   return 0;
+}
+
+/* Record which graphics driver -- and which actual GPU -- the display ended
+ * up on.
  *
  * allegro5.cfg pins this to OpenGL, and when that backend misbehaves the
  * editor renders its status bar and cursor over an entirely black map, with
  * no error and a perfectly healthy frame rate. Removing allegro5.cfg fixes it
- * at once, but nothing on screen or in the logs points that way. This line
- * does. */
+ * at once, but nothing on screen or in the logs points that way.
+ *
+ * The driver name alone turned out not to be enough. A machine can report
+ * "OpenGL driver" and still be running Microsoft's software rasterizer, or a
+ * laptop's integrated chip while a discrete card sits idle -- both of which
+ * look like nothing more than a bad frame rate. So print the renderer the
+ * context actually bound, and say plainly when it is one that cannot be
+ * fast. */
 static void ds1edit_report_display_driver(ALLEGRO_DISPLAY *d)
 {
    int flags;
@@ -952,6 +1026,32 @@ static void ds1edit_report_display_driver(ALLEGRO_DISPLAY *d)
            "display: %ix%i, %s driver%s\n",
            al_get_display_width(d), al_get_display_height(d), driver,
            (flags & ALLEGRO_FULLSCREEN) ? ", fullscreen" : "");
+
+#ifdef DS1EDIT_HAVE_GL
+   if (flags & ALLEGRO_OPENGL)
+   {
+      /* Targeting the backbuffer makes this display's context current, which
+         glGetString needs -- ask before that and the strings can come back
+         NULL. */
+      const char *vendor;
+      const char *renderer;
+
+      al_set_target_backbuffer(d);
+      vendor   = (const char *) glGetString(GL_VENDOR);
+      renderer = (const char *) glGetString(GL_RENDERER);
+
+      fprintf(stderr, "display: renderer \"%s\", vendor \"%s\"\n",
+              renderer ? renderer : "?", vendor ? vendor : "?");
+
+      if (ds1edit_renderer_is_software(renderer))
+         fprintf(stderr,
+                 "display: WARNING -- that is a software rasterizer, not a "
+                 "GPU. Expect well under one frame per second. Install the "
+                 "graphics vendor's driver, and run on the machine's own "
+                 "console rather than a remote desktop session.\n");
+   }
+#endif /* DS1EDIT_HAVE_GL */
+
    fprintf(stderr,
            "display: if the map area is black but the status bar draws, "
            "suspect this driver -- an allegro5.cfg next to the executable "

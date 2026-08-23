@@ -34,6 +34,7 @@ typedef struct
    double editobj_ms_total;
    double anim_ms_total;
    double render_ms_total;
+   double present_ms_total;
    double ui_ms_total;
    double frame_ms_total;
 
@@ -43,6 +44,7 @@ typedef struct
    double editobj_ms_max;
    double anim_ms_max;
    double render_ms_max;
+   double present_ms_max;
    double ui_ms_max;
    double frame_ms_max;
 
@@ -89,6 +91,8 @@ static void perf_print_summary(void)
            glb_perf_stats.anim_ms_total * inv, glb_perf_stats.anim_ms_max);
    fprintf(stderr, "[perf] render:      avg %7.2f ms  max %7.2f ms\n",
            glb_perf_stats.render_ms_total * inv, glb_perf_stats.render_ms_max);
+   fprintf(stderr, "[perf] present:     avg %7.2f ms  max %7.2f ms\n",
+           glb_perf_stats.present_ms_total * inv, glb_perf_stats.present_ms_max);
    fprintf(stderr, "[perf] ui/other:    avg %7.2f ms  max %7.2f ms\n",
            glb_perf_stats.ui_ms_total * inv, glb_perf_stats.ui_ms_max);
    fflush(stderr);
@@ -642,7 +646,13 @@ void interfac_user_handler(int start_ds1_idx)
           perf_now_ms() - section_start_ms);
 
       // redraw the whole screen
+      //
+      // wpreview_draw_tiles() presents the frame itself, so charge
+      // misc_draw_screen's time to "present" and leave "render" holding only
+      // the compositing. Lumped together they cannot tell a slow tile blit
+      // apart from a stalled al_flip_display, which are different bugs.
       section_start_ms = perf_now_ms();
+      glb_present_ms = 0.0;
       if (glb_ds1edit.has_loaded_ds1)
          wpreview_draw_tiles(ds1_idx);
       else
@@ -651,7 +661,11 @@ void interfac_user_handler(int start_ds1_idx)
       perf_accumulate(
           &glb_perf_stats.render_ms_total,
           &glb_perf_stats.render_ms_max,
-          perf_now_ms() - section_start_ms);
+          perf_now_ms() - section_start_ms - glb_present_ms);
+      perf_accumulate(
+          &glb_perf_stats.present_ms_total,
+          &glb_perf_stats.present_ms_max,
+          glb_present_ms);
 
       // scroll UP / DOWN / LEFT / RIGHT
       section_start_ms = perf_now_ms();
