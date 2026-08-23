@@ -265,9 +265,17 @@ target_include_directories(ds1edit PRIVATE
 # ds1edit links Allegro directly rather than through ds1edit_allegro, so the
 # GL handle has to be attached here too or ds1edit_report_display_driver()
 # silently compiles out its renderer probe.
+#
+# macOS deprecated the whole OpenGL API in 10.14 and warns on every call. It is
+# still the backend Allegro uses there, so the probe is exactly as valid as the
+# renderer it is asking about; silence the notice rather than let it bury the
+# warnings that mean something.
 if(OPENGL_FOUND)
     target_link_libraries(ds1edit PRIVATE OpenGL::GL)
     target_compile_definitions(ds1edit PRIVATE DS1EDIT_HAVE_GL)
+    if(APPLE)
+        target_compile_definitions(ds1edit PRIVATE GL_SILENCE_DEPRECATION)
+    endif()
 endif()
 
 # Platform-specific configuration
