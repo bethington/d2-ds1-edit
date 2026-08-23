@@ -172,6 +172,30 @@ void wpreview_init_palette_state(int ds1_idx)
       wpreview_old_pal = glb_ds1edit.cmd_line.force_pal_num - 1;
 }
 
+/* Drawing a memory bitmap onto a video target sends Allegro down the software
+   blitter, which locks the whole destination texture once per sprite. With a
+   screenful of tiles that is a thousand-fold slowdown -- and the picture comes
+   out perfectly correct, so the only symptom is a frame rate. This costs one
+   flag test per draw, which is nothing next to what it catches, so it stays in
+   release builds. Reported once; after that the flag just suppresses repeats. */
+static void wpreview_warn_memory_bitmap(ALLEGRO_BITMAP *bmp)
+{
+   static int warned = 0;
+
+   if (warned || bmp == NULL)
+      return;
+   if (!(al_get_bitmap_flags(bmp) & ALLEGRO_MEMORY_BITMAP))
+      return;
+
+   warned = 1;
+   fprintf(stderr,
+           "render: WARNING -- drawing a MEMORY bitmap into the map. Allegro "
+           "locks the render target for every such sprite; expect a fraction "
+           "of a frame per second. A sprite loaded before the display existed "
+           "and never promoted is the usual cause.\n");
+   fflush(stderr);
+}
+
 #ifdef DS1EDIT_PERF_LOG
 static int _draw_call_count = 0;
 static double _draw_call_total_ms = 0;
@@ -207,7 +231,10 @@ static void wpreview_draw_bitmap(ALLEGRO_BITMAP *bmp, int x, int y)
       if (dt > _draw_call_max_ms)
          _draw_call_max_ms = dt;
       if (bmp && (al_get_bitmap_flags(bmp) & ALLEGRO_MEMORY_BITMAP))
+      {
          _draw_call_mem_count++;
+         wpreview_warn_memory_bitmap(bmp);
+      }
    }
 }
 #else
@@ -215,6 +242,7 @@ static void wpreview_draw_bitmap(ALLEGRO_BITMAP *bmp, int x, int y)
 {
    /* All zoom levels use 1:1 bitmaps scaled by GPU */
    int mul = 1, div = 1;
+   wpreview_warn_memory_bitmap(bmp);
    if (glb_ds1edit.has_loaded_ds1)
    {
       mul = glb_ds1[glb_ds1edit.ds1_group_idx].height_mul;

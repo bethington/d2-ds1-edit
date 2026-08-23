@@ -1159,6 +1159,35 @@ int dcc_make_frames(DCC_S * dcc, int d)
                   nb_bit = 2;
 
                // fill FRAME cell with pixels
+               //
+               // Select the target and take the write lock once for the whole
+               // cell. This used a5_putpixel, which switches the target twice
+               // per pixel; once a display exists al_create_bitmap hands out
+               // video bitmaps, and then every one of those pixels costs its
+               // own texture lock. anim_update_gfx() runs at runtime as well
+               // as at startup -- see editor/objects.c -- so this path really
+               // does meet video bitmaps. dt1_all_zoom_make() measured the
+               // same mistake at ~280 ms per block against ~0.4 ms locked.
+               //
+               // have_bmp stands in for the NULL check a5_putpixel used to do
+               // per pixel: dcc_make_frame_cells() does not check the
+               // al_create_sub_bitmap that fills in cell->bmp, so it really can
+               // be NULL, and al_set_target_bitmap(NULL) is not survivable the
+               // way a skipped putpixel was. The bitstream still has to be read
+               // either way -- skipping the reads would desynchronise every
+               // frame after this one.
+               {
+                  ALLEGRO_BITMAP *prev_target = al_get_target_bitmap();
+                  ALLEGRO_LOCKED_REGION *cell_lock = NULL;
+                  int have_bmp = (cell->bmp != NULL);
+
+                  if (have_bmp)
+                  {
+                     al_set_target_bitmap(cell->bmp);
+                     cell_lock = al_lock_bitmap(cell->bmp, ALLEGRO_PIXEL_FORMAT_ANY,
+                                                ALLEGRO_LOCK_READWRITE);
+                  }
+
                for (y=0; y < cell->h; y++)
                {
                   for (x=0; x < cell->w; x++)
@@ -1172,10 +1201,19 @@ int dcc_make_frames(DCC_S * dcc, int d)
                            "curr_cell %i\n",
                         d, pbe->frame, pbe->frame_cell_index);
                         strcat(dcc_error, add_error);
+                        if (cell_lock != NULL)
+                           al_unlock_bitmap(cell->bmp);
+                        al_set_target_bitmap(prev_target);
                         return 1;
                      }
-                     a5_putpixel(cell->bmp, x, y, pbe->val[pix]);
+                     if (have_bmp)
+                        al_put_pixel(x, y, pal_color(pbe->val[pix]));
                   }
+               }
+
+                  if (cell_lock != NULL)
+                     al_unlock_bitmap(cell->bmp);
+                  al_set_target_bitmap(prev_target);
                }
             }
 

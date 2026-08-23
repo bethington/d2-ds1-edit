@@ -10,12 +10,56 @@
 
 
 // ==========================================================================
+// Select `dst` and hold a write lock across a whole frame decode.
+//
+// These decoders used a5_putpixel, which switches the target bitmap twice per
+// pixel. Against a memory bitmap that is merely wasteful; against a video
+// bitmap -- which is what al_create_bitmap hands out once a display exists --
+// every pixel takes its own texture lock and a frame costs hundreds of
+// milliseconds. dt1_all_zoom_make() measured the same mistake at ~280 ms per
+// block versus ~0.4 ms locked, so do here what it does there.
+//
+// Re-entrant by design: a caller that already holds a lock on `dst` keeps it,
+// and we neither take nor release a second one.
+typedef struct DC6_PIXEL_TARGET_S
+{
+   ALLEGRO_BITMAP * prev_target;
+   int              locked_here;
+} DC6_PIXEL_TARGET_S;
+
+static void dc6_pixel_target_begin(DC6_PIXEL_TARGET_S * pt, ALLEGRO_BITMAP * dst)
+{
+   pt->prev_target = al_get_target_bitmap();
+   pt->locked_here = 0;
+
+   al_set_target_bitmap(dst);
+
+   if (!al_is_bitmap_locked(dst))
+      pt->locked_here = (al_lock_bitmap(dst, ALLEGRO_PIXEL_FORMAT_ANY,
+                                        ALLEGRO_LOCK_READWRITE) != NULL);
+}
+
+static void dc6_pixel_target_end(DC6_PIXEL_TARGET_S * pt, ALLEGRO_BITMAP * dst)
+{
+   if (pt->locked_here)
+      al_unlock_bitmap(dst);
+
+   al_set_target_bitmap(pt->prev_target);
+}
+
+
+// ==========================================================================
 void dc6_decomp_norm(void * src, ALLEGRO_BITMAP * dst, long size, int x0, int y0)
 {
    UBYTE * ptr = (UBYTE *) src;
    long  i;
    int   i2, x=x0, y=y0, c, c2;
-   
+   DC6_PIXEL_TARGET_S pt;
+
+   if (dst == NULL)
+      return;
+
+   dc6_pixel_target_begin(& pt, dst);
 
    for (i=0; i<size; i++)
    {
@@ -34,11 +78,13 @@ void dc6_decomp_norm(void * src, ALLEGRO_BITMAP * dst, long size, int x0, int y0
          {
             c2 = * (ptr ++);
             i++;
-            a5_putpixel(dst, x, y, c2);
+            al_put_pixel(x, y, pal_color(c2));
             x++;
          }
       }
    }
+
+   dc6_pixel_target_end(& pt, dst);
 }
 
 
@@ -50,7 +96,12 @@ void dc6_decomp_cmap(void * src, ALLEGRO_BITMAP * dst, long size, int x0, int y0
    UBYTE * ptr = (UBYTE *) src;
    long  i;
    int   i2, x=x0, y=y0, c, c2;
-   
+   DC6_PIXEL_TARGET_S pt;
+
+   if (dst == NULL)
+      return;
+
+   dc6_pixel_target_begin(& pt, dst);
 
    for (i=0; i<size; i++)
    {
@@ -69,11 +120,13 @@ void dc6_decomp_cmap(void * src, ALLEGRO_BITMAP * dst, long size, int x0, int y0
          {
             c2 = * (ptr ++);
             i++;
-            a5_putpixel(dst, x, y, cmap[c2]);
+            al_put_pixel(x, y, pal_color(cmap[c2]));
             x++;
          }
       }
    }
+
+   dc6_pixel_target_end(& pt, dst);
 }
 
 

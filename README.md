@@ -202,7 +202,29 @@ The editor prints the driver it ended up on at startup, so check `stderr.txt`
 
 ```text
 display: 2560x1440, OpenGL driver
+display: renderer "NVIDIA GeForce RTX 5060 Ti/PCIe/SSE2", vendor "NVIDIA Corporation"
 ```
+
+**The editor draws correctly but at well under one frame per second.** The map
+is right, the mouse works, nothing is in the logs except a very small number in
+the `[perf]` block.
+
+That is almost always the GPU not being used at all, and the `renderer` line
+above says so. Two cases:
+
+- **`renderer "GDI Generic"`** (or `llvmpipe` / `swrast` on Linux) is a software
+  rasterizer, not a GPU. The editor now warns about this by name. It means no
+  vendor driver is installed, or the OpenGL context could not reach the card --
+  a remote desktop session is the usual reason. Install the graphics vendor's
+  driver and run on the machine's own console.
+- **The renderer names an integrated chip** (`Intel(R) UHD Graphics`, say) on a
+  laptop that also has a discrete card. The executable asks for the discrete GPU
+  on both NVIDIA and AMD, but a per-application setting can override that: check
+  NVIDIA Control Panel → Manage 3D Settings → Program Settings (or the Windows
+  Graphics settings page) and set `ds1edit.exe` to the high-performance GPU.
+
+The `[perf]` block splits `render` from `present`, which narrows it further: time
+in `render` is compositing the map, time in `present` is `al_flip_display`.
 
 ## Project Structure
 
