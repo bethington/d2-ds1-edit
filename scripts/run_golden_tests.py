@@ -255,6 +255,9 @@ def parse_args(argv=None):
     parser.add_argument("--artifacts-dir", default=ARTIFACTS_DIR,
                         help="each run gets a new subdirectory here "
                              "(default: tmp/golden-runs)")
+    parser.add_argument("--allow-mod", action="store_true",
+                        help="do not fail a case whose renderer log shows "
+                             "Project Diablo 2 archives in use")
     parser.set_defaults(timeout=RENDER_TIMEOUT_S)
     options = parser.parse_args(argv)
     if options.maps and options.mode:
@@ -298,8 +301,22 @@ def _new_run_dir(artifacts_dir):
     return Path(tempfile.mkdtemp(prefix=f"run-{stamp}-", dir=artifacts_dir))
 
 
+def mod_data_evidence(*streams):
+    """The first renderer log line showing Project Diablo 2 archives in use,
+    or None. Matches the d2install summary line and any slot line naming a
+    ProjectD2 folder; the "found at ... not used" line does not match."""
+    for text in streams:
+        for line in (text or "").splitlines():
+            low = line.lower()
+            if "project diablo 2 data from" in low:
+                return line.strip()
+            if "slot " in low and "projectd2" in low:
+                return line.strip()
+    return None
+
+
 def _run_one(name, case_dir, exe, assets_dir, golden_dir, tolerance, update,
-             timeout_s):
+             timeout_s, allow_mod=False):
     """Run a single case. Returns (status, reason, artifacts)."""
     artifacts = {}
     golden_png = golden_dir / f"{name}.png"
@@ -342,6 +359,12 @@ def _run_one(name, case_dir, exe, assets_dir, golden_dir, tolerance, update,
         if actual_bmp.exists():
             artifacts["actual"] = str(actual_bmp)   # whatever it wrote
         return "failed", result.reason, artifacts
+    if not allow_mod:
+        evidence = mod_data_evidence(result.stdout, result.stderr)
+        if evidence:
+            return ("failed", f"renderer used Project Diablo 2 data, not "
+                              f"vanilla ({evidence}); set use_pd2 = no in the "
+                              f"renderer's ini or pass --allow-mod", artifacts)
 
     actual_png = Path(bmp_to_png_path(str(actual_bmp)))
     actual_bmp.unlink()
@@ -430,6 +453,7 @@ def run_suite(names, options):
     update = getattr(options, "update", False)
     timeout_s = getattr(options, "timeout", RENDER_TIMEOUT_S)
     artifacts_dir = getattr(options, "artifacts_dir", None)
+    allow_mod = getattr(options, "allow_mod", False)
 
     with contextlib.ExitStack() as stack:
         if artifacts_dir:
@@ -443,7 +467,7 @@ def run_suite(names, options):
             try:
                 status, reason, artifacts = _run_one(
                     name, case_dir, exe, assets_dir, golden_dir, tolerance,
-                    update, timeout_s)
+                    update, timeout_s, allow_mod)
             except Exception as e:
                 status, reason, artifacts = (
                     "failed", f"internal error: {type(e).__name__}: {e}", {})

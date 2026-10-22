@@ -499,6 +499,48 @@ class SuiteSelectionTests(SuiteCase):
         self.assertEqual(Path(runner.parse_args([]).exe).name, expected)
 
 
+class ModDataTests(SuiteCase):
+    """A vanilla golden render must not silently use Project Diablo 2 data."""
+
+    PD2_OUT = ("d2install: slot 0 -> C:/Diablo2/ProjectD2/pd2data.mpq\n"
+               "d2install: Project Diablo 2 data from <C:/Diablo2/ProjectD2> "
+               "(use_pd2=auto, found via Uninstall)\n")
+
+    def run_pd2(self, *extra, stdout=PD2_OUT, stderr=""):
+        self.add_map("act1_town")
+        return self.run_main("act1_town", *extra,
+                             renderer=fake_renderer(stdout=stdout, stderr=stderr))
+
+    def test_pd2_in_stdout_fails_the_case_with_a_clear_reason(self):
+        code, _ = self.run_pd2()
+        self.assertEqual(code, 1)
+        case = self.summary["cases"][0]
+        self.assertEqual(case["status"], "failed")
+        self.assertIn("Project Diablo 2", case["reason"])
+        self.assertIn("--allow-mod", case["reason"])
+
+    def test_pd2_slot_line_alone_in_stderr_fails(self):
+        code, _ = self.run_pd2(
+            stdout="ok",
+            stderr="d2install: slot 1 -> D:/x/projectd2/pd2maps.mpq\n")
+        self.assertEqual(code, 1)
+        self.assertEqual(self.summary["cases"][0]["status"], "failed")
+
+    def test_allow_mod_lets_it_pass(self):
+        code, _ = self.run_pd2("--allow-mod")
+        self.assertEqual(code, 0)
+        self.assertEqual(self.summary["cases"][0]["status"], "passed")
+
+    def test_vanilla_output_passes(self):
+        code, _ = self.run_pd2(
+            stdout="d2install: vanilla Diablo II data from <F:/1.13c> "
+                   "(use_pd2=auto, no Project Diablo 2 found)\n"
+                   "d2install: Project Diablo 2 found at <C:/Diablo2/ProjectD2> "
+                   "but it belongs to <C:/Diablo2>; not used "
+                   "(set pd2_dir to use it)\n")
+        self.assertEqual(code, 0)
+
+
 class ArtifactAndUpdateTests(SuiteCase):
     """Task 3: failures leave evidence behind; references change only on an
     explicit, fully successful --update."""

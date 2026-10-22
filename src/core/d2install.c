@@ -322,6 +322,49 @@ int d2install_find_pd2(const D2INSTALL_ENV *env, const char *ini_dir,
    return 0;
 }
 
+static int path_eq(const char *a, const char *b)
+{
+#ifdef WIN32
+   return _stricmp(a, b) == 0;
+#else
+   return strcmp(a, b) == 0;
+#endif
+}
+
+// 1 if `pd2` is exactly "<d2_dir>\ProjectD2" (normalised, separators stripped).
+static int pd2_belongs_to(const char *d2_dir, const char *pd2)
+{
+   char base[D2INSTALL_PATH_MAX], want[D2INSTALL_PATH_MAX], have[D2INSTALL_PATH_MAX];
+   if (!copy_clean_dir(base, sizeof(base), d2_dir)
+       || !pd2_subdir(want, (int) sizeof(want), base)
+       || !copy_clean_dir(have, sizeof(have), pd2))
+      return 0;
+   return path_eq(want, have);
+}
+
+// "<dir>" with one trailing path component removed (the folder above ProjectD2).
+static void parent_dir(char *dst, size_t cap, const char *dir)
+{
+   size_t n;
+   snprintf(dst, cap, "%s", dir);
+   n = strlen(dst);
+   while (n > 0 && !DS1_IS_SEP(dst[n - 1])) n--;
+   if (n > 1 && !(n == 3 && dst[1] == ':')) n--;
+   dst[n] = 0;
+}
+
+void d2install_pd2_skipped_message(const D2INSTALL_RESULT *res, char *out, int cap)
+{
+   char owner[D2INSTALL_PATH_MAX];
+   if (out == NULL || cap < 1) return;
+   out[0] = 0;
+   if (res == NULL || res->pd2_skipped_dir[0] == 0) return;
+   parent_dir(owner, sizeof(owner), res->pd2_skipped_dir);
+   snprintf(out, (size_t) cap,
+            "d2install: Project Diablo 2 found at <%s> but it belongs to <%s>; "
+            "not used (set pd2_dir to use it)\n", res->pd2_skipped_dir, owner);
+}
+
 void d2install_resolve(const D2INSTALL_ENV *env, const D2INSTALL_CONFIG *cfg,
                        D2INSTALL_RESULT *out)
 {
@@ -350,8 +393,32 @@ void d2install_resolve(const D2INSTALL_ENV *env, const D2INSTALL_CONFIG *cfg,
    // Project Diablo 2 overlay, searched before everything above.
    if (cfg->use_pd2 != D2_USE_PD2_NO)
    {
-      if (d2install_find_pd2(env, cfg->pd2_dir, out->d2_dir, out->pd2_dir,
-                             sizeof(out->pd2_dir), &out->pd2_source))
+      int found = d2install_find_pd2(env, cfg->pd2_dir, out->d2_dir, out->pd2_dir,
+                                     sizeof(out->pd2_dir), &out->pd2_source);
+
+      // Only an explicit pd2_dir may point outside the selected install.
+      if (found && out->pd2_source != D2SRC_INI && out->d2_dir[0] != 0
+          && !pd2_belongs_to(out->d2_dir, out->pd2_dir))
+      {
+         char base[D2INSTALL_PATH_MAX];
+         snprintf(out->pd2_skipped_dir, sizeof(out->pd2_skipped_dir), "%s", out->pd2_dir);
+         out->pd2_dir[0] = 0;
+         out->pd2_source = D2SRC_NONE;
+         found = 0;
+         // The Uninstall entry was someone else's; the sibling may still be ours.
+         if (copy_clean_dir(base, sizeof(base), out->d2_dir)
+             && pd2_subdir(out->pd2_dir, (int) sizeof(out->pd2_dir), base)
+             && env_dir_has_pd2(env, out->pd2_dir))
+         {
+            out->pd2_source = D2SRC_SIBLING;
+            found = 1;
+            out->pd2_skipped_dir[0] = 0;
+         }
+         else
+            out->pd2_dir[0] = 0;
+      }
+
+      if (found)
       {
          out->pd2_active = 1;
          for (i = 0; i < MAX_PD2_MPQ; i++)
@@ -578,6 +645,12 @@ int d2install_resolve_mpqs(void)
       glb_config.mpq_file[i] = buf;
       filled++;
       fprintf(stdout, "d2install: slot %d -> %s\n", i, buf);
+   }
+
+   {
+      char skipped[1400];
+      d2install_pd2_skipped_message(res, skipped, sizeof(skipped));
+      if (skipped[0] != 0) say("%s", skipped);
    }
 
    if (res->pd2_active)

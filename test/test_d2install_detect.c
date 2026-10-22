@@ -490,20 +490,86 @@ void test_resolve_with_no_install_at_all_is_empty(void)
    TEST_ASSERT_FALSE(r.pd2_active);
 }
 
-void test_resolve_pd2_via_uninstall_when_it_is_not_next_to_d2(void)
+void test_resolve_uninstall_pd2_under_a_different_install_is_not_used(void)
+{
+   FAKE f; D2INSTALL_ENV e; D2INSTALL_CONFIG c; D2INSTALL_RESULT r;
+   char msg[1400];
+   int i;
+   memset(&f, 0, sizeof(f));
+   fk_add(&f, "F:/VC/LoD/1.13c/d2data.mpq");
+   fk_add(&f, "C:/Diablo2/ProjectD2/pd2data.mpq");
+   fk_un(&f, D2REG_HKLM_WOW64, "Project Diablo 2", "C:/Diablo2/");
+   e = fk_env(&f, 1);
+   memset(&c, 0, sizeof(c));
+   c.d2_install = "F:/VC/LoD/1.13c";
+   d2install_resolve(&e, &c, &r);
+   TEST_ASSERT_FALSE(r.pd2_active);
+   TEST_ASSERT_FALSE(r.pd2_required_missing);
+   TEST_ASSERT_EQUAL_STRING(norm("C:/Diablo2/ProjectD2"), r.pd2_skipped_dir);
+   for (i = 0; i < MAX_PD2_MPQ; i++)
+      TEST_ASSERT_EQUAL_STRING("", r.mpq[i]);
+   expect_chain(&r, MPQ_SLOT_D2DATA, "F:/VC/LoD/1.13c/d2data.mpq");
+
+   d2install_pd2_skipped_message(&r, msg, sizeof(msg));
+   TEST_ASSERT_NOT_NULL(strstr(msg, "d2install: Project Diablo 2 found at <"));
+   TEST_ASSERT_NOT_NULL(strstr(msg, "ProjectD2> but it belongs to <"));
+   TEST_ASSERT_NOT_NULL(strstr(msg, "Diablo2>; not used (set pd2_dir to use it)"));
+
+   c.use_pd2 = D2_USE_PD2_YES;           /* required + only a foreign one: error */
+   d2install_resolve(&e, &c, &r);
+   TEST_ASSERT_FALSE(r.pd2_active);
+   TEST_ASSERT_TRUE(r.pd2_required_missing);
+}
+
+void test_resolve_uninstall_pd2_under_the_selected_install_is_used(void)
 {
    FAKE f; D2INSTALL_ENV e; D2INSTALL_CONFIG c; D2INSTALL_RESULT r;
    memset(&f, 0, sizeof(f));
-   f.hklm = "C:\\Diablo2";
-   fk_add(&f, "C:\\Diablo2\\d2data.mpq");
-   fk_add(&f, "D:\\Games\\PD2\\ProjectD2\\pd2data.mpq");
-   fk_un(&f, D2REG_HKCU, "Project Diablo 2", "D:\\Games\\PD2\\");
+   fk_add(&f, "C:/Diablo2/d2data.mpq");
+   fk_add(&f, "C:/Diablo2/ProjectD2/pd2data.mpq");
+   fk_un(&f, D2REG_HKCU, "Project Diablo 2", "c:/diablo2/");   /* case differs */
    e = fk_env(&f, 1);
    memset(&c, 0, sizeof(c));
+   c.d2_install = "C:/Diablo2/";
    d2install_resolve(&e, &c, &r);
    TEST_ASSERT_TRUE(r.pd2_active);
    TEST_ASSERT_EQUAL_INT(D2SRC_UNINSTALL, r.pd2_source);
-   expect_chain(&r, 0, "D:\\Games\\PD2\\ProjectD2\\pd2data.mpq");
+   TEST_ASSERT_EQUAL_STRING("", r.pd2_skipped_dir);
+   expect_chain(&r, 0, "C:/Diablo2/ProjectD2/pd2data.mpq");
+}
+
+void test_resolve_explicit_pd2_dir_may_belong_to_another_install(void)
+{
+   FAKE f; D2INSTALL_ENV e; D2INSTALL_CONFIG c; D2INSTALL_RESULT r;
+   memset(&f, 0, sizeof(f));
+   fk_add(&f, "F:/VC/d2data.mpq");
+   fk_add(&f, "D:/Games/PD2/ProjectD2/pd2data.mpq");
+   e = fk_env(&f, 1);
+   memset(&c, 0, sizeof(c));
+   c.d2_install = "F:/VC";
+   c.pd2_dir = "D:/Games/PD2/ProjectD2";
+   d2install_resolve(&e, &c, &r);
+   TEST_ASSERT_TRUE(r.pd2_active);
+   TEST_ASSERT_EQUAL_INT(D2SRC_INI, r.pd2_source);
+   TEST_ASSERT_EQUAL_STRING("", r.pd2_skipped_dir);
+   expect_chain(&r, 0, "D:/Games/PD2/ProjectD2/pd2data.mpq");
+}
+
+void test_resolve_foreign_uninstall_pd2_still_lets_the_sibling_win(void)
+{
+   FAKE f; D2INSTALL_ENV e; D2INSTALL_CONFIG c; D2INSTALL_RESULT r;
+   memset(&f, 0, sizeof(f));
+   fk_add(&f, "F:/VC/d2data.mpq");
+   fk_add(&f, "F:/VC/ProjectD2/pd2data.mpq");
+   fk_add(&f, "C:/Diablo2/ProjectD2/pd2data.mpq");
+   fk_un(&f, D2REG_HKLM_NATIVE, "Project Diablo 2", "C:/Diablo2");
+   e = fk_env(&f, 1);
+   memset(&c, 0, sizeof(c));
+   c.d2_install = "F:/VC";
+   d2install_resolve(&e, &c, &r);
+   TEST_ASSERT_TRUE(r.pd2_active);
+   TEST_ASSERT_EQUAL_INT(D2SRC_SIBLING, r.pd2_source);
+   expect_chain(&r, 0, "F:/VC/ProjectD2/pd2data.mpq");
 }
 
 int main(void)
@@ -530,6 +596,9 @@ int main(void)
    RUN_TEST(test_resolve_explicit_ini_archives_are_left_to_the_ini);
    RUN_TEST(test_resolve_ini_d2_install_wins_over_detection);
    RUN_TEST(test_resolve_with_no_install_at_all_is_empty);
-   RUN_TEST(test_resolve_pd2_via_uninstall_when_it_is_not_next_to_d2);
+   RUN_TEST(test_resolve_uninstall_pd2_under_a_different_install_is_not_used);
+   RUN_TEST(test_resolve_uninstall_pd2_under_the_selected_install_is_used);
+   RUN_TEST(test_resolve_explicit_pd2_dir_may_belong_to_another_install);
+   RUN_TEST(test_resolve_foreign_uninstall_pd2_still_lets_the_sibling_win);
    return UNITY_END();
 }

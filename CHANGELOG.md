@@ -13,7 +13,9 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
   `Diablo II` Uninstall entry (HKCU, HKLM, WOW6432Node), then common folders.
   Trailing slashes are normalised and an invalid registry path falls through to
   the next step. Project Diablo 2 is found from `pd2_dir`, its Uninstall entry
-  or the `ProjectD2` folder next to Diablo II. New `use_pd2 = auto | yes | no`
+  or the `ProjectD2` folder next to Diablo II; an automatically found PD2 is
+  used only when it lives in the selected Diablo II install (otherwise startup
+  logs that it was not used), while an explicit `pd2_dir` always applies. New `use_pd2 = auto | yes | no`
   (default `auto`): when PD2 is in use its archives (`pd2data`, `pd2maps`,
   `pd2assets`, `pd2monchars`, `ProjectD2\patch_d2`) are searched after `mod_dir`
   and before `patch_d2`, `d2exp`, `d2data`, `d2char`. Startup logs which data

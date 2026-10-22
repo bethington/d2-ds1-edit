@@ -74,6 +74,9 @@ typedef struct D2INSTALL_RESULT
    D2INSTALL_SRC pd2_source;
    int           pd2_active;                    /* PD2 archives in the chain */
    int           pd2_required_missing;          /* use_pd2=yes, not found  */
+   /* "" or the PD2 folder found automatically but left unused because it
+    * belongs to a different Diablo II install than d2_dir. */
+   char          pd2_skipped_dir[D2INSTALL_PATH_MAX];
    /* Chain slots to fill, indexed like glb_config.mpq_file[]. "" = leave
     * the slot alone (not found, or the ini set it explicitly). */
    char          mpq[MAX_MPQ_FILE][D2INSTALL_PATH_MAX];
@@ -98,9 +101,18 @@ int d2install_find_pd2(const D2INSTALL_ENV *env, const char *ini_dir,
                        const char *d2_dir, char *out, int out_cap,
                        D2INSTALL_SRC *src);
 
-/* The pure resolver: install, PD2 and the ordered archive list. */
+/* The pure resolver: install, PD2 and the ordered archive list. An
+ * automatically found PD2 (Uninstall entry or sibling folder) is used only
+ * when its folder is "<d2_dir>\ProjectD2"; one belonging to another install
+ * is reported in pd2_skipped_dir and not used. An explicit pd2_dir is always
+ * honoured. */
 void d2install_resolve(const D2INSTALL_ENV *env, const D2INSTALL_CONFIG *cfg,
                        D2INSTALL_RESULT *out);
+
+/* The "Project Diablo 2 found at <dir> but it belongs to <other install>; not
+ * used (set pd2_dir to use it)" log line for res->pd2_skipped_dir, or "" when
+ * nothing was skipped. */
+void d2install_pd2_skipped_message(const D2INSTALL_RESULT *res, char *out, int cap);
 
 /* Production environment (registry on Windows; file probing everywhere). */
 const D2INSTALL_ENV *d2install_real_env(void);
