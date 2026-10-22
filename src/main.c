@@ -471,6 +471,7 @@ void ds1edit_init(void)
    glb_ds1edit.cmd_line.headless_mode = FALSE;
    glb_ds1edit.cmd_line.selftest_frames = 0;
    glb_ds1edit.cmd_line.selftest_shot = NULL;
+   glb_ds1edit.cmd_line.selftest_report = NULL;
    glb_ds1edit.cmd_line.switchbench_group = -1;
    glb_ds1edit.cmd_line.switchbench_count = 0;
    glb_ds1edit.cmd_line.headless_output = NULL;
@@ -935,6 +936,13 @@ void ds1edit_load_palettes(void)
 
 static void ds1edit_report_display_driver(ALLEGRO_DISPLAY *d);
 
+char glb_display_driver[200] = "unknown";
+
+const char *ds1edit_build_identity(void)
+{
+   return DS1EDIT_VERSION_STR " (" DS1EDIT_BUILD_MODE ")";
+}
+
 // ==========================================================================
 // Create the display, settling for less if the preferred mode is refused.
 //
@@ -1032,6 +1040,7 @@ static void ds1edit_report_display_driver(ALLEGRO_DISPLAY *d)
    else
       driver = "unknown";
 
+   snprintf(glb_display_driver, sizeof(glb_display_driver), "%s", driver);
    fprintf(stderr,
            "display: %ix%i, %s driver%s\n",
            al_get_display_width(d), al_get_display_height(d), driver,
@@ -1050,6 +1059,8 @@ static void ds1edit_report_display_driver(ALLEGRO_DISPLAY *d)
       vendor   = (const char *) glGetString(GL_VENDOR);
       renderer = (const char *) glGetString(GL_RENDERER);
 
+      snprintf(glb_display_driver, sizeof(glb_display_driver), "%s: %s",
+               driver, renderer ? renderer : "?");
       fprintf(stderr, "display: renderer \"%s\", vendor \"%s\"\n",
               renderer ? renderer : "?", vendor ? vendor : "?");
 
@@ -1070,6 +1081,152 @@ static void ds1edit_report_display_driver(ALLEGRO_DISPLAY *d)
 }
 
 
+/* Put every long-lived bitmap back on the GPU. Called once after the display
+   is created and again after DISPLAY_FOUND: a lost device (fullscreen switch,
+   driver reset, Direct3D alt-tab) can leave bitmaps in system memory, and a
+   MEMORY bitmap drawn onto a video target is a thousand-fold slowdown that still
+   renders a correct picture. */
+void ds1edit_restore_gpu_bitmaps(void)
+{
+   /* a5_font (al_create_builtin_font, top of main) was made before any
+      display, so its glyphs are MEMORY bitmaps flagged ALLEGRO_CONVERT_BITMAP.
+      The OpenGL driver converts those when the display appears; Direct3D,
+      whose display lives on its own thread, does not -- so every HUD glyph
+      went through the software blitter, which locks the whole D3D backbuffer
+      per glyph: ~2.5 s a frame, 0.4 FPS, on any map. Convert them by hand. */
+   al_convert_memory_bitmaps();
+
+   // Promote the hot render surfaces and cached DT1 tiles to display bitmaps
+   // so repeated tile blits stay on the GPU.
+   al_set_new_bitmap_flags(ALLEGRO_VIDEO_BITMAP);
+   ds1edit_recreate_render_targets();
+   if (a5_current_palette != NULL)
+      dt1_rebuild_bitmaps_from_cache(a5_current_palette);
+
+   // Promote animation bitmaps (DCC/DC6 object sprites) from MEMORY to VIDEO.
+   // anim_update_gfx() ran before display existed, so all sprites are memory bitmaps.
+   {
+      int oi, li, fi;
+      int promoted = 0, total = 0;
+      for (oi = 0; oi < glb_ds1edit.obj_desc_num; oi++)
+      {
+         COF_S *cof = glb_ds1edit.obj_desc[oi].cof;
+         if (cof == NULL)
+            continue;
+         for (li = 0; li < COMPOSIT_NB; li++)
+         {
+            LAY_INF_S *lay = &cof->lay_inf[li];
+            if (lay->bmp == NULL)
+               continue;
+            for (fi = 0; fi < lay->bmp_num; fi++)
+            {
+               ALLEGRO_BITMAP *old_bmp = lay->bmp[fi];
+               if (old_bmp == NULL)
+                  continue;
+               total++;
+               if (al_get_bitmap_flags(old_bmp) & ALLEGRO_MEMORY_BITMAP)
+               {
+                  ALLEGRO_BITMAP *new_bmp = al_clone_bitmap(old_bmp);
+                  if (new_bmp != NULL)
+                  {
+                     al_destroy_bitmap(old_bmp);
+                     lay->bmp[fi] = new_bmp;
+                     promoted++;
+                  }
+               }
+            }
+         }
+      }
+   }
+
+   /* The font cannot be promoted by cloning, so confirm the conversion took
+      once here instead of testing every glyph draw. */
+   a5_gpu_guard_font(a5_font, "a5_font");
+}
+
+/* Free the editor's GPU bitmaps while the display still exists. If they are
+   still alive when al_destroy_display runs, the Direct3D driver converts every
+   video bitmap to a memory bitmap first (d3d_destroy_display_internals ->
+   _al_convert_to_memory_bitmap), and OpenGL tears each one down through the
+   context -- seconds, with tens of thousands of tile and sprite bitmaps. Every
+   pointer is cleared as it is freed so ds1edit_exit() cannot free it twice
+   (its old "al_destroy_bitmap corrupts the heap" note was exactly that). */
+static void ds1edit_release_gpu_bitmaps(void)
+{
+   int i, z, b, oi, li, fi, k;
+
+   if (glb_dt1 != NULL)
+   {
+      for (i = 0; i < DT1_MAX; i++)
+      {
+         for (z = 0; z < ZM_MAX; z++)
+         {
+            if (glb_dt1[i].block_zoom[z] == NULL)
+               continue;
+            for (b = 0; b < glb_dt1[i].block_num; b++)
+            {
+               ALLEGRO_BITMAP **slot = glb_dt1[i].block_zoom[z] + b;
+               if (*slot != NULL)
+               {
+                  al_destroy_bitmap(*slot);
+                  *slot = NULL;
+               }
+            }
+         }
+      }
+   }
+
+   for (oi = 0; oi < glb_ds1edit.obj_desc_num; oi++)
+   {
+      COF_S *cof = glb_ds1edit.obj_desc[oi].cof;
+      if (cof == NULL)
+         continue;
+      for (li = 0; li < COMPOSIT_NB; li++)
+      {
+         LAY_INF_S *lay = &cof->lay_inf[li];
+         if (lay->bmp == NULL)
+            continue;
+         for (fi = 0; fi < lay->bmp_num; fi++)
+         {
+            if (lay->bmp[fi] != NULL)
+            {
+               al_destroy_bitmap(lay->bmp[fi]);
+               lay->bmp[fi] = NULL;
+            }
+         }
+      }
+   }
+
+   for (i = 0; i < MOD_MAX; i++)
+   {
+      if (glb_ds1edit.hw_cursor[i] != NULL)
+      {
+         al_destroy_mouse_cursor(glb_ds1edit.hw_cursor[i]);
+         glb_ds1edit.hw_cursor[i] = NULL;
+      }
+   }
+
+#define DS1_RELEASE_BMP(p) do { if ((p) != NULL) { al_destroy_bitmap(p); (p) = NULL; } } while (0)
+   for (z = 0; z < ZM_MAX; z++)
+      for (k = 0; k < 25; k++)
+      {
+         for (i = 0; i < 9; i++)
+            DS1_RELEASE_BMP(glb_ds1edit.subtile_flag[i][z][k]);
+         DS1_RELEASE_BMP(glb_ds1edit.subtile_nowalk[z][k]);
+         DS1_RELEASE_BMP(glb_ds1edit.subtile_nojump[z][k]);
+      }
+   /* screen_buff is a sub-bitmap of big_screen_buff: it goes first. */
+   DS1_RELEASE_BMP(glb_ds1edit.screen_buff);
+   DS1_RELEASE_BMP(glb_ds1edit.big_screen_buff);
+#undef DS1_RELEASE_BMP
+
+   if (a5_font != NULL)
+   {
+      al_destroy_font(a5_font);
+      a5_font = NULL;
+   }
+}
+
 // ==========================================================================
 // as expected, the start of the prog
 //
@@ -1082,6 +1239,7 @@ static void ds1edit_report_display_driver(ALLEGRO_DISPLAY *d)
 #ifdef __APPLE__
 static int ds1edit_main(int argc, char *argv[]);
 
+
 int main(int argc, char *argv[])
 {
    return al_run_main(argc, argv, ds1edit_main);
@@ -1093,6 +1251,7 @@ int main(int argc, char *argv[])
 #endif
 {
    int i, mpq_num = 0, mod_num = 0, ds1_idx = 0;
+   double shutdown_t0 = 0.0;
    char *ininame = DS1EDIT_INI_NAME;
    static char tmp[512];
    static char tmp2[512];
@@ -1757,56 +1916,7 @@ int main(int argc, char *argv[])
        (al_get_allegro_version() >> 8) & 0xFF);
    al_set_window_title(a5_display, tmp);
 
-   /* a5_font (al_create_builtin_font, top of main) was made before any
-      display, so its glyphs are MEMORY bitmaps flagged ALLEGRO_CONVERT_BITMAP.
-      The OpenGL driver converts those when the display appears; Direct3D,
-      whose display lives on its own thread, does not -- so every HUD glyph
-      went through the software blitter, which locks the whole D3D backbuffer
-      per glyph: ~2.5 s a frame, 0.4 FPS, on any map. Convert them by hand. */
-   al_convert_memory_bitmaps();
-
-   // Now that a display exists, promote the hot render surfaces and cached
-   // DT1 tiles to display bitmaps so repeated tile blits stay on the GPU.
-   al_set_new_bitmap_flags(ALLEGRO_VIDEO_BITMAP);
-   ds1edit_recreate_render_targets();
-   if (a5_current_palette != NULL)
-      dt1_rebuild_bitmaps_from_cache(a5_current_palette);
-
-   // Promote animation bitmaps (DCC/DC6 object sprites) from MEMORY to VIDEO.
-   // anim_update_gfx() ran before display existed, so all sprites are memory bitmaps.
-   {
-      int oi, li, fi;
-      int promoted = 0, total = 0;
-      for (oi = 0; oi < glb_ds1edit.obj_desc_num; oi++)
-      {
-         COF_S *cof = glb_ds1edit.obj_desc[oi].cof;
-         if (cof == NULL)
-            continue;
-         for (li = 0; li < COMPOSIT_NB; li++)
-         {
-            LAY_INF_S *lay = &cof->lay_inf[li];
-            if (lay->bmp == NULL)
-               continue;
-            for (fi = 0; fi < lay->bmp_num; fi++)
-            {
-               ALLEGRO_BITMAP *old_bmp = lay->bmp[fi];
-               if (old_bmp == NULL)
-                  continue;
-               total++;
-               if (al_get_bitmap_flags(old_bmp) & ALLEGRO_MEMORY_BITMAP)
-               {
-                  ALLEGRO_BITMAP *new_bmp = al_clone_bitmap(old_bmp);
-                  if (new_bmp != NULL)
-                  {
-                     al_destroy_bitmap(old_bmp);
-                     lay->bmp[fi] = new_bmp;
-                     promoted++;
-                  }
-               }
-            }
-         }
-      }
-   }
+   ds1edit_restore_gpu_bitmaps();
 
    // mouse (skip if already installed by area browser)
    if (!al_is_mouse_installed())
@@ -1909,13 +2019,18 @@ int main(int argc, char *argv[])
    interfac_user_handler(ds1_idx);
 
    // cleanup
+   shutdown_t0 = al_get_time();
    if (a5_tick_timer != NULL)
       al_destroy_timer(a5_tick_timer);
    if (a5_fps_timer != NULL)
       al_destroy_timer(a5_fps_timer);
    if (a5_event_queue != NULL)
       al_destroy_event_queue(a5_event_queue);
+   ds1edit_release_gpu_bitmaps();
    al_destroy_display(a5_display);
+   if (glb_ds1edit.cmd_line.selftest_frames > 0)
+      fprintf(stdout, "selftest: shutdown %.0f ms\n",
+              (al_get_time() - shutdown_t0) * 1000.0);
 
    // fclose(stdout);
    fflush(stdout);

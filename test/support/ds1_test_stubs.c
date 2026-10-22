@@ -93,6 +93,7 @@ int misc_increase_ds1_objects_max(int ds1_idx, long nb_objects)
 /* Drawing-side hooks reached only from interactive code paths
  * (editobj_handler / editobj_draw_edit_obj) that these tests do not drive. */
 void ds1edit_recreate_render_targets(void) { }
+void ds1edit_restore_gpu_bitmaps(void) { }
 
 void anim_update_gfx(int progress)
 {

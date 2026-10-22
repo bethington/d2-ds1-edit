@@ -7,6 +7,11 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
 
 ### Fixed
 
+- **The GPU path is guarded against silent slowdowns.** Every bitmap draw now
+  checks for a memory bitmap on a video target and warns once; `--selftest`
+  fails on any, and reports frame-time percentiles (`--selftest-report=`). The
+  display-lost/found events restore bitmaps to the GPU, and exit frees them
+  first (OpenGL exit 2.6 s to 0.14 s on a large map).
 - **Saving a map is safer.** A save now goes through a staging file, keeps a
   backup, and rolls back if anything fails. A failed save shows an error and
   leaves the editor open with your edits intact; it no longer ends the program.

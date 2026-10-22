@@ -82,6 +82,8 @@ static void perf_accumulate(double *total, double *max, double dt_ms)
       *max = dt_ms;
 }
 
+static void st_fold_sections(void);
+
 static void perf_print_summary(void)
 {
    double inv;
@@ -114,7 +116,189 @@ static void perf_print_summary(void)
            glb_perf_stats.ui_ms_total * inv, glb_perf_stats.ui_ms_max);
    fflush(stderr);
 
+   st_fold_sections();
    memset(&glb_perf_stats, 0, sizeof(glb_perf_stats));
+}
+
+/* ---- --selftest frame-time summary ------------------------------------
+   Per-frame render and present times are kept for the whole run so the report
+   can give percentiles, not just a mean that one slow frame hides. Section
+   totals are folded in from glb_perf_stats because perf_print_summary()
+   zeroes it periodically. */
+static double *st_render = NULL, *st_present = NULL;
+static int st_n = 0, st_cap = 0;
+static double st_t0 = 0.0;
+static int st_win_w = 0, st_win_h = 0;
+static double st_sec_total[9];
+static double st_sec_max[9];
+static const char *const st_sec_name[9] = {
+   "events", "input", "mouse_to_tile", "editobj", "anim",
+   "render", "present", "ui_other", "frame"};
+
+static void st_fold_sections(void)
+{
+   const PERF_STATS_S *p = &glb_perf_stats;
+   const double tot[9] = {p->event_ms_total, p->input_ms_total,
+      p->mouse_to_tile_ms_total, p->editobj_ms_total, p->anim_ms_total,
+      p->render_ms_total, p->present_ms_total, p->ui_ms_total, p->frame_ms_total};
+   const double mx[9] = {p->event_ms_max, p->input_ms_max,
+      p->mouse_to_tile_ms_max, p->editobj_ms_max, p->anim_ms_max,
+      p->render_ms_max, p->present_ms_max, p->ui_ms_max, p->frame_ms_max};
+   int i;
+
+   for (i = 0; i < 9; i++)
+   {
+      st_sec_total[i] += tot[i];
+      if (mx[i] > st_sec_max[i])
+         st_sec_max[i] = mx[i];
+   }
+}
+
+static void st_record(double render_ms, double present_ms)
+{
+   if (st_n == st_cap)
+   {
+      int cap = st_cap ? st_cap * 2 : 1024;
+      double *r = (double *)realloc(st_render, cap * sizeof(double));
+      double *q = (double *)realloc(st_present, cap * sizeof(double));
+      if (r != NULL)
+         st_render = r;
+      if (q != NULL)
+         st_present = q;
+      if (r == NULL || q == NULL)
+         return;   /* a short sample beats a crash in a test harness */
+      st_cap = cap;
+   }
+   st_render[st_n] = render_ms;
+   st_present[st_n] = present_ms;
+   st_n++;
+}
+
+static int st_cmp(const void *a, const void *b)
+{
+   double x = *(const double *)a, y = *(const double *)b;
+   return (x > y) - (x < y);
+}
+
+typedef struct { double avg, p50, p95, p99, max; } ST_DIST_S;
+
+static ST_DIST_S st_dist(const double *v, int n)
+{
+   ST_DIST_S d = {0, 0, 0, 0, 0};
+   double *c, sum = 0.0;
+   int i;
+
+   if (n <= 0)
+      return d;
+   c = (double *)malloc(n * sizeof(double));
+   if (c == NULL)
+      return d;
+   memcpy(c, v, n * sizeof(double));
+   qsort(c, n, sizeof(double), st_cmp);
+   for (i = 0; i < n; i++)
+      sum += c[i];
+   d.avg = sum / n;
+   d.p50 = c[(int)(0.50 * (n - 1) + 0.5)];
+   d.p95 = c[(int)(0.95 * (n - 1) + 0.5)];
+   d.p99 = c[(int)(0.99 * (n - 1) + 0.5)];
+   d.max = c[n - 1];
+   free(c);
+   return d;
+}
+
+static void st_json_string(FILE *f, const char *s)
+{
+   fputc('"', f);
+   for (; s != NULL && *s; s++)
+   {
+      if (*s == '"' || *s == '\\')
+      {
+         fputc('\\', f);
+         fputc(*s, f);
+      }
+      else if ((unsigned char)*s < 0x20)
+         fputc(' ', f);
+      else
+         fputc(*s, f);
+   }
+   fputc('"', f);
+}
+
+/* Prints the summary and, with --selftest-report, writes it as JSON. */
+static void st_report(int win_w, int win_h, double wall_s, int font_bad,
+                      const char *failure)
+{
+   ST_DIST_S r = st_dist(st_render, st_n);
+   ST_DIST_S pr = st_dist(st_present, st_n);
+   int i, slow = -1;
+   double slow_avg = 0.0;
+   const char *path = glb_ds1edit.cmd_line.selftest_report;
+   double fps = (wall_s > 0.0) ? st_n / wall_s : 0.0;
+
+   st_fold_sections();
+   for (i = 0; i < 8; i++)   /* "frame" is the sum, not a section */
+   {
+      double a = (st_n > 0) ? st_sec_total[i] / st_n : 0.0;
+      if (a > slow_avg)
+      {
+         slow_avg = a;
+         slow = i;
+      }
+   }
+
+   fprintf(stdout, "selftest: render avg %.2f ms/frame\n", r.avg);
+   fprintf(stdout,
+           "selftest: frames=%d wall_fps=%.1f window=%dx%d driver=\"%s\"\n",
+           st_n, fps, win_w, win_h, glb_display_driver);
+   fprintf(stdout,
+           "selftest: render ms avg %.2f p50 %.2f p95 %.2f p99 %.2f max %.2f\n",
+           r.avg, r.p50, r.p95, r.p99, r.max);
+   fprintf(stdout, "selftest: present ms avg %.2f max %.2f\n", pr.avg, pr.max);
+   if (slow >= 0)
+      fprintf(stdout, "selftest: slowest section %s avg %.2f ms\n",
+              st_sec_name[slow], slow_avg);
+   fprintf(stdout, "selftest: memory-bitmap draws=%u font_memory=%d\n",
+           a5_gpu_guard_hits, font_bad);
+
+   if (path != NULL)
+   {
+      FILE *f = fopen(path, "wt");
+      if (f == NULL)
+      {
+         fprintf(stdout, "selftest: could not write report %s\n", path);
+         return;
+      }
+      fprintf(f, "{\n  \"schema\": \"ds1edit.fps/1\",\n  \"build\": ");
+      st_json_string(f, ds1edit_build_identity());
+      fprintf(f, ",\n  \"driver\": ");
+      st_json_string(f, glb_display_driver);
+      fprintf(f, ",\n  \"window\": {\"width\": %d, \"height\": %d},\n",
+              win_w, win_h);
+      fprintf(f, "  \"frames\": %d,\n  \"wall_seconds\": %.4f,\n"
+                 "  \"wall_fps\": %.2f,\n", st_n, wall_s, fps);
+      fprintf(f, "  \"render_ms\": {\"avg\": %.4f, \"p50\": %.4f, "
+                 "\"p95\": %.4f, \"p99\": %.4f, \"max\": %.4f},\n",
+              r.avg, r.p50, r.p95, r.p99, r.max);
+      fprintf(f, "  \"present_ms\": {\"avg\": %.4f, \"max\": %.4f},\n",
+              pr.avg, pr.max);
+      if (slow >= 0)
+         fprintf(f, "  \"slowest_section\": {\"name\": \"%s\", "
+                    "\"avg_ms\": %.4f},\n", st_sec_name[slow], slow_avg);
+      else
+         fprintf(f, "  \"slowest_section\": null,\n");
+      fprintf(f, "  \"memory_bitmap_draws\": %u,\n"
+                 "  \"font_memory_bitmap\": %s,\n",
+              a5_gpu_guard_hits, font_bad ? "true" : "false");
+      fprintf(f, "  \"ok\": %s,\n  \"failure\": ", failure == NULL ? "true" : "false");
+      if (failure == NULL)
+         fprintf(f, "null\n}\n");
+      else
+      {
+         st_json_string(f, failure);
+         fprintf(f, "\n}\n");
+      }
+      fclose(f);
+   }
 }
 
 // ==========================================================================
@@ -685,6 +869,17 @@ void interfac_user_handler(int start_ds1_idx)
          misc_draw_screen(a5_mouse_x, a5_mouse_y);
       glb_ds1edit.fps++;
       selftest_render_ms += perf_now_ms() - section_start_ms - glb_present_ms;
+      if (glb_ds1edit.cmd_line.selftest_frames > 0)
+      {
+         if (st_n == 0)
+         {
+            st_t0 = al_get_time();
+            st_win_w = al_get_display_width(a5_display);
+            st_win_h = al_get_display_height(a5_display);
+         }
+         st_record(perf_now_ms() - section_start_ms - glb_present_ms,
+                   glb_present_ms);
+      }
       perf_accumulate(
           &glb_perf_stats.render_ms_total,
           &glb_perf_stats.render_ms_max,
@@ -2074,16 +2269,26 @@ void interfac_user_handler(int start_ds1_idx)
                Direct3D after it), both times at under 1 FPS. A healthy frame
                composes in about a millisecond; 250 ms is far above any real
                GPU or software renderer and far below the collapse. */
-            fprintf(stdout, "selftest: render avg %.2f ms/frame\n",
-                    selftest_render_ms / selftest_rendered);
-            if (selftest_render_ms / selftest_rendered > 250.0)
             {
-               fprintf(stdout,
-                       "selftest: FAIL -- composing a frame averaged over "
-                       "250 ms; something drawn every frame is probably a "
-                       "MEMORY bitmap\n");
-               fflush(stdout);
-               exit(1);
+               int font_bad = a5_gpu_guard_font(a5_font, "a5_font");
+               const char *failure = NULL;
+               double wall_s = al_get_time() - st_t0;
+
+               /* Verdict first, so the JSON report carries it. */
+               if (selftest_render_ms / selftest_rendered > 250.0)
+                  failure = "composing a frame averaged over 250 ms; something "
+                            "drawn every frame is probably a MEMORY bitmap";
+               if (a5_gpu_guard_hits > 0)
+                  failure = "a MEMORY bitmap was drawn onto a VIDEO target "
+                            "(see the render: WARNING line in stderr.txt)";
+
+               st_report(st_win_w, st_win_h, wall_s, font_bad, failure);
+               if (failure != NULL)
+               {
+                  fprintf(stdout, "selftest: FAIL -- %s\n", failure);
+                  fflush(stdout);
+                  exit(1);
+               }
             }
             fflush(stdout);
             done = TRUE;

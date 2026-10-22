@@ -508,6 +508,9 @@ typedef struct CMD_LINE_S
    /* --selftest-shot=<path>: save the final --selftest frame. The only way to
       see what the GUI path actually drew; NULL means do not save. */
    char        * selftest_shot;
+   /* --selftest-report=<path>: the frame-time summary as JSON (schema
+      "ds1edit.fps/1"). */
+   char        * selftest_report;
    int           switchbench_group;  /* group to switch within, -1 = off   */
    int           switchbench_count;  /* how many maps to cycle through     */
 

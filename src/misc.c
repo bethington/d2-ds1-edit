@@ -1674,6 +1674,20 @@ int misc_cmd_line_parse(int argc, char **argv)
          glb_ds1edit.cmd_line.switchbench_group = g;
          glb_ds1edit.cmd_line.switchbench_count = (n > 1) ? n : 3;
       }
+      else if (strnicmp(argv[i], "--selftest-report=", 18) == 0
+               || strnicmp(argv[i], "-selftest-report=", 17) == 0)
+      {
+         const char *eq = strchr(argv[i], '=');
+         glb_ds1edit.cmd_line.selftest_report =
+             (eq != NULL && eq[1] != 0) ? (char *) (eq + 1) : NULL;
+         if (glb_ds1edit.cmd_line.selftest_report == NULL)
+         {
+            printf("misc_cmd_line_parse(), error : --selftest-report needs a filename\n");
+            return -1;
+         }
+         if (glb_ds1edit.cmd_line.selftest_frames <= 0)
+            glb_ds1edit.cmd_line.selftest_frames = 30;
+      }
       else if (strnicmp(argv[i], "--selftest-shot=", 16) == 0
                || strnicmp(argv[i], "-selftest-shot=", 15) == 0)
       {

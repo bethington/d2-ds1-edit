@@ -52,4 +52,7 @@ void   misc_draw_screen                (int mx, int my);
 extern double glb_present_ms;
 int    misc_increase_ds1_objects_max   (int ds1_idx, long nb_objects);
 void   ds1edit_recreate_render_targets (void);
+void   ds1edit_restore_gpu_bitmaps (void);
+extern char glb_display_driver[200];       /* "Direct3D" / "OpenGL: <renderer>" */
+const char *ds1edit_build_identity (void); /* "<version> (<Debug|Release>)" */
 #endif

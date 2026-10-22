@@ -51,6 +51,39 @@ static inline ALLEGRO_COLOR pal_color(int index)
     );
 }
 
+/* ---- GPU draw guard ---- */
+/* Drawing a MEMORY bitmap onto a VIDEO target makes Allegro lock the whole
+ * target per draw -- a correct picture at a fraction of a frame per second.
+ * That has shipped three times, so every bitmap draw in the editor goes
+ * through a flag test (the macros below shadow the Allegro calls) and the
+ * first offender is named on stderr. a5_gpu_guard_hits is read by --selftest,
+ * which fails if it is nonzero. Cost: two flag reads per draw. */
+extern unsigned a5_gpu_guard_hits;
+void a5_gpu_guard_report(const char *what, const char *file, int line,
+                         const ALLEGRO_BITMAP *bmp);
+/* Check a font's glyph page once (after creation / after a display-found
+ * conversion) instead of per glyph. Returns nonzero if it is a MEMORY bitmap
+ * that a video target would have to lock for. */
+int a5_gpu_guard_font(const ALLEGRO_FONT *font, const char *name);
+
+static inline ALLEGRO_BITMAP *a5_gpu_guard(ALLEGRO_BITMAP *src, const char *what,
+                                           const char *file, int line)
+{
+    if (src != NULL && (al_get_bitmap_flags(src) & ALLEGRO_MEMORY_BITMAP))
+    {
+        ALLEGRO_BITMAP *dst = al_get_target_bitmap();
+        if (dst != NULL && !(al_get_bitmap_flags(dst) & ALLEGRO_MEMORY_BITMAP))
+            a5_gpu_guard_report(what, file, line, src);
+    }
+    return src;
+}
+
+#define al_draw_bitmap(b, x, y, f)     al_draw_bitmap(a5_gpu_guard((b), "al_draw_bitmap", __FILE__, __LINE__), (x), (y), (f))
+#define al_draw_tinted_bitmap(b, t, x, y, f)     al_draw_tinted_bitmap(a5_gpu_guard((b), "al_draw_tinted_bitmap", __FILE__, __LINE__), (t), (x), (y), (f))
+#define al_draw_bitmap_region(b, sx, sy, sw, sh, dx, dy, f)     al_draw_bitmap_region(a5_gpu_guard((b), "al_draw_bitmap_region", __FILE__, __LINE__), (sx), (sy), (sw), (sh), (dx), (dy), (f))
+#define al_draw_scaled_bitmap(b, sx, sy, sw, sh, dx, dy, dw, dh, f)     al_draw_scaled_bitmap(a5_gpu_guard((b), "al_draw_scaled_bitmap", __FILE__, __LINE__), (sx), (sy), (sw), (sh), (dx), (dy), (dw), (dh), (f))
+#define al_draw_tinted_scaled_bitmap(b, t, sx, sy, sw, sh, dx, dy, dw, dh, f)     al_draw_tinted_scaled_bitmap(a5_gpu_guard((b), "al_draw_tinted_scaled_bitmap", __FILE__, __LINE__), (t), (sx), (sy), (sw), (sh), (dx), (dy), (dw), (dh), (f))
+
 /* ---- Drawing helpers ---- */
 /* These wrap Allegro 5's target-bitmap model with a convenient
  * pass-dst-bitmap calling convention */

@@ -18,6 +18,7 @@ unsigned long a5_input_events;
 unsigned long a5_input_timer_events;
 
 static int input_resize_pending;
+static int input_display_lost;
 
 int input_properties_panel_owns_undo(int visible, int editing, int pending_count)
 {
@@ -37,6 +38,7 @@ void input_init(void)
    memset(a5_mb_hit, 0, sizeof(a5_mb_hit));
    a5_display_closed = 0;
    input_resize_pending = 0;
+   input_display_lost = 0;
    a5_input_frames = 0;
    a5_input_events = 0;
    a5_input_timer_events = 0;
@@ -135,6 +137,19 @@ void input_note_event(const ALLEGRO_EVENT *ev)
       input_resize_pending = 1;
       break;
 
+   case ALLEGRO_EVENT_DISPLAY_LOST:
+      /* Direct3D device loss: video bitmaps are gone until FOUND. Nothing to
+         do but remember it; Allegro stops presenting and the loop idles. */
+      input_display_lost = 1;
+      break;
+
+   case ALLEGRO_EVENT_DISPLAY_FOUND:
+      /* The device is back. Anything that fell back to system memory while it
+         was away is a silent slowdown, so promote it all again. */
+      input_display_lost = 0;
+      ds1edit_restore_gpu_bitmaps();
+      break;
+
    case ALLEGRO_EVENT_DISPLAY_SWITCH_OUT:
       /* The key-up for anything held right now will be delivered to whichever
          window takes focus, never to us. Forget it all rather than latch. */
@@ -166,6 +181,11 @@ void input_pump(void)
    }
 
    input_end_frame();
+}
+
+int input_display_is_lost(void)
+{
+   return input_display_lost;
 }
 
 int input_take_resize(void)
