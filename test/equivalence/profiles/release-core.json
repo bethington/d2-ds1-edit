@@ -1,0 +1,1015 @@
+{
+ "schema": "ds1edit.release-profile/1",
+ "id": "release-core",
+ "description": "First release qualification profile (design section 10). Case IDs for packages C, D, E and F task 2 name evidence those packages must emit as ds1edit.case/1; an ID nobody emits stays missing and blocks.",
+ "platforms": [
+  "windows-x86",
+  "linux-x86_64",
+  "macos-arm64"
+ ],
+ "requirements": [
+  {
+   "id": "R1",
+   "spec": "design 10.1",
+   "title": "Existing and new portable tests pass on all three platforms",
+   "cases": [
+    {
+     "id": "portable.ctest",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "suite",
+     "binding": [
+      "source"
+     ]
+    },
+    {
+     "id": "portable.python-unittest",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "suite",
+     "binding": [
+      "source"
+     ]
+    },
+    {
+     "id": "palette-nearest-113c",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "comparison",
+     "reference": [
+      "contract",
+      "baseline",
+      "adapter"
+     ]
+    },
+    {
+     "id": "control.palette-nearest-113c.constant",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86"
+     ],
+     "kind": "negative_control",
+     "binding": [
+      "source"
+     ]
+    },
+    {
+     "id": "control.palette-nearest-113c.channel-swap",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86"
+     ],
+     "kind": "negative_control",
+     "binding": [
+      "source"
+     ]
+    },
+    {
+     "id": "control.palette-nearest-113c.last-tie",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86"
+     ],
+     "kind": "negative_control",
+     "binding": [
+      "source"
+     ]
+    },
+    {
+     "id": "control.palette-nearest-113c.relative-index",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86"
+     ],
+     "kind": "negative_control",
+     "binding": [
+      "source"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "R2",
+   "spec": "design 10.2",
+   "title": "Fresh vanilla corpus manifest; every catalogued DS1 read and accounted",
+   "cases": [
+    {
+     "id": "corpus.baseline.manifest",
+     "lane": "corpus",
+     "platforms": [
+      "windows-x86"
+     ],
+     "kind": "corpus",
+     "binding": [
+      "source"
+     ],
+     "reference": [
+      "baseline"
+     ],
+     "coverage": {
+      "complete_accounting": true
+     }
+    },
+    {
+     "id": "corpus.ds1.read-all",
+     "lane": "corpus",
+     "platforms": [
+      "windows-x86"
+     ],
+     "kind": "corpus",
+     "reference": [
+      "baseline"
+     ],
+     "coverage": {
+      "complete_accounting": true
+     }
+    },
+    {
+     "id": "corpus.ds1.assets-resolved",
+     "lane": "corpus",
+     "platforms": [
+      "windows-x86"
+     ],
+     "kind": "corpus",
+     "reference": [
+      "baseline"
+     ],
+     "coverage": {
+      "complete_accounting": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "R3",
+   "spec": "design 10.3",
+   "title": "DS1 version/feature matrix and game-side writer feature coverage",
+   "cases": [
+    {
+     "id": "ds1.format.matrix",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "comparison",
+     "coverage": {
+      "features": [
+       "v2",
+       "v3",
+       "v4",
+       "v5",
+       "v6",
+       "v7",
+       "v8",
+       "v9",
+       "v10",
+       "v12",
+       "v13",
+       "v14",
+       "v15",
+       "v16",
+       "v18",
+       "optional-tail"
+      ]
+     }
+    },
+    {
+     "id": "ds1-113c",
+     "lane": "live",
+     "platforms": [
+      "windows-x86"
+     ],
+     "kind": "comparison",
+     "reference": [
+      "contract",
+      "baseline",
+      "adapter"
+     ],
+     "coverage": {
+      "features": [
+       "tile-layers",
+       "orientations",
+       "objects",
+       "paths",
+       "groups-tags",
+       "format-upgrade",
+       "edited-values"
+      ]
+     }
+    },
+    {
+     "id": "control.ds1-113c.omitted-field",
+     "lane": "live",
+     "platforms": [
+      "windows-x86"
+     ],
+     "kind": "negative_control",
+     "binding": [
+      "source"
+     ]
+    },
+    {
+     "id": "control.ds1-113c.wrong-layer-order",
+     "lane": "live",
+     "platforms": [
+      "windows-x86"
+     ],
+     "kind": "negative_control",
+     "binding": [
+      "source"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "R4",
+   "spec": "design 10.4",
+   "title": "Real editing, undo, isolation, backup, temporary save, redirection, write failure",
+   "cases": [
+    {
+     "id": "editor.undo.tiles",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "suite",
+     "binding": [
+      "source"
+     ]
+    },
+    {
+     "id": "editor.edits.objects-paths",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "suite",
+     "binding": [
+      "source"
+     ]
+    },
+    {
+     "id": "editor.map-isolation",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "suite",
+     "binding": [
+      "source"
+     ]
+    },
+    {
+     "id": "ds1.save.backup",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "suite",
+     "binding": [
+      "source"
+     ]
+    },
+    {
+     "id": "ds1.save.tmp",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "suite",
+     "binding": [
+      "source"
+     ]
+    },
+    {
+     "id": "project.save-redirection",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "suite",
+     "binding": [
+      "source"
+     ]
+    },
+    {
+     "id": "ds1.save.write-failure",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "suite",
+     "binding": [
+      "source"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "R5",
+   "spec": "design 10.5",
+   "title": "Representative visual set over five acts and every decoder/composition feature, including the six core maps",
+   "cases": [
+    {
+     "id": "visual.core.act1_town",
+     "lane": "corpus",
+     "platforms": [
+      "windows-x86"
+     ],
+     "kind": "comparison",
+     "reference": [
+      "baseline"
+     ]
+    },
+    {
+     "id": "visual.core.act1_cave",
+     "lane": "corpus",
+     "platforms": [
+      "windows-x86"
+     ],
+     "kind": "comparison",
+     "reference": [
+      "baseline"
+     ]
+    },
+    {
+     "id": "visual.core.act2_desert",
+     "lane": "corpus",
+     "platforms": [
+      "windows-x86"
+     ],
+     "kind": "comparison",
+     "reference": [
+      "baseline"
+     ]
+    },
+    {
+     "id": "visual.core.act3_jungle",
+     "lane": "corpus",
+     "platforms": [
+      "windows-x86"
+     ],
+     "kind": "comparison",
+     "reference": [
+      "baseline"
+     ]
+    },
+    {
+     "id": "visual.core.act4_fortress",
+     "lane": "corpus",
+     "platforms": [
+      "windows-x86"
+     ],
+     "kind": "comparison",
+     "reference": [
+      "baseline"
+     ]
+    },
+    {
+     "id": "visual.core.act5_town",
+     "lane": "corpus",
+     "platforms": [
+      "windows-x86"
+     ],
+     "kind": "comparison",
+     "reference": [
+      "baseline"
+     ]
+    },
+    {
+     "id": "visual.representative",
+     "lane": "corpus",
+     "platforms": [
+      "windows-x86"
+     ],
+     "kind": "comparison",
+     "reference": [
+      "baseline"
+     ],
+     "coverage": {
+      "features": [
+       "act1",
+       "act2",
+       "act3",
+       "act4",
+       "act5",
+       "dt1-isometric",
+       "dt1-rle",
+       "dt1-animation",
+       "dcc",
+       "dc6",
+       "palette-act",
+       "palette-transparency",
+       "animdata",
+       "cof-priority",
+       "cof-blend",
+       "compose-offsets",
+       "export-png",
+       "export-apng"
+      ]
+     }
+    },
+    {
+     "id": "dc6.rle.basic",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "comparison"
+    },
+    {
+     "id": "dc6.multi_direction",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "comparison"
+    },
+    {
+     "id": "dc6.clip_and_zero_copy",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "comparison"
+    },
+    {
+     "id": "dcc.single_frame",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "comparison"
+    },
+    {
+     "id": "dcc.sequence",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "comparison"
+    },
+    {
+     "id": "dcc.no_equal_cells",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "comparison"
+    },
+    {
+     "id": "dcc.empty_direction",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "comparison"
+    },
+    {
+     "id": "visual-values-113c",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "comparison",
+     "reference": [
+      "contract",
+      "baseline",
+      "adapter"
+     ]
+    },
+    {
+     "id": "decoders-113c",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "comparison",
+     "reference": [
+      "contract",
+      "baseline",
+      "adapter"
+     ]
+    },
+    {
+     "id": "export.images",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "comparison",
+     "coverage": {
+      "features": [
+       "export-png",
+       "export-apng",
+       "delays",
+       "transparency",
+       "cancellation"
+      ]
+     }
+    },
+    {
+     "id": "control.visual-values-113c.seven-bit-mask",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86"
+     ],
+     "kind": "negative_control",
+     "binding": [
+      "source"
+     ]
+    },
+    {
+     "id": "control.decoders-113c.wrong-origin",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86"
+     ],
+     "kind": "negative_control",
+     "binding": [
+      "source"
+     ]
+    },
+    {
+     "id": "control.decoders-113c.dropped-delta-reuse",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86"
+     ],
+     "kind": "negative_control",
+     "binding": [
+      "source"
+     ]
+    },
+    {
+     "id": "control.compose.priority-reversal",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86"
+     ],
+     "kind": "negative_control",
+     "binding": [
+      "source"
+     ]
+    },
+    {
+     "id": "control.export.wrong-delay",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86"
+     ],
+     "kind": "negative_control",
+     "binding": [
+      "source"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "R6",
+   "spec": "design 10.6",
+   "title": "Live revalidation of every required reference contract for this candidate",
+   "cases": [
+    {
+     "id": "palette-nearest-113c",
+     "lane": "live",
+     "platforms": [
+      "windows-x86"
+     ],
+     "kind": "comparison",
+     "reference": [
+      "contract",
+      "baseline",
+      "adapter"
+     ]
+    },
+    {
+     "id": "visual-values-113c",
+     "lane": "live",
+     "platforms": [
+      "windows-x86"
+     ],
+     "kind": "comparison",
+     "reference": [
+      "contract",
+      "baseline",
+      "adapter"
+     ]
+    },
+    {
+     "id": "decoders-113c",
+     "lane": "live",
+     "platforms": [
+      "windows-x86"
+     ],
+     "kind": "comparison",
+     "reference": [
+      "contract",
+      "baseline",
+      "adapter"
+     ]
+    },
+    {
+     "id": "ds1-113c",
+     "lane": "live",
+     "platforms": [
+      "windows-x86"
+     ],
+     "kind": "comparison",
+     "reference": [
+      "contract",
+      "baseline",
+      "adapter"
+     ],
+     "coverage": {
+      "features": [
+       "tile-layers",
+       "orientations",
+       "objects",
+       "paths",
+       "groups-tags",
+       "format-upgrade",
+       "edited-values"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "R7",
+   "spec": "design 10.7",
+   "title": "Malformed input and failed saves fail safely; sanitizer run over core parsers and decoders",
+   "cases": [
+    {
+     "id": "adversarial.core",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "comparison"
+    },
+    {
+     "id": "ds1.save.write-failure",
+     "lane": "portable",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "suite",
+     "binding": [
+      "source"
+     ]
+    },
+    {
+     "id": "sanitizer.core",
+     "lane": "sanitizer",
+     "platforms": [
+      "linux-x86_64"
+     ],
+     "kind": "suite",
+     "binding": [
+      "source"
+     ]
+    },
+    {
+     "id": "control.sanitizer.detector",
+     "lane": "sanitizer",
+     "platforms": [
+      "linux-x86_64"
+     ],
+     "kind": "negative_control",
+     "binding": [
+      "source"
+     ]
+    },
+    {
+     "id": "coverage.production",
+     "lane": "sanitizer",
+     "platforms": [
+      "linux-x86_64"
+     ],
+     "kind": "report",
+     "binding": [
+      "source"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "R8",
+   "spec": "design 10.8",
+   "title": "Extracted packages pass content/startup checks in clean environments; native GUI workflows",
+   "cases": [
+    {
+     "id": "package.{platform}.archive",
+     "lane": "native-package",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "package"
+    },
+    {
+     "id": "package.{platform}.member_names",
+     "lane": "native-package",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "package"
+    },
+    {
+     "id": "package.{platform}.member_uniqueness",
+     "lane": "native-package",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "package"
+    },
+    {
+     "id": "package.{platform}.member_types",
+     "lane": "native-package",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "package"
+    },
+    {
+     "id": "package.{platform}.layout",
+     "lane": "native-package",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "package"
+    },
+    {
+     "id": "package.{platform}.required_members",
+     "lane": "native-package",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "package"
+    },
+    {
+     "id": "package.{platform}.forbidden_members",
+     "lane": "native-package",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "package"
+    },
+    {
+     "id": "package.{platform}.executable_header",
+     "lane": "native-package",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "package"
+    },
+    {
+     "id": "package.{platform}.executable_version",
+     "lane": "native-package",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "package"
+    },
+    {
+     "id": "package.{platform}.runtime_closure",
+     "lane": "native-package",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "package"
+    },
+    {
+     "id": "package.{platform}.extraction",
+     "lane": "native-package",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "package"
+    },
+    {
+     "id": "package.{platform}.macos_app",
+     "lane": "native-package",
+     "platforms": [
+      "macos-arm64"
+     ],
+     "kind": "package"
+    },
+    {
+     "id": "native.{platform}.cli-help",
+     "lane": "native-workflow",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "workflow"
+    },
+    {
+     "id": "native.{platform}.no-game-startup",
+     "lane": "native-workflow",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "workflow"
+    },
+    {
+     "id": "native.{platform}.selftest",
+     "lane": "native-workflow",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "workflow"
+    },
+    {
+     "id": "native.{platform}.clean-environment",
+     "lane": "native-workflow",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "workflow"
+    },
+    {
+     "id": "native.{platform}.gui-edit-undo-save-reopen",
+     "lane": "native-workflow",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "workflow"
+    },
+    {
+     "id": "native.{platform}.gui-modal-input",
+     "lane": "native-workflow",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "workflow"
+    },
+    {
+     "id": "native.{platform}.platform-startup",
+     "lane": "native-workflow",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "workflow"
+    }
+   ]
+  },
+  {
+   "id": "R9",
+   "spec": "design 10.9",
+   "title": "Workload timing/memory baselines recorded; regressions reviewed",
+   "cases": [
+    {
+     "id": "perf.first-open",
+     "lane": "performance",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "performance"
+    },
+    {
+     "id": "perf.map-switch",
+     "lane": "performance",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "performance"
+    },
+    {
+     "id": "perf.decode-repeat",
+     "lane": "performance",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "performance"
+    },
+    {
+     "id": "perf.export-repeat",
+     "lane": "performance",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "performance"
+    },
+    {
+     "id": "perf.shutdown",
+     "lane": "performance",
+     "platforms": [
+      "windows-x86",
+      "linux-x86_64",
+      "macos-arm64"
+     ],
+     "kind": "performance"
+    }
+   ]
+  },
+  {
+   "id": "R10",
+   "spec": "design 10.10",
+   "title": "One report binds every required result to the candidate source/build/package identities",
+   "cases": [],
+   "checks": [
+    "profile_identity",
+    "candidate_identity",
+    "package_hashes",
+    "defects"
+   ]
+  }
+ ],
+ "digest": "dfbab33fa46692d664c708ad6519011e8cf93a13a6591a80cc8832ab8ca8b8c0"
+}

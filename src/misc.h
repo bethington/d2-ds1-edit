@@ -22,6 +22,12 @@ void   misc_save_pal_on_disk           (int pal_idx, UBYTE * d2_pal_ptr);
 int    misc_my_fgets                   (char * dst, int max, FILE * in);
 char * misc_search_name                (char * tmp);
 void   misc_open_1_ds1                 (int ds1_idx, char * name, int type, int def, int new_width, int new_height);
+/* Same, but a map that cannot be loaded is reported instead of ending the
+ * program: returns 0, or -1 with the reason in `error` and the slot left
+ * empty. misc_open_1_ds1() is this plus the historical exit, for command-line
+ * maps where the exit code matters. */
+int    misc_open_1_ds1_checked         (int ds1_idx, char * name, int type, int def, int new_width, int new_height,
+                                        char * error, size_t error_cap);
 void   misc_open_several_ds1           (char * filename);
 void   misc_walkable_tile_info     (void);
 int    misc_seach_block_or4            (int ds1_idx, BLOCK_TABLE_S * bt_ptr, int b, int m, int s);

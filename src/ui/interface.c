@@ -25,6 +25,23 @@
 #include "core/export_common.h"
 #include "core/palette.h"
 #include "ui/input.h"
+#include "core/ds1_save_io.h"
+#include <allegro5/allegro_native_dialog.h>
+
+/* Save one map. A failed save changes nothing on disk or in the map (see
+ * core/ds1_save_io.h); tell the user so it is never mistaken for success. */
+static int interface_save_map(int ds1_idx, int is_tmp_file)
+{
+   char error[768];
+
+   if (ds1_save_checked(ds1_idx, is_tmp_file, error, sizeof(error)) == 0)
+      return 0;
+   al_show_native_message_box(a5_display, "DS1Edit",
+      is_tmp_file ? "The autosave (.tmp) was not written"
+                  : "The map was not saved",
+      error, NULL, ALLEGRO_MESSAGEBOX_ERROR);
+   return -1;
+}
 
 typedef struct
 {
@@ -121,6 +138,7 @@ void interfac_user_handler(int start_ds1_idx)
    ALLEGRO_BITMAP *old_screen_buff = NULL;
    double frame_start_ms, section_start_ms;
    int selftest_rendered = 0;
+   double selftest_render_ms = 0.0;
    int switchbench_done = 0;
    int switchbench_exit_in = 0;
 
@@ -170,7 +188,8 @@ void interfac_user_handler(int start_ds1_idx)
             }
             else if (event.type == ALLEGRO_EVENT_KEY_CHAR)
             {
-               /* Ctrl+Enter = Apply, Ctrl+Z = Discard */
+               /* Ctrl+Enter applies pending properties; Ctrl+Z discards an
+                * active property edit and otherwise undoes a map edit. */
                if (glb_ds1edit.props_panel_visible &&
                    (event.keyboard.modifiers & ALLEGRO_KEYMOD_CTRL))
                {
@@ -180,10 +199,17 @@ void interfac_user_handler(int start_ds1_idx)
                      if (glb_ds1edit.props_panel.pending_count > 0)
                         props_panel_apply();
                   }
-                  else if (event.keyboard.keycode == ALLEGRO_KEY_Z)
+                  else if (event.keyboard.keycode == ALLEGRO_KEY_Z &&
+                           input_properties_panel_owns_undo(
+                               glb_ds1edit.props_panel_visible,
+                               glb_ds1edit.props_panel.editing,
+                               glb_ds1edit.props_panel.pending_count))
                   {
                      glb_ds1edit.props_panel.pending_count = 0;
                      glb_ds1edit.props_panel.editing = FALSE;
+                     /* The panel consumed this press; do not also undo the
+                      * map when its pending state is cleared below. */
+                     a5_key_hit[ALLEGRO_KEY_Z] = 0;
                   }
                }
                else if (glb_ds1edit.props_panel.editing ||
@@ -658,6 +684,7 @@ void interfac_user_handler(int start_ds1_idx)
       else
          misc_draw_screen(a5_mouse_x, a5_mouse_y);
       glb_ds1edit.fps++;
+      selftest_render_ms += perf_now_ms() - section_start_ms - glb_present_ms;
       perf_accumulate(
           &glb_perf_stats.render_ms_total,
           &glb_perf_stats.render_ms_max,
@@ -717,38 +744,46 @@ void interfac_user_handler(int start_ds1_idx)
       }
       else
       {
-         if (key_pressed(KEY_W))
+         /* WASD and the arrow keys scroll. Ctrl+arrows belong to map
+          * browsing below. Touching the window border scrolls only when
+          * mouse_edge_scroll is enabled: an idle pointer resting on an edge
+          * (common in tests and after alt-tab) otherwise drifts the view off
+          * the map. */
+         int ctrl = key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL);
+         int edge = glb_config.mouse_edge_scroll;
+
+         if (key_pressed(KEY_W) || (!ctrl && key_pressed(KEY_UP)))
          {
             glb_ds1edit.win_preview.y0 -= glb_ds1[ds1_idx].cur_scroll.keyb.y;
          }
-         else if (old_mouse_y == 0)
+         else if (edge && old_mouse_y == 0)
          {
             glb_ds1edit.win_preview.y0 -= glb_ds1[ds1_idx].cur_scroll.mouse.y;
          }
 
-         if (key_pressed(KEY_S))
+         if (key_pressed(KEY_S) || (!ctrl && key_pressed(KEY_DOWN)))
          {
             glb_ds1edit.win_preview.y0 += glb_ds1[ds1_idx].cur_scroll.keyb.y;
          }
-         else if (old_mouse_y == glb_config.screen.height - 1)
+         else if (edge && old_mouse_y == glb_config.screen.height - 1)
          {
             glb_ds1edit.win_preview.y0 += glb_ds1[ds1_idx].cur_scroll.mouse.y;
          }
 
-         if (key_pressed(KEY_A))
+         if (key_pressed(KEY_A) || (!ctrl && key_pressed(KEY_LEFT)))
          {
             glb_ds1edit.win_preview.x0 -= glb_ds1[ds1_idx].cur_scroll.keyb.x;
          }
-         else if (old_mouse_x == 0)
+         else if (edge && old_mouse_x == 0)
          {
             glb_ds1edit.win_preview.x0 -= glb_ds1[ds1_idx].cur_scroll.mouse.x;
          }
 
-         if (key_pressed(KEY_D))
+         if (key_pressed(KEY_D) || (!ctrl && key_pressed(KEY_RIGHT)))
          {
             glb_ds1edit.win_preview.x0 += glb_ds1[ds1_idx].cur_scroll.keyb.x;
          }
-         else if (old_mouse_x == glb_config.screen.width - 1)
+         else if (edge && old_mouse_x == glb_config.screen.width - 1)
          {
             glb_ds1edit.win_preview.x0 += glb_ds1[ds1_idx].cur_scroll.mouse.x;
          }
@@ -873,28 +908,32 @@ void interfac_user_handler(int start_ds1_idx)
          }
       }
 
-      // DS1 file navigation (arrow keys, PgUp/PgDn, Home/End)
-      if (key_hit(KEY_UP))
+      // DS1 file navigation (Ctrl+arrows, PgUp/PgDn, Home/End). Plain
+      // arrows scroll the map above.
+      {
+      int nav_ctrl = key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL);
+      if (nav_ctrl && key_hit(KEY_UP))
       {
          int nav_idx = area_browser_nav_up();
          if (nav_idx >= 0 && glb_ds1edit.has_loaded_ds1)
             ds1_idx = nav_idx;
       }
-      if (key_hit(KEY_DOWN))
+      if (nav_ctrl && key_hit(KEY_DOWN))
       {
          int nav_idx = area_browser_nav_down();
          if (nav_idx >= 0 && glb_ds1edit.has_loaded_ds1)
             ds1_idx = nav_idx;
       }
-      if (key_hit(KEY_LEFT))
+      if (nav_ctrl && key_hit(KEY_LEFT))
       {
          area_browser_nav_left();
       }
-      if (key_hit(KEY_RIGHT))
+      if (nav_ctrl && key_hit(KEY_RIGHT))
       {
          int nav_idx = area_browser_nav_right();
          if (nav_idx >= 0 && glb_ds1edit.has_loaded_ds1)
             ds1_idx = nav_idx;
+      }
       }
       if (key_hit(KEY_PGUP) && !(key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)))
       {
@@ -1236,18 +1275,21 @@ void interfac_user_handler(int start_ds1_idx)
       if (key_hit(KEY_S) && (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)))
       {
          // CTRL + S : save the ds1, in the current state, incremental save
-         ds1_save(ds1_idx, FALSE);
-         ret = msg_save_main();
-         switch (ret)
+         // (the "saved" message only after a save that actually happened)
+         if (interface_save_map(ds1_idx, FALSE) == 0)
          {
-         case -1:
-            // error
-            done = TRUE;
-            break;
+            ret = msg_save_main();
+            switch (ret)
+            {
+            case -1:
+               // error
+               done = TRUE;
+               break;
 
-         case 0:
-            // ok
-            break;
+            case 0:
+               // ok
+               break;
+            }
          }
       }
       if (key_hit(KEY_S) && (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT)) && glb_ds1edit.mode == MOD_T)
@@ -1385,8 +1427,11 @@ void interfac_user_handler(int start_ds1_idx)
          }
       }
 
-      // CTRL + U : undo tiles modification
-      if (key_pressed(KEY_U) && (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)))
+      // Ctrl+Z / Ctrl+U: undo tiles modification
+      if (input_undo_shortcut_hit(input_properties_panel_owns_undo(
+              glb_ds1edit.props_panel_visible,
+              glb_ds1edit.props_panel.editing,
+              glb_ds1edit.props_panel.pending_count)))
       {
          if (glb_ds1edit.mode == MOD_T)
          {
@@ -1698,8 +1743,8 @@ void interfac_user_handler(int start_ds1_idx)
             }
             else if (tmp_sel.start == FALSE)
             {
-               if ((key_pressed(KEY_I)) &&
-                   (cx != old_identical_x) && (cy != old_identical_y))
+               if (key_pressed(KEY_I) &&
+                   (cx != old_identical_x || cy != old_identical_y))
                {
                   // for all the tiles Identical to the visible ones
 
@@ -1718,7 +1763,8 @@ void interfac_user_handler(int start_ds1_idx)
                      // new selection (delete previous one)
                      itype = IT_NEW;
                   }
-                  edittile_identical(ds1_idx, itype, cx, cy);
+                  edittile_identical(ds1_idx, itype, cx, cy,
+                      key_pressed(KEY_ALT) || key_pressed(KEY_ALTGR));
                   old_identical_x = cx;
                   old_identical_y = cy;
                }
@@ -1861,23 +1907,29 @@ void interfac_user_handler(int start_ds1_idx)
          {
          case -1:
             // error
-            ds1_save(ds1_idx, TRUE); // save a .TMP map
+            interface_save_map(ds1_idx, TRUE); // save a .TMP map
             done = TRUE;
             break;
 
          case 0:
-            // save ALL & quit
-            for (i = 0; i < DS1_MAX; i++)
+            // save ALL & quit -- but stay open if any map could not be
+            // saved, so its edits are not lost with the process
             {
-               if (strlen(glb_ds1[ds1_idx].name))
-                  ds1_save(i, FALSE);
+               int all_saved = TRUE;
+
+               for (i = 0; i < DS1_MAX; i++)
+               {
+                  if (strlen(glb_ds1[i].name) &&
+                      interface_save_map(i, FALSE) != 0)
+                     all_saved = FALSE;
+               }
+               done = all_saved;
             }
-            done = TRUE;
             break;
 
          case 1:
             // quit
-            ds1_save(ds1_idx, TRUE); // save a .TMP map
+            interface_save_map(ds1_idx, TRUE); // save a .TMP map
             done = TRUE;
             break;
 
@@ -2012,6 +2064,24 @@ void interfac_user_handler(int start_ds1_idx)
                fprintf(stdout,
                        "selftest: FAIL -- the main loop is not wired to the "
                        "input layer, so key_hit()/mouse_hit() can never fire\n");
+               fflush(stdout);
+               exit(1);
+            }
+
+            /* A sprite or glyph left in a MEMORY bitmap still draws a correct
+               picture -- just with the backbuffer locked once per draw. That
+               has shipped twice (sprites in 2.1.1, the HUD font under
+               Direct3D after it), both times at under 1 FPS. A healthy frame
+               composes in about a millisecond; 250 ms is far above any real
+               GPU or software renderer and far below the collapse. */
+            fprintf(stdout, "selftest: render avg %.2f ms/frame\n",
+                    selftest_render_ms / selftest_rendered);
+            if (selftest_render_ms / selftest_rendered > 250.0)
+            {
+               fprintf(stdout,
+                       "selftest: FAIL -- composing a frame averaged over "
+                       "250 ms; something drawn every frame is probably a "
+                       "MEMORY bitmap\n");
                fflush(stdout);
                exit(1);
             }

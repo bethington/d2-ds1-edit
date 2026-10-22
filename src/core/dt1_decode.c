@@ -56,7 +56,9 @@ void decode_sub_tile_normal(unsigned char *buf, int buf_w, int buf_h,
    unsigned char b1, b2;
    int   x=0, y=0;
 
-   while (length > 0)
+   /* Every read stays inside the `length` bytes of this sub-tile: a pair
+    * needs two bytes, and a run never takes more pixels than remain. */
+   while (length >= 2)
    {
       b1 = * ptr;
       b2 = * (ptr + 1);
@@ -65,6 +67,8 @@ void decode_sub_tile_normal(unsigned char *buf, int buf_w, int buf_h,
       if (b1 || b2)
       {
          x += b1;
+         if (b2 > length)
+            b2 = (unsigned char) length;
          length -= b2;
          while (b2)
          {

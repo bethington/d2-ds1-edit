@@ -1,243 +1,147 @@
-# DS1Edit API Reference
+# DS1Edit Command-Line Reference
 
-## Command Line Interface
+`ds1edit` has two modes. With no arguments, or with a DS1/INI file, it opens
+the GUI. With a recognised *verb* as the first argument it runs headless and
+exits.
 
-### Basic Usage
-```bash
-win_ds1edit_debug.exe [mapfile.ds1] [tileset_id] [def_value]
+The binary's own `ds1edit -h` is the authoritative list; this page explains the
+parts that need more than one line.
+
+## GUI mode
+
+```
+ds1edit                                   open empty
+ds1edit <file.ds1> [LevelType] [LevelDef] open one area
+ds1edit <list.ini>                        open several areas
 ```
 
-### Parameters
+- **LevelType** -- ID from `LvlTypes.txt`, selecting the tileset.
+- **LevelDef** -- DEF value from `LvlPrest.txt`, selecting the preset.
 
-#### mapfile.ds1
-- **Type**: String (file path)
-- **Description**: Path to the DS1 file to load/edit
-- **Example**: `assets/tiles/ACT3/Jungle/clearing1.ds1`
+Both are optional; the editor resolves them from the MPQ tables when it can.
+For the ID tables and how to find the right values, see
+[maze-and-ds1.md](maze-and-ds1.md).
 
-#### tileset_id  
-- **Type**: Integer
-- **Description**: Tileset identifier for the area type
-- **Valid Values**:
-  - `2` - Act 1 Cave
-  - `4` - Act 1 Catacombs  
-  - `5` - Act 1 Monastery
-  - `10` - Act 2 Desert
-  - `12` - Act 2 Tomb
-  - `18` - Act 2 Maggot
-  - `20` - Act 3 Town/Kurast
-  - `21` - Act 3 Jungle/Clearing
-  - `22` - Act 3 Temple/Travincal/Mephisto
-  - `23` - Act 3 Spider
-  - `27` - Act 4 Mesa
-  - `28` - Act 4 Lava
-  - `29` - Act 4 Diablo
-  - `30` - Act 5 Siege
-  - `31` - Act 5 Barricade
-  - `35` - Act 5 Ice/Lava
+### Multi-file INI
 
-#### def_value
-- **Type**: Integer
-- **Description**: DEF value from LvlPrest.txt for level definition
-- **Range**: Varies by area (see LvlPrest.txt reference)
+One area per line, whitespace separated, `#` comments ignored:
 
-### Exit Codes
-
-| Code | Meaning | Description |
-|------|---------|-------------|
-| 0 | Success | File loaded and processed successfully |
-| 1 | Error | General error (file not found, invalid format) |
-| 3 | Format Error | DS1 file format issues or corruption |
-
-## Configuration File Format
-
-### INI File Structure
 ```ini
-tileset_id def_value filepath
-tileset_id def_value filepath
-...
-```
-
-### Example Configuration
-```ini
-# Act 3 Clearing areas
+# LevelType  LevelDef  path
 21 575 assets/tiles/ACT3/Jungle/clearing1.ds1
 21 576 assets/tiles/ACT3/Jungle/clearing2.ds1
-21 577 assets/tiles/ACT3/Jungle/clearing3.ds1
 ```
 
-## Tileset Reference
+### GUI flags
 
-### Act 1 Tilesets
-- **Cave (2)**: Underground cave areas
-- **Catacombs (4)**: Monastery basement levels
-- **Monastery (5)**: Surface monastery buildings
+| Flag | Effect |
+|------|--------|
+| `-force_dt1 <f.dt1>...` | Use these DT1s (1-32) instead of resolving from the tables. Suppresses the LevelType/LevelDef arguments. |
+| `-force_pal <act>` | Force the palette for act 1-5 instead of deriving it. |
+| `-no_check_act` | Skip the check that the DS1's internal act matches the tileset. |
+| `-resize <w> <h>` | Resize the map on load. |
+| `-debug` / `-no_vis_debug` | Verbose logging / suppress the on-screen overlay. |
+| `--headless <out.png>` | Render one frame, save it, exit. |
+| `--selftest[=N]` | Render N frames (default 30) through the real GUI path, then exit. |
+| `--switchbench=GROUP[:N]` | Cycle the first N maps (default 3) of GROUP, reporting switch cost. |
 
-### Act 2 Tilesets  
-- **Desert (10)**: Outdoor desert areas
-- **Tomb (12)**: Underground tomb complexes
-- **Maggot (18)**: Maggot lair tunnels
+## CLI verbs
 
-### Act 3 Tilesets
-- **Town/Kurast (20)**: City and town areas
-- **Jungle/Clearing (21)**: Outdoor jungle areas
-- **Temple/Travincal/Mephisto (22)**: Temple complexes and boss areas
-- **Spider (23)**: Spider cavern areas
+Run `ds1edit <verb>` with no arguments for that verb's own usage text.
 
-### Act 4 Tilesets
-- **Mesa (27)**: Outer fortress and mesa areas
-- **Lava (28)**: Lava-filled areas and forge
-- **Diablo (29)**: Final boss encounter areas
+### Inspecting the MPQ chain
+| Verb | Purpose |
+|------|---------|
+| `list-mpqs` | Which MPQ slots are open, and how many files each holds. |
+| `probe <virtual-path>` | Resolve a path through the chain, e.g. `data\Global\AnimData.d2`. |
+| `dump-listfile` | Print each open slot's in-MPQ listfile. |
+| `dump-txt-row <txt> <id>` | Dump one Excel row as `column=value` pairs. |
 
-### Act 5 Tilesets
-- **Siege (30)**: Siege warfare areas
-- **Barricade (31)**: Barricade and fortification areas
-- **Ice/Lava (35)**: Mixed ice and lava environments
+### Areas and presets
+| Verb | Purpose |
+|------|---------|
+| `list-areas` | Every area the browser found, grouped by act. |
+| `list-files [filter]` | Known DS1 files, optionally substring-filtered. |
+| `list-presets` | Parsed `[char_mode_presets]` / `[char_weapon_presets]`. |
+| `audit-lvltypes` | `LvlTypes.txt` rows whose name prefix disagrees with their Act column. |
+| `help` (`-h`) | The full verb and flag list, straight from the binary. |
 
-## File Validation Results
+### Animation and export
+| Verb | Purpose |
+|------|---------|
+| `probe-cof <cat> <token> <mode> [weapon]` | Build, load and dump a COF. |
+| `list-tokens <cat>` | Tokens found in a category (`chars`/`monsters`/`npcs`/`objects`). |
+| `export-compose` (alias `export`) | Compose layered DCCs into APNG animations. |
+| `export-raw` | Raw DCC/DC6/DT1 frames to per-frame PNG, mirroring the GUI flow. |
 
-### Compatibility Statistics
+### Common flags
 
-| Area | Tileset | Total Files | Working | Success Rate |
-|------|---------|-------------|---------|--------------|
-| Act 2 Maggot | 18 | 40 | 2 | 5.0% |
-| Act 3 Clearing | 21 | 90 | 90 | 100.0% |
-| Act 3 Kurast | 20 | 85 | 85 | 100.0% |
-| Act 3 Mephisto | 22 | 55 | 55 | 100.0% |
-| Act 4 Mesa | 27 | 145 | 42 | 29.0% |
-| Act 4 Lava | 28 | 45 | 43 | 95.6% |
-| Act 5 Siege | 30 | 55 | 15 | 27.3% |
+```
+--ini=<path>         load this INI instead of Ds1edit.ini
+--no-ini             ignore INIs; use only CLI flags
+--d2-install=<dir>   override d2_install (auto-fills MPQ slots)
+--mod-dir=<dir>      override mod_dir[0] (overlay)
+--mpq=<path>         append an MPQ to the chain (repeatable)
+-v, -vv              increase verbosity
+```
 
-### Common Error Patterns
+### export / export-compose flags
 
-#### Exit Code 1 - Act Number Mismatch
-- **Cause**: DS1 file internal act number doesn't match tileset requirements
-- **Example**: Act 2 files used with Act 4 tilesets
-- **Solution**: Use files from correct act directory
+```
+--target=TOKEN/MODE[/WEAPON]   single-tuple shortcut
+--category=<chars|monsters|npcs|objects>
+--token=<code>                 per-token filter for bulk runs
+--mode=<list|all>              comma-separated codes, or 'all'
+--weapon=<list|all>            chars only; ignored elsewhere
+--direction=<n|n,m|n-m|all>    direction selector
+--upscale=<1|2|4>              nearest-neighbour APNG scale
+--out=<dir>                    else [export_defaults] compose_output
+```
 
-#### Exit Code 3 - Format Issues  
-- **Cause**: File corruption, invalid format, or missing dependencies
-- **Common Files**: Border variants, extended tile sets, pit files
-- **Solution**: Use core area files, avoid problematic variants
+### export-raw flags
 
-## DEF Value Ranges
+```
+--type=<dcc|dc6|dt1|cof|all>   content-type filter
+--target=<path or glob>        single file or pattern
+--scope=<all|folder>           bulk scope (area is GUI-only)
+--folder=<prefix>              required when --scope=folder
+--preset=<name>                named [export_presets] preset
+--pattern=<glob>               ad-hoc glob
+--listfile=<path>              external listfile, only if the
+                               in-MPQ one fails to decompress
+--out=<dir>                    else raw_<type>_output
+```
 
-### Act 3 Areas
-- **Clearing**: 575-604 (30 values)
-- **Kurast**: 605-652 (48 values)  
-- **Travincal**: 705-710 (6 values)
-- **Temple**: 711-723 (13 values)
-- **Mephisto**: 754-796 (43 values)
+## Examples
 
-### Act 4 Areas
-- **Fortress**: 797-799 (3 values)
-- **Mesa**: 811-939 (129 values)
-- **Lava**: 836-880 (45 values)
-- **Diablo**: 855-862 (8 values)
-
-### Act 5 Areas
-- **Siege**: 865-911 (47 values)
-
-## Best Practices
-
-### File Selection
-1. **Use core files first**: Basic area files have highest compatibility
-2. **Avoid extended variants**: _2, _3, _4 variants often have issues
-3. **Test systematically**: Use provided test scripts
-4. **Check act compatibility**: Ensure DS1 act matches tileset act
-
-### Configuration Management
-1. **Separate by area type**: Create focused INI files per area
-2. **Use descriptive names**: `act3_clearing.ini`, `act4_lava.ini`
-3. **Document DEF ranges**: Keep track of used DEF values
-4. **Validate regularly**: Run test scripts after changes
-
-### Development Workflow
-1. **Start with working files**: Use `*_working.ini` files as base
-2. **Test incrementally**: Add files one by one
-3. **Monitor error logs**: Check `logs/` directory for issues
-4. **Use debug build**: More detailed error reporting
-
-## Error Handling
-
-### File Not Found
 ```bash
-# Check file path exists
-if exist "assets/tiles/ACT3/Jungle/clearing1.ds1" (
-    bin\win_ds1edit_debug.exe "assets/tiles/ACT3/Jungle/clearing1.ds1" 21 575
-) else (
-    echo File not found
-)
+ds1edit list-mpqs
+ds1edit probe "data\Global\AnimData.d2"
+ds1edit probe-cof chars NE WL HTH
+ds1edit export --target=NE/WL/HTH --direction=all --upscale=2
+ds1edit export --category=monsters --mode=NU --direction=0
+ds1edit export-raw --type=dt1 --scope=all --out=C:\tiles
 ```
 
-### Validation Loop
+## Exit codes
+
+| Code | Meaning |
+|------|---------|
+| 0 | Clean run |
+| 1 | Some failures |
+| 2 | Nothing produced |
+| 3 | Bad arguments |
+
+## Scripting
+
+Because the verbs are line-oriented on stdout, they compose directly:
+
 ```bash
-# Test multiple files with error checking
-for /f "tokens=1,2,3*" %%a in (assets\act3_clearing.ini) do (
-    bin\win_ds1edit_debug.exe "%%c" %%a %%b
-    if !errorlevel! neq 0 (
-        echo ERROR: %%c failed with exit code !errorlevel!
-    )
-)
+ds1edit list-files jungle | while read f; do
+    ds1edit export-raw --type=dt1 --target="$f" --out=out/ || echo "FAILED: $f"
+done
 ```
 
-## Utility Scripts
-
-### Test Scripts
-- `scripts/batch/test_clearing_lines.bat` - Test Act 3 clearing areas
-- `scripts/batch/test_mesa_lines.bat` - Test Act 4 mesa areas  
-- `scripts/batch/test_lava_lines.bat` - Test Act 4 lava areas
-- `scripts/batch/test_siege_lines.bat` - Test Act 5 siege areas
-
-### Python Utilities
-- `scripts/python/generate_level_inis.py` - Generate INI files from LvlPrest.txt
-- `scripts/python/test_ini.py` - INI file validation utilities
-- `scripts/python/rename_tileset_files.py` - File management tools
-
-## Integration Examples
-
-### Batch Processing
-```bash
-@echo off
-setlocal enabledelayedexpansion
-
-:: Process all files in an INI
-for /f "tokens=1,2,3*" %%a in (assets\act3_clearing.ini) do (
-    echo Processing %%c...
-    bin\win_ds1edit_debug.exe "%%c" %%a %%b
-    if !errorlevel! equ 0 (
-        echo SUCCESS: %%c
-    ) else (
-        echo FAILED: %%c with code !errorlevel!
-    )
-)
-```
-
-### Python Integration
-```python
-import subprocess
-import sys
-
-def test_ds1_file(filepath, tileset, def_value):
-    """Test a DS1 file with validation."""
-    cmd = [
-        'bin/win_ds1edit_debug.exe',
-        filepath,
-        str(tileset),
-        str(def_value)
-    ]
-    
-    try:
-        result = subprocess.run(cmd, capture_output=True, text=True)
-        return result.returncode == 0
-    except Exception as e:
-        print(f"Error testing {filepath}: {e}")
-        return False
-
-# Usage example
-success = test_ds1_file(
-    'assets/tiles/ACT3/Jungle/clearing1.ds1',
-    21,
-    575
-)
-print(f"Test result: {'PASS' if success else 'FAIL'}")
-```
+Helper scripts live in [scripts/python/](../../scripts/python/) --
+`generate_level_inis.py` builds multi-file INIs from `LvlPrest.txt`,
+`test_ini.py` validates them.

@@ -135,6 +135,48 @@ Diablo 2 uses three main level generation types:
 
 **LvlTypes.txt**: Defines the fundamental properties of each level type including tile graphics and behavior.
 
+#### Common LevelType IDs
+
+The tileset selected by the `LevelType` argument. These are the IDs seen most
+often when opening a DS1 by hand; `ds1edit audit-lvltypes` reads the real table
+from the game's MPQs and is authoritative.
+
+| Act | ID | Tileset |
+|-----|----|---------|
+| 1 | 2 | Cave |
+| 1 | 4 | Catacombs |
+| 1 | 5 | Monastery |
+| 2 | 10 | Desert |
+| 2 | 12 | Tomb |
+| 2 | 18 | Maggot lair |
+| 3 | 20 | Town / Kurast |
+| 3 | 21 | Jungle / Clearing |
+| 3 | 22 | Temple / Travincal / Mephisto |
+| 3 | 23 | Spider cavern |
+| 4 | 27 | Mesa (outer fortress) |
+| 4 | 28 | Lava / forge |
+| 4 | 29 | Diablo |
+| 5 | 30 | Siege |
+| 5 | 31 | Barricade |
+| 5 | 35 | Ice / lava |
+
+#### Approximate LevelDef ranges
+
+DEF values from `LvlPrest.txt`, useful for knowing roughly where to look.
+Ranges overlap and are not exhaustive -- use `ds1edit list-presets` for the
+real values.
+
+| Area | Range |
+|------|-------|
+| Act 3 Clearing | 575-604 |
+| Act 3 Kurast | 605-652 |
+| Act 3 Travincal | 705-710 |
+| Act 3 Temple | 711-723 |
+| Act 3 Mephisto | 754-796 |
+| Act 4 Fortress | 797-799 |
+| Act 4 Diablo | 855-862 |
+| Act 5 Siege | 865-911 |
+
 ---
 
 ## Practical Examples
@@ -176,18 +218,21 @@ Wilderness areas use specialized border DS1 files:
 
 ## Tools and Editing
 
-### DS1 Editor (win_ds1edit)
+### DS1 Editor (ds1edit)
 
-Primary tool for editing DS1 files:
+Primary tool for editing DS1 files. DS1Edit continues Paul Siramy's
+`win_ds1edit`; the original binary is what the community tools below were
+built around, and the argument form is unchanged:
 
-**Basic Usage**:
 ```batch
-win_ds1edit filename.ds1 [LevelType] [LevelDef] > output.txt
+ds1edit filename.ds1 [LevelType] [LevelDef] > output.txt
 ```
 
-**Parameters**:
 - **LevelType**: ID from LvlTypes.txt (e.g., 12 for Act 2 Town)
 - **LevelDef**: DEF value from LvlPrest.txt (e.g., 301)
+
+Both are optional -- the editor resolves them from the MPQ tables when it can.
+For the full flag and verb list see [api.md](api.md).
 
 ### DS1EditLoader
 
@@ -203,7 +248,10 @@ Utility for finding correct DS1 parameters:
 - Visual preview of DS1 files with different settings
 - Automatic ID and DEF value detection
 - Zoom controls for detailed inspection
-- Essential for troubleshooting parameter issues
+
+Historically essential for troubleshooting parameter issues. DS1Edit now reads
+`LvlPrest.txt` and `LvlTypes.txt` from the MPQ chain and derives these
+parameters itself, so a separate preview tool is no longer needed for that.
 
 ### Configuration Setup
 
@@ -212,7 +260,7 @@ For editing multiple DS1 files simultaneously, create .ini files:
 12 -1 LutW.ds1
 12 -1 LutN.ds1
 ```
-Then run: `win_ds1edit act2_town.ini > act2_town.txt`
+Then run: `ds1edit act2_town.ini > act2_town.txt`
 
 ---
 

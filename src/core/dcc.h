@@ -6,6 +6,7 @@
 #define _DCC_INFO_H_
 
 #include "ui/compat.h"
+#include "core/index_frame.h"
 
 
 #define DCC_MAX_DIR    32
@@ -39,8 +40,7 @@ typedef struct DCC_CELL_S
    int    last_w, last_h;   // width & size of the last frame cell that used
                             // this buffer cell (for stage 2)
    int    last_x0, last_y0;
-   
-   ALLEGRO_BITMAP * bmp;   // sub-bitmap in the buffer bitmap
+   // (x0, y0, w, h) locate the cell inside its direction's index buffer
 } DCC_CELL_S; // maybe I'll make 2 kind of cells, 1 for frame-buffer cells,
               // the other for the frame cells...
 
@@ -49,8 +49,11 @@ typedef struct DCC_FRAME_S
    UDWORD variable0;
    UDWORD width;
    UDWORD height;
-   long   xoffset;
-   long   yoffset;
+   /* Signed 32-bit fields filled through a 32-bit bit reader: `long` is
+      64-bit under LP64 and kept its zeroed high half, so every negative
+      offset read as a value near 4 billion on Linux and macOS. */
+   int32_t xoffset;
+   int32_t yoffset;
    UDWORD optional_bytes;
    UDWORD coded_bytes;
 
@@ -68,7 +71,11 @@ typedef struct DCC_FRAME_S
    // not in file, for my own purpose
    DCC_BOX_S box;
 
-   // final bitmap
+   // final frame, palette indices at the direction box size
+   // (the shared raw output; see core/index_frame.h)
+   UBYTE          * pixels;
+
+   // final bitmap, built from `pixels` by dcc_decode() only
    ALLEGRO_BITMAP * bmp;
    
 } DCC_FRAME_S;
@@ -121,7 +128,8 @@ typedef struct DCC_DIRECTION_S
    // frame buffer size, in # of cells, used in stage 2
    int             nb_cells_w;
    int             nb_cells_h;
-   ALLEGRO_BITMAP  * bmp;        // frame buffer bitmap
+   UBYTE           * pixels;     // frame buffer (palette indices)
+   int             decoded;      // TRUE once this direction is decoded
    DCC_CELL_S      * buffer_ptr; // frame buffer cells
    
    // pixel buffer (1 entry = 4 pixels code & some other datas)
@@ -140,11 +148,12 @@ typedef struct DCC_HEADER_S
    UBYTE file_signature;
    UBYTE version;
    UBYTE directions;
-   long  frames_per_dir;
-   long  tag; // always 1. A data's presence bitfield maybe,
-              //    like 0x01 = "final_dc6_size data present" ?
-   long  final_dc6_size;
-   long  dir_offset [DCC_MAX_DIR];
+   /* 32-bit on-disk fields, filled 4 bytes at a time. */
+   int32_t frames_per_dir;
+   int32_t tag; // always 1. A data's presence bitfield maybe,
+                //    like 0x01 = "final_dc6_size data present" ?
+   int32_t final_dc6_size;
+   int32_t dir_offset [DCC_MAX_DIR];
 
    int   already_decoded;
 } DCC_HEADER_S;
@@ -163,17 +172,18 @@ void    dcc_init                   (void);
 int     dcc_read_bytes             (DCC_BITSTREAM_S * bs, int bytes_number, void * dest);
 int     dcc_read_bits              (DCC_BITSTREAM_S * bs, int bits_number, int is_signed, UDWORD * dest );
 int     dcc_frame_header_bitstream (DCC_S * dcc, DCC_BITSTREAM_S * bs, int d, int f);
-void    dcc_init_dir_bitstream     (DCC_S * dcc, DCC_BITSTREAM_S * bs, int d);
+int     dcc_init_dir_bitstream     (DCC_S * dcc, DCC_BITSTREAM_S * bs, int d);
 int     dcc_optional_datas         (DCC_S * dcc, DCC_BITSTREAM_S * bs, int d);
 int     dcc_other_bitstream_size   (DCC_S * dcc, DCC_BITSTREAM_S * bs, int d);
 int     dcc_pixel_values_key       (DCC_S * dcc, DCC_BITSTREAM_S * bs, int d);
 int     dcc_prepare_buffer_cells   (DCC_S * dcc, int d);
 int     dcc_prepare_frame_cells    (DCC_S * dcc, int d, int f);
 int     dcc_fill_pixel_buffer      (DCC_S * dcc, int d);
-int     dcc_save_frame             (DCC_S * dcc, int d, int f, ALLEGRO_BITMAP * frm_bmp);
+int     dcc_save_frame             (DCC_S * dcc, int d, int f, const UBYTE * frm_pixels);
 int     dcc_make_frames            (DCC_S * dcc, int d);
 int     dcc_dir_bitstream          (DCC_S * dcc, int d);
 int     dcc_file_header            (DCC_S * dcc);
+int     dcc_decode_raw             (DCC_S * dcc, long dir_bitfield);
 int     dcc_decode                 (DCC_S * dcc, long dir_bitfield);
 void    dcc_debug                  (DCC_S * dcc);
 DCC_S * dcc_disk_load              (char * dcc_name);

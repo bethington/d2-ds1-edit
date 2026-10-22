@@ -27,7 +27,7 @@ typedef struct PRESET_ENTRY_S
 
    // Joined from Levels.txt (via level_id) and LvlTypes.txt (via level_type)
    int  level_type;                                       // Levels."LevelType"
-   int  act;                                              // Levels."Act" (1..5, 0 if unknown)
+   int  act;                                              // Levels."Act" + 1, or LvlPrest.Name (1..5, 0 unknown)
    char type_name[MPQ_INDEX_TYPE_NAME_LEN];               // LvlTypes."Name"
 } PRESET_ENTRY_S;
 
@@ -53,11 +53,21 @@ const PRESET_ENTRY_S * mpq_index_preset_at(int idx);
 const PRESET_ENTRY_S * mpq_index_find_by_ds1_name(const char *ds1_basename,
                                                   int *out_file_slot);
 
+/* Match a tiles-relative DS1 path, ignoring case, slash style and an optional
+ * Data/Global/Tiles prefix. Unlike basename lookup, never picks a namesake
+ * from another folder. */
+const PRESET_ENTRY_S * mpq_index_find_by_ds1_path(const char *ds1_path,
+                                                  int *out_file_slot);
+
 // Pure variant of the reverse lookup, exposed so unit tests can exercise
 // the scan/match logic without having to populate the global index first.
 const PRESET_ENTRY_S * mpq_index_find_by_ds1_name_in(const PRESET_ENTRY_S *arr,
                                                      int count,
                                                      const char *ds1_basename,
+                                                     int *out_file_slot);
+const PRESET_ENTRY_S * mpq_index_find_by_ds1_path_in(const PRESET_ENTRY_S *arr,
+                                                     int count,
+                                                     const char *ds1_path,
                                                      int *out_file_slot);
 
 #endif

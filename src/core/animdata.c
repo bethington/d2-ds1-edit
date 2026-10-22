@@ -27,15 +27,17 @@ UBYTE animdata_hash_value(char * name)
 
 
 // ==========================================================================
+// AnimData.d2 is exactly 256 buckets laid end to end, each a 32-bit record
+// count followed by that many 160-byte records (animdata-d2.md). The game
+// keeps one pointer per bucket *position*; a name is looked up in the bucket
+// its hash selects. Buckets that run past the end of the file are dropped,
+// and anything after the 256th bucket is ignored.
 void animdata_load(void)
 {
-   char               * name = "Data\\Global\\AnimData.d2", animdata_name[10];
-   int                entry, done = FALSE, curr_block = 0;
-   long               nb_rec;
-   /* 32-bit on-disk fields: `long` is 64-bit under LP64. */
-   const int32_t      * lptr;
-   ANIM_DATA_RECORD_S * rec_ptr = NULL;
-   UBYTE              hash;
+   char               * name = "Data\\Global\\AnimData.d2";
+   int                entry, curr_block;
+   long               nb_rec, pos, size;
+   const UBYTE        * base;
 
 
    // free the file if already in mem
@@ -59,44 +61,31 @@ void animdata_load(void)
       printf("ok, <%s> found\n", name);
 
    // read all blocks and update pointers
-   lptr = ((const int32_t *) glb_ds1edit.anim_data.buffer);
-   while ( ! done)
+   base = (const UBYTE *) glb_ds1edit.anim_data.buffer;
+   size = glb_ds1edit.anim_data.buffer_size;
+   pos  = 0;
+   for (curr_block = 0; (curr_block < 256) && (pos + 4 <= size); curr_block++)
    {
-      nb_rec = * lptr;
-      lptr++;
+      int32_t count;
 
+      memcpy(& count, base + pos, sizeof(count));
+      pos += 4;
+      nb_rec = count;
+      if ((nb_rec < 0) || (nb_rec > (size - pos) / (long) sizeof(ANIM_DATA_RECORD_S)))
+      {
+         printf("   block %3i claims %li records past the end of the file\n",
+                curr_block, nb_rec);
+         break;
+      }
       if (nb_rec)
       {
-         rec_ptr = (ANIM_DATA_RECORD_S *) lptr;
-         memset(animdata_name, 0, sizeof(animdata_name));
-         strncpy(animdata_name, rec_ptr->cof_name, 8);
-         hash = animdata_hash_value(animdata_name);
+         glb_ds1edit.anim_data.block_pointer[curr_block] =
+            (ANIM_DATA_RECORD_S *) (base + pos);
+         glb_ds1edit.anim_data.nb_records[curr_block] = (int) nb_rec;
       }
-      else
-         hash = 0;
-
-      // debug infos
-      printf("   block %3i, hash = %3i, # records = %li\n", curr_block, hash, nb_rec);
-      fflush(stdout);
-      curr_block++;
-
-      // update block pointer & records number
-      if (nb_rec)
-      {
-         glb_ds1edit.anim_data.block_pointer[hash] = rec_ptr;
-         glb_ds1edit.anim_data.nb_records[hash]    = nb_rec;
-      }
-
-      // next block, if any
-      lptr += 40 * nb_rec; // skip nb_rec records of 160 bytes each
-      if ( (UBYTE *) lptr >=
-           ((UBYTE *) glb_ds1edit.anim_data.buffer + glb_ds1edit.anim_data.buffer_size)
-         )
-      {
-         done = TRUE;
-      }
+      pos += nb_rec * (long) sizeof(ANIM_DATA_RECORD_S);
    }
-   printf("\n");
+   printf("   %i animdata blocks\n\n", curr_block);
 }
 
 
@@ -122,7 +111,9 @@ int animdata_get_cof_info_quiet(const char * name, long * fpd, long * speed)
    ANIM_DATA_RECORD_S * rec_ptr;
    UBYTE              hash;
    int                i;
-   char               rec_name[80];
+   size_t             key_len, k;
+   const char         * dot;
+   char               key[8];
 
    if (name == NULL || fpd == NULL || speed == NULL)
    {
@@ -131,15 +122,24 @@ int animdata_get_cof_info_quiet(const char * name, long * fpd, long * speed)
       return -1;
    }
 
+   // the key is the name up to its extension, as the hash sees it
+   dot = strrchr(name, '.');
+   key_len = (dot != NULL) ? (size_t) (dot - name) : strlen(name);
+
    hash = animdata_hash_value((char *) name);
-   if (glb_ds1edit.anim_data.block_pointer[hash])
+   /* The game (D2Common 1.13c 6fd91dd0) uppercases the query in place, then
+    * 6fd91d00 compares the whole 8-byte name field as two dwords: the stored
+    * name is matched exactly, not case-folded. Build the same zero-padded
+    * uppercase key and compare all 8 bytes. */
+   if ((key_len <= 8) && glb_ds1edit.anim_data.block_pointer[hash])
    {
+      memset(key, 0, sizeof(key));
+      for (k = 0; k < key_len; k++)
+         key[k] = (char) toupper((unsigned char) name[k]);
       rec_ptr = glb_ds1edit.anim_data.block_pointer[hash];
       for (i = 0; i < glb_ds1edit.anim_data.nb_records[hash]; i++)
       {
-         memset(rec_name, 0, sizeof(rec_name));
-         strncpy(rec_name, rec_ptr[i].cof_name, 8);
-         if (stricmp(rec_name, name) == 0)
+         if (memcmp(rec_ptr[i].cof_name, key, sizeof(key)) == 0)
          {
             *fpd   = rec_ptr[i].frames_per_dir;
             *speed = rec_ptr[i].speed;

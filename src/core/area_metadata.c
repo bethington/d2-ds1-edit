@@ -45,6 +45,16 @@ int area_group_resolve_act(int txt_act, const char * name)
 }
 
 
+int area_preset_resolve_act(int level_id, int levels_act, const char * preset_name)
+{
+   /* Levels.Act is 0-based; LevelId 0 is the Null placeholder. */
+   if (level_id > 0 && levels_act >= 0 && levels_act <= 4)
+      return levels_act + 1;
+
+   return area_name_parse_act(preset_name);
+}
+
+
 const char * area_name_strip_prefix(const char * name)
 {
    if (area_name_parse_act(name) > 0)

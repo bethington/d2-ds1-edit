@@ -1,0 +1,127 @@
+{
+ "baseline_digest": "46a1628e3e099497c9d17f3191a68a5c61a48788317293b86154b505e386e265",
+ "baseline_path": "test/equivalence/fixtures/palette-nearest-baseline.json",
+ "behavior": "What the original 1.13c DS1 loader makes of a map the editor saved, compared with the intended map at the loader's return stage",
+ "digest": "4b8ed6451c49f176c168c16a0be96c7bfd48db99becc2a60dc260a751350f0d8",
+ "domain": {
+  "axes": {
+   "edited_values": {
+    "coverage": "sampled",
+    "required": true
+   },
+   "floor_layers_1_to_2": {
+    "coverage": "sampled",
+    "required": true
+   },
+   "format_upgrade_to_v18": {
+    "coverage": "sampled",
+    "note": "sources of every shipped version family re-saved",
+    "required": true
+   },
+   "groups_and_tags": {
+    "coverage": "sampled",
+    "required": true
+   },
+   "object_id_remap": {
+    "coverage": "sampled",
+    "note": "compared only through the loader on both sides (independent reference encoding)",
+    "required": true
+   },
+   "objects_and_flags": {
+    "coverage": "sampled",
+    "required": true
+   },
+   "orientations": {
+    "coverage": "sampled",
+    "required": true
+   },
+   "paths_and_actions": {
+    "coverage": "sampled",
+    "required": true
+   },
+   "wall_layers_1_to_4": {
+    "coverage": "sampled",
+    "required": true
+   }
+  },
+  "description": "editor-saved maps (writer always version 18) covering each writer feature of design section 10, plus the vanilla corpus's own files through the same loader; not every possible map"
+ },
+ "editor_policy": {
+  "normalizations": [
+   "writer_v18_upgrade",
+   "source_ignored"
+  ]
+ },
+ "id": "ds1-loader-113c",
+ "kind": "ds1-loader",
+ "limitations": [
+  "Loader-return stage only: room instantiation, DT1 resolution and rendering are not observed.",
+  "Raw file object IDs are not observable at this stage (remapped by act/version tables); they are compared only via an independent encoding loaded by the same function.",
+  "The tail slack is zero-filled; the game's own allocation slack is uninitialised heap, so maps relying on bytes past end-of-file are compared under zero slack.",
+  "The file read is substituted (12 bytes patched for the duration of one call); file lookup/MPQ precedence is not part of this contract.",
+  "Fields the loader never reads (the tileset name list, the v18 pre-group dword, the group record's 0x10 slot) are covered by editor preservation tests, not here.",
+  "Natural cache records are a later stage for instantiated maps (tile dwords flagged in place); only the direct route is compared."
+ ],
+ "native_quirks": [
+  {
+   "detail": "below version 4 the loader points record[15] at the floor block but leaves the floor-layer count (record[6]) 0; compared as floor0_unlisted. Re-saving at v18 makes the count 1.",
+   "evidence": "disassembly 0x6fd5b67f..0x6fd5b69f; live court1b.ds1 (v3)",
+   "id": "legacy_v3_floor_count_zero"
+  },
+  {
+   "detail": "the loader keeps objects outside width*5 x height*5; the editor's reader discards them (src/core/ds1.c), so a re-save drops them",
+   "evidence": "live: 80 objects in 38 vanilla maps (e.g. act1 catacomb catsdown.ds1 type 2 id 17 at 194,19)",
+   "id": "out_of_bounds_objects_kept"
+  },
+  {
+   "detail": "objects are prepended; a path attaches to the first list node at its (x,y) = the last such object in file order",
+   "evidence": "disassembly 0x6fd5bae9..0x6fd5bb03",
+   "id": "paths_attach_to_last_object_at_position"
+  }
+ ],
+ "normalizations": [],
+ "outputs": [
+  {
+   "name": "game_invariant",
+   "type": "json"
+  },
+  {
+   "name": "game_same_stage",
+   "type": "json"
+  }
+ ],
+ "reference": {
+  "abi_recipe": {
+   "caller_contract": "caller zeroes the 0x5c-byte record (REP STOSD ECX=0x17 at 0x6fd5beef) before the call; the data-table preload passes pool 0 (LoadLevelPresetData 0x6fdc05bc)",
+   "convention": "custom stdcall: 2 stack dwords (record*, file name*), callee pops 8 (RET 8); EAX = memory pool, consumed only by the file read at 0xb56b; EBX/ESI/EDI/EBP saved and initialised inside",
+   "evidence": [
+    "Ghidra diablo2:/Vanilla/1.13c/D2Common.dll disassembly 0x6fd5b560..0x6fd5bbb2 and 0x6fd5be50..0x6fd5bf65 (read-only)",
+    "live 2026-10-22, member lod-113c slot 1 (exe sha256 74fe9c09...): direct-route records of LRiverC/Cott5 equal the game's own natural cache records field for field (incl. remapped object ids); TownS1's natural record differs only by tile dwords the game flags in place after instantiating the town (a later stage)",
+    "live 2026-10-22: all 2276 manifest DS1s through the direct route vs the editor's reading of the same bytes: 2238 equal, 38 differ only by out-of-bounds objects the editor discards"
+   ],
+   "file_read": "push 0; push eax; mov eax,[esp+0x38]; call RESOURCE_AllocateAndOpen(0x6fd59900) = 6a00508b442438e889e3ffff at RVA 0xb56b; the callee pops its 2 arguments (stdcall), so the 12 bytes are stack-neutral; it returns a buffer of filesize+800 bytes (Archive.cpp line 0xcf)",
+   "function_bytes": "83ec18535556578b7c242c6a00508b442438e889e3ffff8bf08977048b2e8b4e0483c60483c604894f0c8b1683c60483fd08c744241c00000000896c24108957107c168b0683c60483f8048944241c7e08c744241c0400000083fd0ac707000000007c078b06890783c60483fd037c288b0683c60485c07e1f8bc8eb038d49008a1633c084d274098a5430014084d275f7498d74060175e88b5f108b4f0c43410fafd983fd097c0883fd0e7d0383c60883fd047c6a8b1683c60483fd108957147c0a8b0689471883c604eb07c74718010000008b471433d285c07e1c8d0c9d000000008d471c89701003f1893003f14283c0043b57147cee8b471833c985c07e408d149d000000008d473ceb038d4900893003f24183c0043b4f187cf3eb228d049d0000000089772c03f089773c03f089771c03f0897748c747140100000003f083fd077d428b471485c0c7442430000000007e338d571c85db8b027e178bcb8b288b2cadc0bcdd6f892883c0044975ef8b6c24108b4424308b4f144083c2043bc1894424307cd08b0f8d049d0000000089774403f085c97e0a83f9027f0589774803f083fd010f8eff0200008b0683c60485c00f8ef2020000894424208bff8b06b9040000008b3c0e03f133ed8944241803f148896c24300f840f010000480f84c200000083e8020f8520020000394c24100f8ea2000000518b0cbd80eede6f518d54241c52e8846fffff83c40cc64424170033ffeb088da42400000000900fbe443c1450e86173ffff83c40488443c144783ff037ce88a44241484c0896c2430c644243220750cc644243020c644243120eb23884424308a44241584c07507c644243120eb10884424318a44241684c07404884424328b156cffde6f55c6442437208b4c24345152e851daffff33c93bc50f9cc14923c88bf9c744243003000000e967010000837c2410057e2b81ff960000007d188b54241c69d29600000003d78b3c95c8e2de6fe94001000081ef96000000e93501000081ff3d0200000f852901000083cfffe921010000394c2410c7442430010000000f8e0f0100008b5c241c3bdd7c5f83fb057d5a392d8009df6f74528b049d8409df6f3bc58b0c9d9809df6f74403bf97d3c8a4cb8010fb77cb8020fb6c12bc5741848742948740583cfffeb21a11c9ede6f03b8800a0000eb148b0d1c9ede6f8b91800a00000315b409df6f03faba020000003bda7559a11c9ede6f8b80800a00003bf80f8d8c00000033c93d290100000f9fc14981e1d6feffff81c1290100003bf97507bf7e010000eb6233c93d6e0100000f9fc14981e191feffff81c16e0100008bc13bf8754dbf94010000eb3e83fb047541a11c9ede6f3bb8800a00007d343bfd7c3081ff02020000741b81ff180200007e2081ff1b0200007f18b9f50300002bcf8bf9eb05bfcd01000089542418896c24308b1e8b56048b44241083c60483c60433ed83f805895424247e058b2e83c60485ff7c70837c241801750583f8047e646a0068b6030000684033de6fba2000000033c9e86cd8ffff33c98bd0890a894a04894a08894a0c894a10894a14894a18894a1c8b4c24188b5424308948148b4c24248948188b4c242cc7400c0000000089780489108958088b515489500c89415409681cff4c24200f8514fdffff837c24100c0f8ca70000008b44242c8b0085c00f8e9900000083f8020f8f90000000837c2410127c0383c6048b0e8b7c242c6a008bc1687c0400008d1440894f4c68b06ede6fc1e20333c983c604e8c3d7ffff8947508b474c33c985c07e538b54241033c08b2e8b5f50892c188b6e048b5f5083c604896c03048b6e048b5f5083c60483c604896c03088b2e8b5f5083c60483fa0d896c030c7c0c8b2e8b5f50896c031483c6048b5f4c4183c0183bcb7cb38b5c241083fb0e7c4f8b0683c60485c07e46894424308b2e8b460483c6048b4e0483c60483c60485ed74278b54242c8b7a5485ff74113947087505394f1874228b7f0c85ff75ef83fb0f8d34ee7c038d34aeff4c243075be5f5e5d5b83c418c208006a0068ae04000068b06ede6fba0800000033c9e8ead6ffff6a0068af0400008d546d0068b06ede6fc1e20233c9894710e8cdd6ffff85ed8b4f108941048b5710892a7eac33c08b4f108b51048b0e894c02048b57108b4a048b560483c60483c60483fb0f895401087c108b4f108b51048b0e890c1083c604eb0d8b57108b4a04c704080100000083c00c4d75b9e95effffff",
+   "function_length": 1618,
+   "hidden_state": "reads sgptDataTables(+0xa80), the monster remap tables at 0x6fdf0980..0x6fdf09b4, the act object table at 0x6fdee2c8, the legacy orientation table at 0x6fddbcc0 and the item-code table at 0x6fdeee80; allocates object/group/path nodes from pool 0 (not freed; small)",
+   "kind": "d2common-preset-loader/1",
+   "module": "D2Common.dll",
+   "observation": "direct: the 12 file-read bytes are replaced for one call by mov eax,<buffer>; nop*7 and restored and read back immediately after; the buffer is the file followed by 800 zero bytes. natural: walk the preset cache at D2Common+0xa147c (name[0x104], refcount@0x104, record@0x108, next@0x10c)",
+   "patch_original": "6a00508b442438e889e3ffff",
+   "patch_site_rva": "0xb56b",
+   "record_bytes": 92,
+   "record_layout": "dwords: 0 tagType, 1 buffer, 3 width-1, 4 height-1, 5 wall layers, 6 floor layers, 7..10 orientation[], 11..14 wall tiles[], 15..16 floor tiles[], 17 shadow, 18 tag (tagType 1/2 or v<4), 19 group count, 20 groups (0x18: x,y,w,h,-,unk@0x14 v>=13), 21 objects (0x20 nodes: unit type, id, x, next, path{count, (action,x,y)[]}, type, y, flags; prepended)",
+   "relocations": "none applied: D2Common.dll must be at its preferred base 0x6fd50000 (checked) and its whole .text must equal the baseline (checked before any call)",
+   "rva": "0xb560",
+   "symbol": "LoadAndParsePresetArchive (Ghidra name); sole caller GetOrCreatePresetFileCacheEntry 0x6fd5be50 (call site 0x6fd5bf35)",
+   "timeout_ms": 10000
+  },
+  "abi_recipe_digest": "bd42aa847e28ad39a0ea164ee56418ae53dfae21ad56fe758ff846343fc2d2ec",
+  "function_bytes_sha256": "2f3aa2bfbe58612e32680524d7d8664ac081b5efe8b956cfa5730becef0c012f",
+  "module": "D2Common.dll",
+  "rva": "0xb560"
+ },
+ "required": true,
+ "schema": "ds1edit.contract/1",
+ "stage": "LoadAndParsePresetArchive return (before room instantiation; instantiated maps have tile dwords flagged in place, so natural cache records of loaded areas are a later stage)",
+ "success_outcome": "pass"
+}

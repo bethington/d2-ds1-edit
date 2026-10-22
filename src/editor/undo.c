@@ -6,6 +6,21 @@
 #include "core/ds1.h"
 #include "editor/undo.h"
 
+/* Undo buffer file layout (one file per edit, private to this process):
+ *
+ *   "UNDO"                     tag
+ *   UDWORD seg_num             number of segments
+ *   per segment:
+ *      UDWORD x, y             first cell of a run of horizontally adjacent cells
+ *      UDWORD cell_num         cells in the run
+ *      per cell: UWORD layer_flag, then per flagged layer a data-flag byte
+ *                and the fields it names
+ *
+ * The counts and coordinates used to be single bytes: an edit touching more
+ * than 255 runs (any scattered selection on a mid-sized map), a run longer
+ * than 255 cells, or a cell beyond column/row 255 wrapped around, and undo
+ * then restored the wrong cells or none at all. */
+
 
 // ==========================================================================
 // after each cell, reset the flags to prepare the next 1
@@ -87,7 +102,8 @@ void undo_exit(void)
 void undo_new_tile_buffer(int ds1_idx)
 {
    UNDO_S * u = & glb_ds1[ds1_idx].undo;
-   long   fake = 0, i;
+   UDWORD fake = 0;
+   long   i;
    char   tmp[150];
 
    // just in case
@@ -129,25 +145,25 @@ void undo_new_tile_buffer(int ds1_idx)
 
    // fake segment number (will be updated later)
    u->seg_offset = ftell(u->fptr);
-   fwrite(&fake, sizeof(u->seg_num), 1, u->fptr);
+   fwrite(&fake, sizeof(fake), 1, u->fptr);
 
    // init
    u->in_seg      = FALSE;
    u->seg_num     = 0;
    u->cell_offset = -1;
    u->cell_num    = 0;
-   u->old_x       = (UBYTE) -1;
-   u->old_y       = (UBYTE) -1;
+   u->old_x       = -2;
+   u->old_y       = -2;
    undo_reset_flags(ds1_idx);
 }
 
 
 // ==========================================================================
 // start a new segment of continuous cells in the undo buffer file
-void undo_start_seg_in_tile_buffer(int ds1_idx, UBYTE x, UBYTE y)
+void undo_start_seg_in_tile_buffer(int ds1_idx, int x, int y)
 {
    UNDO_S * u = & glb_ds1[ds1_idx].undo;
-   long   fake = 0;
+   UDWORD fake = 0, ux = (UDWORD) x, uy = (UDWORD) y;
    char   tmp[150];
 
    // just in case
@@ -173,12 +189,12 @@ void undo_start_seg_in_tile_buffer(int ds1_idx, UBYTE x, UBYTE y)
    u->seg_num++;
    
    // starting cell
-   fwrite(&x, sizeof(x), 1, u->fptr);
-   fwrite(&y, sizeof(y), 1, u->fptr);
+   fwrite(&ux, sizeof(ux), 1, u->fptr);
+   fwrite(&uy, sizeof(uy), 1, u->fptr);
 
    // fake cell number of this segment (will be updated later)
    u->cell_offset = ftell(u->fptr);
-   fwrite(&fake, sizeof(u->cell_num), 1, u->fptr);
+   fwrite(&fake, sizeof(fake), 1, u->fptr);
 
    // init
    u->cell_num = 0;
@@ -244,7 +260,7 @@ void undo_add_to_tile_buffer(int ds1_idx, int ix, int iy)
    CELL_S_S       * s  = glb_ds1[ds1_idx].shadow_buff + ts;
    CELL_W_S       * w  = glb_ds1[ds1_idx].wall_buff   + tw;
    UWORD          layer_flag = 0; // 4 walls + 4 floors + 1 shadow = 9 bits
-   UBYTE          x = ix & 0xFF, y = iy & 0xFF;
+   int            x = ix, y = iy;
    char           tmp[150];
 
    // just in case
@@ -270,7 +286,8 @@ void undo_add_to_tile_buffer(int ds1_idx, int ix, int iy)
    if (layer_flag)
    {
       // same segment ?
-      if ( (u->seg_num == 0) || ((x != (u->old_x + 1)) || (y != u->old_y)) )
+      if ( (u->seg_num == 0) || ((x != (u->old_x + 1)) || (y != u->old_y)) ||
+           (u->cell_num == 0xFFFFFFFFu) )
       {
          // another segment, close a precedent one ?
          if (u->in_seg != FALSE)
@@ -419,11 +436,13 @@ void undo_apply_tile_buffer(int ds1_idx)
 {
    UNDO_S * u = & glb_ds1[ds1_idx].undo;
    FILE   * in;
-   int    tf, ts, tw, i, c, s, seg_num, cell_num, x, y, layer_flag, data_flag;
+   int    tf, ts, tw, i, c, x, y, layer_flag, data_flag;
+   UDWORD seg_num, cell_num, s, cn, ux, uy;
+   UWORD  lf;
    CELL_F_S * f;
    CELL_S_S * sh;
    CELL_W_S * w;
-   char   undo_file[100], tmp[100];
+   char   undo_file[300], tmp[400];
    
    if ((u->buf_num <= 0) || (u->cur_buf_num < 0))
       return;
@@ -448,13 +467,25 @@ void undo_apply_tile_buffer(int ds1_idx)
       }
    }
 
-   seg_num = fgetc(in);
+   if (fread(&seg_num, sizeof(seg_num), 1, in) != 1)
+   {
+      fclose(in);
+      sprintf(tmp, "undo_apply_tile_buffer() : truncated %s", undo_file);
+      ds1edit_error(tmp);
+   }
    for (s=0; s < seg_num; s++)
    {
-      x  = fgetc(in);
-      y  = fgetc(in);
-      cell_num = fgetc(in);
-      for (c=0; c < cell_num; c++)
+      if ( (fread(&ux, sizeof(ux), 1, in) != 1) ||
+           (fread(&uy, sizeof(uy), 1, in) != 1) ||
+           (fread(&cell_num, sizeof(cell_num), 1, in) != 1) )
+      {
+         fclose(in);
+         sprintf(tmp, "undo_apply_tile_buffer() : truncated %s", undo_file);
+         ds1edit_error(tmp);
+      }
+      x = (int) ux;
+      y = (int) uy;
+      for (cn=0; cn < cell_num; cn++)
       {
          if ( (x < 0) || (y < 0) ||
               (x >= glb_ds1[ds1_idx].width) ||
@@ -472,7 +503,14 @@ void undo_apply_tile_buffer(int ds1_idx)
          f  = glb_ds1[ds1_idx].floor_buff  + tf;
          sh = glb_ds1[ds1_idx].shadow_buff + ts;
          w  = glb_ds1[ds1_idx].wall_buff   + tw;
-         fread(&layer_flag, sizeof(UWORD), 1, in);
+         lf = 0;
+         if (fread(&lf, sizeof(lf), 1, in) != 1)
+         {
+            fclose(in);
+            sprintf(tmp, "undo_apply_tile_buffer() : truncated %s", undo_file);
+            ds1edit_error(tmp);
+         }
+         layer_flag = lf;
          for (i=0; i < glb_ds1[ds1_idx].floor_num; i++)
          {
             if (layer_flag & (1 << i))
@@ -575,7 +613,7 @@ void undo_add_this_tile_to_buffer(int ds1_idx, int ix, int iy,
    UNDO_DAT_FLG_S * df = & u->dat_flg;
    int            i;
    UWORD          layer_flag = 0; // 4 walls + 4 floors + 1 shadow = 9 bits
-   UBYTE          x = ix & 0xFF, y = iy & 0xFF;
+   int            x = ix, y = iy;
    char           tmp[150];
 
 
@@ -605,7 +643,8 @@ void undo_add_this_tile_to_buffer(int ds1_idx, int ix, int iy,
    if (layer_flag)
    {
       // same segment ?
-      if ( (u->seg_num == 0) || ((x != (u->old_x + 1)) || (y != u->old_y)) )
+      if ( (u->seg_num == 0) || ((x != (u->old_x + 1)) || (y != u->old_y)) ||
+           (u->cell_num == 0xFFFFFFFFu) )
       {
          // another segment, close a precedent one ?
          if (u->in_seg != FALSE)

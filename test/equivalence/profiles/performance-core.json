@@ -1,0 +1,63 @@
+{
+ "schema": "ds1edit.performance-profile/1",
+ "id": "performance-core",
+ "description": "Repeated-workload resource and timing records for the first release (robustness package E, task 3). Release builds only; no pass/fail budget exists: comparisons are emitted as 'unreviewed' until a maintainer reviews baseline evidence.",
+ "repetitions": 10,
+ "warmups": 3,
+ "timeout_s": 120,
+ "build_requirements": {"config": "Release", "sanitizers": false, "coverage": false},
+ "comparison_policy": "like-for-like (workload, inputs, build configuration, compiler, host class) only; otherwise incomparable; never an automatic pass",
+ "workloads": [
+  {
+   "id": "map-open-headless",
+   "kind": "map-open-headless",
+   "description": "First map open: one process start, MPQ open, palette/tile load, headless render at 1:4 and exit. Each cycle is a fresh process, so the first cycle is also recorded as a separate cold-start sample.",
+   "maps": ["act1_town", "act1_cave", "act2_desert", "act3_jungle", "act4_fortress", "act5_town"],
+   "cold_first": true,
+   "requires": ["d2-game-data"]
+  },
+  {
+   "id": "decode-dcc-probe",
+   "kind": "probe-decode",
+   "description": "Authored DCC fixture decoded by the production dcc.c through the reference probe. Process start dominates; this tracks decoder regressions on a portable input, not real-asset throughput.",
+   "command": ["{probe}", "decode", "--kind", "dcc", "--input", "{fixtures}/decoders/dcc_sequence.dcc", "--direction", "-1", "--out-dir", "{out}"],
+   "check": {"min_files": 2, "stable": true}
+  },
+  {
+   "id": "decode-dc6-probe",
+   "kind": "probe-decode",
+   "description": "Authored DC6 fixture decoded by the production dc6 path through the reference probe.",
+   "command": ["{probe}", "decode", "--kind", "dc6", "--input", "{fixtures}/decoders/dc6_rle_basic.dc6", "--direction", "-1", "--out-dir", "{out}"],
+   "check": {"min_files": 2, "stable": true}
+  },
+  {
+   "id": "export-raw-dt1-floor",
+   "kind": "editor-cli",
+   "description": "Real DT1 (ACT1 town floor.dt1) decoded and exported to per-tile PNGs by the editor CLI.",
+   "command": ["{exe}", "export-raw", "--type=dt1", "--target=data\\global\\tiles\\ACT1\\TOWN\\floor.dt1", "--out={out}"],
+   "needs": ["game-data"],
+   "check": {"min_files": 100, "stable": true}
+  },
+  {
+   "id": "export-raw-dcc-necromancer",
+   "kind": "editor-cli",
+   "description": "Real DCC (NEHDBHMWLHTH) decoded and exported frame by frame by the editor CLI.",
+   "command": ["{exe}", "export-raw", "--type=dcc", "--target=data\\global\\CHARS\\NE\\HD\\NEHDBHMWLHTH.dcc", "--out={out}"],
+   "needs": ["game-data"],
+   "check": {"min_files": 100, "stable": true}
+  },
+  {
+   "id": "export-compose-ne-wl-hth",
+   "kind": "editor-cli",
+   "description": "Layered character composition and APNG export of one direction (NE/WL/HTH).",
+   "command": ["{exe}", "export", "--target=NE/WL/HTH", "--direction=0", "--out={out}"],
+   "needs": ["game-data"],
+   "check": {"min_files": 1, "stable": true}
+  },
+  {
+   "id": "map-switch-shared-and-different-tilesets",
+   "status": "not_implemented",
+   "reason": "Switching between a declared pair of maps inside one editor session needs an in-process repeat mode; the headless CLI opens one map per process. Until one exists, in-session growth across map switches is not observed and must not be inferred from the per-process runs above."
+  }
+ ]
+}

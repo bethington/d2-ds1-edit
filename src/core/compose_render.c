@@ -3,11 +3,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <allegro5/allegro.h>
-
 #include "structs.h"
 #include "core/dcc.h"
 #include "core/dc6.h"
+#include "core/index_frame.h"
 #include "core/compose_bbox.h"
 #include "core/compose_blit.h"
 #include "core/compose_cof.h"
@@ -46,160 +45,111 @@ static void layer_data_free(LAYER_DATA_S *lay)
    memset(lay, 0, sizeof(*lay));
 }
 
-static int copy_bitmap_to_rgba(ALLEGRO_BITMAP *bmp, int w, int h,
-                               unsigned char *out_buf)
+/* Convert one palette-index canvas to RGBA through the current palette.
+ * Index 0 is transparent. Without a palette, indices become a grey ramp. */
+static void index_canvas_to_rgba(const unsigned char *idx, int w, int h,
+                                 unsigned char *rgba)
 {
-   ALLEGRO_LOCKED_REGION *lock;
-   int y;
+   size_t i, n = (size_t) w * (size_t) h;
 
-   if (bmp == NULL || out_buf == NULL || w <= 0 || h <= 0)
-      return 0;
-
-   lock = al_lock_bitmap(bmp,
-                         ALLEGRO_PIXEL_FORMAT_ABGR_8888_LE,
-                         ALLEGRO_LOCK_READONLY);
-   if (lock == NULL)
-      return 0;
-
-   for (y = 0; y < h; y++)
+   for (i = 0; i < n; i++)
    {
-      unsigned char *src_row = (unsigned char *) lock->data + y * lock->pitch;
-      unsigned char *dst_row = out_buf + (size_t) y * w * 4;
-      memcpy(dst_row, src_row, (size_t) w * 4);
+      unsigned char v = idx[i];
+      unsigned char *p = rgba + i * 4;
+
+      if (v == 0)
+      {
+         p[0] = p[1] = p[2] = p[3] = 0;
+      }
+      else if (a5_current_palette != NULL)
+      {
+         p[0] = a5_current_palette->colors[v].r;
+         p[1] = a5_current_palette->colors[v].g;
+         p[2] = a5_current_palette->colors[v].b;
+         p[3] = a5_current_palette->colors[v].a;
+      }
+      else
+      {
+         p[0] = p[1] = p[2] = v;
+         p[3] = 255;
+      }
+   }
+}
+
+/* Fill `lay` from `count` index canvases of w x h. Returns 1 on success. */
+static int layer_from_index_canvases(LAYER_DATA_S *lay,
+                                     unsigned char *const *canvases,
+                                     int count, int w, int h,
+                                     int off_x, int off_y)
+{
+   int f;
+
+   if (w <= 0 || h <= 0 || count <= 0)
+      return 0;
+
+   lay->frames = (unsigned char **) calloc((size_t) count,
+                                            sizeof(unsigned char *));
+   if (lay->frames == NULL)
+      return 0;
+   lay->frame_count = count;
+   lay->loaded = 1;   /* so layer_data_free releases a partial fill */
+
+   for (f = 0; f < count; f++)
+   {
+      lay->frames[f] = (unsigned char *) malloc((size_t) w * h * 4);
+      if (lay->frames[f] == NULL)
+      {
+         layer_data_free(lay);
+         return 0;
+      }
+      index_canvas_to_rgba(canvases[f], w, h, lay->frames[f]);
    }
 
-   al_unlock_bitmap(bmp);
+   lay->width  = w;
+   lay->height = h;
+   lay->off_x  = off_x;
+   lay->off_y  = off_y;
    return 1;
 }
 
 /* Load one layer's DC6 for the given direction. Returns 1 on success,
- * 0 on failure (file missing, decode error, allocation). DC6 stores
- * frames as a flat array sized direction_count * frames_per_dir;
- * direction d's frames are at offsets [d*fpd .. d*fpd+fpd-1]. Each
- * frame has its own bounding box and RLE-compressed pixel data. */
+ * 0 on failure (file missing, decode error, allocation). The frames are
+ * decoded by the shared raw decoder and laid out on the union of their
+ * rectangles, exactly as the editor and the asset export do. */
 static int load_dc6_layer_for_direction(const char *dc6_path,
                                         int direction,
                                         LAYER_DATA_S *lay)
 {
    char *buf = NULL;
    long buf_len = 0;
-   /* 32-bit on-disk fields: `long` is 64-bit under LP64. */
-   const int32_t *lp;
-   long dc6_ver, dc6_unk1, dc6_unk2, dc6_dir, dc6_fpd;
-   const int32_t *dc6_fptr;
-   int box_x1, box_y1, box_x2, box_y2;
-   int box_w, box_h;
-   int f;
+   DS1EDIT_INDEX_FRAME *frames = NULL;
+   size_t count = 0;
+   unsigned char **canvases = NULL;
+   int w, h, off_x, off_y, ok;
 
    if (lay == NULL) return 0;
    memset(lay, 0, sizeof(*lay));
 
    if (misc_load_mpq_file((char *) dc6_path, &buf, &buf_len, 0) == -1)
       return 0;
-   if (buf == NULL || buf_len < 24) { if (buf) free(buf); return 0; }
+   if (buf == NULL || buf_len <= 0) { if (buf) free(buf); return 0; }
 
-   lp = (const int32_t *) buf;
-   dc6_ver  = lp[0];
-   dc6_unk1 = lp[1];
-   dc6_unk2 = lp[2];
-   /* lp[3] unknown */
-   dc6_dir  = lp[4];
-   dc6_fpd  = lp[5];
-   dc6_fptr = &lp[6];
-
-   if (dc6_ver != 6 || dc6_unk1 != 1 || dc6_unk2 != 0
-       || dc6_dir <= 0 || dc6_fpd <= 0
-       || direction < 0 || direction >= dc6_dir)
-   {
-      free(buf);
-      return 0;
-   }
-
-   /* Bounding box across all frames in the requested direction. */
-   box_x1 = box_y1 = 0x7FFFFFFF;
-   box_x2 = box_y2 = -0x7FFFFFFF;
-   for (f = 0; f < dc6_fpd; f++)
-   {
-      long off = dc6_fptr[direction * dc6_fpd + f];
-      const int32_t *fh;
-      long fw, fh_, fox, foy, fx1, fy1, fx2, fy2;
-      if (off < 0 || off >= buf_len - 24) { free(buf); return 0; }
-      fh = (const int32_t *) (buf + off);
-      fw  = fh[1]; fh_ = fh[2]; fox = fh[3]; foy = fh[4];
-      fx1 = fox; fx2 = fx1 + fw - 1;
-      fy2 = foy; fy1 = fy2 - fh_ + 1;
-      if (fx1 < box_x1) box_x1 = (int) fx1;
-      if (fx2 > box_x2) box_x2 = (int) fx2;
-      if (fy1 < box_y1) box_y1 = (int) fy1;
-      if (fy2 > box_y2) box_y2 = (int) fy2;
-   }
-   box_w = box_x2 - box_x1 + 1;
-   box_h = box_y2 - box_y1 + 1;
-   if (box_w <= 0 || box_h <= 0) { free(buf); return 0; }
-
-   lay->frames = (unsigned char **) calloc((size_t) dc6_fpd,
-                                            sizeof(unsigned char *));
-   if (lay->frames == NULL) { free(buf); return 0; }
-
-   for (f = 0; f < dc6_fpd; f++)
-   {
-      long off = dc6_fptr[direction * dc6_fpd + f];
-      /* A DC6 frame header is eight 32-bit fields followed by the RLE data.
-         `fh` was declared `long *` while being assigned an int32_t cast, so on
-         a 64-bit host every field was read 8 bytes wide at twice its offset --
-         fh[1] picked up fields 2 and 3 rather than the width. The data pointer
-         had the same fault from a different direction: 8 * sizeof(long) is 64
-         here, and the header is 32 bytes, so it started half a header past the
-         pixels. dc6.c reads the identical layout correctly; this now matches
-         it. */
-      const int32_t *fh = (const int32_t *) (buf + off);
-      long fox = fh[3], foy = fh[4];
-      long flen = fh[7];  /* RLE-compressed length */
-      unsigned char *fdata = (unsigned char *) (fh + 8);
-      ALLEGRO_BITMAP *frame_bmp;
-      ALLEGRO_LOCKED_REGION *lock;
-      int x0, y0, y;
-
-      lay->frames[f] = (unsigned char *) calloc((size_t) box_w * box_h * 4, 1);
-      if (lay->frames[f] == NULL) { layer_data_free(lay); free(buf); return 0; }
-
-      frame_bmp = al_create_bitmap(box_w, box_h);
-      if (frame_bmp == NULL) continue;
-      a5_clear(frame_bmp);
-
-      /* Decode RLE into the bitmap at the frame's offset within the
-       * layer's bounding box. dc6_decomp_norm starts at (x0, y0) and
-       * decodes downward (D2's bottom-up coordinate convention). */
-      x0 = (int) (fox - box_x1);
-      y0 = (int) (foy - box_y1);
-      dc6_decomp_norm(fdata, frame_bmp, flen, x0, y0);
-
-      /* Copy bitmap pixels into RGBA. */
-      lock = al_lock_bitmap(frame_bmp,
-                            ALLEGRO_PIXEL_FORMAT_ABGR_8888_LE,
-                            ALLEGRO_LOCK_READONLY);
-      if (lock != NULL)
-      {
-         for (y = 0; y < box_h; y++)
-         {
-            unsigned char *src = (unsigned char *) lock->data + y * lock->pitch;
-            unsigned char *dst = lay->frames[f] + (size_t) y * box_w * 4;
-            memcpy(dst, src, (size_t) box_w * 4);
-         }
-         al_unlock_bitmap(frame_bmp);
-      }
-      al_destroy_bitmap(frame_bmp);
-   }
-
-   lay->loaded      = 1;
-   lay->width       = box_w;
-   lay->height      = box_h;
-   lay->off_x       = box_x1;
-   lay->off_y       = box_y1;
-   lay->frame_count = (int) dc6_fpd;
-
+   ok = dc6_decode_indices(buf, (size_t) buf_len, direction,
+                           &frames, &count, NULL, 0);
    free(buf);
-   return 1;
+   if (!ok)
+      return 0;
+
+   ok = (ds1edit_index_frames_to_canvases(frames, count, &canvases, &w, &h,
+                                &off_x, &off_y) == 0)
+        && layer_from_index_canvases(lay, canvases, (int) count, w, h,
+                                     off_x, off_y);
+
+   ds1edit_index_canvases_free(canvases, count);
+   ds1edit_index_frames_free(frames, count);
+   if (!ok)
+      memset(lay, 0, sizeof(*lay));
+   return ok;
 }
 
 /* Load one layer's DCC for the given direction. On success, populates
@@ -213,11 +163,10 @@ static int load_layer_for_direction(const char *dcc_path,
 {
    char *dcc_buf = NULL;
    long dcc_len = 0;
-   DCC_S *dcc = NULL;
-   DCC_DIRECTION_S *dir;
-   int w, h;
-   int frames;
-   int f;
+   DS1EDIT_INDEX_FRAME *frames = NULL;
+   size_t count = 0, f;
+   unsigned char **canvases;
+   int ok;
 
    if (lay == NULL)
       return 0;
@@ -225,70 +174,32 @@ static int load_layer_for_direction(const char *dcc_path,
 
    if (misc_load_mpq_file((char *) dcc_path, &dcc_buf, &dcc_len, 0) == -1)
       return 0;
+   if (dcc_buf == NULL || dcc_len <= 0) { if (dcc_buf) free(dcc_buf); return 0; }
 
-   dcc = dcc_mem_load(dcc_buf, (int) dcc_len);
+   ok = dcc_decode_indices(dcc_buf, (size_t) dcc_len, direction,
+                           &frames, &count, NULL, 0);
    free(dcc_buf);
-   if (dcc == NULL)
-      return 0;
-
-   /* dcc_mem_load only copies bytes; the header is parsed inside
-    * dcc_decode. Decode FIRST, then validate the direction. */
-   if (dcc_decode(dcc, 1L << direction))
+   if (!ok || count == 0)
    {
-      dcc_destroy(dcc);
+      ds1edit_index_frames_free(frames, count);
       return 0;
    }
 
-   if (direction < 0 || direction >= dcc->header.directions)
-   {
-      dcc_destroy(dcc);
-      return 0;
-   }
+   /* Every DCC frame of a direction already has the direction box size. */
+   canvases = (unsigned char **) calloc(count, sizeof(unsigned char *));
+   ok = (canvases != NULL);
+   for (f = 0; ok && f < count; f++)
+      canvases[f] = frames[f].pixels;
+   if (ok)
+      ok = layer_from_index_canvases(lay, canvases, (int) count,
+                                     frames[0].width, frames[0].height,
+                                     frames[0].origin_x, frames[0].origin_y);
 
-   dir = &dcc->direction[direction];
-   w = (int) dir->box.width;
-   h = (int) dir->box.height;
-   frames = (int) dcc->header.frames_per_dir;
-
-   if (w <= 0 || h <= 0 || frames <= 0)
-   {
-      dcc_destroy(dcc);
-      return 0;
-   }
-
-   lay->frames = (unsigned char **) calloc((size_t) frames,
-                                            sizeof(unsigned char *));
-   if (lay->frames == NULL)
-   {
-      dcc_destroy(dcc);
-      return 0;
-   }
-
-   for (f = 0; f < frames; f++)
-   {
-      lay->frames[f] = (unsigned char *) calloc((size_t) w * h * 4, 1);
-      if (lay->frames[f] == NULL)
-      {
-         /* On alloc failure mid-way, free what we have and bail. */
-         while (f > 0)
-            free(lay->frames[--f]);
-         free(lay->frames);
-         dcc_destroy(dcc);
-         memset(lay, 0, sizeof(*lay));
-         return 0;
-      }
-      copy_bitmap_to_rgba(dcc->frame[direction][f].bmp, w, h, lay->frames[f]);
-   }
-
-   lay->loaded = 1;
-   lay->width = w;
-   lay->height = h;
-   lay->off_x = (int) dir->box.xmin;
-   lay->off_y = (int) dir->box.ymin;
-   lay->frame_count = frames;
-
-   dcc_destroy(dcc);
-   return 1;
+   free(canvases);
+   ds1edit_index_frames_free(frames, count);
+   if (!ok)
+      memset(lay, 0, sizeof(*lay));
+   return ok;
 }
 
 void compose_render_free(COMPOSE_RENDER_RESULT_S *result)

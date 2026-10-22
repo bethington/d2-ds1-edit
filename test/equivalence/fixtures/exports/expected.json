@@ -1,0 +1,85 @@
+{
+ "outputs": [
+  {
+   "delays": [],
+   "file": "sprite/Data/Test/sprite/dir_00/frame_000.png",
+   "frames": [
+    "0000000000000000000000000000000032cd96ff00000000000000000000000000000000"
+   ],
+   "height": 3,
+   "kind": "png",
+   "width": 3
+  },
+  {
+   "delays": [],
+   "file": "sprite/Data/Test/sprite/dir_00/frame_001.png",
+   "frames": [
+    "000000000000000000000000000000003cc3b4ff3dc2b7ff000000000000000000000000"
+   ],
+   "height": 3,
+   "kind": "png",
+   "width": 3
+  },
+  {
+   "delays": [],
+   "file": "sprite/Data/Test/sprite/dir_01/frame_000.png",
+   "frames": [
+    "000000000000000046b9d2ff000000000000000047b8d5ff"
+   ],
+   "height": 2,
+   "kind": "png",
+   "width": 3
+  },
+  {
+   "delays": [],
+   "file": "sprite/Data/Test/sprite/dir_01/frame_001.png",
+   "frames": [
+    "00000000000000000000000050aff0ff0000000051aef3ff"
+   ],
+   "height": 2,
+   "kind": "png",
+   "width": 3
+  },
+  {
+   "delays": [
+    [
+     128,
+     1000
+    ],
+    [
+     128,
+     1000
+    ],
+    [
+     128,
+     1000
+    ]
+   ],
+   "file": "compose/AMTNHTH.apng",
+   "frames": [
+    "14eb3cff14eb3cff14eb3cff0000000014eb3cff14eb3cff0af51eff0af51eff14eb3cff14eb3cff0af51eff0af51eff",
+    "15ea3fff15ea3fff15ea3fff0000000015ea3fff15ea3fff15ea3fff0bf421ff15ea3fff15ea3fff15ea3fff0bf421ff",
+    "16e942ff16e942ff16e942ff0000000016e942ff16e942ff0cf324ff0cf324ff16e942ff16e942ff0cf324ff0cf324ff"
+   ],
+   "height": 3,
+   "kind": "apng",
+   "width": 4
+  },
+  {
+   "delays": [
+    [
+     40,
+     1000
+    ]
+   ],
+   "file": "compose/one_frame.apng",
+   "frames": [
+    "14eb3cff14eb3cff14eb3cff0000000014eb3cff14eb3cff0af51eff0af51eff14eb3cff14eb3cff0af51eff0af51eff"
+   ],
+   "height": 3,
+   "kind": "apng",
+   "width": 4
+  }
+ ],
+ "schema": "ds1edit.export-cases/1"
+}

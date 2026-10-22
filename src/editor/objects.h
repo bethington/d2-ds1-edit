@@ -5,6 +5,8 @@
 
 #define _EDITOBJ_H_                                                           
 
+#define OBJ_OOB_COLOR 10 // palette index of the "outside the map" warning tint
+
 int  editobj_qsort_helper_drawing_order (const void * e1, const void * e2);
 void editobj_set_drawing_order          (int ds1_idx);
 void editobj_make_obj_label             (int ds1_idx);
@@ -25,6 +27,8 @@ void editobj_copy_obj                   (int ds1_idx);
 // void editobj_search_copy_center         (int ds1_idx, int * cx, int * cy);
 // int  editobj_center_before_copy         (int ds1_idx, int * cx0, int * cy0, int * mx,  int * my);
 int  editobj_count_sel_obj              (int ds1_idx);
+int  editobj_is_out_of_bounds           (int ds1_idx, int obj_idx);
+int  editobj_count_out_of_bounds        (int ds1_idx);
 int  editobj_insert_obj                 (int ds1_idx, int cx, int cy);
 void editobj_prepare_edit_obj_win       (int ds1_idx, int obj_idx);
 void editobj_draw_edit_obj              (int ds1_idx);

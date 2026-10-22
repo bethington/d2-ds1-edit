@@ -34,6 +34,44 @@ archives via `tools/d2mpq.py`, never from the repository's own tables
 | [Network protocol](guides/network-protocol.md) | original research — the closing part | 341 live capture pairs; `Fog.dll` ordinal 10224 confirmed instruction-for-instruction at `0x6FF6EDA0`; both D2Net size tables read from memory | which PD2 site writes the overrides |
 | [ds1edit manual](getting-started/manual.md) · [overview](getting-started/overview.md) · [tutorial 1](tutorials/01-basic-map-editing.md) | Siramy, 2004–2011 | 12 data claims re-verified against vanilla archives; format claims now sourced to the DS1 chapter; [one report](getting-started/siramy-conversions.verification.md) covers all three | ~35 keyboard sections (the 2003–2006 binary is absent) |
 
+## Cross-chapter open items
+
+A consolidated index of the open work that touches more than one chapter. The
+per-chapter `Open` column in the table above is the right place for items
+internal to a single chapter; this section is for the items that span two or
+more chapters, or whose resolution would change a claim in a chapter other
+than the one they currently sit in. Each entry names the chapters affected,
+gives a one-line summary, and points to where the detail lives.
+
+- **The `.txt`/`.bin` global semantics** (Excel tables & data loading;
+  touches every table loader). The global at `0x6fde9e20` is never written
+  by any shipped binary; whether it selects file format or memory mode is
+  unresolved. See the section below for the full investigation.
+- **The palette reproduction gap** (Palettes and colour; D2CMP decoders;
+  potentially DS1 object rendering and sprite compositing). The
+  reimplemented generators byte-diff at 77.6% against the shipped
+  `Pal.PL2`; the remaining ~22% sits in the hue-rotation and screen-blend
+  paths, and the `palshift` table's semantics are not settled. Detail in
+  [`palettes-and-colour.md`](guides/palettes-and-colour.md) § Open.
+- **PD2 runtime patches — which actually take?** (Mods and hooking;
+  Network protocol). The 24-binary SHA-256 diff and the load chain from
+  shipped bytes are complete; the patches the mod's runtime patcher
+  activates at launch — and which of them write the network-protocol
+  override sites — are not. Detail in
+  [`mods-and-hooking-1.13c.md`](guides/mods-and-hooking-1.13c.md) and
+  [`network-protocol.md`](guides/network-protocol.md) § Open.
+- **DC6 `flip` and DCC `variable0`** (Sprite formats: DCC + DC6;
+  potentially DS1 object rendering and the compose pipeline). Two sprite
+  fields with unknown semantics. If either has run-time meaning, the DS1
+  object chapter and the compose presets may need revisiting. Detail in
+  [`sprite-formats-dcc-dc6.md`](guides/sprite-formats-dcc-dc6.md) § Open.
+- **The `~35` keyboard sections in the ds1edit manual** (Manual,
+  Overview, Tutorial 1; potentially the inventory/path sections of D2S).
+  The 2003–2006 binary the keyboard tables derive from is absent from
+  every known archive. Either a different source has to be located or
+  the sections are dropped. Detail in
+  [`siramy-conversions.verification.md`](getting-started/siramy-conversions.verification.md).
+
 ## The `.txt`/`.bin` global: nothing writes it, anywhere
 
 The generic table loader forks on a global at `0x6fde9e20`, and in shipped

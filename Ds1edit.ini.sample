@@ -132,6 +132,11 @@ winobj_can_scroll_keyb = YES
 winobj_can_scroll_mouse = NO
 
 
+; Scroll the map when the mouse touches the window border. The arrow keys
+; and WASD always scroll; Ctrl+arrows browse maps.
+mouse_edge_scroll = NO
+
+
 ; After Centering (the 'C' key), which zoom level to use?
 ; Valid values: NO_CHANGE, 1:1, 1:2, 1:4, 1:8, 1:16
 ; Code default is 1:1; sample uses NO_CHANGE so centering doesn't

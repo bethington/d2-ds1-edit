@@ -31,6 +31,64 @@ static int streq_ci(const char *a, const char *b)
    return *a == 0 && *b == 0;
 }
 
+static int path_char(int c)
+{
+   if (c == '/') c = '\\';
+   return tolower((unsigned char)c);
+}
+
+static const char *tiles_relative(const char *path)
+{
+   /* "global\tiles\" is the layout copy-on-save writes into a project
+    * (<project>\Global\Tiles\<suffix>, no "Data" level); without it a saved
+    * project copy reopened by path matched no preset at all. */
+   const char *prefixes[] = { "data\\global\\tiles\\", "global\\tiles\\", "assets\\tiles\\" };
+   const char *p;
+   int i;
+   if (path == NULL) return NULL;
+   for (p = path; *p; p++)
+   {
+      if (p != path && path_char(p[-1]) != '\\') continue;
+      for (i = 0; i < 3; i++)
+      {
+         const char *a = p, *prefix = prefixes[i];
+         while (*prefix && *a && path_char(*prefix) == path_char(*a))
+         {
+            prefix++;
+            a++;
+         }
+         if (*prefix == 0) return a;
+      }
+   }
+   return path;
+}
+
+static int path_equal(const char *a, const char *b)
+{
+   a = tiles_relative(a);
+   b = tiles_relative(b);
+   if (a == NULL || b == NULL) return 0;
+   while (*a && *b && path_char(*a) == path_char(*b)) { a++; b++; }
+   return *a == 0 && *b == 0;
+}
+
+const PRESET_ENTRY_S *mpq_index_find_by_ds1_path_in(const PRESET_ENTRY_S *arr,
+                                                     int count,
+                                                     const char *ds1_path,
+                                                     int *out_file_slot)
+{
+   int i, f;
+   if (arr == NULL || count <= 0 || ds1_path == NULL) return NULL;
+   for (i = 0; i < count; i++)
+      for (f = 0; f < arr[i].ds1_count; f++)
+         if (path_equal(arr[i].ds1_files[f], ds1_path))
+         {
+            if (out_file_slot != NULL) *out_file_slot = f;
+            return &arr[i];
+         }
+   return NULL;
+}
+
 const PRESET_ENTRY_S *mpq_index_find_by_ds1_name_in(const PRESET_ENTRY_S *arr,
                                                     int count,
                                                     const char *ds1_basename,

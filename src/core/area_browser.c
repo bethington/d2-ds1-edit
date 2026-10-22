@@ -11,14 +11,32 @@
 #include "core/cof.h"
 #include "core/animdata.h"
 #include "core/dt1.h"
+#include "core/mpq_index.h"
 #include "render/preview.h"
 #include "core/area_browser.h"
 #include "ui/props_panel.h"
 #include "platform.h"
 #include "ui/input.h"
+#include <allegro5/allegro_native_dialog.h>
 
 #define AREA_INIT_GROUPS    64
 #define AREA_INIT_ENTRIES   32
+
+static int unlisted_path_equal(const char *a, const char *b);
+
+/* Animation frames contain colors from the palette active when decoded. */
+static const RGBA_PALETTE *browser_animation_palette = NULL;
+
+/* A map that cannot be opened is reported and skipped; the editor keeps
+ * running with that slot empty (ds1_read_checked leaves it so). */
+static void area_browser_report_open_error(const char * error)
+{
+   fprintf(stderr, "area browser: %s\n", error);
+   fflush(stderr);
+   if (a5_display != NULL)
+      al_show_native_message_box(a5_display, "DS1Edit",
+         "The map could not be opened", error, NULL, ALLEGRO_MESSAGEBOX_ERROR);
+}
 
 
 /* ---- helpers ---- */
@@ -668,8 +686,13 @@ int area_browser_open_by_file(const char * ds1_path)
          const char * entry_name;
 
          /* Try full path match first */
-         if (stricmp(e->ds1_path, ds1_path) == 0)
+         if (unlisted_path_equal(e->ds1_path, ds1_path))
             goto found;
+
+         /* A full path must not silently select a namesake in another
+          * folder. Filename-only selection is for filename-only queries. */
+         if (strchr(ds1_path, '/') != NULL || strchr(ds1_path, '\\') != NULL)
+            continue;
 
          /* Try filename-only match */
          entry_name = strrchr(e->ds1_path, '/');
@@ -702,7 +725,7 @@ int area_browser_open_by_file(const char * ds1_path)
          }
 
          {
-            char full_path[512];
+            char full_path[512], open_error[768];
             int found_mod = 0;
             if (glb_config.mod_dir[0] != NULL)
             {
@@ -718,7 +741,13 @@ int area_browser_open_by_file(const char * ds1_path)
             }
             if (!found_mod)
                sprintf(full_path, "assets/tiles/%s", e->ds1_path);
-            misc_open_1_ds1(ds1_idx, full_path, e->lvltype_id, e->lvlprest_def, 0, 0);
+            if (misc_open_1_ds1_checked(ds1_idx, full_path, e->lvltype_id,
+                                        e->lvlprest_def, 0, 0,
+                                        open_error, sizeof(open_error)) != 0)
+            {
+               area_browser_report_open_error(open_error);
+               return -1;
+            }
          }
          return 0;
       }
@@ -740,17 +769,8 @@ static void area_browser_unload_current(void)
 
    memset(glb_ds1, 0, sizeof(DS1_S) * DS1_MAX);
 
-   {
-      int od;
-      for (od = 0; od < glb_ds1edit.obj_desc_num; od++)
-      {
-         if (glb_ds1edit.obj_desc[od].cof != NULL)
-         {
-            anim_destroy_cof(glb_ds1edit.obj_desc[od].cof);
-            glb_ds1edit.obj_desc[od].cof = NULL;
-         }
-      }
-   }
+   /* Keep decoded animations until the new map's usage is known.
+    * anim_update_gfx() frees those the next map does not use. */
 }
 
 static int area_browser_open_entry_into_slot(int group_idx, int entry_idx, int ds1_idx)
@@ -758,7 +778,7 @@ static int area_browser_open_entry_into_slot(int group_idx, int entry_idx, int d
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
    AREA_GROUP_S * g;
    AREA_DS1_ENTRY_S * e;
-   char ds1_path[512];
+   char ds1_path[512], open_error[768];
 
    if (group_idx < 0 || group_idx >= ab->group_count)
       return -1;
@@ -778,7 +798,11 @@ static int area_browser_open_entry_into_slot(int group_idx, int entry_idx, int d
       printf("  [%d] (backup) %s\n", entry_idx, ds1_path);
       fflush(stdout);
 
-      ds1_read(ds1_path, ds1_idx, 0, 0);
+      if (ds1_read_checked(ds1_path, ds1_idx, 0, 0, open_error, sizeof(open_error)) != 0)
+      {
+         area_browser_report_open_error(open_error);
+         return -1;
+      }
       misc_make_block_table(ds1_idx);
       ds1_make_prop_2_block(ds1_idx);
       return 0;
@@ -795,13 +819,12 @@ static int area_browser_open_entry_into_slot(int group_idx, int entry_idx, int d
    printf("  [%d] lvltype=%d def=%d %s\n", entry_idx, e->lvltype_id, e->lvlprest_def, ds1_path);
    fflush(stdout);
 
-   misc_open_1_ds1(ds1_idx, ds1_path, e->lvltype_id, e->lvlprest_def, 0, 0);
-
-   /* Unlisted maps have no LvlTypes row, so read_lvltypes_txt reported an
-    * unknown Act. The group's Act was derived from the folder; stamp it on so
-    * palette_resolve_act picks the right palette instead of falling to 1. */
-   if (e->lvltype_id < 0 && g->act >= 1 && g->act <= 5)
-      glb_ds1[ds1_idx].txt_act = g->act;
+   if (misc_open_1_ds1_checked(ds1_idx, ds1_path, e->lvltype_id, e->lvlprest_def,
+                               0, 0, open_error, sizeof(open_error)) != 0)
+   {
+      area_browser_report_open_error(open_error);
+      return -1;
+   }
 
    return 0;
 }
@@ -812,17 +835,29 @@ static void area_browser_finish_load(int group_idx, int active_ds1_idx, int open
 
    if (!ab->groups[group_idx].is_backup)
    {
+      int pal_idx = palette_resolve_index(glb_ds1[active_ds1_idx].txt_act,
+                                          glb_ds1[active_ds1_idx].act);
+      const RGBA_PALETTE *new_palette = &glb_ds1edit.vga_pal[pal_idx];
+      int old_bitmap_flags;
+
+      if (browser_animation_palette != new_palette)
+         anim_exit();
+      browser_animation_palette = new_palette;
+      a5_current_palette = &glb_ds1edit.vga_pal[pal_idx];
+
       animdata_load();
+
+      /* DCC/DC6 decoding writes many small pixel regions. Keeping scratch
+       * surfaces in memory avoids a GPU lock for every region; the completed
+       * frames are promoted to video bitmaps below. */
+      old_bitmap_flags = al_get_new_bitmap_flags();
+      al_set_new_bitmap_flags(ALLEGRO_MEMORY_BITMAP);
       anim_update_gfx(FALSE);
+      al_set_new_bitmap_flags(old_bitmap_flags);
       misc_make_cmaps();
 
       al_set_new_bitmap_flags(ALLEGRO_VIDEO_BITMAP);
       ds1edit_recreate_render_targets();
-      {
-         int pal_idx = palette_resolve_index(glb_ds1[active_ds1_idx].txt_act,
-                                             glb_ds1[active_ds1_idx].act);
-         a5_current_palette = &glb_ds1edit.vga_pal[pal_idx];
-      }
       dt1_rebuild_bitmaps_from_cache(a5_current_palette);
       {
          int oi, li, fi;
@@ -1262,6 +1297,7 @@ static int unlisted_lvltype_for_dir(AREA_BROWSER_S * ab, const char * rel,
                                     int * act_out)
 {
    int g, e;
+   int found_type = -1, found_act = 0;
 
    for (g = 0; g < ab->group_count; g++)
    {
@@ -1274,12 +1310,15 @@ static int unlisted_lvltype_for_dir(AREA_BROWSER_S * ab, const char * rel,
       {
          if (unlisted_same_dir(grp->entries[e].ds1_path, rel))
          {
-            if (act_out != NULL) *act_out = grp->act;
-            return grp->lvltype_id;
+            if (found_type >= 0 && found_type != grp->lvltype_id)
+               return -2; /* Several TXT tilesets share this folder. */
+            found_type = grp->lvltype_id;
+            found_act = grp->act;
          }
       }
    }
-   return -1;
+   if (found_type >= 0 && act_out != NULL) *act_out = found_act;
+   return found_type;
 }
 
 /* Leaf directory of a tiles-relative path ("ACT3\\Kurast\\x.ds1" -> "Kurast"). */
@@ -1412,25 +1451,50 @@ static int unlisted_scan_slot(AREA_BROWSER_S * ab, int slot)
 
          {
             int nbr_act = 0;
-            int lvltype = unlisted_lvltype_for_dir(ab, rel, &nbr_act);
+            int lvltype = -1, def = -1;
+            const PRESET_ENTRY_S *preset = mpq_index_find_by_ds1_path(rel, NULL);
             AREA_GROUP_S * g;
 
-            /* No listed neighbour: try a group whose name is this folder. */
-            if (lvltype < 0)
-               lvltype = unlisted_lvltype_by_name(ab, rel, &nbr_act);
+            /* Exact LvlPrest.File match wins over any folder inference. A
+             * LevelType of 0 is the "None" row, not a usable tileset. */
+            if (preset != NULL)
+            {
+               def = preset->def;
+               if (preset->level_type > 0 && preset->type_name[0] != '\0')
+                  lvltype = preset->level_type;
+            }
+            if (preset == NULL)
+            {
+               lvltype = unlisted_lvltype_for_dir(ab, rel, &nbr_act);
+               if (lvltype == -1)
+                  lvltype = unlisted_lvltype_by_name(ab, rel, &nbr_act);
+               if (lvltype == -2)
+                  lvltype = -1;
+            }
 
-            /* Prefer the Act of the group that owns this folder; fall back to
-             * the one implied by the folder name itself. */
-            act = (nbr_act >= 1 && nbr_act <= 5)
+            if (lvltype > 0)
+            {
+               int gi;
+               for (gi = 0; gi < ab->group_count; gi++)
+                  if (ab->groups[gi].lvltype_id == lvltype)
+                  {
+                     nbr_act = ab->groups[gi].act;
+                     break;
+                  }
+            }
+
+            /* TXT preset metadata determines the Act when available. The
+             * folder is only a browser grouping hint for unmatched maps. */
+            act = (preset != NULL && preset->act >= 1 && preset->act <= 5)
+                  ? preset->act
+                  : (nbr_act >= 1 && nbr_act <= 5)
                   ? nbr_act
                   : unlisted_act_from_path(rel);
 
             g = unlisted_group_for_act(ab, act);
             if (g == NULL) continue;
 
-            /* Def stays -1: there is no LvlPrest row, so no tileset mask.
-             * lvltype is what supplies the DT1 set. */
-            area_group_add_entry(g, lvltype, -1, rel);
+            area_group_add_entry(g, lvltype, def, rel);
             added++;
          }
       }

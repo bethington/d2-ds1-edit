@@ -7,6 +7,7 @@
 #include "core/cof.h"
 #include "editor/paths.h"
 #include "editor/objects.h"
+#include "editor/selection_logic.h"
 #include "ui/input.h"
 
 
@@ -44,6 +45,39 @@ int editobj_qsort_helper_drawing_order(const void * e1, const void * e2)
 
 
 // ==========================================================================
+// The original game keeps objects whose position is outside the map
+// (width*5 x height*5 sub-tiles), so the editor loads, shows and saves them.
+// Everything that turns an object position into a tile / sub-tile index must
+// therefore cope with negative and huge values.
+int editobj_is_out_of_bounds(int ds1_idx, int obj_idx)
+{
+   const OBJ_S * ob;
+
+   if ((obj_idx < 0) || (obj_idx >= glb_ds1[ds1_idx].obj_num))
+      return FALSE;
+   ob = & glb_ds1[ds1_idx].obj[obj_idx];
+   return (ob->x < 0) || (ob->x >= (long) glb_ds1[ds1_idx].width * 5) ||
+          (ob->y < 0) || (ob->y >= (long) glb_ds1[ds1_idx].height * 5);
+}
+
+int editobj_count_out_of_bounds(int ds1_idx)
+{
+   int o, n = 0;
+
+   for (o=0; o < glb_ds1[ds1_idx].obj_num; o++)
+      if (editobj_is_out_of_bounds(ds1_idx, o))
+         n++;
+   return n;
+}
+
+// floor division / modulo by 5 (C truncates toward zero, which would give a
+// negative sub-tile index for negative coordinates)
+static long editobj_floor_div5(long v)
+{
+   return (v >= 0) ? (v / 5L) : -((-v + 4L) / 5L);
+}
+
+// ==========================================================================
 // sort objects to prepare the drawing function
 void editobj_set_drawing_order(int ds1_idx)
 {
@@ -55,10 +89,10 @@ void editobj_set_drawing_order(int ds1_idx)
    for (i=0; i < glb_ds1[ds1_idx].obj_num; i++)
    {
       obj = & glb_ds1[ds1_idx].obj[i];
-      obj->tx = obj->x / 5L;
-      obj->sx = obj->x % 5L;
-      obj->ty = obj->y / 5L;
-      obj->sy = obj->y % 5L;
+      obj->tx = editobj_floor_div5(obj->x);
+      obj->sx = obj->x - obj->tx * 5L;
+      obj->ty = editobj_floor_div5(obj->y);
+      obj->sy = obj->y - obj->ty * 5L;
    }
 
    // force unused objects to be in last position
@@ -194,6 +228,12 @@ void editobj_draw_obj_lab(int ds1_idx, int is_shadow)
             color1 = 0;   // background label
             color2 = 255; // sub-tile & line color
             color3 = 255; // label border color
+            if (editobj_is_out_of_bounds(ds1_idx, o))
+            {
+               // outside the map: warning tint (kept & saved, like the game)
+               color2 = OBJ_OOB_COLOR;
+               color3 = OBJ_OOB_COLOR;
+            }
             if (IS_SELECTED(f1))
             {
                color1 = 118;
@@ -495,6 +535,23 @@ void editobj_clear_obj_lab_flags(int ds1_idx)
 
 
 // ==========================================================================
+// The tile cursor never leaves the map, so an object outside of it can only
+// be picked by its on-screen foot marker (same geometry as the drawing code).
+static int editobj_over_oob_foot(int ds1_idx, long x, long y, int mx, int my)
+{
+   long dx, dy, ox0, oy0;
+
+   dx  = ((y-2) * -glb_ds1[ds1_idx].tile_w / 10) + ((x+3) * glb_ds1[ds1_idx].tile_w / 10);
+   dy  = ((y-2) *  glb_ds1[ds1_idx].tile_h / 10) + ((x+3) * glb_ds1[ds1_idx].tile_h / 10);
+   ox0 = dx - glb_ds1edit.win_preview.x0;
+   oy0 = dy - glb_ds1edit.win_preview.y0 - 16;
+
+   return (mx >= ox0 - 4) && (mx <= ox0 + 4) &&
+          (my >= oy0)     && (my <= oy0 + 16);
+}
+
+
+// ==========================================================================
 // managment of the mouse focus. only 1 label OR 1 object can have
 // the focus at a time ( & label have a higher priority than object feet)
 // this function tells if the screen have to be redraw too
@@ -519,7 +576,9 @@ int editobj_over_obj_lab(int ds1_idx, int * ptr_t, int * ptr_o,
                // check sub-tile
                x = glb_ds1[ds1_idx].obj[o].x;
                y = glb_ds1[ds1_idx].obj[o].y;
-               if ((cx == x) && (cy == y))
+               if (((cx == x) && (cy == y)) ||
+                   (editobj_is_out_of_bounds(ds1_idx, o) &&
+                    editobj_over_oob_foot(ds1_idx, x, y, mx, my)))
                {
                   // mouse over this object
                   last_t = 2;
@@ -662,15 +721,24 @@ int editobj_moving_obj_lab(int ds1_idx, int dcx, int dcy, int dmx, int dmy)
             ptr_obj->x = ptr_obj->old_x + dcx;
             ptr_obj->y = ptr_obj->old_y + dcy;
 
-            if (ptr_obj->x < 0)
-               ptr_obj->x = 0;
-            if (ptr_obj->x >= glb_ds1[ds1_idx].width * 5)
-               ptr_obj->x = glb_ds1[ds1_idx].width * 5 - 1;
+            // keep an object that starts inside the map inside it; one that
+            // starts outside (the game allows it) is moved exactly by the
+            // offset, per axis, so it is never snapped to the map edge
+            if ((ptr_obj->old_x >= 0) && (ptr_obj->old_x < glb_ds1[ds1_idx].width * 5))
+            {
+               if (ptr_obj->x < 0)
+                  ptr_obj->x = 0;
+               if (ptr_obj->x >= glb_ds1[ds1_idx].width * 5)
+                  ptr_obj->x = glb_ds1[ds1_idx].width * 5 - 1;
+            }
 
-            if (ptr_obj->y < 0)
-               ptr_obj->y = 0;
-            if (ptr_obj->y >= glb_ds1[ds1_idx].height * 5)
-               ptr_obj->y = glb_ds1[ds1_idx].height * 5 - 1;
+            if ((ptr_obj->old_y >= 0) && (ptr_obj->old_y < glb_ds1[ds1_idx].height * 5))
+            {
+               if (ptr_obj->y < 0)
+                  ptr_obj->y = 0;
+               if (ptr_obj->y >= glb_ds1[ds1_idx].height * 5)
+                  ptr_obj->y = glb_ds1[ds1_idx].height * 5 - 1;
+            }
 
             save_old = TRUE;
          }
@@ -770,6 +838,11 @@ void editobj_del_obj(int ds1_idx)
    OBJ_S * ptr_s, * ptr_d;
    int   s=0, d=0, n=0, max = glb_ds1[ds1_idx].obj_num, done = FALSE;
 
+
+   // no object at all: the loop below would inspect slot 0 anyway and count
+   // it, turning the Delete key into "create one empty type-0 object"
+   if (max <= 0)
+      return;
 
    while ( ! done)
    {
@@ -1680,6 +1753,7 @@ int editobj_identical_lab_del(int ds1_idx, int o)
 int editobj_handler(int ds1_idx, int cx, int cy, int mx, int my, int mb)
 {
    static int  old_ds1_idx = -1, old_t, old_o, cur_type;
+   static int  box_active = FALSE, box_start_x, box_start_y;
    static enum {OM_NONE, OM_NEW, OM_ADD, OM_DEL, OM_MOV, OM_EDT, OM_INS} old_mode;
    int         t=0, o=0, redraw = FALSE;
    static int  start_cx, start_cy, start_mx, start_my;
@@ -1702,6 +1776,7 @@ int editobj_handler(int ds1_idx, int cx, int cy, int mx, int my, int mb)
    // environement managment
    if (ds1_idx != old_ds1_idx)
    {
+      box_active = FALSE;
       // init the backup datas, the very first time
       if (old_ds1_idx == -1)
       {
@@ -1771,6 +1846,9 @@ int editobj_handler(int ds1_idx, int cx, int cy, int mx, int my, int mb)
    else if (old_mode != OM_MOV)
    {
       // NOT moving obj or label
+
+      if (!(mb & 1))
+         box_active = FALSE;
       
       if (editobj_over_obj_lab(ds1_idx, & t, & o, cx, cy, mx, my))
          redraw = TRUE;
@@ -1779,9 +1857,15 @@ int editobj_handler(int ds1_idx, int cx, int cy, int mx, int my, int mb)
       {
          // button 1 pressed (& not moving obj or label)
 
-         if (key_pressed(KEY_ALT) || key_pressed(KEY_ALTGR))
+         if (box_active || key_pressed(KEY_ALT) || key_pressed(KEY_ALTGR))
          {
-            if (o != -1)
+            /* Alt-drag from an unselected point adds all object centers in
+             * the rectangle. Starting on a selected object still moves it. */
+            if (!box_active && o != -1 &&
+                ((cur_type == 1 && t == 1 &&
+                  IS_SELECTED(glb_ds1[ds1_idx].obj[o].label.flags)) ||
+                 (cur_type == 2 && t == 2 &&
+                  IS_SELECTED(glb_ds1[ds1_idx].obj[o].flags))))
             {
                // moving objects / labels
                start_cx = cx;
@@ -1805,6 +1889,27 @@ int editobj_handler(int ds1_idx, int cx, int cy, int mx, int my, int mb)
                      editobj_prepare_undo(ds1_idx);
                      editobj_prepare_moving(ds1_idx);
                      old_mode = OM_MOV;
+                  }
+               }
+            }
+            else
+            {
+               if (!box_active)
+               {
+                  box_active = TRUE;
+                  box_start_x = cx;
+                  box_start_y = cy;
+                  cur_type = 2;
+               }
+               for (i = 0; i < glb_ds1[ds1_idx].obj_num; i++)
+               {
+                  OBJ_S *obj = &glb_ds1[ds1_idx].obj[i];
+                  if (!IS_SELECTED(obj->flags) &&
+                      selection_point_in_box(box_start_x, box_start_y,
+                                             cx, cy, obj->x, obj->y))
+                  {
+                     SET_SELECTED(obj->flags);
+                     redraw = TRUE;
                   }
                }
             }
@@ -2014,7 +2119,10 @@ int editobj_handler(int ds1_idx, int cx, int cy, int mx, int my, int mb)
             redraw = TRUE;
             anim_update_gfx(FALSE);
          }
-         else if (key_pressed(KEY_U) && (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)))
+         else if (input_undo_shortcut_hit(input_properties_panel_owns_undo(
+                     glb_ds1edit.props_panel_visible,
+                     glb_ds1edit.props_panel.editing,
+                     glb_ds1edit.props_panel.pending_count)))
          {
             // undo last modification (movement / copy / delete / edit)
             if (glb_ds1[ds1_idx].can_undo_obj)

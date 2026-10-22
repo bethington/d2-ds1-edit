@@ -231,6 +231,97 @@ static void test_file_grows_with_frame_count(void)
    TEST_ASSERT_TRUE(size_5_frames > size_2_frames);
 }
 
+/* ---- package D: delays and failure cleanup -------------------------------- */
+
+/* fcTL delay_num/delay_den of every frame, in file order. */
+static int read_fctl_delays(const char *path, int nums[], int dens[], int max)
+{
+   unsigned char buf[4096];
+   int n = read_file_bytes(path, buf, sizeof(buf)), pos = 8, k = 0;
+   while (n > 0 && pos + 8 <= n)
+   {
+      uint32_t len = read_u32_be(buf + pos);
+      if (memcmp(buf + pos + 4, "fcTL", 4) == 0 && k < max)
+      {
+         nums[k] = (buf[pos + 8 + 20] << 8) | buf[pos + 8 + 21];
+         dens[k] = (buf[pos + 8 + 22] << 8) | buf[pos + 8 + 23];
+         k++;
+      }
+      if (memcmp(buf + pos + 4, "IEND", 4) == 0)
+         break;
+      pos += 8 + (int) len + 4;
+   }
+   return k;
+}
+
+static void test_delays_are_serialized_exactly_or_reduced(void)
+{
+   /* Declared policy: a rational that fits 16 bits is written as given; one
+    * that does not is reduced by its gcd; one that still does not fit is
+    * refused rather than silently wrapped. */
+   APNG_WRITER_S *w;
+   unsigned char frame[4] = { 1, 2, 3, 255 };
+   int nums[4], dens[4];
+
+   w = apng_writer_open(TEST_OUT, 1, 1, 3, 0);
+   TEST_ASSERT_NOT_NULL(w);
+   TEST_ASSERT_EQUAL_INT(1, apng_writer_write_frame(w, frame, 40, 1000));
+   TEST_ASSERT_EQUAL_INT(1, apng_writer_write_frame(w, frame, 1, 3));
+   TEST_ASSERT_EQUAL_INT(1, apng_writer_write_frame(w, frame, 70000, 1000));
+   TEST_ASSERT_EQUAL_INT(1, apng_writer_close(w));
+   TEST_ASSERT_EQUAL_INT(3, read_fctl_delays(TEST_OUT, nums, dens, 4));
+   TEST_ASSERT_EQUAL_INT(40, nums[0]);   TEST_ASSERT_EQUAL_INT(1000, dens[0]);
+   TEST_ASSERT_EQUAL_INT(1, nums[1]);    TEST_ASSERT_EQUAL_INT(3, dens[1]);
+   TEST_ASSERT_EQUAL_INT(70, nums[2]);   TEST_ASSERT_EQUAL_INT(1, dens[2]);
+
+   w = apng_writer_open(TEST_OUT, 1, 1, 1, 0);
+   TEST_ASSERT_NOT_NULL(w);
+   TEST_ASSERT_EQUAL_INT(0, apng_writer_write_frame(w, frame, 65537, 65536));
+   TEST_ASSERT_EQUAL_INT(0, apng_writer_close(w));
+}
+
+static void test_failed_close_leaves_no_file(void)
+{
+   APNG_WRITER_S *w;
+   unsigned char frame[4] = { 0, 0, 0, 255 };
+
+   w = apng_writer_open(TEST_OUT, 1, 1, 3, 0);
+   TEST_ASSERT_NOT_NULL(w);
+   TEST_ASSERT_EQUAL_INT(1, apng_writer_write_frame(w, frame, 1, 25));
+   TEST_ASSERT_EQUAL_INT(0, apng_writer_close(w));
+   TEST_ASSERT_EQUAL_INT_MESSAGE(-1, file_size(TEST_OUT),
+      "an underfilled APNG was left on disk looking complete");
+}
+
+static void test_frames_replace_rather_than_blend(void)
+{
+   /* every fcTL must be dispose NONE + blend SOURCE: a transparent pixel in
+    * frame 2 must not show frame 1 through it */
+   APNG_WRITER_S *w;
+   unsigned char a[4] = { 9, 9, 9, 255 }, b[4] = { 0, 0, 0, 0 };
+   unsigned char buf[1024];
+   int n, pos = 8, seen = 0;
+
+   w = apng_writer_open(TEST_OUT, 1, 1, 2, 0);
+   TEST_ASSERT_NOT_NULL(w);
+   TEST_ASSERT_EQUAL_INT(1, apng_writer_write_frame(w, a, 1, 10));
+   TEST_ASSERT_EQUAL_INT(1, apng_writer_write_frame(w, b, 1, 10));
+   TEST_ASSERT_EQUAL_INT(1, apng_writer_close(w));
+   n = read_file_bytes(TEST_OUT, buf, sizeof(buf));
+   while (pos + 8 <= n)
+   {
+      uint32_t len = read_u32_be(buf + pos);
+      if (memcmp(buf + pos + 4, "fcTL", 4) == 0)
+      {
+         TEST_ASSERT_EQUAL_UINT8(0, buf[pos + 8 + 24]);
+         TEST_ASSERT_EQUAL_UINT8(0, buf[pos + 8 + 25]);
+         seen++;
+      }
+      pos += 8 + (int) len + 4;
+   }
+   TEST_ASSERT_EQUAL_INT(2, seen);
+}
+
 int main(void)
 {
    UNITY_BEGIN();
@@ -240,5 +331,8 @@ int main(void)
    RUN_TEST(test_write_frame_after_count_fails);
    RUN_TEST(test_close_fails_if_underfilled);
    RUN_TEST(test_file_grows_with_frame_count);
+   RUN_TEST(test_delays_are_serialized_exactly_or_reduced);
+   RUN_TEST(test_failed_close_leaves_no_file);
+   RUN_TEST(test_frames_replace_rather_than_blend);
    return UNITY_END();
 }

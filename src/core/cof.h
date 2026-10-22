@@ -11,7 +11,9 @@ COF_S * anim_load_desc_gfx     (int i, int progress);
 int     anim_destroy_cof        (COF_S * cof);
 void    anim_update_gfx         (int progress);
 int     anim_exit               (void);
-void    anim_build_layer_cache  (LAY_INF_S * lay);
+int     anim_layer_from_index_frames(LAY_INF_S * lay, UBYTE * const * frames,
+                                     int count, int w, int h, int off_x, int off_y,
+                                     const UBYTE * palshift);
 
 
 #endif

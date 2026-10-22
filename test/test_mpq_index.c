@@ -129,6 +129,59 @@ void test_find_respects_ds1_count(void)
    TEST_ASSERT_NULL    (mpq_index_find_by_ds1_name_in(arr, 1, "unused.ds1", NULL));
 }
 
+void test_full_path_chooses_matching_preset_over_same_basename(void)
+{
+   PRESET_ENTRY_S arr[2];
+   const PRESET_ENTRY_S *hit;
+
+   seed(&arr[0], 836, "Act 4 - Lava", "Act4/Lava/LavaX.ds1");
+   seed(&arr[1], 900, "Act 5 - Lava", "ACT4\\Expansion\\lavaX.ds1");
+
+   hit = mpq_index_find_by_ds1_path_in(arr, 2,
+      "data/global/tiles/act4/expansion/LAVAX.DS1", NULL);
+   TEST_ASSERT_NOT_NULL(hit);
+   TEST_ASSERT_EQUAL_INT(900, hit->def);
+   hit = mpq_index_find_by_ds1_path_in(arr, 2,
+      "D:\\mods\\data\\Global\\Tiles\\ACT4\\Expansion\\lavaX.ds1", NULL);
+   TEST_ASSERT_NOT_NULL(hit);
+   TEST_ASSERT_EQUAL_INT(900, hit->def);
+   TEST_ASSERT_NULL(mpq_index_find_by_ds1_path_in(arr, 2,
+      "Act1/Other/LavaX.ds1", NULL));
+}
+
+
+void test_full_path_of_a_project_copy_finds_its_preset(void)
+{
+   /* Copy-on-save writes <project>/Global/Tiles/<suffix> (no "Data" level);
+    * reopening that copy must resolve the same preset as the original. */
+   PRESET_ENTRY_S arr[2];
+   const PRESET_ENTRY_S *hit;
+
+   seed(&arr[0], 836, "Act 4 - Lava", "Act4/Lava/LavaX.ds1");
+   seed(&arr[1], 900, "Act 5 - Lava", "ACT4\\Expansion\\lavaX.ds1");
+
+   hit = mpq_index_find_by_ds1_path_in(arr, 2,
+      "C:\\mods\\my proj\\Global\\Tiles\\ACT4\\Expansion\\lavaX.ds1", NULL);
+   TEST_ASSERT_NOT_NULL(hit);
+   TEST_ASSERT_EQUAL_INT(900, hit->def);
+   hit = mpq_index_find_by_ds1_path_in(arr, 2, "/home/u/proj/global/tiles/act4/lava/lavax.ds1", NULL);
+   TEST_ASSERT_NOT_NULL(hit);
+   TEST_ASSERT_EQUAL_INT(836, hit->def);
+}
+
+void test_full_path_never_falls_back_to_a_namesake(void)
+{
+   PRESET_ENTRY_S arr[1];
+   int slot = -1;
+
+   seed(&arr[0], 10, "Act 1 - Cave Entrance", "data\\global\\tiles\\ACT1\\CAVES\\denent.ds1");
+   TEST_ASSERT_NULL(mpq_index_find_by_ds1_path_in(arr, 1,
+      "C:\\mods\\proj\\Global\\Tiles\\ACT2\\CAVES\\denent.ds1", &slot));
+   TEST_ASSERT_EQUAL_INT(-1, slot);
+   TEST_ASSERT_NULL(mpq_index_find_by_ds1_path_in(arr, 1, "denent.ds1", NULL));
+   TEST_ASSERT_NULL(mpq_index_find_by_ds1_path_in(arr, 1, "", NULL));
+}
+
 
 int main(void)
 {
@@ -140,6 +193,9 @@ int main(void)
    RUN_TEST(test_find_scans_all_file_slots);
    RUN_TEST(test_find_misses_return_null);
    RUN_TEST(test_find_respects_ds1_count);
+   RUN_TEST(test_full_path_chooses_matching_preset_over_same_basename);
+   RUN_TEST(test_full_path_of_a_project_copy_finds_its_preset);
+   RUN_TEST(test_full_path_never_falls_back_to_a_namesake);
 
    return UNITY_END();
 }

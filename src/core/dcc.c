@@ -2,6 +2,7 @@
  * See NOTICE at the repository root for attribution and license status. */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <limits.h>
 #include <string.h>
 #include "types.h"
@@ -138,15 +139,18 @@ int dcc_read_bits(DCC_BITSTREAM_S * bs, int bits_number, int is_signed,
    }
 
    // signed value handle
-   if (is_signed == FALSE)
+   // (a 0-bit field is 0, and a 32-bit one already holds its sign: shifting
+   // a 32-bit 1 by 32 is undefined, and on x86 it turned every negative
+   // 32-bit value into -1)
+   if ((is_signed == FALSE) || (bits_number == 0) || (bits_number >= 32))
       return 0;
       
    // else it's a signed value (1 bit value will be 0 or -1, NOT 1)
    // so check if we have read a negative value
-   if ((* dest) & (1 << (bits_number-1)) )
+   if ((* dest) & (1UL << (bits_number-1)) )
    {
       // negative : extend its sign
-      (* dest) |= ~ ((1 << bits_number) - 1);
+      (* dest) |= ~ ((1UL << bits_number) - 1UL);
    }
 
    return 0;
@@ -258,10 +262,35 @@ int dcc_frame_header_bitstream(DCC_S *dcc, DCC_BITSTREAM_S *bs, int d, int f)
 
 // ==========================================================================
 // init the bitstreams for this direction
-void dcc_init_dir_bitstream(DCC_S * dcc, DCC_BITSTREAM_S * bs, int d)
+// return 0 on success, non-zero if the sub-bitstream sizes read from the file
+// do not fit in the direction's data
+int dcc_init_dir_bitstream(DCC_S * dcc, DCC_BITSTREAM_S * bs, int d)
 {
    DCC_BITSTREAM_S * ec, * pm, * et, * rp, * pcd;
    UDWORD          glb_bit = (bs->cur_byte * 8) + bs->cur_bit;
+   UDWORD          sub_bits;
+
+
+   // The 20-bit sizes of the sub-bitstreams come from the file. Together
+   // they must fit in what is left of this direction, otherwise the data
+   // pointers below point past the buffer and the remainder size underflows.
+   sub_bits = 0;
+   if (dcc->direction[d].compression_flag & 0x02)
+      sub_bits += dcc->direction[d].equal_cell_bitstream_size;
+   sub_bits += dcc->direction[d].pixel_mask_bitstream_size;
+   if (dcc->direction[d].compression_flag & 0x01)
+   {
+      sub_bits += dcc->direction[d].encoding_type_bitstream_size;
+      sub_bits += dcc->direction[d].raw_pixel_bitstream_size;
+   }
+   if ((glb_bit > bs->size) || (sub_bits > bs->size - glb_bit))
+   {
+      sprintf(dcc_error, "direction %i : the sub-bitstream sizes (%lu bits) "
+                         "do not fit in the %lu bits left\n", d,
+                         (unsigned long) sub_bits,
+                         (unsigned long) (glb_bit > bs->size ? 0 : bs->size - glb_bit));
+      return 1;
+   }
 
 
    // init temporary bitstream pointers
@@ -315,6 +344,7 @@ void dcc_init_dir_bitstream(DCC_S * dcc, DCC_BITSTREAM_S * bs, int d)
    pcd->cur_bit_num = 0;
    pcd->cur_byte    = 0;
    pcd->size        = bs->size - glb_bit;
+   return 0;
 
 // debug
 /*
@@ -592,14 +622,8 @@ int dcc_prepare_buffer_cells(DCC_S * dcc, int d)
          cell      = & dir->buffer_ptr[x + (y * nb_cell_w)];
          cell->w   = cell_w[x];
          cell->h   = cell_h[y];
-         cell->bmp = al_create_sub_bitmap(dir->bmp, x0, y0, cell->w, cell->h);
-         if (cell->bmp == NULL)
-         {
-            sprintf(dcc_error, "dcc_prepare_buffer_cells() :\n"
-                               "can't create sub_bitmap for cell->bmp x0=%i, y0=%i\n",
-                               x0, y0);
-            return 1;
-         }
+         cell->x0  = x0;
+         cell->y0  = y0;
          x0 += 4;
       }
       y0 += 4;
@@ -720,7 +744,6 @@ int dcc_prepare_frame_cells(DCC_S * dcc, int d, int f)
          cell->y0  = y0;
          cell->w   = cell_w[x];
          cell->h   = cell_h[y];
-         cell->bmp = al_create_sub_bitmap(dir->bmp, x0, y0, cell->w, cell->h);
          x0 += cell->w;
       }
       y0 += cell->h;
@@ -773,17 +796,16 @@ int dcc_fill_pixel_buffer(DCC_S * dcc, int d)
    }
 
    // frame buffer, will be simply called as "buffer" for now
-   dir->bmp = al_create_bitmap(dir->box.width, dir->box.height);
-   if (dir->bmp == NULL)
+   dir->pixels = (UBYTE *) calloc((size_t) dir->box.width * dir->box.height, 1);
+   if (dir->pixels == NULL)
    {
-      sprintf(dcc_error, "dcc_fill_pixel_buffer() : can't create buffer bitmap "
+      sprintf(dcc_error, "dcc_fill_pixel_buffer() : can't create buffer "
                          "of %i * %i pixels\n",
                          (int)dir->box.width, (int)dir->box.height);
       return 1;
    }
-   a5_clear(dir->bmp); // all 0
 
-   // create sub-bitmaps into this dir->bmp, 1 for each cells
+   // lay the buffer cells over dir->pixels
    if (dcc_prepare_buffer_cells(dcc, d))
       return 1;
 
@@ -1026,35 +1048,56 @@ int dcc_fill_pixel_buffer(DCC_S * dcc, int d)
 
 
 // ==========================================================================
-int dcc_save_frame(DCC_S * dcc, int d, int f, ALLEGRO_BITMAP * frm_bmp)
+int dcc_save_frame(DCC_S * dcc, int d, int f, const UBYTE * frm_pixels)
 {
    DCC_FRAME_S * fptr = & dcc->frame[d][f];
+   size_t        size = (size_t) dcc->direction[d].box.width
+                      * (size_t) dcc->direction[d].box.height;
 
-   fptr->bmp = al_create_bitmap(al_get_bitmap_width(frm_bmp), al_get_bitmap_height(frm_bmp));
-   if (fptr->bmp == NULL)
+   fptr->pixels = (UBYTE *) malloc(size > 0 ? size : 1);
+   if (fptr->pixels == NULL)
    {
-      sprintf(dcc_error, "dcc_save_frame() : can't create final frame "
-                         "bitmap of %i * %i pixels\n",
-                         al_get_bitmap_width(frm_bmp), al_get_bitmap_height(frm_bmp));
+      sprintf(dcc_error, "dcc_save_frame() : can't allocate the final frame "
+                         "of %li * %li pixels\n",
+                         dcc->direction[d].box.width,
+                         dcc->direction[d].box.height);
       return 1;
    }
-   /* Clear then copy: frm_bmp has transparent (alpha=0) background pixels.
-    * a5_blit uses alpha blending, so transparent source pixels won't overwrite
-    * uninitialized destination content. Clear first to ensure clean background. */
-   a5_clear(fptr->bmp);
-   a5_blit(frm_bmp, fptr->bmp, 0, 0, 0, 0, al_get_bitmap_width(frm_bmp), al_get_bitmap_height(frm_bmp));
-
-
-#ifdef DCCINFO_SAVE_PNG
-   {
-      char    tmp[30];
-
-      sprintf(tmp, "d%02i-f%03i.png", d, f);
-      al_save_bitmap(tmp, frm_bmp);
-   }
-#endif
-
+   memcpy(fptr->pixels, frm_pixels, size);
    return 0;
+}
+
+
+// ==========================================================================
+// index-buffer helpers for stage 2
+static void dcc_fill_rect(UBYTE * buf, long buf_w, int x0, int y0,
+                          int w, int h, UBYTE val)
+{
+   int y;
+
+   for (y = 0; y < h; y++)
+      memset(buf + (size_t) (y0 + y) * buf_w + x0, val, (size_t) w);
+}
+
+static void dcc_copy_rect(const UBYTE * src, UBYTE * dst, long buf_w,
+                          int sx, int sy, int dx, int dy, int w, int h)
+{
+   int y;
+
+   // source and destination may overlap inside the same buffer: walk the
+   // rows in the order that never reads a row this copy already overwrote
+   if ((src == dst) && (dy > sy))
+   {
+      for (y = h - 1; y >= 0; y--)
+         memmove(dst + (size_t) (dy + y) * buf_w + dx,
+                 src + (size_t) (sy + y) * buf_w + sx, (size_t) w);
+   }
+   else
+   {
+      for (y = 0; y < h; y++)
+         memmove(dst + (size_t) (dy + y) * buf_w + dx,
+                 src + (size_t) (sy + y) * buf_w + sx, (size_t) w);
+   }
 }
 
 
@@ -1071,7 +1114,9 @@ int dcc_make_frames(DCC_S * dcc, int d)
    int             nb_cell, nb_bit,
                    cell_x, cell_y, cell_idx,
                    x, y, f, c;
-   ALLEGRO_BITMAP  * frm_bmp;
+   UBYTE           * frm;
+   long            buf_w = dir->box.width;
+   size_t          frm_size = (size_t) dir->box.width * dir->box.height;
    char            add_error[256];
 
 
@@ -1082,21 +1127,21 @@ int dcc_make_frames(DCC_S * dcc, int d)
       dir->buffer_ptr[c].last_h  = -1;
    }
 
-   // create the temp frame bitmap (size = current direction box)
-   frm_bmp = al_create_bitmap(dir->box.width, dir->box.height);
-   if (frm_bmp == NULL)
+   // the temp frame (size = current direction box)
+   frm = (UBYTE *) malloc(frm_size > 0 ? frm_size : 1);
+   if (frm == NULL)
    {
       sprintf(dcc_error, "dcc_make_frames() : can't create tmp frame "
-                         "bitmap of %i * %i pixels",
+                         "of %i * %i pixels",
                          (int)dir->box.width, (int)dir->box.height
       );
       return 1;
    }
-      
+
    // for all frames
    for (f=0; f < dcc->header.frames_per_dir; f++)
    {
-      a5_clear(frm_bmp); // clear the final frame bitmap (to index 0)
+      memset(frm, 0, frm_size); // clear the final frame (to index 0)
       frame = & dcc->frame[d][f];
       nb_cell = frame->nb_cells_w * frame->nb_cells_h;
 
@@ -1111,45 +1156,43 @@ int dcc_make_frames(DCC_S * dcc, int d)
          cell_y    = cell->y0 / 4;
          cell_idx  = cell_x + (cell_y * dir->nb_cells_w);
          buff_cell = & dir->buffer_ptr[cell_idx];
-         
+
          // equal cell checks
          if ((pbe->frame != f) || (pbe->frame_cell_index != c))
          {
             // this buffer cell have an equalcell bit set to 1
             //    so either copy the frame cell or clear it
-            
+
             if ((cell->w != buff_cell->last_w) || (cell->h != buff_cell->last_h))
             {
-               // different sizes
-               a5_clear(cell->bmp); // set all pixels of the frame cell to 0
+               // different sizes : set all pixels of the frame cell to 0
+               dcc_fill_rect(dir->pixels, buf_w, cell->x0, cell->y0,
+                             cell->w, cell->h, 0);
             }
             else
             {
                // same sizes
-               
-               // copy the old frame cell into its new position
-               a5_blit(dir->bmp, dir->bmp,
-                    buff_cell->last_x0, buff_cell->last_y0,
-                    cell->x0, cell->y0,
-                    cell->w, cell->h
-               );
 
-               // copy it again, into the final frame bitmap
-               a5_blit(cell->bmp, frm_bmp,
-                    0, 0,
-                    cell->x0, cell->y0,
-                    cell->w, cell->h
-               );
+               // copy the old frame cell into its new position
+               dcc_copy_rect(dir->pixels, dir->pixels, buf_w,
+                             buff_cell->last_x0, buff_cell->last_y0,
+                             cell->x0, cell->y0, cell->w, cell->h);
+
+               // copy it again, into the final frame
+               dcc_copy_rect(dir->pixels, frm, buf_w,
+                             cell->x0, cell->y0, cell->x0, cell->y0,
+                             cell->w, cell->h);
             }
          }
          else
          {
             // fill the frame cell with pixels
-            
+
             if (pbe->val[0] == pbe->val[1])
             {
                // fill FRAME cell to color val[0]
-               a5_clear_to_color(cell->bmp, pbe->val[0]);
+               dcc_fill_rect(dir->pixels, buf_w, cell->x0, cell->y0,
+                             cell->w, cell->h, pbe->val[0]);
             }
             else
             {
@@ -1158,36 +1201,8 @@ int dcc_make_frames(DCC_S * dcc, int d)
                else
                   nb_bit = 2;
 
-               // fill FRAME cell with pixels
-               //
-               // Select the target and take the write lock once for the whole
-               // cell. This used a5_putpixel, which switches the target twice
-               // per pixel; once a display exists al_create_bitmap hands out
-               // video bitmaps, and then every one of those pixels costs its
-               // own texture lock. anim_update_gfx() runs at runtime as well
-               // as at startup -- see editor/objects.c -- so this path really
-               // does meet video bitmaps. dt1_all_zoom_make() measured the
-               // same mistake at ~280 ms per block against ~0.4 ms locked.
-               //
-               // have_bmp stands in for the NULL check a5_putpixel used to do
-               // per pixel: dcc_make_frame_cells() does not check the
-               // al_create_sub_bitmap that fills in cell->bmp, so it really can
-               // be NULL, and al_set_target_bitmap(NULL) is not survivable the
-               // way a skipped putpixel was. The bitstream still has to be read
-               // either way -- skipping the reads would desynchronise every
-               // frame after this one.
-               {
-                  ALLEGRO_BITMAP *prev_target = al_get_target_bitmap();
-                  ALLEGRO_LOCKED_REGION *cell_lock = NULL;
-                  int have_bmp = (cell->bmp != NULL);
-
-                  if (have_bmp)
-                  {
-                     al_set_target_bitmap(cell->bmp);
-                     cell_lock = al_lock_bitmap(cell->bmp, ALLEGRO_PIXEL_FORMAT_ANY,
-                                                ALLEGRO_LOCK_READWRITE);
-                  }
-
+               // fill FRAME cell with pixels; the bitstream has to be read
+               // for every pixel or every later cell desynchronises
                for (y=0; y < cell->h; y++)
                {
                   for (x=0; x < cell->w; x++)
@@ -1201,28 +1216,19 @@ int dcc_make_frames(DCC_S * dcc, int d)
                            "curr_cell %i\n",
                         d, pbe->frame, pbe->frame_cell_index);
                         strcat(dcc_error, add_error);
-                        if (cell_lock != NULL)
-                           al_unlock_bitmap(cell->bmp);
-                        al_set_target_bitmap(prev_target);
+                        free(frm);
                         return 1;
                      }
-                     if (have_bmp)
-                        al_put_pixel(x, y, pal_color(pbe->val[pix]));
+                     dir->pixels[(size_t) (cell->y0 + y) * buf_w + cell->x0 + x]
+                        = pbe->val[pix];
                   }
-               }
-
-                  if (cell_lock != NULL)
-                     al_unlock_bitmap(cell->bmp);
-                  al_set_target_bitmap(prev_target);
                }
             }
 
-            // copy the frame cell into the frame bitmap
-            a5_blit(cell->bmp, frm_bmp,
-                 0, 0,
-                 cell->x0, cell->y0,
-                 cell->w, cell->h
-            );
+            // copy the frame cell into the final frame
+            dcc_copy_rect(dir->pixels, frm, buf_w,
+                          cell->x0, cell->y0, cell->x0, cell->y0,
+                          cell->w, cell->h);
 
             // next pixelbuffer entry
             pbe++;
@@ -1240,11 +1246,15 @@ int dcc_make_frames(DCC_S * dcc, int d)
       }
 
       // save frame
-      dcc_save_frame(dcc, d, f, frm_bmp);
+      if (dcc_save_frame(dcc, d, f, frm))
+      {
+         free(frm);
+         return 1;
+      }
    }
 
    // end
-   al_destroy_bitmap(frm_bmp);
+   free(frm);
    return 0;
 }
 
@@ -1259,7 +1269,7 @@ int dcc_dir_bitstream(DCC_S * dcc, int d)
    char            add_error[80];
    
    // if already done, return
-   if (dcc->direction[d].bmp != NULL)
+   if (dcc->direction[d].decoded)
       return 0;
    
    // in case
@@ -1380,6 +1390,15 @@ int dcc_dir_bitstream(DCC_S * dcc, int d)
    dcc->direction[d].box.height =
       dcc->direction[d].box.ymax - dcc->direction[d].box.ymin + 1;
 
+   // a direction box the frame buffer cannot hold (empty, or absurd)
+   if ((dcc->direction[d].box.width < 1) || (dcc->direction[d].box.height < 1)
+       || (dcc->direction[d].box.width > 4096) || (dcc->direction[d].box.height > 4096))
+   {
+      sprintf(dcc_error, "direction %i : box %li x %li is not decodable\n", d,
+              dcc->direction[d].box.width, dcc->direction[d].box.height);
+      return 1;
+   }
+
    // optional bytes data
    if (dcc_optional_datas(dcc, & bs, d))
       return 1;
@@ -1393,7 +1412,8 @@ int dcc_dir_bitstream(DCC_S * dcc, int d)
       return 1;
 
    // init the other bitstreams
-   dcc_init_dir_bitstream(dcc, & bs, d);
+   if (dcc_init_dir_bitstream(dcc, & bs, d))
+      return 1;
 
    // stage 1 : fill the pixelbuffer
    if (dcc_fill_pixel_buffer(dcc, d))
@@ -1439,7 +1459,8 @@ int dcc_dir_bitstream(DCC_S * dcc, int d)
       strcat(dcc_error, add_error);
       return 1;
    }
-   
+
+   dcc->direction[d].decoded = TRUE;
    return 0;
 }
 
@@ -1478,9 +1499,41 @@ int dcc_file_header(DCC_S * dcc)
    if (dcc_read_bytes( & bs, 4, & dcc->header.final_dc6_size))
       return 1;
 
+   // the decoder's tables hold DCC_MAX_DIR directions of DCC_MAX_FRAME
+   // frames; anything larger would be written past them
+   if (dcc->header.file_signature != 0x74)
+   {
+      sprintf(dcc_error, "dcc_file_header() : bad signature 0x%02X\n",
+              dcc->header.file_signature);
+      return 1;
+   }
+   if ((dcc->header.directions < 1) || (dcc->header.directions > DCC_MAX_DIR)
+       || (dcc->header.frames_per_dir < 1)
+       || (dcc->header.frames_per_dir > DCC_MAX_FRAME))
+   {
+      sprintf(dcc_error, "dcc_file_header() : %i directions of %li frames "
+                         "is outside 1..%i x 1..%i\n",
+              dcc->header.directions, (long) dcc->header.frames_per_dir,
+              DCC_MAX_DIR, DCC_MAX_FRAME);
+      return 1;
+   }
+
    for (i=0; i < dcc->header.directions; i++)
       if (dcc_read_bytes( & bs, 4, & dcc->header.dir_offset[i]))
          return 1;
+
+   // each direction starts after the header, in order, inside the file
+   for (i=0; i < dcc->header.directions; i++)
+   {
+      long lo = (i == 0) ? (long) bs.cur_byte : dcc->header.dir_offset[i - 1];
+
+      if ((dcc->header.dir_offset[i] < lo) || (dcc->header.dir_offset[i] >= dcc->size))
+      {
+         sprintf(dcc_error, "dcc_file_header() : direction %i offset %li is "
+                            "outside the file\n", i, (long) dcc->header.dir_offset[i]);
+         return 1;
+      }
+   }
 
    // end
    dcc->header.already_decoded = TRUE;
@@ -1489,28 +1542,28 @@ int dcc_file_header(DCC_S * dcc)
 
 
 // ==========================================================================
-// read a dcc and decode it
+// read a dcc and decode it into palette-index frames (frame[d][f].pixels)
 // dir_bitfield is a bitfield : set the bit(s) for the direction(s) to decode
 // return 0 on sucess, non-zero if error
-int dcc_decode(DCC_S * dcc, long dir_bitfield)
+int dcc_decode_raw(DCC_S * dcc, long dir_bitfield)
 {
    int d;
-   
+
    // init the dcc_bits_width_table[]
    dcc_init();
 
    // init direction box min & max (NOT ZERO !)
    dcc->box.xmin = dcc->box.ymin = LONG_MAX;
    dcc->box.xmax = dcc->box.ymax = LONG_MIN;
-   
+
    // file header
    if (dcc_file_header(dcc))
       return 1;
-   
+
    // direction bitstream
    for (d=0; d<dcc->header.directions; d++)
    {
-      if (dir_bitfield & (1 << d))
+      if ((((unsigned long) dir_bitfield) >> d) & 1UL)
       {
          if (dcc_dir_bitstream(dcc, d))
             return 1;
@@ -1538,6 +1591,156 @@ int dcc_decode(DCC_S * dcc, long dir_bitfield)
 
 
 // ==========================================================================
+// dcc_decode_raw(), then one bitmap per decoded frame, converted from the
+// frame's palette indices through the current palette (index 0 transparent)
+// return 0 on sucess, non-zero if error
+int dcc_decode(DCC_S * dcc, long dir_bitfield)
+{
+   int d, f, x, y;
+
+   if (dcc_decode_raw(dcc, dir_bitfield))
+      return 1;
+
+   for (d=0; d<dcc->header.directions; d++)
+   {
+      DCC_DIRECTION_S * dir = & dcc->direction[d];
+
+      if ((! ((((unsigned long) dir_bitfield) >> d) & 1UL)) || ! dir->decoded)
+         continue;
+
+      for (f=0; f < dcc->header.frames_per_dir; f++)
+      {
+         DCC_FRAME_S           * frame = & dcc->frame[d][f];
+         ALLEGRO_BITMAP        * prev_target;
+         ALLEGRO_LOCKED_REGION * lock;
+
+         if ((frame->bmp != NULL) || (frame->pixels == NULL))
+            continue;
+
+         frame->bmp = al_create_bitmap(dir->box.width, dir->box.height);
+         if (frame->bmp == NULL)
+         {
+            sprintf(dcc_error, "dcc_decode() : can't create final frame "
+                               "bitmap of %li * %li pixels\n",
+                               dir->box.width, dir->box.height);
+            return 1;
+         }
+
+         prev_target = al_get_target_bitmap();
+         al_set_target_bitmap(frame->bmp);
+         lock = al_lock_bitmap(frame->bmp, ALLEGRO_PIXEL_FORMAT_ANY,
+                               ALLEGRO_LOCK_WRITEONLY);
+         for (y=0; y < dir->box.height; y++)
+            for (x=0; x < dir->box.width; x++)
+            {
+               UBYTE v = frame->pixels[(size_t) y * dir->box.width + x];
+               al_put_pixel(x, y, v ? pal_color(v) : al_map_rgba(0, 0, 0, 0));
+            }
+         if (lock != NULL)
+            al_unlock_bitmap(frame->bmp);
+         al_set_target_bitmap(prev_target);
+      }
+   }
+   return 0;
+}
+
+
+// ==========================================================================
+// raw entry point : bytes in, palette-index frames out (see index_frame.h)
+int dcc_decode_indices(const void *bytes, size_t len, int direction,
+                       DS1EDIT_INDEX_FRAME **frames, size_t *count,
+                       char *error, size_t error_cap)
+{
+   DCC_S               * dcc;
+   DS1EDIT_INDEX_FRAME * out = NULL;
+   size_t              n_out = 0, k = 0;
+   int                 d, d_first, d_last, f;
+   unsigned long       bitfield = 0;
+
+   if (frames != NULL) *frames = NULL;
+   if (count  != NULL) *count  = 0;
+   if ((error != NULL) && (error_cap > 0)) error[0] = 0;
+
+   if ((bytes == NULL) || (frames == NULL) || (count == NULL)
+       || (len > (size_t) INT_MAX))
+   {
+      if ((error != NULL) && (error_cap > 0))
+         snprintf(error, error_cap, "dcc: invalid arguments");
+      return 0;
+   }
+
+   memset(dcc_error, 0, sizeof(dcc_error));
+   dcc = dcc_mem_load((void *) bytes, (int) len);
+   if (dcc == NULL)
+      goto fail;
+   if (dcc_file_header(dcc))
+      goto fail;
+
+   if (direction == DS1EDIT_ALL_DIRECTIONS)
+   {
+      d_first = 0;
+      d_last  = dcc->header.directions - 1;
+   }
+   else if ((direction >= 0) && (direction < dcc->header.directions))
+      d_first = d_last = direction;
+   else
+   {
+      sprintf(dcc_error, "dcc: direction %i not in [0, %i)\n",
+              direction, dcc->header.directions);
+      goto fail;
+   }
+   for (d = d_first; d <= d_last; d++)
+      bitfield |= 1UL << d;
+
+   if (dcc_decode_raw(dcc, (long) bitfield))
+      goto fail;
+
+   n_out = (size_t) (d_last - d_first + 1) * (size_t) dcc->header.frames_per_dir;
+   out = (DS1EDIT_INDEX_FRAME *) calloc(n_out > 0 ? n_out : 1, sizeof(*out));
+   if (out == NULL)
+   {
+      sprintf(dcc_error, "dcc: out of memory\n");
+      goto fail;
+   }
+
+   for (d = d_first; d <= d_last; d++)
+   {
+      DCC_DIRECTION_S * dir = & dcc->direction[d];
+
+      for (f = 0; f < dcc->header.frames_per_dir; f++, k++)
+      {
+         DS1EDIT_INDEX_FRAME * fr = & out[k];
+
+         fr->width      = (int32_t) dir->box.width;
+         fr->height     = (int32_t) dir->box.height;
+         fr->stride     = fr->width;
+         fr->origin_x   = (int32_t) dir->box.xmin;
+         fr->origin_y   = (int32_t) dir->box.ymin;
+         fr->frame      = f;
+         fr->direction  = d;
+         fr->pixels_len = (size_t) fr->width * (size_t) fr->height;
+         // hand the decoder's own buffer over, no copy
+         fr->pixels     = dcc->frame[d][f].pixels;
+         dcc->frame[d][f].pixels = NULL;
+      }
+   }
+
+   dcc_destroy(dcc);
+   *frames = out;
+   *count  = n_out;
+   return 1;
+
+fail:
+   if ((error != NULL) && (error_cap > 0))
+      snprintf(error, error_cap, "dcc: %s",
+               dcc_error[0] ? dcc_error : "decode failed");
+   ds1edit_index_frames_free(out, k);
+   dcc_destroy(dcc);
+   return 0;
+}
+
+
+// ==========================================================================
 // output the dcc datas in a more usable form
 void dcc_debug(DCC_S * dcc)
 {
@@ -1546,9 +1749,9 @@ void dcc_debug(DCC_S * dcc)
    printf("file_signature = %i\n",  dcc->header.file_signature);
    printf("version        = %i\n",  dcc->header.version);
    printf("directions     = %i\n",  dcc->header.directions);
-   printf("frames_per_dir = %li\n", dcc->header.frames_per_dir);
-   printf("tag            = %li\n", dcc->header.tag);
-   printf("final_dc6_size = %li bytes\n", dcc->header.final_dc6_size);
+   printf("frames_per_dir = %li\n", (long) dcc->header.frames_per_dir);
+   printf("tag            = %li\n", (long) dcc->header.tag);
+   printf("final_dc6_size = %li bytes\n", (long) dcc->header.final_dc6_size);
 
    printf("\nbox                = (%li, %li)  --->  (%li, %li)  =  %li * %li\n",
       dcc->box.xmin, dcc->box.ymin,
@@ -1613,10 +1816,10 @@ void dcc_debug(DCC_S * dcc)
             printf("      height         = %lu\n", (unsigned long)dcc->frame[d][f].height);
 
          if (dcc->direction[d].xoffset_bits)
-            printf("      xoffset        = %li\n", dcc->frame[d][f].xoffset);
+            printf("      xoffset        = %li\n", (long) dcc->frame[d][f].xoffset);
 
          if (dcc->direction[d].yoffset_bits)
-            printf("      yoffset        = %li\n", dcc->frame[d][f].yoffset);
+            printf("      yoffset        = %li\n", (long) dcc->frame[d][f].yoffset);
 
          if (dcc->direction[d].optional_bytes_bits)
             printf("      optional_bytes = %lu\n", (unsigned long)dcc->frame[d][f].optional_bytes);
@@ -1786,7 +1989,7 @@ DCC_S * dcc_mem_load(void * mem_ptr, int mem_size)
 // free a dcc from memory
 void dcc_destroy(DCC_S * dcc)
 {
-   int d, f, nb_cell, i;
+   int d, f, nb_cell, i, nb_dir, nb_frm;
 
    
    if (dcc == NULL)
@@ -1799,11 +2002,20 @@ void dcc_destroy(DCC_S * dcc)
       dcc->ptr = NULL;
    }
 
-   // free datas in all directions
-   for (d=0; d < dcc->header.directions; d++)
+   // free datas in all directions. A header the validator rejected still
+   // holds its out-of-range counts here, and nothing was allocated past the
+   // tables' bounds, so never walk beyond them (ASan: heap-buffer-overflow
+   // in this loop when a 33-direction header was rejected).
+   nb_dir = dcc->header.directions;
+   if (nb_dir > DCC_MAX_DIR)
+      nb_dir = DCC_MAX_DIR;
+   nb_frm = (int) dcc->header.frames_per_dir;
+   if (nb_frm > DCC_MAX_FRAME)
+      nb_frm = DCC_MAX_FRAME;
+   for (d=0; d < nb_dir; d++)
    {
       // free datas in all frames for this direction
-      for (f=0; f < dcc->header.frames_per_dir; f++)
+      for (f=0; f < nb_frm; f++)
       {
          // free optional bytes, if any
          if (dcc->frame[d][f].optional_bytes_data)
@@ -1812,19 +2024,19 @@ void dcc_destroy(DCC_S * dcc)
             dcc->frame[d][f].optional_bytes_data = NULL;
          }
 
-         // free frame cells & sub-bitmaps
+         // free frame cells
          if (dcc->frame[d][f].cell)
          {
-            nb_cell = dcc->frame[d][f].nb_cells_w * dcc->frame[d][f].nb_cells_h;
-            for (i=0; i < nb_cell; i++)
-               if (dcc->frame[d][f].cell[i].bmp)
-                  al_destroy_bitmap(dcc->frame[d][f].cell[i].bmp);
-
             free(dcc->frame[d][f].cell);
             dcc->frame[d][f].cell = NULL;
          }
 
-         //destroy frame bitmap
+         // free the frame's index buffer and bitmap
+         if (dcc->frame[d][f].pixels)
+         {
+            free(dcc->frame[d][f].pixels);
+            dcc->frame[d][f].pixels = NULL;
+         }
          if (dcc->frame[d][f].bmp)
             al_destroy_bitmap(dcc->frame[d][f].bmp);
       }
@@ -1836,21 +2048,19 @@ void dcc_destroy(DCC_S * dcc)
          dcc->direction[d].pixel_buffer = NULL;
       }
 
-      // destroy buffer cells & sub-bitmaps
+      // free buffer cells
       if (dcc->direction[d].buffer_ptr)
       {
-         nb_cell = dcc->direction[d].nb_cells_w * dcc->direction[d].nb_cells_h;
-         for (i=0; i < nb_cell; i++)
-            if (dcc->direction[d].buffer_ptr[i].bmp)
-               al_destroy_bitmap(dcc->direction[d].buffer_ptr[i].bmp);
-               
          free(dcc->direction[d].buffer_ptr);
          dcc->direction[d].buffer_ptr = NULL;
       }
 
-      // destroy buffer bitmap
-      if (dcc->direction[d].bmp)
-         al_destroy_bitmap(dcc->direction[d].bmp);
+      // free the direction's frame buffer
+      if (dcc->direction[d].pixels)
+      {
+         free(dcc->direction[d].pixels);
+         dcc->direction[d].pixels = NULL;
+      }
    }
 
    // free general structure of this dcc

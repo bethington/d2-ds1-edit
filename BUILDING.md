@@ -2,10 +2,16 @@
 
 ## Prerequisites
 
-- **CMake** 3.20 or later
+- **CMake** 3.21 or later (needed for `RUNTIME_DEPENDENCY_SET`)
 - **Visual Studio 2019** (or later) with C compiler
 - **vcpkg** for Allegro 5 dependency management
-- **Python 3** with Pillow (`pip install Pillow`) for golden screenshot tests
+- **Python 3** with the test dependencies (`pip install -r test/python/requirements.txt`,
+  which is Pillow). Python runs the `py_*` CTest suites and the golden screenshot
+  runner. CMake registers a failing `py_unavailable` test if it cannot find Python,
+  so a missing interpreter shows up as a red run rather than a quiet gap.
+- Linux and macOS: Allegro 5 from the system package manager (see the README).
+  The Clang/GCC instrumented lanes below also need `clang` or `gcc`, and `xvfb`
+  on a headless Linux machine.
 
 ## Install vcpkg and Allegro 5
 
@@ -27,11 +33,17 @@ cmake --preset default
 # Build (dev = optimized with debug symbols)
 cmake --build --preset dev
 
-# Run tests
+# Run tests: the test preset uses the Release configuration, so build it first
+cmake --build --preset release
 ctest --preset default
 ```
 
-The executable is output to `bin/ds1edit.exe`. Allegro 5 DLLs are automatically copied to `bin/`. Runtime data files (`data/` and `assets/`, which includes the editor's UI images under `assets/ui/`) are also copied to `bin/` by a post-build step.
+On Linux and macOS use `cmake --preset linux` / `macos`, `cmake --build --preset
+linux` / `macos`, and `ctest --preset linux` / `macos` (Release, Ninja). CI uses
+the `ci` preset on Windows (Ninja plus MSVC) and then packages with
+`cpack --config build/CPackConfig.cmake -B dist`.
+
+The executable is output to `bin/ds1edit.exe`. Allegro 5 DLLs are automatically copied to `bin/` (and beside the test executables under `test/<config>/`, so they run from a build tree). Runtime data files (`data/` and `assets/`, which includes the editor's UI images under `assets/ui/`) are also copied to `bin/` by a post-build step.
 
 ## Build Options
 
@@ -39,8 +51,28 @@ The executable is output to `bin/ds1edit.exe`. Allegro 5 DLLs are automatically 
 |--------|---------|-------------|
 | `USE_SOFTWARE_RENDERER` | OFF | Force software rendering (no GPU) |
 | `DS1EDIT_PERF_LOG` | OFF | Enable per-frame perf logging to stderr and perf_log.csv |
+| `DS1EDIT_ENABLE_SANITIZERS` | OFF | AddressSanitizer + UndefinedBehaviorSanitizer (GCC/Clang; AddressSanitizer only on MSVC 19.28+). Instrumented lane only, never a Release/perf build |
+| `DS1EDIT_ENABLE_COVERAGE` | OFF | GCC `--coverage` (read with `gcov --json-format`) or Clang source-based coverage (`llvm-cov export`). Needs `-DCMAKE_BUILD_TYPE=Debug`; mutually exclusive with sanitizers |
 
 Example: `cmake --preset default -DUSE_SOFTWARE_RENDERER=ON`
+
+Instrumented builds use their own build tree, for example:
+
+```bash
+# Linux: Clang ASan + UBSan, run the portable suites under a virtual display
+cmake -S . -B build-asan -G Ninja -DCMAKE_BUILD_TYPE=Debug       -DCMAKE_C_COMPILER=clang -DDS1EDIT_ENABLE_SANITIZERS=ON
+cmake --build build-asan
+xvfb-run -a ctest --test-dir build-asan -L portable --output-on-failure
+
+# Linux: GCC coverage; summarise with the repository's own tool
+cmake -S . -B build-cov -G Ninja -DCMAKE_BUILD_TYPE=Debug       -DCMAKE_C_COMPILER=gcc -DDS1EDIT_ENABLE_COVERAGE=ON
+```
+
+`python -m scripts.equivalence.coverage_report` reads the `gcov --json-format` or
+`llvm-cov export` output and prints an honest line/branch summary: uninstrumented
+production files are listed and make the result `partial`, never counted as
+covered. Unsupported compiler combinations stop CMake at configure time. No local
+coverage numbers exist yet; `.github/workflows/build.yml` runs both lanes.
 
 ## Running
 
@@ -74,7 +106,9 @@ ds1edit --area "Act 1 - Town" --selftest=120   # or pick the frame count
 `--selftest` takes the ordinary GUI path -- create the display, load assets,
 load the map, run the event loop -- renders N frames and exits 0. It cannot
 tell you the picture is *correct*, but it catches a window that opens and
-never paints.
+never paints. It also prints the average render time and fails
+above 250 ms per frame, which catches the editor falling off the GPU (or, on
+Direct3D, glyph bitmaps left in system memory).
 
 Worth running before any release: nothing else in the project exercises the
 display. The unit tests are headless, `--headless` never creates a display,
@@ -84,14 +118,60 @@ existed.
 
 
 
-```bash
-# Unit tests
-ctest --preset default
+### CTest and the Python suites
 
-# Golden screenshot comparison (from project root)
+```bash
+ctest --preset default                       # every suite (about 70)
+ctest --preset default -L portable           # only suites that need no game files
+ctest --preset default -N                    # list them; py_golden_runner must be present,
+                                             # py_unavailable / py_missing must not be
+python -m unittest discover -s test/python -t . -p "test_*.py"   # Python suites alone
+```
+
+`py_*` suites are registered automatically from `test/python/test_*.py` by
+`test/cmake/python.cmake`, run from the repository root, and carry the
+`portable` label. They use authored fixtures and mocked subprocesses only.
+
+### Golden screenshot comparison
+
+```bash
 python scripts/run_golden_tests.py --core --tolerance 4
 python scripts/run_golden_tests.py --full --tolerance 4
 ```
+
+The runner is a strict gate: exit **0** only if every selected map passes,
+**1** if any map fails or is skipped (missing reference or INI included), **2**
+for a bad command line or configuration. Every run writes a fresh
+`tmp/golden-runs/run-*/` with `results.json` and the rendered images;
+`--update` rewrites references atomically and should only be used after the
+difference is explained. Pin the inputs (profile `visual-core.json` through
+`scripts/equivalence/render_cases.py`) before trusting a comparison.
+
+### Local-only equivalence lanes
+
+Lanes that need a licensed Diablo II 1.13c installation (the vanilla corpus
+sweep, `baseline.py`) or a live original-game reference (`capture_palette.py`)
+are never run in public CI. They need `pip install -r
+test/equivalence/requirements-local.txt` (adds `mpyq`); see
+[test/equivalence/README.md](test/equivalence/README.md). The recorded replay
+`equivalence_palette_replay` is portable and runs in CTest.
+
+### Packages
+
+```bash
+cpack --config build/CPackConfig.cmake -B dist        # ZIP on Windows, TGZ elsewhere
+python -m scripts.equivalence.package_check --archive dist/DS1Edit-<ver>-<system>.<ext>     --platform windows-x86|linux-x86_64|macos-arm64 --version <ver> --out-dir tmp/package-check
+```
+
+`package_check` inspects the archive (layout, no game data, architecture and
+embedded version, runtime closure) before extracting it. The Windows ZIP carries
+the x86 `vcruntime140.dll`, so it needs Windows 10 or later (Universal C Runtime)
+but not a separate Visual C++ Redistributable. The macOS package holds
+`ds1edit.app` beside `assets/` with the project version in its `Info.plist`; its
+`codesign --verify` and version checks run on the macOS CI job, and the package
+has not been verified on a Mac outside CI. Releases publish only the packages CI
+built and qualified; see [docs/release-readiness.md](docs/release-readiness.md)
+and [release/qualification/README.md](release/qualification/README.md).
 
 ## Project Structure
 
@@ -114,8 +194,12 @@ test/
   unity/            Unity test framework (ThrowTheSwitch)
   golden/           Golden reference screenshots (PNG)
   test_*.c          Unit test files
+  python/           Python unittest suites (registered as py_* CTest tests)
+  cmake/            CTest registration helpers (python, equivalence, ...)
+  equivalence/      Contracts, profiles and recorded reference results
 scripts/
-  run_golden_tests.py     Automated render+compare workflow
+  equivalence/      Equivalence, qualification, package and coverage tools
+  run_golden_tests.py     Automated render+compare workflow (strict exit codes)
   capture_golden.py       Capture reference screenshots
   compare_golden.py       Pixel-level image comparison
 bin/                Build output (gitignored)

@@ -1,0 +1,121 @@
+{
+ "baseline_digest": "46a1628e3e099497c9d17f3191a68a5c61a48788317293b86154b505e386e265",
+ "behavior": "Nearest palette colour for an RGB query, transparent index 0 excluded: editor palette_find_closest vs D2CMP.dll 1.13c 0x9d30",
+ "digest": "60ff14d1190e1383e0b73cffcd14470ae15191b6fdb1705b498a53cb05db2e8c",
+ "domain": {
+  "axes": {
+   "count": {
+    "coverage": "pinned",
+    "note": "255 entries; other counts are outside this contract",
+    "required": true
+   },
+   "exact_colour_per_index": {
+    "coverage": "exhaustive",
+    "note": "every index 1..255 of the main palette",
+    "required": true
+   },
+   "palette": {
+    "coverage": "sampled",
+    "note": "2 authored palettes (distinct; duplicates/ties)",
+    "required": true
+   },
+   "query_rgb": {
+    "coverage": "sampled",
+    "note": "exact colours, 3-level grid, tie points",
+    "required": true
+   },
+   "tie_policy": {
+    "coverage": "sampled",
+    "note": "duplicates and equidistant queries",
+    "required": true
+   },
+   "transparent_index_0": {
+    "coverage": "pinned",
+    "note": "excluded by both: the editor skips it, the reference is given entries 1..255",
+    "required": true
+   }
+  },
+  "description": "336 distinct authored (palette, rgb) queries over 2 authored palettes; not all 2^24 colours or all palettes"
+ },
+ "id": "palette-nearest-113c",
+ "inputs": {
+  "digest": "67d6482b199d184fbf5209d8c4ac585647b1f7dc23e2bd4cba04663f7e2c510e",
+  "path": "test/equivalence/fixtures/palette-nearest-inputs.json"
+ },
+ "kind": "palette-nearest",
+ "limitations": [
+  "Compares the search algorithm under the editor's RGBA memory order. It does not establish which channel order the game's own palettes or callers use.",
+  "Only AL is compared; EAX bits 8..31 are not a result of the routine.",
+  "Finite authored domain; palettes with alpha/gamma handling are out of scope."
+ ],
+ "normalizations": [
+  {
+   "name": "index_offset",
+   "params": {
+    "applies_to": "expected",
+    "offset": 1,
+    "output": "index"
+   }
+  }
+ ],
+ "outputs": [
+  {
+   "name": "index",
+   "type": "int"
+  },
+  {
+   "name": "writes",
+   "type": "json"
+  }
+ ],
+ "reference": {
+  "abi_recipe": {
+   "convention": "stdcall: 5 dword stack arguments, callee pops 0x14 (RET 0x14)",
+   "distance": "32-bit sum of (byte_k - c_k)^2 over k=0..2; compared UNSIGNED (JNC)",
+   "entry_count": 255,
+   "entry_layout": "stride 4; byte0 is compared with c0, byte1 with c1, byte2 with c2; byte3 is never read",
+   "entry_start": 1,
+   "evidence": [
+    "Ghidra project diablo2:/Vanilla/1.13c/D2CMP.dll, disassembly 0x6fe19d30..0x6fe19da0",
+    "PE .reloc of the identified D2CMP.dll: no fix-up inside RVA 0x9d30..0x9da0"
+   ],
+   "export_ordinal": 10049,
+   "function_bytes": "518b4c240c535533c083cbff33ed85c989442408765456578b7c241883c702900fb657fe8b7424208b4c24248b4424282bd60fb677ff2bf10fb60f2bc80fafc98bc60fafc603c88bc20fafc203c83bcb7306896c24108bd98b44241c4583c7043be872bc8a4424105f5e5d5b59c21400",
+   "function_length": 112,
+   "hidden_state": "none: no global reads or writes, no calls, no relocations",
+   "kind": "stdcall-palette-nearest/1",
+   "marshalling": {
+    "c0": "query r",
+    "c1": "query g",
+    "c2": "query b",
+    "count": "entry_count",
+    "entries": "scratch + 4*entry_start",
+    "palette_memory": "1024 scratch bytes in the editor's RGBA_PALETTE order (r,g,b,a per entry)"
+   },
+   "module": "D2CMP.dll",
+   "register_inputs": "none: ECX is pushed as the local best-index slot and reloaded from [esp+0xc] before use; EAX/EDX/ESI/EDI/EBP are not read",
+   "relocations": [],
+   "return": "AL = relative index of the minimum; EAX bits 8..31 hold bits of `count` (or 0 when count==0) and are not part of the result",
+   "rva": "0x9d30",
+   "scratch_bytes": 1024,
+   "search": "relative indices 0..count-1 from `entries`; count==0 returns 0 without reading memory",
+   "stack_args": [
+    "entries",
+    "count",
+    "c0",
+    "c1",
+    "c2"
+   ],
+   "tie_policy": "strict less-than against the running minimum (initially 0xFFFFFFFF): the first (lowest) relative index at the minimum wins",
+   "timeout_ms": 5000,
+   "writes": "none outside its own stack frame"
+  },
+  "abi_recipe_digest": "e2f11375697db9a55e32937582fd18706a569b7e1c876ba91b17de4c0ac05d45",
+  "function_bytes_sha256": "83931990311c2210742ec01205318118263a2a6cdb1be5aeb729f9f3b9611ee4",
+  "module": "D2CMP.dll",
+  "rva": "0x9d30"
+ },
+ "required": true,
+ "schema": "ds1edit.contract/1",
+ "success_outcome": "pass"
+}

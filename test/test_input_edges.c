@@ -70,6 +70,35 @@ void tearDown(void)
 {
 }
 
+void test_editor_undo_shortcuts_fire_once_and_respect_active_property_edits(void)
+{
+   ALLEGRO_EVENT z = key_down_event(ALLEGRO_KEY_Z);
+   ALLEGRO_EVENT u = key_down_event(ALLEGRO_KEY_U);
+   hold_key(ALLEGRO_KEY_LCTRL);
+
+   input_begin_frame();
+   input_note_event(&z);
+   TEST_ASSERT_TRUE(input_undo_shortcut_hit(0));
+   /* A visible but idle panel must not steal undo from the map. */
+   TEST_ASSERT_FALSE(input_properties_panel_owns_undo(1, 0, 0));
+   TEST_ASSERT_TRUE(input_undo_shortcut_hit(
+       input_properties_panel_owns_undo(1, 0, 0)));
+   TEST_ASSERT_TRUE(input_properties_panel_owns_undo(1, 1, 0));
+   TEST_ASSERT_TRUE(input_properties_panel_owns_undo(1, 0, 1));
+   TEST_ASSERT_FALSE(input_undo_shortcut_hit(
+       input_properties_panel_owns_undo(1, 1, 0)));
+   TEST_ASSERT_FALSE(input_undo_shortcut_hit(
+       input_properties_panel_owns_undo(1, 0, 1)));
+   input_begin_frame();
+   TEST_ASSERT_FALSE(input_undo_shortcut_hit(0));
+
+   input_begin_frame();
+   input_note_event(&u);
+   TEST_ASSERT_TRUE(input_undo_shortcut_hit(1));
+   release_key(ALLEGRO_KEY_LCTRL);
+   TEST_ASSERT_FALSE(input_undo_shortcut_hit(0));
+}
+
 /* ---- key_hit: once per press, not once per frame ---------------------- */
 
 void test_key_hit_fires_on_the_frame_the_key_goes_down(void)
@@ -196,6 +225,7 @@ void test_suppress_held_clears_pending_edges(void)
 int main(void)
 {
    UNITY_BEGIN();
+   RUN_TEST(test_editor_undo_shortcuts_fire_once_and_respect_active_property_edits);
    RUN_TEST(test_key_hit_fires_on_the_frame_the_key_goes_down);
    RUN_TEST(test_key_hit_is_clear_on_later_frames_while_still_held);
    RUN_TEST(test_key_hit_fires_again_after_release_and_repress);

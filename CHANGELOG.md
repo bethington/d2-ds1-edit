@@ -3,6 +3,102 @@
 Notable changes to DS1Edit. Releases before 2.1.1 are described on the
 [GitHub releases page](https://github.com/bethington/d2-ds1-edit/releases).
 
+## Unreleased
+
+### Fixed
+
+- **Saving a map is safer.** A save now goes through a staging file, keeps a
+  backup, and rolls back if anything fails. A failed save shows an error and
+  leaves the editor open with your edits intact; it no longer ends the program.
+- **Corrupt or truncated maps no longer crash the editor.** The DS1 reader
+  checks every length and offset before using it. Opening a damaged map from
+  the area browser now shows an error instead of exiting. All 2,276 DS1 files in
+  vanilla 1.13c read and resave cleanly, and 2,238 of them are identical to what
+  the original game's loader produces. The other 38 differed because objects
+  outside the map's width x 5 by height x 5 grid were dropped on load; they are
+  now kept, drawn with a warning tint, and saved. All 2,276 now match the
+  original loader.
+- **Undo handles large edits and large maps.** Undo records used 8-bit counts
+  and coordinates, which broke runs of more than 255 tiles and maps wider than
+  256. They are now 32-bit.
+- **Delete with nothing selected no longer creates a ghost object.**
+- **Saving a project copy** handles sibling folders that share a name prefix,
+  over-long paths and trailing separators, and a project copy now finds its
+  preset.
+- **Tile variants are picked by rarity as the game does**
+  (`misc_check_tiles_conflicts`). Some maps drew a different variant of a tile
+  than the original game.
+- **Sprites and tiles decode correctly in edge cases.** One raw index-frame
+  decode path now serves DCC, DC6 and DT1 (no more RGBA-to-palette recovery).
+  Fixed: DCC 32-bit signed fields; a crash on a malformed DCC header; a DCC
+  sub-stream overrun; AnimData lookup (file extension, bucket position, overrun;
+  names are compared exactly after uppercasing, as the game does); DT1 RLE
+  overrun and an offset crash; stale transparent pixels in DT1 tiles; two DT1
+  32-bit wraparounds; DT1 sub-tile length now read as 16 bits; DT1 flags bit 0
+  accepted; DT1 `roof_y` zero-extended; a block-table scan that read past the
+  end.
+- **Exports:** APNG frame delays no longer overflow, a failed APNG export
+  removes its partial file, and transparent PNG pixels are written
+  deterministically.
+- **Palette:** the PL2 channel order is red, green, blue, confirmed against the
+  running game. Nearest-colour matching agrees with the original D2CMP 1.13c on
+  all 336 test vectors. The cached palette never overrides the archive palette,
+  and the colour-map cache is keyed by palette and gamma.
+- **Map memory leaks** in `ds1_free` fixed, along with a `dcc_destroy` heap
+  overflow found by AddressSanitizer and an undefined-behaviour call to
+  `mod_load_in_mem` (mismatched prototype).
+- **The editor was unusably slow on Direct3D (under 1 frame per second)** on
+  some machines: the built-in font glyphs created before the window stayed in
+  system memory. They are now converted to video bitmaps once the display
+  exists. `--selftest` now prints the average render time and fails above 250 ms
+  per frame.
+- **Windows package starts on a clean Windows 10 or later** without a separate
+  Visual C++ Redistributable: the x86 `vcruntime140.dll` now ships in the ZIP
+  (it needs the Universal C Runtime that Windows 10 already includes). The
+  generated `assets/editor/version` stamp is no longer packaged.
+- **macOS package** now contains `ds1edit.app` beside `assets/`, and its
+  `Info.plist` carries the real version number instead of an empty one. Not yet
+  verified on a Mac.
+- `I` key repeat condition fixed.
+
+### Added
+
+- **Arrow keys and WASD scroll the map.** **Ctrl+arrows** browse maps (plain
+  arrows used to).
+- **Ctrl+Z undoes map edits** (while the properties panel is editing, it owns
+  Ctrl+Z; **Ctrl+U** still undoes tiles). Ctrl+U now acts once per key press
+  instead of repeating.
+- **Alt+I** selects strictly identical tiles; **Alt-drag** box-selects objects.
+- **Palette per map comes from the game tables first**, and maps no table lists
+  are resolved by their exact `LvlPrest.txt` path, so a same-named map in
+  another folder is no longer confused with them.
+- **Old DS1 files load their tiles** through `.tg1` fallback tile loading.
+- Build options `DS1EDIT_ENABLE_SANITIZERS` (AddressSanitizer and
+  UndefinedBehaviorSanitizer; AddressSanitizer only on MSVC) and
+  `DS1EDIT_ENABLE_COVERAGE` (GCC gcov, Clang source-based coverage).
+- A much larger automated test inventory: about 70 CTest suites (was 29),
+  including Python suites (`py_*`), an adversarial malformed-input campaign
+  (6,717 cases), a DS1 sweep over the vanilla corpus, and a replay of recorded
+  original-game answers.
+- `scripts/run_golden_tests.py` is strict: exit 0 only if every selected map
+  passes, 1 for a failure or a skip, 2 for a bad configuration. Each run keeps
+  `results.json` under `tmp/golden-runs/`, and `--update` replaces references
+  atomically.
+
+### Changed
+
+- **Edge-of-window mouse scrolling is off by default.** Set
+  `mouse_edge_scroll = YES` in `Ds1edit.ini` to restore it.
+- Building and testing now need CMake 3.21 and Python 3 with Pillow
+  (`pip install -r test/python/requirements.txt`).
+- Release packages are built and inspected by CI, and a release publishes only
+  those exact packages after a reviewed qualification record is found. See
+  `docs/release-readiness.md`.
+- **Known review concern (open):** an unlisted pre-v8 DS1 that has no preset
+  and no inferable tileset now gets the Act 1 palette, because the folder-Act
+  stamp in `area_browser_open_entry_into_slot` was removed.
+- The `test_placeholder` suite was removed.
+
 ## 2.1.1
 
 ### Fixed

@@ -162,6 +162,7 @@ typedef struct CONFIG_S
    int      stretch_sprites;
    int      winobj_scroll_keyb;
    int      winobj_scroll_mouse;
+   int      mouse_edge_scroll;
    int      center_zoom;
    int      default_zoom;
    int      nb_type1_per_act;
@@ -389,10 +390,10 @@ typedef struct UNDO_S
    char           tag[4];
    int            in_seg;
    long           seg_offset;
-   UBYTE          seg_num;
+   UDWORD         seg_num;     // segments in this buffer (was UBYTE: wrapped at 256)
    long           cell_offset;
-   UBYTE          cell_num;
-   UBYTE          old_x, old_y;
+   UDWORD         cell_num;    // cells in the current segment (was UBYTE)
+   int            old_x, old_y; // full cell coordinates (were truncated to 8 bits)
    UNDO_DAT_FLG_S dat_flg;
 } UNDO_S;
 
@@ -1156,7 +1157,7 @@ extern DS1_S * glb_ds1;
 typedef struct BLOCK_S
 {
    long       direction;
-   WORD       roof_y;
+   UWORD      roof_y;
    UBYTE      sound;
    UBYTE      animated;
    long       size_y;

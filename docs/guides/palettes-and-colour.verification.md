@@ -274,3 +274,17 @@ here for a single-pass review:
   a materially different, richer mechanism than the numeric `Transform`
   column this chapter traces in depth, and this pass did not have budget to
   find its consuming function.
+
+## Addendum (2026-10-22): channel names settled against the running game
+
+The byte-order findings above stand; the channel *names* do not. A live
+1.13c frame (d2-fleet `lod-113c`, Act I town, PNG sha256
+`559f0fb8a847f641230bb7b268146eec424d0b500a191fd5768c08a8a657b53c`) has a
+palette equal to `ACT1\Pal.PL2`'s base table read as (R, G, B, pad) at 256/256
+indices (43/256 read as (B, G, R, pad)). Its life orb (index 5, PL2 bytes
+`5C 00 00 00`) is red and its mana orb (index 138, `00 00 58 00`) is blue. For
+all five act palettes `pal.dat` read as (B, G, R) equals the PL2 base table
+read as (R, G, B) at 256/256. Hence: `pal.dat` is blue-first; the PL2 base
+entry, the tint source bytes at `0x6b604`, and `FindNearestPaletteColor`'s
+first colour argument are red-first. The tint reproduction's "(blue, green,
+red) slot order" is the same slot order, correctly named (red, green, blue).

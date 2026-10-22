@@ -52,6 +52,11 @@ d2-ds1-edit/
 │   │   ├── bits_window.c/h   # Bits/flags window
 │   │   └── compat.h          # Allegro 5 compatibility layer and draw helpers
 │   │
+│   ├── cli/                   # Headless command-line interface
+│   │   ├── cli.c             # Verb dispatcher (list-areas, list-files,
+│   │   │                      audit-lvltypes, export-compose, probe-cof, ...)
+│   │   └── cli.h             # CLI classification + entry point
+│   │
 │   └── mpq/                   # MPQ archive reader
 │       ├── MpqView.c/h
 │       ├── Explode.c
@@ -68,7 +73,6 @@ d2-ds1-edit/
 │
 ├── test/                       # Unit tests (Unity framework)
 │   ├── CMakeLists.txt         # Test build configuration
-│   ├── test_placeholder.c     # Infrastructure validation
 │   ├── test_palette.c         # Palette color conversion tests
 │   ├── test_rgba_cache.c      # RGBA cache create/rebuild/convert tests
 │   ├── test_dt1_decode.c      # DT1 sub-tile decoder tests
@@ -163,6 +167,7 @@ All `#include` directives use project-root style relative to `src/`:
 | `src/render/preview.c` | Tile rendering pipeline, per-frame perf stats |
 | `src/ui/compat.h` | Allegro 5 draw helpers, D2 blend modes |
 | `src/main.c` | Init, display creation, bitmap promotion |
+| `src/cli/cli.c` | Headless CLI verbs (list-areas, audit-lvltypes, export-compose, ...) |
 | `src/core/cof.c` | COF/DCC/DC6 animation loading |
 | `src/core/dt1.c` | DT1 tile loading and palette rebuild |
 | `src/core/rgba_cache.c` | Tile bitmap cache (palette -> RGBA) |

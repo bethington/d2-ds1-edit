@@ -1,0 +1,63 @@
+{
+ "schema": "ds1edit.visual-contract/1",
+ "id": "decoders-113c",
+ "target": "vanilla-113c",
+ "status": "portable-only",
+ "note": "Raw palette-index outputs of the DC6/DCC/DT1 decoders compared with independently encoded intent (scripts/equivalence/decoder_cases.py) and authored DT1 bytes. Original-game decoder captures (DCC seeds 0x140a0/0x13b70/0x13780 are discovery seeds, not callable APIs) are not bound yet.",
+ "interface": {
+  "seam": "src/core/index_frame.h: DS1EDIT_INDEX_FRAME, dc6_decode_indices, dcc_decode_indices",
+  "probe": "test_visual_reference_probe decode --kind dt1|dcc|dc6 --input PATH --direction N --out-dir PATH",
+  "frame_fields": [
+   "width",
+   "height",
+   "stride",
+   "origin_x",
+   "origin_y",
+   "frame",
+   "direction",
+   "pixels"
+  ],
+  "origin": "signed sprite-space position of pixel (0,0), rows top-down",
+  "transparency": "index0",
+  "dc6_frames": "each frame at its own size; origin_y = offsetY - height + 1",
+  "dcc_frames": "every frame of a direction at the direction box; origin = box minimum",
+  "dt1_frames": "one per block, the editor's block image (zero line placed by orientation), origin (0,0)"
+ },
+ "cases_file": "test/equivalence/fixtures/decoders/expected.json",
+ "controls": {
+  "wrong_origin": "dc6.rle.basic",
+  "wrong_row_direction": "dc6.rle.basic",
+  "dropped_delta_reuse": "dcc.sequence",
+  "transparent_skip": "dc6.rle.basic"
+ },
+ "assumptions": [
+  {
+   "id": "DC6_FLIP_IGNORED",
+   "assumed": "the DC6 frame 'flip' dword is not interpreted; rows are always bottom-up",
+   "status": "needs_original_confirmation",
+   "evidence_needed": "a vanilla DC6 frame with flip=1 (140 exist) rendered by the original game",
+   "attempted": "2026-10-22: not settled in package D task 4's pass. D2CMP 1.13c ConvertRawCelToLoaded (6fe21d00) copies the frame header fields but the blitters that would consume flip/literal-0/bottomUp/cell layout were not traced; no original decode of an authored frame was attempted (needs a dedicated idle member and a callable decoder route)."
+  },
+  {
+   "id": "DC6_LITERAL_ZERO_TRANSPARENT",
+   "assumed": "a literal palette index 0 in a DC6 copy run is transparent, like a skip (the game's copy blitter would draw entry 0)",
+   "status": "needs_original_confirmation",
+   "evidence_needed": "original blit of a frame with a literal 0 byte, if any vanilla frame has one",
+   "attempted": "2026-10-22: not settled in package D task 4's pass. D2CMP 1.13c ConvertRawCelToLoaded (6fe21d00) copies the frame header fields but the blitters that would consume flip/literal-0/bottomUp/cell layout were not traced; no original decode of an authored frame was attempted (needs a dedicated idle member and a callable decoder route)."
+  },
+  {
+   "id": "DCC_BOTTOM_UP_LAYOUT",
+   "assumed": "bottomUp=1 frames only change the frame box (ymin = yoffset); rows are still decoded top-down. All 3.3M vanilla frames are bottomUp=0",
+   "status": "needs_original_confirmation",
+   "evidence_needed": "original decoder on an authored bottomUp=1 frame",
+   "attempted": "2026-10-22: not settled in package D task 4's pass. D2CMP 1.13c ConvertRawCelToLoaded (6fe21d00) copies the frame header fields but the blitters that would consume flip/literal-0/bottomUp/cell layout were not traced; no original decode of an authored frame was attempted (needs a dedicated idle member and a callable decoder route)."
+  },
+  {
+   "id": "DCC_CELL_MERGE_RULE",
+   "assumed": "a frame's first cell column/row absorbs a following column/row of width 0 or 1 (the decoder's and the encoder's shared reading of the format)",
+   "status": "needs_original_confirmation",
+   "evidence_needed": "original DCC decode of a frame whose box leaves a 1-pixel column",
+   "attempted": "2026-10-22: not settled in package D task 4's pass. D2CMP 1.13c ConvertRawCelToLoaded (6fe21d00) copies the frame header fields but the blitters that would consume flip/literal-0/bottomUp/cell layout were not traced; no original decode of an authored frame was attempted (needs a dedicated idle member and a callable decoder route)."
+  }
+ ]
+}

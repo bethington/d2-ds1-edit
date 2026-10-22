@@ -8,20 +8,19 @@
     "configurePresets": [
         {
             "name": "default",
-            "displayName": "Default (x86, vcpkg)",
-            "description": "Build with vcpkg dependencies, Win32 architecture",
-            "generator": "Visual Studio 16 2019",
+            "displayName": "Visual Studio 2022 (x86)",
+            "description": "Build with the installed x86 vcpkg libraries using Visual Studio 2022",
+            "generator": "Visual Studio 17 2022",
             "architecture": {
                 "value": "Win32",
                 "strategy": "set"
             },
-            "binaryDir": "${sourceDir}/build",
+            "binaryDir": "${sourceDir}/tmp/build-vs2022",
             "cacheVariables": {
-                "CMAKE_TOOLCHAIN_FILE": {
-                    "type": "FILEPATH",
-                    "value": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
-                },
-                "VCPKG_TARGET_TRIPLET": "x86-windows"
+                "CMAKE_PREFIX_PATH": {
+                    "type": "PATH",
+                    "value": "${sourceDir}/build/vcpkg_installed/x86-windows"
+                }
             },
             "condition": {
                 "type": "equals",

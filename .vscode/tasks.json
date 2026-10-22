@@ -4,7 +4,7 @@
         {
             "label": "CMake Configure",
             "type": "shell",
-            "command": "cmake",
+            "command": "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe",
             "args": ["--preset", "default"],
             "group": "build",
             "problemMatcher": []
@@ -12,8 +12,8 @@
         {
             "label": "Build DS1Edit Debug",
             "type": "shell",
-            "command": "cmake",
-            "args": ["--build", "--preset", "dev"],
+            "command": "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe",
+            "args": ["--build", "--preset", "debug", "--target", "ds1edit"],
             "group": {
                 "kind": "build",
                 "isDefault": true
@@ -23,39 +23,39 @@
         {
             "label": "Build DS1Edit Release",
             "type": "shell",
-            "command": "cmake",
-            "args": ["--build", "--preset", "release"],
+            "command": "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe",
+            "args": ["--build", "--preset", "release", "--target", "ds1edit"],
             "group": "build",
             "problemMatcher": "$msCompile"
         },
         {
             "label": "Clean Build DS1Edit Debug",
             "type": "shell",
-            "command": "cmake",
-            "args": ["--build", "--preset", "dev", "--clean-first"],
+            "command": "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe",
+            "args": ["--build", "--preset", "debug", "--target", "ds1edit", "--clean-first"],
             "group": "build",
             "problemMatcher": "$msCompile"
         },
         {
             "label": "Clean Build DS1Edit Release",
             "type": "shell",
-            "command": "cmake",
-            "args": ["--build", "--preset", "release", "--clean-first"],
+            "command": "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe",
+            "args": ["--build", "--preset", "release", "--target", "ds1edit", "--clean-first"],
             "group": "build",
             "problemMatcher": "$msCompile"
         },
         {
             "label": "Clean Bin",
             "type": "shell",
-            "command": "cmake",
-            "args": ["--build", "build", "--target", "clean-bin"],
+            "command": "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe",
+            "args": ["--build", "--preset", "release", "--target", "clean-bin"],
             "group": "build",
             "problemMatcher": []
         },
         {
             "label": "Run Tests",
             "type": "shell",
-            "command": "ctest",
+            "command": "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/ctest.exe",
             "args": ["--preset", "default"],
             "group": "test",
             "problemMatcher": []
@@ -63,7 +63,7 @@
         {
             "label": "Package Release",
             "type": "shell",
-            "command": "cmake",
+            "command": "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe",
             "args": [
                 "--build", "--preset", "release",
                 "--target", "package"

@@ -17,6 +17,7 @@
 #include "core/dcc.h"
 #include "core/dc6.h"
 #include "core/dc6_header.h"
+#include "core/index_frame.h"
 #include "core/export_progress.h"
 #include "core/glob_match.h"
 #include "core/asset_export.h"
@@ -381,7 +382,9 @@ int asset_export_dt1_header_looks_valid(const void *buffer, long len)
    memcpy(&block_num, bytes + 268, sizeof(block_num));
    memcpy(&bh_start,  bytes + 272, sizeof(bh_start));
 
-   if (x1 != 7 || x2 != 6)
+   /* x2 is a flags dword. A serialized DT1 may set bit 0 in addition to
+    * the usual disk-layout bits 1 and 2. */
+   if (x1 != 7 || (x2 & ~1) != 6)
       return 0;
    if (block_num < 0 || bh_start < 0)
       return 0;
@@ -1190,55 +1193,79 @@ static int export_dt1_png(const char *asset_path, const char *output_dir)
    return exported;
 }
 
+/* Build an RGBA bitmap from a palette-index canvas (index 0 transparent),
+ * through the current palette. Both sprite exporters decode to indices with
+ * the shared raw decoders and convert here, once, at the end. */
+static ALLEGRO_BITMAP *index_canvas_to_bitmap(const UBYTE *pixels, int w, int h)
+{
+   ALLEGRO_BITMAP *bmp, *prev_target;
+   ALLEGRO_LOCKED_REGION *lock;
+   int x, y;
+
+   if (pixels == NULL || w <= 0 || h <= 0)
+      return NULL;
+
+   bmp = al_create_bitmap(w, h);
+   if (bmp == NULL)
+      return NULL;
+
+   prev_target = al_get_target_bitmap();
+   al_set_target_bitmap(bmp);
+   lock = al_lock_bitmap(bmp, ALLEGRO_PIXEL_FORMAT_ANY, ALLEGRO_LOCK_WRITEONLY);
+   for (y = 0; y < h; y++)
+      for (x = 0; x < w; x++)
+      {
+         UBYTE v = pixels[(size_t) y * w + x];
+         /* index 0: fully transparent, and the same bytes in every export */
+         al_put_pixel(x, y, v ? pal_color(v) : al_map_rgba(0, 0, 0, 0));
+      }
+   if (lock != NULL)
+      al_unlock_bitmap(bmp);
+   al_set_target_bitmap(prev_target);
+   return bmp;
+}
+
 int asset_export_dcc_buffer_png(const char *asset_path, const void *buffer,
                                 long len, const char *output_dir)
 {
-   long bitfield = 0;
-   DCC_S *dcc;
-   int d, f, exported = 0;
+   DS1EDIT_INDEX_FRAME *frames = NULL;
+   size_t count = 0, i;
+   int directions, fpd, exported = 0;
    char out_path[1024];
    char leaf[64];
 
    if (asset_path == NULL || buffer == NULL || output_dir == NULL || len <= 0)
       return 0;
 
-   dcc = dcc_mem_load((void *) buffer, (int) len);
-   if (dcc == NULL)
+   if (!dcc_decode_indices(buffer, (size_t) len, DS1EDIT_ALL_DIRECTIONS,
+                           &frames, &count, NULL, 0))
       return 0;
-
-   if (dcc_file_header(dcc) != 0)
+   if (count == 0)
    {
-      dcc_destroy(dcc);
-      return 0;
-   }
-
-   for (d = 0; d < dcc->header.directions; d++)
-      bitfield |= (1L << d);
-
-   if (dcc_decode(dcc, bitfield) != 0)
-   {
-      dcc_destroy(dcc);
+      ds1edit_index_frames_free(frames, count);
       return 0;
    }
 
-   for (d = 0; d < dcc->header.directions; d++)
+   directions = frames[count - 1].direction + 1;
+   fpd        = (int) (count / (size_t) directions);
+
+   for (i = 0; i < count; i++)
    {
-      for (f = 0; f < dcc->header.frames_per_dir; f++)
-      {
-         if (dcc->frame[d][f].bmp == NULL)
-            continue;
+      ALLEGRO_BITMAP *bmp = index_canvas_to_bitmap(frames[i].pixels,
+                                                   frames[i].width,
+                                                   frames[i].height);
+      if (bmp == NULL)
+         continue;
 
-         make_anim_leaf(asset_path, leaf, sizeof(leaf), dcc->header.directions,
-            dcc->header.frames_per_dir, d, f);
-         if (!make_output_path(out_path, sizeof(out_path), output_dir, asset_path, leaf))
-            continue;
-
-         if (save_bitmap_png(out_path, dcc->frame[d][f].bmp))
-            exported++;
-      }
+      make_anim_leaf(asset_path, leaf, sizeof(leaf), directions, fpd,
+                     frames[i].direction, frames[i].frame);
+      if (make_output_path(out_path, sizeof(out_path), output_dir, asset_path, leaf)
+          && save_bitmap_png(out_path, bmp))
+         exported++;
+      al_destroy_bitmap(bmp);
    }
 
-   dcc_destroy(dcc);
+   ds1edit_index_frames_free(frames, count);
    return exported;
 }
 
@@ -1259,84 +1286,38 @@ static int export_dcc_png(const char *asset_path, const char *output_dir)
 int asset_export_dc6_buffer_png(const char *asset_path, const void *buffer,
                                 long len, const char *output_dir)
 {
-   const int32_t *lptr, *dc6_fptr;
-   long offset;
-   long dc6_ver, dc6_unk1, dc6_unk2, dc6_dir, dc6_fpd;
-   long f_w, f_h, f_offx, f_offy, f_x1, f_x2, f_y1, f_y2, f_len;
-   UBYTE *f_data;
-   int d, f, exported = 0, w, h, x1, y1, x2, y2;
-   ALLEGRO_BITMAP *bmp;
+   DS1EDIT_INDEX_FRAME *frames = NULL;
+   size_t count = 0;
+   int32_t dc6_dir, dc6_fpd;
+   int d, f, exported = 0;
    char out_path[1024];
    char leaf[64];
 
-   if (asset_path == NULL || buffer == NULL || output_dir == NULL || len <= 0)
+   if (asset_path == NULL || buffer == NULL || output_dir == NULL || len < 24)
       return 0;
 
-   lptr     = (const int32_t *) buffer;
-   dc6_ver  = lptr[0];
-   dc6_unk1 = lptr[1];
-   dc6_unk2 = lptr[2];
-   dc6_dir  = lptr[4];
-   dc6_fpd  = lptr[5];
-   dc6_fptr = &lptr[6];
-   if ((dc6_ver != 6) || (dc6_unk1 != 1) || (dc6_unk2 != 0))
+   if (!dc6_decode_indices(buffer, (size_t) len, DS1EDIT_ALL_DIRECTIONS,
+                           &frames, &count, NULL, 0))
       return 0;
+
+   memcpy(&dc6_dir, (const UBYTE *) buffer + 16, sizeof(dc6_dir));
+   memcpy(&dc6_fpd, (const UBYTE *) buffer + 20, sizeof(dc6_fpd));
 
    for (d = 0; d < dc6_dir; d++)
    {
-      x1 = y1 = LONG_MAX;
-      x2 = y2 = LONG_MIN;
-      for (f = 0; f < dc6_fpd; f++)
-      {
-         offset = dc6_fptr[d * dc6_fpd + f];
-         if (offset >= len)
-            continue;
+      const DS1EDIT_INDEX_FRAME *dir_frames = frames + (size_t) d * dc6_fpd;
+      UBYTE **canvases = NULL;
+      int w, h, off_x, off_y;
 
-         lptr = (const int32_t *) (((const UBYTE *) buffer) + offset);
-         f_w    = lptr[1];
-         f_h    = lptr[2];
-         f_offx = lptr[3];
-         f_offy = lptr[4];
-         f_x1 = f_offx;
-         f_x2 = f_x1 + f_w - 1;
-         f_y2 = f_offy;
-         f_y1 = f_y2 - f_h + 1;
-
-         if (f_x1 < x1) x1 = (int) f_x1;
-         if (f_x2 > x2) x2 = (int) f_x2;
-         if (f_y1 < y1) y1 = (int) f_y1;
-         if (f_y2 > y2) y2 = (int) f_y2;
-      }
-
-      w = x2 - x1 + 1;
-      h = y2 - y1 + 1;
-      if (w <= 0 || h <= 0)
+      if (ds1edit_index_frames_to_canvases(dir_frames, (size_t) dc6_fpd, &canvases,
+                                 &w, &h, &off_x, &off_y) != 0)
          continue;
 
       for (f = 0; f < dc6_fpd; f++)
       {
-         offset = dc6_fptr[d * dc6_fpd + f];
-         if (offset >= len)
-            continue;
-
-         lptr = (const int32_t *) (((const UBYTE *) buffer) + offset);
-         f_offx = lptr[3];
-         f_offy = lptr[4];
-         f_len  = lptr[7];
-         f_data = (UBYTE *) (&lptr[8]);
-
-         bmp = al_create_bitmap(w, h);
+         ALLEGRO_BITMAP *bmp = index_canvas_to_bitmap(canvases[f], w, h);
          if (bmp == NULL)
             continue;
-
-         a5_clear(bmp);
-         dc6_decomp_norm(
-            f_data,
-            bmp,
-            f_len,
-            (int) (f_offx - x1),
-            h - 1 + (int) (f_offy - y2)
-         );
 
          /* For single-direction multi-frame DC6 (UI spritesheets like
           * inv1x1, inv2x3, etc.) emit a flat <basename>_NN.png in the
@@ -1363,8 +1344,10 @@ int asset_export_dc6_buffer_png(const char *asset_path, const void *buffer,
 
          al_destroy_bitmap(bmp);
       }
+      ds1edit_index_canvases_free(canvases, (size_t) dc6_fpd);
    }
 
+   ds1edit_index_frames_free(frames, count);
    return exported;
 }
 

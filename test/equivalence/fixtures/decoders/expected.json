@@ -1,0 +1,318 @@
+{
+ "cases": [
+  {
+   "direction": 0,
+   "features": [
+    "literal",
+    "skip",
+    "row_end",
+    "bottom_up",
+    "negative_origin",
+    "multi_frame",
+    "early_row_end",
+    "empty_row"
+   ],
+   "file": "dc6_rle_basic.dc6",
+   "frames": [
+    {
+     "direction": 0,
+     "frame": 0,
+     "height": 4,
+     "origin_x": -3,
+     "origin_y": -9,
+     "pixels_hex": "0a0a0000140a001e1e1400000000002828282828",
+     "stride": 5,
+     "width": 5
+    },
+    {
+     "direction": 0,
+     "frame": 1,
+     "height": 3,
+     "origin_x": 4,
+     "origin_y": -2,
+     "pixels_hex": "c8fbfbc8c800",
+     "stride": 2,
+     "width": 2
+    }
+   ],
+   "id": "dc6.rle.basic",
+   "input_sha256": "a459531c39e49351763753a2b090d058b9318ead0d5d6f5dd9c1ec9c2b0e57e1",
+   "kind": "dc6",
+   "transparency": "index0"
+  },
+  {
+   "direction": -1,
+   "features": [
+    "multi_direction",
+    "direction_order"
+   ],
+   "file": "dc6_multi_direction.dc6",
+   "frames": [
+    {
+     "direction": 0,
+     "frame": 0,
+     "height": 2,
+     "origin_x": -5,
+     "origin_y": -7,
+     "pixels_hex": "0a0014001e00",
+     "stride": 3,
+     "width": 3
+    },
+    {
+     "direction": 0,
+     "frame": 1,
+     "height": 2,
+     "origin_x": -5,
+     "origin_y": -4,
+     "pixels_hex": "140014001e00",
+     "stride": 3,
+     "width": 3
+    },
+    {
+     "direction": 1,
+     "frame": 0,
+     "height": 2,
+     "origin_x": 5,
+     "origin_y": -7,
+     "pixels_hex": "1e0014001e00",
+     "stride": 3,
+     "width": 3
+    },
+    {
+     "direction": 1,
+     "frame": 1,
+     "height": 2,
+     "origin_x": 5,
+     "origin_y": -4,
+     "pixels_hex": "280014001e00",
+     "stride": 3,
+     "width": 3
+    }
+   ],
+   "id": "dc6.multi_direction",
+   "input_sha256": "4be327064bef0cfe0b5e12d73ac86587917707518f75cd20f5315c8a76c0e274",
+   "kind": "dc6",
+   "transparency": "index0"
+  },
+  {
+   "direction": 0,
+   "features": [
+    "clipping",
+    "zero_copy"
+   ],
+   "file": "dc6_clip.dc6",
+   "frames": [
+    {
+     "direction": 0,
+     "frame": 0,
+     "height": 2,
+     "origin_x": 0,
+     "origin_y": 0,
+     "pixels_hex": "0a141e28",
+     "stride": 2,
+     "width": 2
+    }
+   ],
+   "id": "dc6.clip_and_zero_copy",
+   "input_sha256": "38d7fa383289422e964b4391b52fa8b6364696dcda8ef307fb3b761bba5ac7da",
+   "kind": "dc6",
+   "transparency": "index0"
+  },
+  {
+   "direction": 0,
+   "features": [
+    "negative_origin",
+    "one_bit_cells",
+    "two_bit_cells",
+    "transparent_cells"
+   ],
+   "file": "dcc_single.dcc",
+   "frames": [
+    {
+     "direction": 0,
+     "frame": 0,
+     "height": 6,
+     "origin_x": -4,
+     "origin_y": -12,
+     "pixels_hex": "0a0a1414000000000a0a1414001e1e00000000001e1e1e1e28000000000000282800c80000c800282828282828282828",
+     "stride": 8,
+     "width": 8
+    }
+   ],
+   "id": "dcc.single_frame",
+   "input_sha256": "a8dcadcf7354d77b388da188fa36b16ed740664b95c6c29f4648ae0deba60761",
+   "kind": "dcc",
+   "transparency": "index0"
+  },
+  {
+   "direction": -1,
+   "features": [
+    "equal_cells",
+    "changed_cells",
+    "frame_sequence",
+    "byte_boundary_fields",
+    "signed_fields",
+    "unaligned_frame_box",
+    "clear_on_size_change",
+    "multi_direction"
+   ],
+   "file": "dcc_sequence.dcc",
+   "frames": [
+    {
+     "direction": 0,
+     "frame": 0,
+     "height": 8,
+     "origin_x": -300,
+     "origin_y": -120,
+     "pixels_hex": "0a0a0a0a141414141e1e1e1e0a0a0a0a141414141e1e1e1e0a0a0a0a141414141e1e1e1e0a0a0a0a141414141e1e1e1e2828282800000000c8c8c8c82828282800000000c8c8c8c82828282800000000c8c8c8c82828282800000000c8c8c8c8",
+     "stride": 12,
+     "width": 12
+    },
+    {
+     "direction": 0,
+     "frame": 1,
+     "height": 8,
+     "origin_x": -300,
+     "origin_y": -120,
+     "pixels_hex": "0a0a0a0a141414141e1e1e1e0a0a0a0a14fb14141e1e1e1e0a0a0a0a141414141e1e1e1e0a0a0a0a141414141e1e1e1e2828282800000000c8c8c8c82828282800000000c8c8c8c82828282800000000c8c8c8c82828282800000000c8c8c8c8",
+     "stride": 12,
+     "width": 12
+    },
+    {
+     "direction": 0,
+     "frame": 2,
+     "height": 8,
+     "origin_x": -300,
+     "origin_y": -120,
+     "pixels_hex": "0a0a0a0a141414141e1e1e1e0a0a0a0a141414141e1e1e1e0a0a0a0a141414141e1e1e1e0a0a0a0a141414141e1e1e1e2828282800000000c8c8c8c82828282800000000c8c8c8c82828282800000000c8c8c8c82828282800000000c8c8c8c8",
+     "stride": 12,
+     "width": 12
+    },
+    {
+     "direction": 1,
+     "frame": 0,
+     "height": 3,
+     "origin_x": 998,
+     "origin_y": 70000,
+     "pixels_hex": "00004d4d4d4d00004d00004d00004d4d4d4d",
+     "stride": 6,
+     "width": 6
+    },
+    {
+     "direction": 1,
+     "frame": 1,
+     "height": 3,
+     "origin_x": 998,
+     "origin_y": 70000,
+     "pixels_hex": "00004d4d4d4d00004d00004d00004d4d4d4d",
+     "stride": 6,
+     "width": 6
+    },
+    {
+     "direction": 1,
+     "frame": 2,
+     "height": 3,
+     "origin_x": 998,
+     "origin_y": 70000,
+     "pixels_hex": "000000004d4d00000000004d000000004d4d",
+     "stride": 6,
+     "width": 6
+    }
+   ],
+   "id": "dcc.sequence",
+   "input_sha256": "0dfc038776827a8f5142c5b7c6e3abbe27c7361c727ddf43dde96947c66b0cdc",
+   "kind": "dcc",
+   "transparency": "index0"
+  },
+  {
+   "direction": 0,
+   "features": [
+    "compression_flag_0",
+    "displacement_chain",
+    "four_colour_cells",
+    "solid_cells"
+   ],
+   "file": "dcc_flag0.dcc",
+   "frames": [
+    {
+     "direction": 0,
+     "frame": 0,
+     "height": 8,
+     "origin_x": 0,
+     "origin_y": 0,
+     "pixels_hex": "05121f2c3946536005121f2c3946536005121f2c3946536005121f2c394653606d7a8794a1aebbc86d7a8794a1aebbc86d7a8794a1aebbc86d7a8794a1aebbc8",
+     "stride": 8,
+     "width": 8
+    },
+    {
+     "direction": 0,
+     "frame": 1,
+     "height": 8,
+     "origin_x": 0,
+     "origin_y": 0,
+     "pixels_hex": "05c805c8c8c8c8c805c805c8c8c8c8c805c805c8c8c8c8c805c805c8c8c8c8c8bbc8000000000000bbc8000000000000bbc8000000000000bbc8000000000000",
+     "stride": 8,
+     "width": 8
+    }
+   ],
+   "id": "dcc.no_equal_cells",
+   "input_sha256": "c5c35efe179a135abf2402cdee64aa132136047518e697518db937aeb43074f0",
+   "kind": "dcc",
+   "transparency": "index0"
+  },
+  {
+   "direction": -1,
+   "features": [
+    "empty_direction"
+   ],
+   "file": "dcc_empty_dir.dcc",
+   "frames": [
+    {
+     "direction": 0,
+     "frame": 0,
+     "height": 2,
+     "origin_x": 3,
+     "origin_y": 3,
+     "pixels_hex": "0000000000000000",
+     "stride": 4,
+     "width": 4
+    },
+    {
+     "direction": 0,
+     "frame": 1,
+     "height": 2,
+     "origin_x": 3,
+     "origin_y": 3,
+     "pixels_hex": "0000000000000000",
+     "stride": 4,
+     "width": 4
+    },
+    {
+     "direction": 1,
+     "frame": 0,
+     "height": 2,
+     "origin_x": 0,
+     "origin_y": 0,
+     "pixels_hex": "0a14140a",
+     "stride": 2,
+     "width": 2
+    },
+    {
+     "direction": 1,
+     "frame": 1,
+     "height": 2,
+     "origin_x": 0,
+     "origin_y": 0,
+     "pixels_hex": "140a0a14",
+     "stride": 2,
+     "width": 2
+    }
+   ],
+   "id": "dcc.empty_direction",
+   "input_sha256": "f0a235d28e210f5c1e80363e1634c768016452078541a909179505d098fde644",
+   "kind": "dcc",
+   "transparency": "index0"
+  }
+ ],
+ "schema": "ds1edit.decoder-cases/1"
+}

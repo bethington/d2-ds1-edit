@@ -19,6 +19,18 @@ unsigned long a5_input_timer_events;
 
 static int input_resize_pending;
 
+int input_properties_panel_owns_undo(int visible, int editing, int pending_count)
+{
+   return visible && (editing || pending_count > 0);
+}
+
+int input_undo_shortcut_hit(int properties_panel_owns_undo)
+{
+   return (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)) &&
+          (key_hit(KEY_U) ||
+           (!properties_panel_owns_undo && key_hit(ALLEGRO_KEY_Z)));
+}
+
 void input_init(void)
 {
    memset(a5_key_hit, 0, sizeof(a5_key_hit));

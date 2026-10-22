@@ -119,6 +119,11 @@ void input_suppress_held(void);
  * harmless now that a queued KEY_DOWN means "pressed". */
 void input_discard_pending(void);
 
+/* A pending or in-progress property edit owns Ctrl+Z. A visible idle panel
+ * does not; Ctrl+U remains the editor's legacy undo alias. */
+int input_properties_panel_owns_undo(int visible, int editing, int pending_count);
+int input_undo_shortcut_hit(int properties_panel_owns_undo);
+
 /* Did this key go down since the last pump? */
 #define key_hit(k)     (a5_key_hit[(k)] != 0)
 

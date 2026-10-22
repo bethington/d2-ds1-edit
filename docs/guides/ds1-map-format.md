@@ -453,7 +453,7 @@ split by layer.
 | 8–13 | `prop2` | **`sub_index`** | — | — | — | — | — | — | — |
 | 14–15 | `prop2 & 0xC0` | **never set** | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 16 | `prop3 & 0x01` | unknown | 239 | 0 | 1 | 20 | 2 | 0 | 0 |
-| 17 | `prop3 & 0x02` | **Unwalkable** | 152 115 | 185 | 150 | 9 062 | 26 | 65 | 20 |
+| 17 | `prop3 & 0x02` | **Unwalkable** | 152 515 | 185 | 150 | 9 062 | 26 | 65 | 20 |
 | 18–19 | `prop3 & 0x0C` | **never set** | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 20–25 | `prop3>>4`, `prop4 & 0x03` | **`main_index`** | — | — | — | — | — | — | — |
 | 26 | `prop4 & 0x04` | unknown — **not part of `main_index`** | 1 | 0 | 1 | 44 | 37 | 0 | 0 |
@@ -849,6 +849,18 @@ Two further edges the loader guards and a naive reader will not: the wall and
 floor counts may be zero, and the special-tile scan never visits the last row or
 column of a preset — its bounds are the *stored* `width − 1` and `height − 1`,
 not the real ones (`6fd5c517`, `6fd5c527`) **[G]**.
+
+### What DS1Edit does with these (2026-10-22 testing)
+
+DS1Edit's reader (`ds1_read_checked`) checks every length and offset against the
+bytes actually present before using them, and its save (`ds1_save_checked`)
+writes a staging file, keeps the previous map as a backup and rolls back on any
+failure, reporting the failure instead of ending the program. Run over the whole
+vanilla 1.13c corpus, all 2 276 DS1 files read and resave cleanly, and 2 238 of
+them come out identical to what the original game loader produces. The other 38
+differed in one respect: the editor dropped objects that lie outside the map's
+`width × 5` by `height × 5` sub-cell grid. The fix keeps them, draws them with a
+warning tint and saves them; with the fix all 2 276 match the original loader.
 
 ---
 

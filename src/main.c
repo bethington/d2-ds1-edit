@@ -878,38 +878,48 @@ void ds1edit_load_palettes(void)
 
    for (i = 0; i < ACT_MAX; i++)
    {
-      glb_ds1edit.pal_loaded[i] = TRUE;
-      // first checking on disk
-      if (misc_load_pal_from_disk(i) == FALSE)
+      UBYTE *cached_pal = NULL;
+      long cached_size = 0;
+      char *source_pal = NULL;
+      long source_size = 0;
+      int cached = misc_load_pal_from_disk(i);
+
+      if (cached)
       {
-         // not already on disk
+         cached_pal = glb_ds1edit.d2_pal[i];
+         cached_size = glb_ds1edit.pal_size[i];
+      }
+
+      /* The archive/mod overlay is authoritative. The editor's palN.bin is
+       * only a cache and may belong to a different mod or project. */
+      sprintf(palname, "Data\\Global\\Palette\\Act%i\\Pal.pl2", i + 1);
+      printf("want to read a palette from game data : %s\n", palname);
+      entry = misc_load_mpq_file(palname, &source_pal, &source_size, TRUE);
+      if (entry != -1)
+      {
+         glb_ds1edit.pal_loaded[i] = cached && cached_size == source_size
+            && memcmp(cached_pal, source_pal, source_size) == 0;
+         free(cached_pal);
+         glb_ds1edit.d2_pal[i] = (UBYTE *)source_pal;
+         glb_ds1edit.pal_size[i] = source_size;
+         if (!glb_ds1edit.pal_loaded[i])
+            misc_save_pal_on_disk(i, glb_ds1edit.d2_pal[i]);
+      }
+      else if (cached)
+      {
+         glb_ds1edit.pal_loaded[i] = TRUE;
+         glb_ds1edit.d2_pal[i] = cached_pal;
+         glb_ds1edit.pal_size[i] = cached_size;
+      }
+      else
+      {
          glb_ds1edit.pal_loaded[i] = FALSE;
-
-         // make full path
-         sprintf(palname, "Data\\Global\\Palette\\Act%i\\Pal.pl2", i + 1);
-
-         // load the palette
-         printf("want to read a palette from mpq : %s\n", palname);
-         entry = misc_load_mpq_file(
-             palname,
-             (char **)&glb_ds1edit.d2_pal[i],
-             &glb_ds1edit.pal_size[i],
-             TRUE);
-         if (entry == -1)
-         {
-            sprintf(
-                tmp,
-                "ds1edit_load_palettes() :\n"
-                "File \"%s\" not found.",
-                palname);
-            if (i < 4)
-               ds1edit_error(tmp);
-            else
-               printf("warning :\n%s\n", tmp);
-         }
-
-         // save it for the next time
-         misc_save_pal_on_disk(i, glb_ds1edit.d2_pal[i]);
+         sprintf(tmp, "ds1edit_load_palettes() :\nFile \"%s\" not found.", palname);
+         if (i < 4)
+            ds1edit_error(tmp);
+         else
+            printf("warning :\n%s\n", tmp);
+         continue;
       }
 
       // palette loaded, either from disk of from mpq, reorder it
@@ -1639,6 +1649,15 @@ int main(int argc, char *argv[])
    // animdata, animations, and colormaps — only if DS1 files are loaded
    if (glb_ds1edit.has_loaded_ds1)
    {
+      /* DT1 pixels are palette indices. Select the map's TXT-first palette
+       * before decoding object sprites or promoting the cached tile bitmaps.
+       * The preview's palette state assumes this palette is already applied. */
+      int pal_idx = glb_ds1edit.cmd_line.force_pal_num == -1
+                  ? palette_resolve_index(glb_ds1[ds1_idx].txt_act,
+                                          glb_ds1[ds1_idx].act)
+                  : glb_ds1edit.cmd_line.force_pal_num - 1;
+      a5_current_palette = &glb_ds1edit.vga_pal[pal_idx];
+
       // animdata.d2
       printf("\nanimdata_load()\n");
       fflush(stdout);
@@ -1737,6 +1756,14 @@ int main(int argc, char *argv[])
        (al_get_allegro_version() >> 16) & 0xFF,
        (al_get_allegro_version() >> 8) & 0xFF);
    al_set_window_title(a5_display, tmp);
+
+   /* a5_font (al_create_builtin_font, top of main) was made before any
+      display, so its glyphs are MEMORY bitmaps flagged ALLEGRO_CONVERT_BITMAP.
+      The OpenGL driver converts those when the display appears; Direct3D,
+      whose display lives on its own thread, does not -- so every HUD glyph
+      went through the software blitter, which locks the whole D3D backbuffer
+      per glyph: ~2.5 s a frame, 0.4 FPS, on any map. Convert them by hand. */
+   al_convert_memory_bitmaps();
 
    // Now that a display exists, promote the hot render surfaces and cached
    // DT1 tiles to display bitmaps so repeated tile blits stay on the GPU.
