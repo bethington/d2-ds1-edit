@@ -108,3 +108,23 @@ endif()
 list(APPEND DS1EDIT_ALLEGRO_TESTS test_d2install)
 add_test(NAME d2install COMMAND test_d2install)
 set_tests_properties(d2install PROPERTIES LABELS "portable")
+
+# Detection precedence (INI, HKCU, HKLM native/WOW64, Uninstall, common paths;
+# PD2 via ini / Uninstall / sibling) through an injected registry reader and
+# file probe: the same on every platform, never reads the host.
+add_executable(test_d2install_detect test_d2install_detect.c
+    ${CMAKE_SOURCE_DIR}/src/core/d2install.c
+    ${CMAKE_SOURCE_DIR}/src/platform.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/support/test_tmp.c)
+target_link_libraries(test_d2install_detect PRIVATE unity ds1edit_allegro)
+target_include_directories(test_d2install_detect PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/mpq
+    ${ALLEGRO5_INCLUDE_DIR})
+if(WIN32)
+    target_link_libraries(test_d2install_detect PRIVATE advapi32)
+endif()
+list(APPEND DS1EDIT_ALLEGRO_TESTS test_d2install_detect)
+add_test(NAME d2install_detect COMMAND test_d2install_detect)
+set_tests_properties(d2install_detect PROPERTIES LABELS "portable")

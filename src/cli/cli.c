@@ -168,6 +168,8 @@ typedef struct CLI_COMMON_OPTS_S
    const char *ini_path;       /* NULL = use default DS1EDIT_INI_NAME */
    int         no_ini;         /* 1 = don't load any INI */
    const char *d2_install;     /* NULL = no override */
+   const char *pd2_dir;        /* NULL = no override */
+   int         use_pd2;        /* -1 = no override, else D2_USE_PD2_* */
    const char *mod_dir;        /* NULL = no override */
    const char *extra_mpqs[MAX_MPQ_FILE]; /* appended-style additions */
    int         extra_mpq_count;
@@ -178,6 +180,7 @@ static int parse_common_opts(int argc, char **argv, CLI_COMMON_OPTS_S *out)
 {
    int i;
    memset(out, 0, sizeof(*out));
+   out->use_pd2 = -1;
    /* Walk all flags; ignore unknowns (per-verb parsers will see them). */
    for (i = 2; i < argc; i++)
    {
@@ -194,6 +197,15 @@ static int parse_common_opts(int argc, char **argv, CLI_COMMON_OPTS_S *out)
          out->ini_path = a + 6;
       else if (strncmp(a, "--d2-install=", 13) == 0)
          out->d2_install = a + 13;
+      else if (strncmp(a, "--pd2-dir=", 10) == 0)
+         out->pd2_dir = a + 10;
+      else if (strncmp(a, "--use-pd2=", 10) == 0)
+      {
+         const char *v = a + 10;
+         out->use_pd2 = (strcmp(v, "yes") == 0) ? D2_USE_PD2_YES
+                      : (strcmp(v, "no") == 0)  ? D2_USE_PD2_NO
+                      : D2_USE_PD2_AUTO;
+      }
       else if (strncmp(a, "--mod-dir=", 10) == 0)
          out->mod_dir = a + 10;
       else if (strncmp(a, "--mpq=", 6) == 0)
@@ -305,6 +317,10 @@ static int cli_minimum_init(const CLI_COMMON_OPTS_S *opts)
     * one if the chain is full. */
    if (opts->d2_install != NULL)
       replace_string(&glb_config.d2_install, opts->d2_install);
+   if (opts->pd2_dir != NULL)
+      replace_string(&glb_config.pd2_dir, opts->pd2_dir);
+   if (opts->use_pd2 >= 0)
+      glb_config.use_pd2 = opts->use_pd2;
    if (opts->mod_dir != NULL)
       replace_string(&glb_config.mod_dir[0], opts->mod_dir);
 
@@ -318,7 +334,7 @@ static int cli_minimum_init(const CLI_COMMON_OPTS_S *opts)
       int slot;
       const char *path = opts->extra_mpqs[i];
       if (path == NULL || path[0] == 0) continue;
-      for (slot = 0; slot < MAX_MPQ_FILE; slot++)
+      for (slot = MPQ_SLOT_PATCH_D2; slot < MAX_MPQ_FILE; slot++)
       {
          if (glb_config.mpq_file[slot] == NULL
              || glb_config.mpq_file[slot][0] == 0)
@@ -330,7 +346,7 @@ static int cli_minimum_init(const CLI_COMMON_OPTS_S *opts)
       if (slot >= MAX_MPQ_FILE)
          fprintf(stderr,
                  "ds1edit: --mpq=%s ignored (chain full, %d slots used)\n",
-                 path, MAX_MPQ_FILE);
+                 path, MAX_VANILLA_MPQ);
    }
 
    /* Open every MPQ that resolved to a path. ds1edit_open_all_mpq
@@ -345,15 +361,21 @@ static int cli_minimum_init(const CLI_COMMON_OPTS_S *opts)
 
 static const char *slot_label(int slot)
 {
-   /* Slot layout matches d2install.c: 0=patch_d2, 1=d2exp, 2=d2data,
-    * 3=d2char. Names are useful for the missing-d2char debug case. */
+   /* Slot layout is in structs.h: PD2 overlay first, then patch_d2, d2exp,
+    * d2data, d2char. Names are useful for the missing-d2char debug case. */
+   static const char * const pd2_names[MAX_PD2_MPQ] = {
+      "pd2data", "pd2maps", "pd2assets", "pd2monchars", "pd2patch"
+   };
    switch (slot)
    {
-      case 0: return "patch_d2";
-      case 1: return "d2exp";
-      case 2: return "d2data";
-      case 3: return "d2char";
-      default: return "?";
+      case MPQ_SLOT_PATCH_D2: return "patch_d2";
+      case MPQ_SLOT_D2EXP:    return "d2exp";
+      case MPQ_SLOT_D2DATA:   return "d2data";
+      case MPQ_SLOT_D2CHAR:   return "d2char";
+      default:
+         if (slot >= MPQ_SLOT_PD2_FIRST && slot < MPQ_SLOT_PD2_FIRST + MAX_PD2_MPQ)
+            return pd2_names[slot - MPQ_SLOT_PD2_FIRST];
+         return "?";
    }
 }
 
@@ -2195,6 +2217,8 @@ static int verb_help(int argc, char **argv)
       "  --ini=<path>          load this INI instead of " DS1EDIT_INI_NAME "\n"
       "  --no-ini              do not load any INI; use only CLI flags\n"
       "  --d2-install=<dir>    override d2_install (auto-fills MPQ slots)\n"
+      "  --pd2-dir=<dir>       override pd2_dir (Project Diablo 2 folder)\n"
+      "  --use-pd2=auto|yes|no override use_pd2 (default auto)\n"
       "  --mod-dir=<dir>       override mod_dir[0] (overlay)\n"
       "  --mpq=<path>          append an MPQ to the chain (repeatable)\n"
       "  -v, -vv               increase verbosity\n"

@@ -21,7 +21,24 @@
 /* PAL_SIZE: number of palette entries used by indexed-color structures */
 #define PAL_SIZE 256
 
-#define MAX_MPQ_FILE           4
+/* The archive chain, searched in index order (lowest index first):
+ *   0..4  Project Diablo 2 overlay (pd2data, pd2maps, pd2assets, pd2monchars,
+ *         ProjectD2\patch_d2) -- only filled when PD2 is in use
+ *   5..8  vanilla: patch_d2, d2exp, d2data, d2char
+ * mod_dir (loose files) is searched before all of these. */
+#define MAX_PD2_MPQ            5
+#define MPQ_SLOT_PD2_FIRST     0
+#define MPQ_SLOT_PATCH_D2      (MAX_PD2_MPQ + 0)
+#define MPQ_SLOT_D2EXP         (MAX_PD2_MPQ + 1)
+#define MPQ_SLOT_D2DATA        (MAX_PD2_MPQ + 2)
+#define MPQ_SLOT_D2CHAR        (MAX_PD2_MPQ + 3)
+#define MAX_VANILLA_MPQ        4
+#define MAX_MPQ_FILE           (MAX_PD2_MPQ + MAX_VANILLA_MPQ)
+
+/* use_pd2 ini setting. AUTO is 0 so a zeroed CONFIG_S means auto. */
+#define D2_USE_PD2_AUTO        0
+#define D2_USE_PD2_YES         1
+#define D2_USE_PD2_NO          2
 #define MAX_MOD_DIR            1
 #define DT1_IN_DS1_MAX        33
 #define DS1_MAX             2048
@@ -148,6 +165,8 @@ typedef struct CONFIG_S
 {
    int      fullscreen;
    char     * d2_install;   // optional D2 install dir; auto-detected if empty
+   char     * pd2_dir;      // optional Project Diablo 2 folder; auto-detected if empty
+   int      use_pd2;        // D2_USE_PD2_AUTO / _YES / _NO
    int      upscale_enabled;
    char     * upscale_service_url;
    int      export_dc6_single_frame_only;  // YES: skip multi-frame DC6 in PNG export

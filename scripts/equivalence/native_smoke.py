@@ -369,8 +369,10 @@ class _OwnedIni:
 
     def __init__(self, ctx: _Ctx, d2_install: str, label: str):
         self.path = ctx.root / INI_NAME
-        self.text = ("d2_install = %s\nfull_screen = NO\nscreen_width = 800\n"
-                     "screen_height = 600\n" % d2_install)
+        # use_pd2 = no: auto-detection must never put Project Diablo 2 data
+        # into vanilla evidence.
+        self.text = ("d2_install = %s\nuse_pd2 = no\nfull_screen = NO\n"
+                     "screen_width = 800\nscreen_height = 600\n" % d2_install)
         self.ctx, self.label = ctx, label
 
     def __enter__(self):

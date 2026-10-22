@@ -122,7 +122,7 @@ def build_runtime(run_dir: Path, exe: Path, game_dir: str, driver: str,
     if assets_dir.is_dir():
         shutil.copytree(assets_dir, rt / "assets")
     (rt / "Ds1edit.ini").write_text(
-        f"d2_install = {game_dir}\nfull_screen = NO\n"
+        f"d2_install = {game_dir}\nuse_pd2 = no\nfull_screen = NO\n"
         f"screen_width = {size[0]}\nscreen_height = {size[1]}\n")
     (rt / "allegro5.cfg").write_text(f"[graphics]\ndriver={driver}\n")
     return rt

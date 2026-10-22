@@ -393,6 +393,8 @@ class UserConfigIsolation(NativeSmokeBase):
         self.assertEqual(len(installs), 2)
         for t in seen:
             self.assertIn("full_screen = NO", t)
+            # auto-detection must never leak Project Diablo 2 into the evidence
+            self.assertIn("use_pd2 = no", t)
 
     def test_cli_cases_run_without_any_ini_in_the_working_directory(self):
         flags = []

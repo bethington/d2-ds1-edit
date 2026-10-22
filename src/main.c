@@ -671,6 +671,8 @@ void ds1edit_exit(void)
    fflush(stderr);
    if (glb_config.d2_install != NULL)
       free(glb_config.d2_install);
+   if (glb_config.pd2_dir != NULL)
+      free(glb_config.pd2_dir);
    if (glb_config.upscale_service_url != NULL)
       free(glb_config.upscale_service_url);
    for (i = 0; i < MAX_MPQ_FILE; i++)
@@ -754,10 +756,11 @@ void ds1edit_exit(void)
 void ds1edit_debug(void)
 {
    printf("\n");
-   printf("d2char                  = %s\n", glb_config.mpq_file[3]);
-   printf("d2data                  = %s\n", glb_config.mpq_file[2]);
-   printf("d2exp                   = %s\n", glb_config.mpq_file[1]);
-   printf("patch_d2                = %s\n", glb_config.mpq_file[0]);
+   printf("d2char                  = %s\n", glb_config.mpq_file[MPQ_SLOT_D2CHAR]);
+   printf("d2data                  = %s\n", glb_config.mpq_file[MPQ_SLOT_D2DATA]);
+   printf("d2exp                   = %s\n", glb_config.mpq_file[MPQ_SLOT_D2EXP]);
+   printf("patch_d2                = %s\n", glb_config.mpq_file[MPQ_SLOT_PATCH_D2]);
+   printf("data set                = %s\n", d2install_data_set_name());
    printf("mod_dir                 = %s\n", glb_config.mod_dir[0]);
    printf("upscale_enabled         = %s\n", glb_config.upscale_enabled ? "YES" : "NO");
    printf("upscale_service_url     = %s\n", glb_config.upscale_service_url ? glb_config.upscale_service_url : "");
@@ -1354,7 +1357,8 @@ int main(int argc, char *argv[])
    // editor used. Registry / common-path detection still runs as a further
    // fallback inside d2install_resolve_mpqs().
    if ((glb_config.d2_install == NULL || glb_config.d2_install[0] == 0) &&
-       glb_prefs.last_d2_install[0] != 0)
+       glb_prefs.last_d2_install[0] != 0 &&
+       d2install_is_install_dir(glb_prefs.last_d2_install))   // a stale remembered path is ignored
    {
       size_t len = strlen(glb_prefs.last_d2_install);
       char *buf = (char *)malloc(len + 1);

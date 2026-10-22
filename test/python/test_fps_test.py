@@ -202,6 +202,7 @@ class MatrixTests(unittest.TestCase):
             self.assertIn("act1_town|opengl|1920x1080", table)
             ini = (out / "runs" / "act1_town-opengl-1920x1080-r1" / "rt" / "Ds1edit.ini").read_text()
             self.assertIn("full_screen = NO", ini)
+            self.assertIn("use_pd2 = no", ini)   # never auto-detect PD2 into a baseline
             cfg = (out / "runs" / "act1_town-opengl-1920x1080-r1" / "rt" / "allegro5.cfg").read_text()
             self.assertIn("driver=opengl", cfg)
 

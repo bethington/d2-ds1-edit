@@ -298,6 +298,7 @@ d2data   = {d2data}
 d2exp    = {d2exp}
 patch_d2 = {patch_d2}
 mod_dir  =
+use_pd2  = no
 upscale_enabled = NO
 full_screen = NO
 gamma_correction = {gamma}
@@ -431,6 +432,10 @@ def check_reads(reads: list[dict], stdout: str, cdef: dict, game_dir,
         fails.append({"kind": "preferences", "stage": "resource_selection",
                       "path": "d2install",
                       "expected": "isolated", "actual": "seeded from preferences"})
+    if "Project Diablo 2 data from" in stdout:
+        fails.append({"kind": "game_data", "stage": "resource_selection",
+                      "path": "d2install", "expected": "vanilla",
+                      "actual": "Project Diablo 2 data in use"})
     m = re.search(r"^mod_dir\s*=\s*(.*)$", stdout, re.M)
     if m and m.group(1).strip() not in ("(null)", ""):
         fails.append({"kind": "overlay", "stage": "resource_selection",

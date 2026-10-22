@@ -218,6 +218,16 @@ class RenderCasesTest(unittest.TestCase):
         self.assertEqual("mismatch", case["status"])
         self.assertEqual("preferences", case["failures"][0]["kind"])
 
+    def test_project_diablo_2_data_in_the_log_fails(self):
+        run = self.w.runner(stdout=self.w.log(
+            extra=["d2install: Project Diablo 2 data from <C:\\Diablo2\\ProjectD2> (use_pd2=auto)"]))
+        case = self.by_id(self.w.run(runner=run))["visual.core.act1_town"]
+        self.assertEqual("mismatch", case["status"])
+        self.assertIn("game_data", [f["kind"] for f in case["failures"]])
+
+    def test_owned_ini_pins_vanilla_data(self):
+        self.assertRegex(RC.INI_TEMPLATE, r"(?m)^use_pd2\s*=\s*no\s*$")
+
     def test_profile_must_forbid_overlays_and_preferences(self):
         for key, value in (("mod_dir", r"D:\mods"), ("preferences", "user")):
             p = copy.deepcopy(self.w.profile)
