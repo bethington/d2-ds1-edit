@@ -662,6 +662,20 @@ void area_browser_list_files(const char * filter)
 
 /* Find a DS1 file by path (case-insensitive, partial match on filename).
  * Opens it with its correct LvlType and DEF. Returns 0 on success. */
+/* Last-resort palette act, shared by both open paths. misc_open_1_ds1
+ * already applied LvlTypes, then the preset's act; only when neither produced
+ * a valid act (unlisted map, no preset, v<8 DS1) use the group's folder act. */
+static void area_browser_apply_folder_act(int ds1_idx, const AREA_GROUP_S * g)
+{
+   if (glb_ds1[ds1_idx].txt_act < 1 || glb_ds1[ds1_idx].txt_act > 5)
+   {
+      int act = area_resolve_txt_act(0, 0, g->act);
+
+      if (act != 0)
+         glb_ds1[ds1_idx].txt_act = act;
+   }
+}
+
 int area_browser_open_by_file(const char * ds1_path)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
@@ -748,6 +762,7 @@ int area_browser_open_by_file(const char * ds1_path)
                area_browser_report_open_error(open_error);
                return -1;
             }
+            area_browser_apply_folder_act(ds1_idx, g);
          }
          return 0;
       }
@@ -826,16 +841,7 @@ static int area_browser_open_entry_into_slot(int group_idx, int entry_idx, int d
       return -1;
    }
 
-   /* misc_open_1_ds1 already applied LvlTypes, then the preset's act. Only
-    * when neither produced a valid act (unlisted map, no preset, v<8 DS1)
-    * fall back to the browser group's folder-derived act. */
-   if (glb_ds1[ds1_idx].txt_act < 1 || glb_ds1[ds1_idx].txt_act > 5)
-   {
-      int act = area_resolve_txt_act(0, 0, g->act);
-
-      if (act != 0)
-         glb_ds1[ds1_idx].txt_act = act;
-   }
+   area_browser_apply_folder_act(ds1_idx, g);
 
    return 0;
 }
