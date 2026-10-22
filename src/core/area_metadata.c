@@ -55,6 +55,21 @@ int area_preset_resolve_act(int level_id, int levels_act, const char * preset_na
 }
 
 
+/* Palette act for a DS1: LvlTypes first, then the LvlPrest preset, then the
+ * browser group's folder-derived act as a last resort. 0 = nothing valid. */
+int area_resolve_txt_act(int lvltypes_act, int preset_act, int folder_act)
+{
+   if (lvltypes_act >= 1 && lvltypes_act <= 5)
+      return lvltypes_act;
+   if (preset_act >= 1 && preset_act <= 5)
+      return preset_act;
+   if (folder_act >= 1 && folder_act <= 5)
+      return folder_act;
+
+   return 0;
+}
+
+
 const char * area_name_strip_prefix(const char * name)
 {
    if (area_name_parse_act(name) > 0)

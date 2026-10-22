@@ -85,6 +85,21 @@ void test_area_name_strip_prefix_preserves_nonstandard_names(void)
 }
 
 
+void test_area_resolve_txt_act_precedence_and_folder_fallback(void)
+{
+   /* LvlTypes beats preset beats folder */
+   TEST_ASSERT_EQUAL_INT(2, area_resolve_txt_act(2, 3, 4));
+   TEST_ASSERT_EQUAL_INT(3, area_resolve_txt_act(0, 3, 4));
+   TEST_ASSERT_EQUAL_INT(3, area_resolve_txt_act(-1, 3, 4));
+   /* folder act is the last resort */
+   TEST_ASSERT_EQUAL_INT(4, area_resolve_txt_act(0, 0, 4));
+   TEST_ASSERT_EQUAL_INT(5, area_resolve_txt_act(6, 9, 5));
+   /* nothing valid -> 0, caller keeps the DS1's own act */
+   TEST_ASSERT_EQUAL_INT(0, area_resolve_txt_act(0, 0, 0));
+   TEST_ASSERT_EQUAL_INT(0, area_resolve_txt_act(7, -2, 6));
+}
+
+
 int main(void)
 {
    UNITY_BEGIN();
@@ -97,5 +112,6 @@ int main(void)
    RUN_TEST(test_area_preset_resolve_act_uses_zero_based_levels_act);
    RUN_TEST(test_area_preset_resolve_act_uses_preset_name_for_null_level);
    RUN_TEST(test_area_name_strip_prefix_preserves_nonstandard_names);
+   RUN_TEST(test_area_resolve_txt_act_precedence_and_folder_fallback);
    return UNITY_END();
 }
