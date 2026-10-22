@@ -236,6 +236,7 @@ void test_two_edits_undo_in_reverse_order_then_stop(void)
    TEST_ASSERT_TRUE(IS_SELECTED(F(0, 2, 1, 0)->flags));
 
    /* nothing left to undo: a third undo is a no-op */
+   drop(&s1);
    take(&s1, 0);
    undo(0);
    expect_same(&s1, 0);

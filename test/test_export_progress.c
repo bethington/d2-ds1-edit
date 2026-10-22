@@ -17,8 +17,15 @@ void setUp(void)
    if (!once)
    {
       once = 1;
+      /* On macOS the mouse driver needs Allegro's Cocoa main loop
+       * (al_run_main); installing it from a plain main() traps, so the
+       * mouse-dependent case reports IGNORED there instead. */
+#ifndef __APPLE__
       if (al_init())
          s_have_mouse = al_install_mouse();
+#else
+      (void) al_init();
+#endif
    }
    export_progress_end();
 }
