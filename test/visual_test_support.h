@@ -17,6 +17,10 @@ void visual_fetch_reset(void);
  * (case-insensitive, '/' and '\\' equivalent). Returns 1 on success. */
 int  visual_fetch_add(const char *name, const void *bytes, size_t len);
 
+/* The archive fetch this support file replaces (production prototype in
+ * misc.h, which pulls in the whole editor). */
+int  misc_load_mpq_file(char *filename, char **buffer, long *buf_len, int output);
+
 /* Number of fetches answered / refused since the last reset. */
 int  visual_fetch_hits(void);
 int  visual_fetch_misses(void);

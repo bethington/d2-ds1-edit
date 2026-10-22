@@ -128,9 +128,11 @@ WINDOWS_OS_DLLS = frozenset(n.lower() for n in (
 WINDOWS_OS_PREFIXES = ("api-ms-win-", "ext-ms-")
 
 # Libraries the Linux package declares as system prerequisites (README:
-# distribution Allegro 5.2 packages) plus the C runtime.
+# distribution Allegro 5.2 packages and the system OpenGL driver, which is
+# never shipped) plus the C runtime.
 LINUX_DECLARED_PREREQS = (
     r"liballegro(_[a-z]+)?\.so\.5\.2(\.\d+)*",
+    r"libOpenGL\.so\.0", r"libGL\.so\.1", r"libGLX\.so\.0", r"libEGL\.so\.1",
     r"libc\.so\.6", r"libm\.so\.6", r"libdl\.so\.2", r"libpthread\.so\.0",
     r"librt\.so\.1", r"libz\.so\.1", r"libgcc_s\.so\.1",
     r"ld-linux-x86-64\.so\.2",
