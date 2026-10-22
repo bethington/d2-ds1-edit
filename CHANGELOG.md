@@ -3,7 +3,7 @@
 Notable changes to DS1Edit. Releases before 2.1.1 are described on the
 [GitHub releases page](https://github.com/bethington/d2-ds1-edit/releases).
 
-## Unreleased
+## 2.2.0
 
 ### Added
 
