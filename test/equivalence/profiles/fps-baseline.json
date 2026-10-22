@@ -1,0 +1,185 @@
+{
+  "schema": "ds1edit.fps-baseline/1",
+  "reviewed": false,
+  "note": "Recorded by fps_test.py --write-baseline. Set reviewed to true only after a maintainer has checked these numbers; until then comparisons report 'unreviewed' and never fail.",
+  "created": "2026-10-22T16:55:26",
+  "host": {
+    "host_class": "Windows|AMD64|Intel(R) Core(TM) i7-9700K CPU @ 3.60GHz",
+    "gpu": "NVIDIA GeForce RTX 5060 Ti / driver 32.0.16.1088",
+    "cpu": "Intel(R) Core(TM) i7-9700K CPU @ 3.60GHz",
+    "os_build": "26200",
+    "node": "Ben-PC"
+  },
+  "frames": 120,
+  "runs": 3,
+  "cases": {
+    "act1_town|direct3d|1280x720": {
+      "build": "2.1.1 (Release)",
+      "render_avg_ms": 0.9069,
+      "render_p95_ms": 1.1455,
+      "wall_fps": 94.71,
+      "present_avg_ms": 8.7021
+    },
+    "act1_town|direct3d|1920x1080": {
+      "build": "2.1.1 (Release)",
+      "render_avg_ms": 4.0736,
+      "render_p95_ms": 19.5908,
+      "wall_fps": 47.0,
+      "present_avg_ms": 15.0844
+    },
+    "act1_town|opengl|1280x720": {
+      "build": "2.1.1 (Release)",
+      "render_avg_ms": 2.5984,
+      "render_p95_ms": 1.8272,
+      "wall_fps": 110.22,
+      "present_avg_ms": 7.1805
+    },
+    "act1_town|opengl|1920x1080": {
+      "build": "2.1.1 (Release)",
+      "render_avg_ms": 10.7141,
+      "render_p95_ms": 42.8855,
+      "wall_fps": 65.78,
+      "present_avg_ms": 5.2078
+    },
+    "act1_cave|direct3d|1280x720": {
+      "build": "2.1.1 (Release)",
+      "render_avg_ms": 0.8444,
+      "render_p95_ms": 1.5248,
+      "wall_fps": 92.17,
+      "present_avg_ms": 9.2379
+    },
+    "act1_cave|direct3d|1920x1080": {
+      "build": "2.1.1 (Release)",
+      "render_avg_ms": 1.3522,
+      "render_p95_ms": 3.0158,
+      "wall_fps": 59.97,
+      "present_avg_ms": 13.8615
+    },
+    "act1_cave|opengl|1280x720": {
+      "build": "2.1.1 (Release)",
+      "render_avg_ms": 6.3356,
+      "render_p95_ms": 10.4244,
+      "wall_fps": 87.8,
+      "present_avg_ms": 4.0249
+    },
+    "act1_cave|opengl|1920x1080": {
+      "build": "2.1.1 (Release)",
+      "render_avg_ms": 4.8522,
+      "render_p95_ms": 10.387,
+      "wall_fps": 92.46,
+      "present_avg_ms": 6.0382
+    },
+    "act2_desert|direct3d|1280x720": {
+      "build": "2.1.1 (Release)",
+      "render_avg_ms": 0.6186,
+      "render_p95_ms": 0.8084,
+      "wall_fps": 84.56,
+      "present_avg_ms": 9.1526
+    },
+    "act2_desert|direct3d|1920x1080": {
+      "build": "2.1.1 (Release)",
+      "render_avg_ms": 0.856,
+      "render_p95_ms": 1.1004,
+      "wall_fps": 61.24,
+      "present_avg_ms": 11.989
+    },
+    "act2_desert|opengl|1280x720": {
+      "build": "2.1.1 (Release)",
+      "render_avg_ms": 6.865,
+      "render_p95_ms": 9.9121,
+      "wall_fps": 98.71,
+      "present_avg_ms": 3.2316
+    },
+    "act2_desert|opengl|1920x1080": {
+      "build": "2.1.1 (Release)",
+      "render_avg_ms": 4.6368,
+      "render_p95_ms": 9.6099,
+      "wall_fps": 98.75,
+      "present_avg_ms": 5.4356
+    },
+    "act3_jungle|direct3d|1280x720": {
+      "build": "2.1.1 (Release)",
+      "render_avg_ms": 0.8775,
+      "render_p95_ms": 1.4799,
+      "wall_fps": 89.98,
+      "present_avg_ms": 8.8269
+    },
+    "act3_jungle|direct3d|1920x1080": {
+      "build": "2.1.1 (Release)",
+      "render_avg_ms": 1.4107,
+      "render_p95_ms": 1.9363,
+      "wall_fps": 68.76,
+      "present_avg_ms": 11.9597
+    },
+    "act3_jungle|opengl|1280x720": {
+      "build": "2.1.1 (Release)",
+      "render_avg_ms": 4.5417,
+      "render_p95_ms": 9.1932,
+      "wall_fps": 99.76,
+      "present_avg_ms": 3.8155
+    },
+    "act3_jungle|opengl|1920x1080": {
+      "build": "2.1.1 (Release)",
+      "render_avg_ms": 5.3583,
+      "render_p95_ms": 9.5297,
+      "wall_fps": 96.68,
+      "present_avg_ms": 5.1238
+    },
+    "act4_fortress|direct3d|1280x720": {
+      "build": "2.1.1 (Release)",
+      "render_avg_ms": 0.869,
+      "render_p95_ms": 1.3446,
+      "wall_fps": 94.33,
+      "present_avg_ms": 8.5259
+    },
+    "act4_fortress|direct3d|1920x1080": {
+      "build": "2.1.1 (Release)",
+      "render_avg_ms": 1.2623,
+      "render_p95_ms": 1.8862,
+      "wall_fps": 70.87,
+      "present_avg_ms": 11.7906
+    },
+    "act4_fortress|opengl|1280x720": {
+      "build": "2.1.1 (Release)",
+      "render_avg_ms": 4.5839,
+      "render_p95_ms": 9.4166,
+      "wall_fps": 98.83,
+      "present_avg_ms": 5.5296
+    },
+    "act4_fortress|opengl|1920x1080": {
+      "build": "2.1.1 (Release)",
+      "render_avg_ms": 4.9556,
+      "render_p95_ms": 9.147,
+      "wall_fps": 100.25,
+      "present_avg_ms": 5.13
+    },
+    "act5_town|direct3d|1280x720": {
+      "build": "2.1.1 (Release)",
+      "render_avg_ms": 1.0484,
+      "render_p95_ms": 1.4119,
+      "wall_fps": 72.36,
+      "present_avg_ms": 9.3043
+    },
+    "act5_town|direct3d|1920x1080": {
+      "build": "2.1.1 (Release)",
+      "render_avg_ms": 1.7066,
+      "render_p95_ms": 2.1852,
+      "wall_fps": 58.46,
+      "present_avg_ms": 11.7496
+    },
+    "act5_town|opengl|1280x720": {
+      "build": "2.1.1 (Release)",
+      "render_avg_ms": 4.734,
+      "render_p95_ms": 10.0503,
+      "wall_fps": 99.64,
+      "present_avg_ms": 5.2995
+    },
+    "act5_town|opengl|1920x1080": {
+      "build": "2.1.1 (Release)",
+      "render_avg_ms": 5.6287,
+      "render_p95_ms": 13.468,
+      "wall_fps": 95.64,
+      "present_avg_ms": 4.9608
+    }
+  }
+}

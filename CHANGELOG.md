@@ -5,6 +5,12 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
 
 ## Unreleased
 
+### Added
+
+- **Frame-rate test.** `scripts/perf/fps_test.py` measures render time per map,
+  driver and window size, fails on memory-bitmap draws or >16.7 ms at 1080p,
+  and can profile failing cases with WPR or perf. Local CTest `perf_fps`.
+
 ### Fixed
 
 - **The GPU path is guarded against silent slowdowns.** Every bitmap draw now

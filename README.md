@@ -277,6 +277,16 @@ connected to the archive-loading path; this is not a complete PD2 archive preset
 
 ## Troubleshooting
 
+**The editor is slow (a few frames per second, or exit takes seconds).** A
+bitmap that fell back to system memory draws a correct picture at a fraction
+of the speed. Look for a `render: WARNING -- ... MEMORY bitmap` line in
+`stderr.txt`, and run `ds1edit assets/act1_town.ini --selftest=60`: it prints
+the frame-time summary and fails if any memory bitmap was drawn. To measure
+across maps, drivers and window sizes, use `python scripts/perf/fps_test.py
+--exe <path to ds1edit>` and read its table as described under "Frame-rate
+test" in [BUILDING.md](BUILDING.md); `render avg` above 16.7 ms at 1080p
+cannot hold 60 fps.
+
 **The window opens but the map area is black.** The status bar and the mouse
 cursor draw, the frame rate looks normal, and nothing appears in the logs.
 

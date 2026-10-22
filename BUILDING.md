@@ -106,9 +106,9 @@ ds1edit --area "Act 1 - Town" --selftest=120   # or pick the frame count
 `--selftest` takes the ordinary GUI path -- create the display, load assets,
 load the map, run the event loop -- renders N frames and exits 0. It cannot
 tell you the picture is *correct*, but it catches a window that opens and
-never paints. It also prints the average render time and fails
-above 250 ms per frame, which catches the editor falling off the GPU (or, on
-Direct3D, glyph bitmaps left in system memory).
+never paints. It also prints a frame-time summary and fails above 250 ms
+per frame, or if any memory bitmap was drawn onto a video target (the editor
+falling off the GPU, or on Direct3D glyph bitmaps left in system memory).
 
 Worth running before any release: nothing else in the project exercises the
 display. The unit tests are headless, `--headless` never creates a display,
@@ -117,6 +117,65 @@ editor once shipped precisely because it was a no-op in every test that
 existed.
 
 
+
+### Frame-rate test
+
+`scripts/perf/fps_test.py` runs `--selftest` over a matrix of maps x drivers x
+window sizes, each run in its own owned runtime (exe, DLLs, assets, a generated
+`Ds1edit.ini` with `full_screen = NO`, and an `allegro5.cfg` naming the driver).
+Windowed only; it needs a display, a GPU and a vanilla 1.13c install.
+
+```bash
+python scripts/perf/fps_test.py --exe bin/ds1edit.exe
+python scripts/perf/fps_test.py --exe bin/ds1edit.exe --drivers opengl     --maps act1_town --size 1920x1080 --runs 5 --frames 240
+cmake -B build -DDS1EDIT_GAME_DIR=F:/.../LoD/1.13c && ctest --test-dir build -L perf
+```
+
+Defaults: the six core maps, `direct3d,opengl` on Windows (`opengl` elsewhere),
+1280x720 and 1920x1080, 120 frames, 3 runs. Output goes to
+`tmp/perf/fps-<timestamp>/` (`summary.json`, `summary.txt`, per-run folders with
+the editor's stdout/stderr and `report.json`, schema `ds1edit.fps/1`).
+`--selftest-report=PATH` on the editor writes the same JSON for one run.
+
+Reading the table (times in ms, per frame, median over the runs):
+
+| column | meaning |
+| --- | --- |
+| render avg / p95 / p99 | composing the frame: tiles, sprites, HUD, not the swap |
+| present | `al_flip_display`, which includes the vsync wait |
+| wall fps | frames over wall-clock time, vsync-limited |
+| exit ms | shutdown time (bitmaps freed, display destroyed) |
+| slowest | the largest per-frame section of the editor's perf timers |
+| baseline | `none`, `ok`, `regressed`, `unreviewed`, `incomparable`, `no-entry` |
+
+A case FAILS on a nonzero exit or timeout, a missing report, any
+memory-bitmap draw (a memory bitmap onto a video target), median render avg
+above 16.7 ms at 1080p, or a more than 25 % regression against
+`test/equivalence/profiles/fps-baseline.json`. The baseline only judges when it
+is `"reviewed": true` and its host (CPU/OS/GPU) and build identity match;
+otherwise the column says `unreviewed` or `incomparable` and never passes or
+fails the case. Record a new baseline with `--write-baseline PATH` (always
+written `"reviewed": false`; a maintainer flips it after checking the numbers).
+
+`--profile-on-fail` (or `--profile` for every case) reruns the case under
+Windows Performance Recorder (`wpr -start CPU -filemode`, `wpr -stop
+<run>/trace.etl`, then `xperf -i trace.etl -symbols -a profile -detail`) or
+`perf record -g` on Linux, and writes the top 20 functions to
+`<run>/hotspots.txt`; both are referenced from `summary.json`. WPR usually
+needs an elevated shell: if it refuses, the case records status `unavailable`
+with WPR's message instead of prompting. Point `--symbols-dir` at a
+RelWithDebInfo build's PDBs for symbol names.
+
+Manual profiling recipe when the table shows a slowdown:
+
+1. Build with `DS1EDIT_PERF_LOG` and read the per-section timers
+   (events / input / render / present / ...) to see which section moved.
+2. Run the fps_test matrix on the suspect and the last good commit
+   (`git archive <rev> | tar -x -C tmp/bisect-<rev>`, build each) and bisect.
+3. Profile the bad build: WPR + WPA on Windows, `perf` on Linux, Instruments
+   (Time Profiler) on macOS.
+4. If the CPU is idle but frames are slow, capture a frame in RenderDoc (OpenGL)
+   or PIX (Direct3D) and look for per-draw locks and texture uploads.
 
 ### CTest and the Python suites
 
