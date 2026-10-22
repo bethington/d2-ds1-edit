@@ -30,6 +30,13 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
 - **Saving a project copy** handles sibling folders that share a name prefix,
   over-long paths and trailing separators, and a project copy now finds its
   preset.
+- **Maps outside the area lists keep their folder's Act palette.** A DS1 with no
+  preset or LvlTypes row and no act field of its own had been drawn with the Act 1
+  palette; the browser group's Act is now used as a last resort.
+- **The core golden screenshots are rebuilt from vanilla 1.13c inputs.** Five of
+  the six references were regenerated (the old ones encoded the previous tile
+  variant choice, and `act5_town` was a PD2 mod render); all six pass at
+  tolerance 4.
 - **Tile variants are picked by rarity as the game does**
   (`misc_check_tiles_conflicts`). Some maps drew a different variant of a tile
   than the original game.

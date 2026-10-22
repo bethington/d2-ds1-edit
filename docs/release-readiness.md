@@ -14,14 +14,19 @@ reports **NOT READY: 11 of 164 required entries qualify**
 (`tmp/qualification/2026-10-22-working-tree/`; see the
 [behavior ledger](testing/behavior-ledger.md)). The remaining blockers:
 
-1. **Golden reference decision.** Four of the six core golden screenshots
-   (`act1_town`, `act2_desert`, `act3_jungle`, `act4_fortress`) mismatch only
-   because of the intentional tile-rarity variant selection fix in
-   `misc_check_tiles_conflicts`; their references encode the old defect.
-   `act5_town`'s reference was made with a PD2 mod overlay. The references have
-   **not** been regenerated and the tolerance has not changed. A maintainer must
-   decide how to re-pin them (proposal in `tmp/visual-diagnosis/`), with the
-   runner inputs pinned by `render_cases.py` and `visual-core.json`.
+1. ~~**Golden reference decision.**~~ **Resolved 2026-10-22.** The maintainer
+   kept the tile-rarity variant selection fix in `misc_check_tiles_conflicts`.
+   `act1_town`, `act2_desert`, `act3_jungle`, `act4_fortress` and `act5_town`
+   were regenerated from the pinned vanilla 1.13c inputs
+   (`test/equivalence/profiles/visual-core.json`, no `mod_dir`, gamma 1.20,
+   zoom 1:4, isolated preferences, two byte-identical renders); `act1_cave`
+   already passed and is unchanged. Each new image equals the proposal in
+   `tmp/visual-diagnosis/proposed/<map>/` pixel for pixel; rendering the old
+   selection from vanilla reproduced the four old references exactly, and
+   `act5_town`'s old reference was a PD2 overlay render. Tolerance is unchanged.
+   `python scripts/run_golden_tests.py --core --tolerance 4` passes 6/6 and
+   `render_cases run` passes all six cases against an owned vanilla runtime
+   (`tmp/regen/`; evidence `tmp/visual-diagnosis/DIAGNOSIS.md`).
 2. **Linux and macOS native build, test and package runs have not been done
    locally.** The Docker engine was not running, so nothing here has been built
    or tested on those platforms, and the macOS `.app` packaging fixes are
@@ -141,9 +146,8 @@ measurement exists locally. Counts are approximate: about 70 CTest suites (was
    sanitizer and coverage jobs have never executed).
 2. Check out-of-bounds objects in the GUI (tint, picking, move, delete) on one
    of the 38 affected vanilla maps.
-3. Decide the golden references: regenerate from pinned inputs after review, or
-   keep the old ones with documented exceptions. Do not raise tolerance to hide
-   them. Settle the `act5_town` overlay question.
+3. ~~Decide the golden references.~~ Done: regenerated from pinned vanilla 1.13c
+   inputs (see blocker 1); tolerance unchanged.
 4. Fix the fullscreen Direct3D exit hang or document it as a known issue for the
    release.
 5. Run the clean-VM Windows check and the manual
