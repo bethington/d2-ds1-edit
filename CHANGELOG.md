@@ -7,6 +7,19 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
 
 ### Added
 
+- **Install auto-detection, including Project Diablo 2.** With `d2_install`
+  blank the editor now finds Diablo II from, in order, `HKCU\Software\Blizzard
+  Entertainment\Diablo II`, the HKLM key (64-bit and WOW6432Node views), the
+  `Diablo II` Uninstall entry (HKCU, HKLM, WOW6432Node), then common folders.
+  Trailing slashes are normalised and an invalid registry path falls through to
+  the next step. Project Diablo 2 is found from `pd2_dir`, its Uninstall entry
+  or the `ProjectD2` folder next to Diablo II. New `use_pd2 = auto | yes | no`
+  (default `auto`): when PD2 is in use its archives (`pd2data`, `pd2maps`,
+  `pd2assets`, `pd2monchars`, `ProjectD2\patch_d2`) are searched after `mod_dir`
+  and before `patch_d2`, `d2exp`, `d2data`, `d2char`. Startup logs which data
+  set is active. Windows reads the registry; Linux and macOS probe common
+  folders. The CLI gains `--pd2-dir=` and `--use-pd2=`. The scripted vanilla
+  lanes (smoke, render cases, frame-rate test) pin `use_pd2 = no`.
 - **Frame-rate test.** `scripts/perf/fps_test.py` measures render time per map,
   driver and window size, fails on memory-bitmap draws or >16.7 ms at 1080p,
   and can profile failing cases with WPR or perf. Local CTest `perf_fps`.

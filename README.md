@@ -232,7 +232,9 @@ Copy `Ds1edit.ini.sample` to `Ds1edit.ini` and point it at your Diablo II instal
 d2_install = C:\Diablo2
 ```
 
-That one line fills every MPQ slot. **Nothing needs extracting** -- maps, tiles,
+That one line fills every MPQ slot. You can even leave it blank: the editor finds
+Diablo II from the registry (HKCU, HKLM, the Uninstall list) or a common folder, and
+logs what it found at startup. **Nothing needs extracting** -- maps, tiles,
 sprites, palettes and the data tables are all read straight out of the archives, and
 the whole map list appears in the browser. Set `mod_dir` and your mod's loose files
 take priority over the base game without repacking anything.
@@ -252,28 +254,29 @@ See the sample file for all available settings (resolution, scroll speed, gamma,
 window border; the arrow keys and **WASD** always scroll, and **Ctrl+arrows**
 browse maps.
 
-### Example: a Project Diablo 2 editing workspace
+### Project Diablo 2
 
-For an installation with the base game's MPQs in `C:\Diablo2` and PD2 in
-`C:\Diablo2\ProjectD2`, edit these settings in `Ds1edit.ini`:
+If Project Diablo 2 is installed (its `ProjectD2` folder holds `pd2data.mpq`), the editor
+finds it on its own and reads PD2's data and maps instead of the vanilla ones:
 
 ```ini
-d2_install = C:\Diablo2
-patch_d2 = C:\Diablo2\ProjectD2\patch_d2.mpq
-mod_dir = C:\D2Modding\PD2Workspace
+; auto (default) | yes (require it) | no (vanilla only)
+use_pd2 = auto
+; blank = detect; or e.g. C:\Diablo2\ProjectD2
+pd2_dir =
 ```
 
-Use your actual paths. `d2_install` selects the base archives, `patch_d2`
-overrides the patch archive, and `mod_dir` selects a folder of loose files.
-Preserve the game's directory structure inside the workspace, for example
-`data\global\excel\LvlTypes.txt` for a table or `data\global\tiles\...` for
-maps and tilesets. The workspace's files take priority over the selected MPQs.
-
-**PD2 archive support:** this example does not automatically load PD2's
-additional archives, such as `pd2data.mpq` and `pd2maps.mpq`. PD2-specific maps,
-tables, and assets needed for this workflow must be provided as loose files in
-the workspace. Extra archive entries stored in `project.ini` are not currently
-connected to the archive-loading path; this is not a complete PD2 archive preset.
+PD2's archives are searched after `mod_dir` and before the base game's, in this order:
+`pd2data.mpq`, `pd2maps.mpq`, `pd2assets.mpq`, `pd2monchars.mpq`, `ProjectD2\patch_d2.mpq`,
+then `patch_d2`, `d2exp`, `d2data`, `d2char`. PD2 ships no readable load list, so this order
+is the editor's assumption: the first four are the order PD2's own DLL names them, with the
+folder's patch last. `D2MultiRes`, `SGD2FreeRes`, `d2gl` and `ver-IX86-1` only hold display
+helpers and are not opened. Startup prints a line such as
+`d2install: Project Diablo 2 data from <C:\Diablo2\ProjectD2> (use_pd2=auto, ...)`; with
+`use_pd2 = no` it prints `vanilla Diablo II data` instead. `use_pd2 = yes` logs an error and
+falls back to vanilla data if PD2 cannot be found. Explicit `d2char`/`d2data`/`d2exp`/`patch_d2`
+paths and `mod_dir` still win over detection. To pin vanilla data for reproducible
+runs, set `use_pd2 = no`.
 
 ## Troubleshooting
 

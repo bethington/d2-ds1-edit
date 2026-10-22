@@ -15,10 +15,22 @@
 ; ==========================================================================
 d2_install =
 
+; Project Diablo 2. pd2_dir is the folder holding pd2data.mpq (normally
+; <Diablo II>\ProjectD2); blank = auto-detect (its Uninstall entry, then the
+; ProjectD2 folder next to Diablo II).
+;   use_pd2 = auto   use PD2 data when it is found (default)
+;   use_pd2 = yes    require it; log an error and fall back if it is missing
+;   use_pd2 = no     vanilla Diablo II data only
+; When PD2 is in use its archives are searched after mod_dir and before the
+; base game's: pd2data, pd2maps, pd2assets, pd2monchars, ProjectD2\patch_d2.
+; ==========================================================================
+pd2_dir =
+use_pd2 = auto
+
 ; Per-MPQ overrides. An explicit path here always wins over d2_install /
 ; auto-detection. Leave blank to let resolution fill the slot from
 ; d2_install. When a file is loaded, the editor scans mod_dir first, then
-; patch_d2, d2exp, d2data, d2char (in that order, matching D2 itself).
+; the PD2 archives (when in use), then patch_d2, d2exp, d2data, d2char.
 ; ==========================================================================
 d2char   =
 d2data   =

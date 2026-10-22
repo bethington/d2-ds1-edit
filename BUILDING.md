@@ -123,7 +123,9 @@ existed.
 `scripts/perf/fps_test.py` runs `--selftest` over a matrix of maps x drivers x
 window sizes, each run in its own owned runtime (exe, DLLs, assets, a generated
 `Ds1edit.ini` with `full_screen = NO`, and an `allegro5.cfg` naming the driver).
-Windowed only; it needs a display, a GPU and a vanilla 1.13c install.
+Windowed only; it needs a display, a GPU and a vanilla 1.13c install. Every owned
+`Ds1edit.ini` (this test, native smoke, render cases) sets `use_pd2 = no` so
+auto-detected Project Diablo 2 data can never reach vanilla evidence.
 
 ```bash
 python scripts/perf/fps_test.py --exe bin/ds1edit.exe

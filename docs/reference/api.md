@@ -80,6 +80,8 @@ Run `ds1edit <verb>` with no arguments for that verb's own usage text.
 --ini=<path>         load this INI instead of Ds1edit.ini
 --no-ini             ignore INIs; use only CLI flags
 --d2-install=<dir>   override d2_install (auto-fills MPQ slots)
+--pd2-dir=<dir>      override pd2_dir (Project Diablo 2 folder)
+--use-pd2=auto|yes|no  override use_pd2 (default auto)
 --mod-dir=<dir>      override mod_dir[0] (overlay)
 --mpq=<path>         append an MPQ to the chain (repeatable)
 -v, -vv              increase verbosity
