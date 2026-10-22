@@ -527,7 +527,13 @@ void test_resolve_uninstall_pd2_under_the_selected_install_is_used(void)
    memset(&f, 0, sizeof(f));
    fk_add(&f, "C:/Diablo2/d2data.mpq");
    fk_add(&f, "C:/Diablo2/ProjectD2/pd2data.mpq");
+   /* Windows paths compare without case; elsewhere case is significant, so
+    * the case-differing spelling only applies there. */
+#ifdef _WIN32
    fk_un(&f, D2REG_HKCU, "Project Diablo 2", "c:/diablo2/");   /* case differs */
+#else
+   fk_un(&f, D2REG_HKCU, "Project Diablo 2", "C:/Diablo2/");
+#endif
    e = fk_env(&f, 1);
    memset(&c, 0, sizeof(c));
    c.d2_install = "C:/Diablo2/";
