@@ -128,8 +128,8 @@
    ],
    "reference": {
     "path": "test/golden/act1_town.png",
-    "sha256": "91151e5d21835de42e0c2d8f47e0cc45cd1047cdce6d9100e829adc0f63c9da8",
-    "origin": "908b8c9 --update (2026-08-20); reproduced exactly by 908b8c9 and HEAD 996bf5f from vanilla 1.13c archives, no mod_dir, gamma 1.20, zoom 1:4."
+    "sha256": "5c813102eb70a0650a36d67e3c162075d499455a55e8ff38ffc6230b7750c30c",
+    "origin": "Regenerated 2026-10-22 from pinned vanilla 1.13c (no mod_dir, gamma 1.20, zoom 1:4, isolated preferences) with the intentional rarity variant-selection fix in misc_check_tiles_conflicts; see tmp/visual-diagnosis/DIAGNOSIS.md."
    },
    "compare": "exact-rgb"
   },
@@ -288,8 +288,8 @@
    ],
    "reference": {
     "path": "test/golden/act2_desert.png",
-    "sha256": "9265adbb8b2dcbe18aae63009c124b2ecda14c29e3bd114a4e3ef45bac0aacfb",
-    "origin": "908b8c9 --update (2026-08-20); reproduced exactly by 908b8c9 and HEAD 996bf5f from vanilla 1.13c archives, no mod_dir, gamma 1.20, zoom 1:4."
+    "sha256": "d498efd57db03f73615d1e3ad0168a523be27bf4e306dccf5f11d76dca1e6aee",
+    "origin": "Regenerated 2026-10-22 from pinned vanilla 1.13c (no mod_dir, gamma 1.20, zoom 1:4, isolated preferences) with the intentional rarity variant-selection fix in misc_check_tiles_conflicts; see tmp/visual-diagnosis/DIAGNOSIS.md."
    },
    "compare": "exact-rgb"
   },
@@ -385,8 +385,8 @@
    ],
    "reference": {
     "path": "test/golden/act3_jungle.png",
-    "sha256": "1fca1cb650463486804a476e51a87e3a7404454476da6adbdd38deca0cf8101a",
-    "origin": "908b8c9 --update (2026-08-20); reproduced exactly by 908b8c9 and HEAD 996bf5f from vanilla 1.13c archives, no mod_dir, gamma 1.20, zoom 1:4."
+    "sha256": "400a23f822c36250b99d425e0ccaddeffea2ad773f952c392c5063f0eb83e4ce",
+    "origin": "Regenerated 2026-10-22 from pinned vanilla 1.13c (no mod_dir, gamma 1.20, zoom 1:4, isolated preferences) with the intentional rarity variant-selection fix in misc_check_tiles_conflicts; see tmp/visual-diagnosis/DIAGNOSIS.md."
    },
    "compare": "exact-rgb"
   },
@@ -481,8 +481,8 @@
    ],
    "reference": {
     "path": "test/golden/act4_fortress.png",
-    "sha256": "252fcb7008052a7100c938209fe2c84e6c50622ecc4bb3e04cf5f27017ed3c5f",
-    "origin": "908b8c9 --update (2026-08-20); reproduced exactly by 908b8c9 and HEAD 996bf5f from vanilla 1.13c archives, no mod_dir, gamma 1.20, zoom 1:4."
+    "sha256": "6e4043c707e3b993c5a675f0dbc09fa03bcd64e0823bd5db823f329e6ae9e8ae",
+    "origin": "Regenerated 2026-10-22 from pinned vanilla 1.13c (no mod_dir, gamma 1.20, zoom 1:4, isolated preferences) with the intentional rarity variant-selection fix in misc_check_tiles_conflicts; see tmp/visual-diagnosis/DIAGNOSIS.md."
    },
    "compare": "exact-rgb"
   },
@@ -629,8 +629,8 @@
    ],
    "reference": {
     "path": "test/golden/act5_town.png",
-    "sha256": "6cd43f1836231796ba803a021c4adbc9d215ecb1e0effe6660a5d55c1944bbae",
-    "origin": "908b8c9 --update (2026-08-20). Reproduced exactly only with the PD2 overlay (modified townWest.ds1, Objects.txt, LvlPrest/LvlTypes/Levels.txt) at gamma 1.20: wrong baseline input, see tmp/visual-diagnosis."
+    "sha256": "0c21a991d28aec5d2ffc5ab8e1014d57ab296a8476caeef70a8586b719123e53",
+    "origin": "Regenerated 2026-10-22 from pinned vanilla 1.13c (no mod_dir, gamma 1.20, zoom 1:4, isolated preferences); the previous reference was a PD2 mod-overlay render. Includes the rarity variant-selection fix; see tmp/visual-diagnosis/DIAGNOSIS.md."
    },
    "compare": "exact-rgb"
   }
