@@ -128,8 +128,8 @@
    ],
    "reference": {
     "path": "test/golden/act1_town.png",
-    "sha256": "5c813102eb70a0650a36d67e3c162075d499455a55e8ff38ffc6230b7750c30c",
-    "origin": "Regenerated 2026-10-22 from pinned vanilla 1.13c (no mod_dir, gamma 1.20, zoom 1:4, isolated preferences) with the intentional rarity variant-selection fix in misc_check_tiles_conflicts; see tmp/visual-diagnosis/DIAGNOSIS.md."
+    "sha256": "cc4a76e3b238e6ecbe221789847b18e423a58c954d0b2d8738c7169318d4fc05",
+    "origin": "Regenerated 2026-10-22 from pinned vanilla 1.13c (no mod_dir, gamma 1.20, zoom 1:4, isolated preferences) with the intentional rarity variant-selection fix in misc_check_tiles_conflicts; see tmp/visual-diagnosis/DIAGNOSIS.md; re-rendered 2026-10-23 after the translucent-tint blend fix (non-premultiplied alpha tints), tint pixels only."
    },
    "compare": "exact-rgb"
   },
@@ -288,8 +288,8 @@
    ],
    "reference": {
     "path": "test/golden/act2_desert.png",
-    "sha256": "d498efd57db03f73615d1e3ad0168a523be27bf4e306dccf5f11d76dca1e6aee",
-    "origin": "Regenerated 2026-10-22 from pinned vanilla 1.13c (no mod_dir, gamma 1.20, zoom 1:4, isolated preferences) with the intentional rarity variant-selection fix in misc_check_tiles_conflicts; see tmp/visual-diagnosis/DIAGNOSIS.md."
+    "sha256": "19bccd2165e7f4681def10f7dfbbc777ccc37e00aa42604ef4c14f29c17f18d1",
+    "origin": "Regenerated 2026-10-22 from pinned vanilla 1.13c (no mod_dir, gamma 1.20, zoom 1:4, isolated preferences) with the intentional rarity variant-selection fix in misc_check_tiles_conflicts; see tmp/visual-diagnosis/DIAGNOSIS.md; re-rendered 2026-10-23 after the translucent-tint blend fix (non-premultiplied alpha tints), tint pixels only."
    },
    "compare": "exact-rgb"
   },
@@ -385,8 +385,8 @@
    ],
    "reference": {
     "path": "test/golden/act3_jungle.png",
-    "sha256": "400a23f822c36250b99d425e0ccaddeffea2ad773f952c392c5063f0eb83e4ce",
-    "origin": "Regenerated 2026-10-22 from pinned vanilla 1.13c (no mod_dir, gamma 1.20, zoom 1:4, isolated preferences) with the intentional rarity variant-selection fix in misc_check_tiles_conflicts; see tmp/visual-diagnosis/DIAGNOSIS.md."
+    "sha256": "bba4c679eafc8b78521f77fe25097422e72016084cc13fdda081ce06d608dd32",
+    "origin": "Regenerated 2026-10-22 from pinned vanilla 1.13c (no mod_dir, gamma 1.20, zoom 1:4, isolated preferences) with the intentional rarity variant-selection fix in misc_check_tiles_conflicts; see tmp/visual-diagnosis/DIAGNOSIS.md; re-rendered 2026-10-23 after the translucent-tint blend fix (non-premultiplied alpha tints), tint pixels only."
    },
    "compare": "exact-rgb"
   },
@@ -629,8 +629,8 @@
    ],
    "reference": {
     "path": "test/golden/act5_town.png",
-    "sha256": "0c21a991d28aec5d2ffc5ab8e1014d57ab296a8476caeef70a8586b719123e53",
-    "origin": "Regenerated 2026-10-22 from pinned vanilla 1.13c (no mod_dir, gamma 1.20, zoom 1:4, isolated preferences); the previous reference was a PD2 mod-overlay render. Includes the rarity variant-selection fix; see tmp/visual-diagnosis/DIAGNOSIS.md."
+    "sha256": "718e1a210227df6f38366d004454d9eea8dae5ec6fcd9ba8dea354f3196e22dd",
+    "origin": "Regenerated 2026-10-22 from pinned vanilla 1.13c (no mod_dir, gamma 1.20, zoom 1:4, isolated preferences); the previous reference was a PD2 mod-overlay render. Includes the rarity variant-selection fix; see tmp/visual-diagnosis/DIAGNOSIS.md; re-rendered 2026-10-23 after the translucent-tint blend fix (non-premultiplied alpha tints), tint pixels only."
    },
    "compare": "exact-rgb"
   }

@@ -33,6 +33,8 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
 
 ### Fixed
 
+- **Translucent tints no longer draw too dark.** Fades (50 % selection tint, transparent layers, COF 25/50/75 % modes) were tinted with a premultiplied colour under a non-premultiplied blender, so the source was weighted by alpha twice (`0.25*src + 0.5*dst` for a 50 % tint). They now blend as `src*a + dst*(1-a)`. Additive, multiply, screen and shadow draws are unchanged. Four core golden images were regenerated; only translucent-tint pixels changed.
+
 - **Zero-layer COFs compose to nothing instead of failing.** Project Diablo 2 ships
   three COFs with a layer count of 0 (`zznuhth`, `zzonhth`, `zzophth`); the map
   renderer accepted them but the export composer rejected them. They now parse as
