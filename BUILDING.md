@@ -43,18 +43,17 @@ linux` / `macos`, and `ctest --preset linux` / `macos` (Release, Ninja). CI uses
 the `ci` preset on Windows (Ninja plus MSVC) and then packages with
 `cpack --config build/CPackConfig.cmake -B dist`.
 
-The executable is output to `bin/ds1edit.exe`. Allegro 5 DLLs are automatically copied to `bin/` (and beside the test executables under `test/<config>/`, so they run from a build tree). Runtime data files (`data/` and `assets/`, which includes the editor's UI images under `assets/ui/`) are also copied to `bin/` by a post-build step.
+The executable is output to `bin/ds1edit.exe`. Allegro 5 DLLs are automatically copied to `bin/` (and beside the test executables under `test/<config>/`, so they run from a build tree). Runtime data files (`assets/`, which includes the editor's UI images under `assets/ui/`) are also copied to `bin/` by a post-build step.
 
 ## Build Options
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `USE_SOFTWARE_RENDERER` | OFF | Force software rendering (no GPU) |
 | `DS1EDIT_PERF_LOG` | OFF | Enable per-frame perf logging to stderr and perf_log.csv |
 | `DS1EDIT_ENABLE_SANITIZERS` | OFF | AddressSanitizer + UndefinedBehaviorSanitizer (GCC/Clang; AddressSanitizer only on MSVC 19.28+). Instrumented lane only, never a Release/perf build |
 | `DS1EDIT_ENABLE_COVERAGE` | OFF | GCC `--coverage` (read with `gcov --json-format`) or Clang source-based coverage (`llvm-cov export`). Needs `-DCMAKE_BUILD_TYPE=Debug`; mutually exclusive with sanitizers |
 
-Example: `cmake --preset default -DUSE_SOFTWARE_RENDERER=ON`
+Example: `cmake --preset default -DDS1EDIT_PERF_LOG=ON`
 
 Instrumented builds use their own build tree, for example:
 
@@ -91,7 +90,7 @@ ds1edit.exe <file.ds1> <ID> <DEF> --headless output.png
 
 ## Game Data
 
-The editor needs Diablo II tile data to function. Place your DS1/DT1 files under `assets/tiles/` organized by Act (this directory is gitignored). The INI files in `assets/` define which tile files to load for each area.
+The editor reads Diablo II maps, tiles, sprites, palettes and tables straight from your own game archives; nothing is extracted and no game data ships with it. Copy `Ds1edit.ini.sample` to `Ds1edit.ini` beside the executable and set `d2_install` (or leave it blank to auto-detect the install; see the README's Configuration section). Project Diablo 2 is detected the same way and controlled by `use_pd2` / `pd2_dir`. The INI files in `assets/` are per-area map lists used by the command line and tests.
 
 ## Testing
 
@@ -358,12 +357,11 @@ src/                C source files
   editor/           Editing operations (tiles, objects, paths, undo)
   ui/               User interface (event loop, dialogs, windows)
   mpq/              MPQ archive reader
-data/               Palettes, gamma tables, editor tile data
-assets/
+assets/             Area INI configs and editor data files
   ui/               Editor interface images (buttons, tabs, cursors,
                     walkable-info bits, window frames)
-assets/             Area INI configs, excel tables, palette data
-  tiles/            Game tile data (gitignored, user-supplied)
+  editor/           Editor data (obj.txt, ds1edit.dt1; generated palettes
+                    and the version stamp are not packaged)
 test/
   unity/            Unity test framework (ThrowTheSwitch)
   golden/           Golden reference screenshots (PNG)

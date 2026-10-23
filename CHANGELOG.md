@@ -22,19 +22,70 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
   set is active. Windows reads the registry; Linux and macOS probe common
   folders. The CLI gains `--pd2-dir=` and `--use-pd2=`. The scripted vanilla
   lanes (smoke, render cases, frame-rate test) pin `use_pd2 = no`.
+
 - **Project Diablo 2 compatibility lane (local only).** `scripts/equivalence/pd2_lane.py`
   (CTest label `pd2`, registered only with `-DDS1EDIT_PD2_DIR=...`, never in CI)
   binds results to the SHA-256 of the PD2 archives and reads every PD2 map, table,
   decoder input and a fixed headless render set through the editor; it never
   commits PD2 art. See BUILDING.md.
+
 - **Frame-rate test.** `scripts/perf/fps_test.py` measures render time per map,
   driver and window size, fails on memory-bitmap draws or >16.7 ms at 1080p,
   and can profile failing cases with WPR or perf. Local CTest `perf_fps`.
 
+- **Arrow keys and WASD scroll the map.** **Ctrl+arrows** browse maps (plain
+  arrows used to).
+
+- **Ctrl+Z undoes map edits** (while the properties panel is editing, it owns
+  Ctrl+Z; **Ctrl+U** still undoes tiles). Ctrl+U now acts once per key press
+  instead of repeating.
+
+- **Alt+I** selects strictly identical tiles; **Alt-drag** box-selects objects.
+
+- **Palette per map comes from the game tables first**, and maps no table lists
+  are resolved by their exact `LvlPrest.txt` path, so a same-named map in
+  another folder is no longer confused with them.
+
+- **Old DS1 files load their tiles** through `.tg1` fallback tile loading.
+
+- Build options `DS1EDIT_ENABLE_SANITIZERS` (AddressSanitizer and
+  UndefinedBehaviorSanitizer; AddressSanitizer only on MSVC) and
+  `DS1EDIT_ENABLE_COVERAGE` (GCC gcov, Clang source-based coverage).
+
+- A much larger automated test inventory: about 70 CTest suites (was 29),
+  including Python suites (`py_*`), an adversarial malformed-input campaign
+  (6,717 cases), a DS1 sweep over the vanilla corpus, and a replay of recorded
+  original-game answers.
+- `scripts/run_golden_tests.py` is strict: exit 0 only if every selected map
+  passes, 1 for a failure or a skip, 2 for a bad configuration. Each run keeps
+  `results.json` under `tmp/golden-runs/`, and `--update` replaces references
+  atomically.
+
+- **Fast, check and full test tiers.** `ctest --preset fast` (about 20 s, every
+  portable unit suite), `check` (about 35 s, adds the core golden images, a
+  seeded 500-case slice of the adversarial campaign and the display self-test)
+  and `full` (everything, including the full campaign and the local lanes), with
+  matching `ci-*`, `linux-*` and `macos-*` names. See BUILDING.md.
+- **Tests no longer take over your desktop.** Test launchers start child
+  processes without console windows, and tests that open the editor run with
+  `DS1EDIT_TEST_OFFSCREEN=1`, which keeps its window off-screen, non-activating
+  and out of the taskbar (never in fullscreen). `scripts/perf/focus_watch.py`
+  measures it.
+
+### Changed
+
+- **Edge-of-window mouse scrolling is off by default.** Set
+  `mouse_edge_scroll = YES` in `Ds1edit.ini` to restore it.
+- Building and testing now need CMake 3.21 and Python 3 with Pillow
+  (`pip install -r test/python/requirements.txt`).
+- Release packages are built and inspected by CI, and a release publishes only
+  those exact packages after a reviewed qualification record is found. See
+  `docs/release-readiness.md`.
+- The `test_placeholder` suite was removed.
+
 ### Fixed
 
 - **Translucent tints no longer draw too dark.** Fades (50 % selection tint, transparent layers, COF 25/50/75 % modes) were tinted with a premultiplied colour under a non-premultiplied blender, so the source was weighted by alpha twice (`0.25*src + 0.5*dst` for a 50 % tint). They now blend as `src*a + dst*(1-a)`. Additive, multiply, screen and shadow draws are unchanged. Four core golden images were regenerated; only translucent-tint pixels changed.
-
 - **Zero-layer COFs compose to nothing instead of failing.** Project Diablo 2 ships
   three COFs with a layer count of 0 (`zznuhth`, `zzonhth`, `zzophth`); the map
   renderer accepted them but the export composer rejected them. They now parse as
@@ -46,7 +97,8 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
   checks for a memory bitmap on a video target and warns once; `--selftest`
   fails on any, and reports frame-time percentiles (`--selftest-report=`). The
   display-lost/found events restore bitmaps to the GPU, and exit frees them
-  first (OpenGL exit 2.6 s to 0.14 s on a large map).
+  first (OpenGL exit 2.6 s to 0.14 s on a large map). This should also remove
+  the Direct3D fullscreen exit hang, which is not yet re-verified.
 - **Saving a map is safer.** A save now goes through a staging file, keeps a
   backup, and rolls back if anything fails. A failed save shows an error and
   leaves the editor open with your edits intact; it no longer ends the program.
@@ -54,10 +106,11 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
   checks every length and offset before using it. Opening a damaged map from
   the area browser now shows an error instead of exiting. All 2,276 DS1 files in
   vanilla 1.13c read and resave cleanly, and 2,238 of them are identical to what
-  the original game's loader produces. The other 38 differed because objects
-  outside the map's width x 5 by height x 5 grid were dropped on load; they are
-  now kept, drawn with a warning tint, and saved. All 2,276 now match the
-  original loader.
+  the original game's loader produces; the other 38 are the next item.
+- **Objects outside the map grid are kept.** Objects beyond the map's width x 5
+  by height x 5 grid (80 objects in 38 vanilla maps) used to be dropped on
+  load. They are now kept, drawn with a warning tint, selectable and saved, and
+  all 2,276 vanilla maps match the original game's loader.
 - **Undo handles large edits and large maps.** Undo records used 8-bit counts
   and coordinates, which broke runs of more than 255 tiles and maps wider than
   256. They are now 32-bit.
@@ -107,44 +160,6 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
   `Info.plist` carries the real version number instead of an empty one. Not yet
   verified on a Mac.
 - `I` key repeat condition fixed.
-
-### Added
-
-- **Arrow keys and WASD scroll the map.** **Ctrl+arrows** browse maps (plain
-  arrows used to).
-- **Ctrl+Z undoes map edits** (while the properties panel is editing, it owns
-  Ctrl+Z; **Ctrl+U** still undoes tiles). Ctrl+U now acts once per key press
-  instead of repeating.
-- **Alt+I** selects strictly identical tiles; **Alt-drag** box-selects objects.
-- **Palette per map comes from the game tables first**, and maps no table lists
-  are resolved by their exact `LvlPrest.txt` path, so a same-named map in
-  another folder is no longer confused with them.
-- **Old DS1 files load their tiles** through `.tg1` fallback tile loading.
-- Build options `DS1EDIT_ENABLE_SANITIZERS` (AddressSanitizer and
-  UndefinedBehaviorSanitizer; AddressSanitizer only on MSVC) and
-  `DS1EDIT_ENABLE_COVERAGE` (GCC gcov, Clang source-based coverage).
-- A much larger automated test inventory: about 70 CTest suites (was 29),
-  including Python suites (`py_*`), an adversarial malformed-input campaign
-  (6,717 cases), a DS1 sweep over the vanilla corpus, and a replay of recorded
-  original-game answers.
-- `scripts/run_golden_tests.py` is strict: exit 0 only if every selected map
-  passes, 1 for a failure or a skip, 2 for a bad configuration. Each run keeps
-  `results.json` under `tmp/golden-runs/`, and `--update` replaces references
-  atomically.
-
-### Changed
-
-- **Edge-of-window mouse scrolling is off by default.** Set
-  `mouse_edge_scroll = YES` in `Ds1edit.ini` to restore it.
-- Building and testing now need CMake 3.21 and Python 3 with Pillow
-  (`pip install -r test/python/requirements.txt`).
-- Release packages are built and inspected by CI, and a release publishes only
-  those exact packages after a reviewed qualification record is found. See
-  `docs/release-readiness.md`.
-- **Known review concern (open):** an unlisted pre-v8 DS1 that has no preset
-  and no inferable tileset now gets the Act 1 palette, because the folder-Act
-  stamp in `area_browser_open_entry_into_slot` was removed.
-- The `test_placeholder` suite was removed.
 
 ## 2.1.1
 

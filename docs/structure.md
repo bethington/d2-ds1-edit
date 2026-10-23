@@ -116,7 +116,6 @@ cmake --build --preset release --target package   # Create release zip
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `USE_SOFTWARE_RENDERER` | OFF | Force software rendering (no GPU) |
 | `DS1EDIT_PERF_LOG` | OFF | Enable per-frame perf logging to stderr and perf_log.csv |
 
 ## Testing

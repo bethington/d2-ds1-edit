@@ -207,6 +207,15 @@ This is not a complete tutorial explaining all you need to know, but at least I 
 
 ## Installing the Editor
 
+> **Current DS1Edit (2.2.0) differs from the 2006 steps below.** The Allegro 5
+> build needs no `alleg403.zip` and no `.bat` launchers: copy `Ds1edit.ini.sample`
+> to `Ds1edit.ini`, set `d2_install` (or leave it blank and the editor finds
+> Diablo II from the registry or a common folder; Project Diablo 2 is found the
+> same way, see `use_pd2` and `pd2_dir`), and launch the editor with no
+> arguments to pick a map from the browser. Nothing has to be extracted from the
+> MPQs. Startup details are written to `stderr.txt`. The README's Configuration
+> section is the current reference; the steps below are Siramy's original text.
+
 1.  Extract the **win\_ds1edit.zip** somewhere on your hard disk, its location is not important. Then, extract the **alleg403.zip** in that directory (the **alleg40.dll** must be at the same place of the **win\_ds1edit.exe** ).  
 
 2.  Now, edit **Ds1edit.ini** .  
@@ -643,6 +652,11 @@ only the Tree, not its Floor Tile.
 
 ### Ctrl + S
 
+> **Current editor.** Saving is checked: the new map is written to a staging file,
+> the old one is kept as the backup described below, and everything is rolled back
+> if a step fails. A failed save shows an error and leaves the editor open with
+> your edits intact.
+
 **S** ave the map (the .DS1), in its current state. Incremental backups. First, it rename the current .DS1 to the first free name with numbers it found, then it save the current map.
 
 For instance, say that you are editing the map **duriel.ds1** for the first time. When you'll ask to save it, it'll rename **duriel.ds1** to **duriel-000.ds1** and save the current state of the map into the file **duriel.ds1**.
@@ -654,6 +668,12 @@ So, the **duriel-000.ds1** is always you original .ds1, and the next numbers are
 * * *
 
 ### Ctrl + U
+
+> **Current editor.** **Ctrl+Z** undoes map edits too (while a properties-panel
+> field is being edited, the panel owns Ctrl+Z), and **Ctrl+U** acts once per key
+> press. **Alt+I** selects strictly identical tiles and **Alt**-drag box-selects
+> objects. Objects outside the map's `width*5` by `height*5` grid are kept, drawn
+> with a warning tint, and saved. Undo buffers live in a `tmp` folder beside the editor, not in `data` plus `tmp`.
 
 **U** ndo the precedent **Tiles** modifications, up to the very start. Note that when you make some multiple undo and then start to make new modifications, the undo buffers are reseted : the ones you have just used to get back to the current state of the map are lost. Also you can't undo an undo : there's only 1 way of undo.
 

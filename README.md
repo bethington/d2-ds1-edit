@@ -48,9 +48,9 @@ inspect its properties in the same window.*
 
 | Platform | Package | Runtime dependency |
 |----------|---------|--------------------|
-| Windows (x86) | `ds1edit-<ver>-windows-x86.zip` | none — Allegro 5 DLLs and `vcruntime140.dll` are bundled; needs Windows 10 or later (its Universal C Runtime) |
-| Linux (x86_64) | `ds1edit-<ver>-linux-x86_64.tar.gz` | system Allegro 5 (see below) |
-| macOS (arm64) | `ds1edit-<ver>-macos-arm64.tar.gz` | `brew install allegro` |
+| Windows (x86) | `DS1Edit-<ver>-win32.zip` | none — Allegro 5 DLLs and `vcruntime140.dll` are bundled; needs Windows 10 or later (its Universal C Runtime) |
+| Linux (x86_64) | `DS1Edit-<ver>-linux-x86_64.tar.gz` | system Allegro 5 and a system OpenGL driver (see below) |
+| macOS (arm64) | `DS1Edit-<ver>-macos-arm64.tar.gz` | `brew install allegro` |
 
 Unpack anywhere and run `ds1edit` (`ds1edit.exe` on Windows, `ds1edit.app` on macOS). There is no installer.
 
@@ -58,7 +58,8 @@ Unpack anywhere and run `ds1edit` (`ds1edit.exe` on Windows, `ds1edit.app` on ma
 x86 `vcruntime140.dll`. It does rely on the Universal C Runtime, which is part of
 Windows 10 and later.
 
-**Linux** needs Allegro 5 from your package manager:
+**Linux** needs Allegro 5 from your package manager, plus a working OpenGL
+driver (Mesa or your GPU vendor's; the editor links the system `libGL`):
 
 ```bash
 # Debian / Ubuntu
@@ -70,7 +71,7 @@ sudo dnf install allegro5 allegro5-addon-image allegro5-addon-ttf
 
 **macOS** packages contain `ds1edit.app` (the entry point to launch; Input
 Monitoring, which Allegro needs for the keyboard, is granted to it) beside the
-plain `ds1edit` binary and `assets/`. The app is ad-hoc signed, not notarized,
+plain `ds1edit` binary and `assets/` (keep the app beside `assets/`). The app is ad-hoc signed, not notarized,
 so Gatekeeper will refuse the first launch. Either right-click the app and
 choose Open, or clear the quarantine flag:
 
@@ -78,8 +79,8 @@ choose Open, or clear the quarantine flag:
 xattr -dr com.apple.quarantine ds1edit.app ds1edit
 ```
 
-The macOS package has not yet been run on a Mac by the maintainers; see
-[docs/release-readiness.md](docs/release-readiness.md).
+The macOS package is built and checked by CI but its GUI launch has not yet been
+tried on a Mac by the maintainers; see [docs/release-readiness.md](docs/release-readiness.md).
 
 You need your own copy of Diablo II (Classic or LoD) — the editor reads tiles and sprites straight out of your MPQs and ships no game assets.
 
@@ -94,6 +95,8 @@ You need your own copy of Diablo II (Classic or LoD) — the editor reads tiles 
    d2_install = C:\Diablo2
    ```
 
+   You can leave `d2_install` blank: the editor then looks for Diablo II itself
+   (see [Configuration](#configuration)).
 3. Launch `ds1edit.exe` on Windows, `ds1edit` on Linux, or `ds1edit.app` on macOS, with no arguments.
    Choose a map from the built-in browser.
 
@@ -108,16 +111,20 @@ file opening. To compile the editor yourself, see [Building](#building).
 - **D2 Blend Modes** - Correct additive, multiply, and screen blending (reverse-engineered from D2CMP.dll)
 - **Object Animation** - DCC/DC6 sprite rendering with shadow projection
 - **Multi-Zoom** - 7 zoom levels from 1:1 to 1:16
-- **Keyboard navigation** - arrow keys and **WASD** scroll the map; **Ctrl+arrows** browse maps; **Ctrl+Z** / **Ctrl+U** undo. Edge-of-window mouse scrolling is off unless you set `mouse_edge_scroll = YES` in `Ds1edit.ini`
+- **Keyboard navigation** - arrow keys and **WASD** scroll the map; **Ctrl+arrows** browse maps; **Ctrl+Z** / **Ctrl+U** undo. Edge-of-window mouse scrolling is off unless you set `mouse_edge_scroll = YES` in `Ds1edit.ini` (see [Controls](#controls))
+- **Checked saves** - a save goes through a staging file, keeps a numbered backup, and rolls back on failure; a failed save is reported and never closes the editor
+- **Project Diablo 2** - detected automatically and read ahead of the vanilla archives, or pinned off with `use_pd2 = no`
 - **Reads your MPQs directly** - maps, tiles, sprites, palettes and data tables, with a mod-directory overlay; nothing has to be extracted first
 - **Headless Mode** - Command-line screenshot rendering for CI/testing
+- **Frame-rate tooling** - `--selftest` frame-time report and `scripts/perf/fps_test.py` (see [Troubleshooting](#troubleshooting))
 - **Performance Profiling** - Optional per-frame and per-section timing (`-DDS1EDIT_PERF_LOG=ON`)
 
 ## Building
 
 Requirements: CMake 3.21 or later, a C compiler (Visual Studio 2019 or later on
-Windows), Allegro 5, and Python 3 with Pillow for the test suite
-(`pip install -r test/python/requirements.txt`). See [BUILDING.md](BUILDING.md).
+Windows), Allegro 5 (vcpkg on Windows, system packages elsewhere), and Python 3 with
+Pillow for the test suite (`pip install -r test/python/requirements.txt`). See
+[BUILDING.md](BUILDING.md).
 
 ```bash
 # Windows -- Visual Studio 2022 (x86); uses build/vcpkg_installed/x86-windows
@@ -162,11 +169,15 @@ python scripts/run_golden_tests.py --core --tolerance 4   # golden screenshots
 ```
 
 `fast`, `check` and `full` are tiers (see "Test tiers" in [BUILDING.md](BUILDING.md)):
-use `fast` while working, `check` before pushing, `full` for releases. Tests run
-without flashing console windows and keep the editor window off-screen and
-non-activating, so you can keep typing while they run.
+use `fast` while working, `check` before pushing, `full` for releases. Each family
+has its own names (`ci-fast`, `linux-check`, `macos-full`, ...). Tests run
+without flashing console windows, and tests that open the editor set
+`DS1EDIT_TEST_OFFSCREEN=1`, which keeps its window off-screen and non-activating,
+so you can keep typing while they run. `golden_core` and `display_selftest` need a
+vanilla 1.13c runtime you own: configure with `-DDS1EDIT_GOLDEN_RUNTIME=<dir>`
+(without it they report `Not Run (Skipped)`, never a pass).
 
-About 70 CTest suites run: native Unity suites for the parsers, decoders, editor
+About 75 CTest suites run: native Unity suites for the parsers, decoders, editor
 logic and CLI, and `py_*` Python suites that CMake registers from `test/python/`
 (label `portable`). If Python is not found at configure time, a failing
 `py_unavailable` test is registered on purpose so a missing interpreter cannot
@@ -174,8 +185,11 @@ look like a green run.
 
 Suites labelled `portable` use only authored fixtures and need no Diablo II
 files. Suites that need a licensed installation or a live reference are local
-lanes: see [test/equivalence/README.md](test/equivalence/README.md) for the
-corpus and live-equivalence lanes, which are never run in public CI.
+lanes, never run in public CI: the frame-rate test (`perf_fps`, needs
+`-DDS1EDIT_GAME_DIR=`), the Project Diablo 2 lane (`pd2_*`, registered only with
+`-DDS1EDIT_PD2_DIR=`; see "Project Diablo 2 lane" in [BUILDING.md](BUILDING.md)),
+and the corpus and live-equivalence lanes in
+[test/equivalence/README.md](test/equivalence/README.md).
 
 ### Golden Screenshot Tests
 `scripts/run_golden_tests.py` renders maps in headless mode and compares them
@@ -185,11 +199,9 @@ reference or INI is a skip), **2** for an invalid command line or
 configuration. Each run writes a new `tmp/golden-runs/run-*/` directory with
 `results.json` and the rendered images; `--update` replaces references
 atomically. Inputs must be pinned (the `visual-core.json` profile used by
-`scripts/equivalence/render_cases.py`) for a comparison to mean anything. At the
-moment four of the six core references (`act1_town`, `act2_desert`,
-`act3_jungle`, `act4_fortress`) differ from current output because they encode
-the old tile-variant selection defect, and `act5_town` was made with a Project
-Diablo 2 overlay; they have not been regenerated.
+`scripts/equivalence/render_cases.py`) for a comparison to mean anything. The six
+core references were regenerated from pinned vanilla 1.13c inputs for 2.2.0 and
+pass at tolerance 4.
 
 ### Unit Tests
 Examples: `test_palette` (colour matching), `test_rgba_cache` (tile cache),
@@ -240,8 +252,11 @@ d2_install = C:\Diablo2
 ```
 
 That one line fills every MPQ slot. You can even leave it blank: the editor finds
-Diablo II from the registry (HKCU, HKLM, the Uninstall list) or a common folder, and
-logs what it found at startup. **Nothing needs extracting** -- maps, tiles,
+Diablo II on its own and logs what it found at startup. It tries, in order,
+`HKCU\Software\Blizzard Entertainment\Diablo II`, the same key under HKLM (64-bit and
+WOW6432Node views), the `Diablo II` Uninstall entry (HKCU, HKLM, WOW6432Node), then
+common folders; a registry path that does not exist falls through to the next step.
+Windows reads the registry; Linux and macOS probe common folders. **Nothing needs extracting** -- maps, tiles,
 sprites, palettes and the data tables are all read straight out of the archives, and
 the whole map list appears in the browser. Set `mod_dir` and your mod's loose files
 take priority over the base game without repacking anything.
@@ -258,13 +273,20 @@ patch_d2 = C:\Diablo2\patch_d2.mpq
 
 See the sample file for all available settings (resolution, scroll speed, gamma, etc.).
 `mouse_edge_scroll` (default `NO`) turns on scrolling when the mouse touches the
-window border; the arrow keys and **WASD** always scroll, and **Ctrl+arrows**
-browse maps.
+window border; see [Controls](#controls) for the keys.
+
+`stderr.txt`, written in the folder you run the editor from, holds the startup
+log (detected install, data set in use, display driver and renderer) and any
+warnings. Attach it to bug reports.
 
 ### Project Diablo 2
 
 If Project Diablo 2 is installed (its `ProjectD2` folder holds `pd2data.mpq`), the editor
-finds it on its own and reads PD2's data and maps instead of the vanilla ones:
+finds it on its own and reads PD2's data and maps instead of the vanilla ones. It looks
+at `pd2_dir`, PD2's Uninstall entry, and the `ProjectD2` folder next to Diablo II. An
+automatically found PD2 is used only if it belongs to the Diablo II install the editor
+selected; one that belongs to a different install is skipped (startup logs that it was
+not used). An explicit `pd2_dir` is always honoured.
 
 ```ini
 ; auto (default) | yes (require it) | no (vanilla only)
@@ -283,7 +305,33 @@ helpers and are not opened. Startup prints a line such as
 `use_pd2 = no` it prints `vanilla Diablo II data` instead. `use_pd2 = yes` logs an error and
 falls back to vanilla data if PD2 cannot be found. Explicit `d2char`/`d2data`/`d2exp`/`patch_d2`
 paths and `mod_dir` still win over detection. To pin vanilla data for reproducible
-runs, set `use_pd2 = no`.
+runs, set `use_pd2 = no`. The command-line equivalents are `--pd2-dir=` and `--use-pd2=`.
+
+## Controls
+
+| Input | Action |
+|-------|--------|
+| Arrow keys, **WASD** | Scroll the map |
+| **Ctrl+arrows** | Previous / next map in the area browser (plain arrows no longer do this) |
+| Mouse at the window edge | Scroll, only with `mouse_edge_scroll = YES` (default `NO`) |
+| **Ctrl+Z** | Undo the last map edit. While a properties-panel field is being edited, the panel owns Ctrl+Z |
+| **Ctrl+U** | Undo tile edits; acts once per key press |
+| **Alt+I** | Select strictly identical tiles |
+| **Alt**-drag | Box-select objects |
+| **Ctrl+S** | Save the map (see below) |
+
+Scroll speeds are `keyb_scroll_x/y` and `mouse_scroll_x/y` in `Ds1edit.ini`. The
+[manual](docs/getting-started/manual.md) describes the rest of the editing keys.
+
+### Saving and out-of-bounds objects
+
+A save writes a staging file first, renames the existing map to the first free
+`name-000.ds1`, `name-001.ds1`, ... backup, then moves the new file into place, and
+rolls everything back if a step fails. A failed save shows an error and leaves the
+editor open with your edits intact; it never ends the program.
+
+Objects that lie outside the map's `width*5` by `height*5` grid (about 80 objects in
+38 vanilla maps) are kept, drawn with a warning tint, selectable, and saved.
 
 ## Troubleshooting
 
@@ -358,8 +406,10 @@ above 250 ms per frame. If you still see it, report the `display:` and
 `renderer` lines.
 
 **Known issue: exiting in fullscreen on Direct3D can hang** while the display is
-torn down (reproduced on Windows). Use `full_screen = NO`, or end the process
-from Task Manager. This is not fixed yet.
+torn down (reproduced on Windows before 2.2.0). 2.2.0 frees the GPU bitmaps before
+destroying the display, which should remove the hang, but that has not been
+re-verified in fullscreen. If it still happens, use `full_screen = NO`, or end the
+process from Task Manager, and report it with your `stderr.txt`.
 
 ## Project Structure
 
@@ -367,7 +417,7 @@ See [docs/structure.md](docs/structure.md) for detailed layout.
 
 Key directories:
 - `src/` - C source code organized into `core/`, `render/`, `editor/`, `ui/`, `mpq/`
-- `data/`, `assets/` - Runtime data (copied to `bin/` at build time); `assets/ui/` holds the editor's interface images
+- `assets/` - Runtime data (copied to `bin/` at build time); `assets/ui/` holds the editor's interface images, `assets/editor/` its data files
 - `test/` - Unit tests (Unity framework), Python suites in `test/python/`
 - `scripts/` - Golden test and equivalence/qualification scripts (Python)
 - `bin/` - Build output directory (gitignored)
