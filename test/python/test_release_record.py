@@ -122,11 +122,11 @@ class World:
         self.candidate = Q.combine_candidate(manifests, REPOSITORY, self.profile["digest"],
                                              self.reference)
         per = {p: [] for p in PLATS}
-        side = []
+        side, cov = [], []
         for e in self.entries:
             case = self.passing_case(e)
             if e["lane"] == "sanitizer":
-                side.append(case)
+                (cov if e["id"] == "coverage.production" else side).append(case)
             else:
                 per[e["platform"]].append(case)
         for p in PLATS:
@@ -139,6 +139,8 @@ class World:
                        {"schema": Q.CASE_SET_SCHEMA, "cases": rest})
         write_json(self.artifacts / "evidence-linux-sanitizers" / "ci.json",
                    {"schema": Q.CASE_SET_SCHEMA, "cases": side})
+        write_json(self.artifacts / "evidence-linux-coverage" / "ci.json",
+                   {"schema": Q.CASE_SET_SCHEMA, "cases": cov})
 
     def passing_case(self, e):
         plat = self.candidate["platforms"][e["platform"]]
@@ -184,6 +186,7 @@ class World:
             d = self.artifacts / ("candidate-%s" % p)
             out += [d / "package-inspection.json"] + sorted((d / "evidence").glob("*.json"))
         out.append(self.artifacts / "evidence-linux-sanitizers" / "ci.json")
+        out.append(self.artifacts / "evidence-linux-coverage" / "ci.json")
         return out
 
     def drop_case(self, cid, platform):
@@ -482,6 +485,90 @@ class DryRun(unittest.TestCase):
         write_json(f, C.seal({k: v for k, v in m.items() if k != "digest"}))
         self.assertEqual(self.dry(), 1)
 
+    # -- the record must be bound to the evidence the run produced -------------
+    def forge(self, fn):
+        rec = self.w.record()
+        fn(rec)
+        write_json(self.w.record_path(), C.seal({k: v for k, v in rec.items() if k != "digest"}))
+
+    @staticmethod
+    def drop_ci_case(rec, cid="editor.undo.tiles", platform="windows-x86"):
+        """Remove one CI case from the record's results; return that result object."""
+        for r in rec["results"]:
+            if r.get("schema") == Q.CASE_SET_SCHEMA and any(
+                    c["id"] == cid and c["platform"] == platform for c in r["cases"]):
+                r["cases"] = [c for c in r["cases"]
+                              if not (c["id"] == cid and c["platform"] == platform)]
+                return r
+        raise KeyError(cid)
+
+    def test_poc_a_failing_ci_case_cannot_be_omitted_and_waived(self):
+        """A mismatching CI case, dropped from results and waived, must not release."""
+        self.w.edit_case("editor.undo.tiles", "windows-x86",
+                         lambda c: c.update(status="mismatch",
+                                            failures=[{"kind": "check", "detail": "x"}]))
+        self.assertEqual(self.w.run(), 1)
+        honest = json.loads((self.w.work / "qualification-not-ready.json").read_text("utf-8"))
+        results = copy.deepcopy(honest["results"])
+        for r in results:
+            if r.get("schema") == Q.CASE_SET_SCHEMA:
+                r["cases"] = [c for c in r["cases"] if not (
+                    c["id"] == "editor.undo.tiles" and c["platform"] == "windows-x86")]
+        results.append({"schema": Q.REVIEW_SCHEMA, "dispositions": [
+            waiver(id="editor.undo.tiles", reason="omitted")]})
+        # qualify itself refuses to waive an entry CI produces evidence for ...
+        with self.assertRaises(C.ValidationError) as cm:
+            Q.qualify(self.w.profile, honest["candidate"], results, version="9.9.9")
+        self.assertIn("cannot be waived", str(cm.exception))
+        # ... and a record forged around that (ready, resealed, input_artifacts kept) is
+        # refused by the release-time verification.
+        forged = copy.deepcopy(honest)
+        forged["results"], forged["ready"] = results, True
+        forged["waived"] = []
+        write_json(self.w.record_path(),
+                   C.seal({k: v for k, v in forged.items() if k != "digest"}))
+        self.assertEqual(self.dry(), 1)
+        self.assertIn("::error::", self.w.stderr)
+
+    def test_results_that_do_not_match_input_artifacts_one_to_one_fail(self):
+        self.forge(lambda rec: self.drop_ci_case(rec))
+        self.assertEqual(self.dry(), 1)
+        self.assertIn("input_artifacts do not match its results", self.w.stderr)
+
+    def test_a_ci_case_dropped_consistently_still_differs_from_the_run(self):
+        def edit(rec):
+            r = self.drop_ci_case(rec)
+            for a in rec["input_artifacts"]:
+                if a["path"].endswith("ci-windows-x86.json"):
+                    a["payload_sha256"] = C.payload_sha256(r)
+        self.forge(edit)
+        self.assertEqual(self.dry(), 1)
+        self.assertIn("ci-windows-x86.json is not part of the reviewed record", self.w.stderr)
+
+    def test_a_platform_without_its_ci_evidence_file_fails(self):
+        (self.w.artifacts / "candidate-linux-x86_64" / "evidence" / "ci-linux-x86_64.json"
+         ).unlink()
+        self.assertEqual(self.dry(), 1)
+        self.assertIn("evidence/ci-linux-x86_64.json is missing", self.w.stderr)
+
+    def test_the_instrumented_jobs_evidence_is_downloaded_and_bound_too(self):
+        shutil.rmtree(self.w.artifacts / "evidence-linux-sanitizers")
+        self.assertEqual(self.dry(), 2)
+        self.assertIn("evidence-linux-sanitizers", self.w.stderr)
+        self.w.run()      # restore nothing: just make sure a changed file is caught below
+
+    def test_changed_sanitizer_or_coverage_evidence_fails(self):
+        for name in RR.EVIDENCE_ARTIFACTS:
+            f = self.w.artifacts / name / "ci.json"
+            doc = json.loads(f.read_text(encoding="utf-8"))
+            doc["cases"][0]["limitations"].append("edited")
+            write_json(f, doc)
+            self.assertEqual(self.dry(), 1, name)
+            self.assertIn("%s: ci.json is not part of the reviewed record" % name,
+                          self.w.stderr)
+            doc["cases"][0]["limitations"].pop()
+            write_json(f, doc)
+
     def test_a_missing_record_fails(self):
         self.w.record_path().unlink()
         self.assertEqual(self.dry(), 1)
@@ -502,6 +589,7 @@ class ReleaseWorkflowHelpers(unittest.TestCase):
         self.assertEqual(self.w.run(), 0)
         self.record = self.w.record()
         self.cdir = self.w.work / "candidate"
+        self.edir = self.w.work / "evidence"
 
     def test_find_record(self):
         digest, path = RR.find_record(self.w.root, self.w.out)
@@ -511,7 +599,8 @@ class ReleaseWorkflowHelpers(unittest.TestCase):
 
     def test_verify_candidate_dir_accepts_the_downloaded_artifacts(self):
         self.assertEqual(RR.verify_candidate_dir(self.record, self.w.profile, self.w.root,
-                                                 self.cdir, "v9.9.9"), [])
+                                                 self.cdir, "v9.9.9",
+                                                 evidence_dir=self.edir), [])
 
     def test_verify_candidate_dir_checks_the_tag_against_package_names(self):
         problems = RR.verify_candidate_dir(self.record, self.w.profile, self.w.root,
@@ -550,9 +639,40 @@ class ReleaseWorkflowHelpers(unittest.TestCase):
         section = RR.release_notes(self.record, "v9.9.9").split("## Waived checks", 1)[1]
         self.assertIn("`corpus.ds1.read-all` (windows-x86, missing)", section)
         self.assertIn(waiver()["reason"], section)
-        self.assertIn("`perf.first-open` (linux-x86_64, not_run)", section)
+        self.assertIn("`perf.first-open` (linux-x86\_64, not\_run)", section)
         self.assertIn("no timing runner on linux", section)
         self.assertNotIn("None", section)
+
+    def test_release_notes_escape_markdown_and_html_in_waiver_text(self):
+        self.record["waived"] = [
+            {"key": "k", "id": "corpus.ds1.read-all", "platform": "windows-x86",
+             "status": "missing",
+             "waiver": waiver(reason="see [x](http://evil) <img src=x> **b** `c` | d",
+                              reviewer="a_b")}]
+        section = RR.release_notes(self.record, "v9.9.9").split("## Waived checks", 1)[1]
+        for raw in ("[x](http", "**b**", "`c`"):
+            self.assertNotIn(raw, section)
+        self.assertNotRegex(section, r"(?<!\\)[<>]")
+        self.assertIn("\\[x\\]\\(http://evil\\)", section)
+        self.assertIn("\\<img", section)
+        self.assertEqual(len(section.strip().splitlines()), 1)
+
+    def test_find_record_refuses_values_that_could_inject_github_output(self):
+        for field, value in (("candidate_run_id", "12\nevil=1"), ("repository", "a/b\nx=1"),
+                             ("commit", "z" * 40)):
+            rec = self.w.record()
+            if field == "commit":
+                rec["candidate"]["source"]["commit"] = value
+            else:
+                rec["candidate"][field] = value
+            write_json(self.w.record_path(), rec)
+            out, err = io.StringIO(), io.StringIO()
+            with redirect_stdout(out), redirect_stderr(err):
+                rc = RR.main(["find-record", "--root", str(self.w.root),
+                              "--qualification-dir", str(self.w.out)])
+            self.assertEqual(rc, 1, field)
+            self.assertEqual(out.getvalue(), "")
+            self.assertIn("unusable value", err.getvalue())
 
     def test_subcommands_print_github_output_style_lines(self):
         out, err = io.StringIO(), io.StringIO()
@@ -577,6 +697,7 @@ class ReleaseWorkflowHelpers(unittest.TestCase):
         with redirect_stdout(out), redirect_stderr(err):
             rc = RR.main(["verify-release", "--record", str(self.w.record_path()),
                           "--candidate-dir", str(self.cdir), "--tag", "v9.9.9",
+                          "--evidence-dir", str(self.edir),
                           "--profile", str(PROFILE), "--root", str(self.w.root),
                           "--notes-out", str(notes)])
         self.assertEqual(rc, 0, err.getvalue())
@@ -584,6 +705,7 @@ class ReleaseWorkflowHelpers(unittest.TestCase):
         with redirect_stdout(io.StringIO()), redirect_stderr(err):
             rc = RR.main(["verify-release", "--record", str(self.w.record_path()),
                           "--candidate-dir", str(self.cdir), "--tag", "v9.9.10",
+                          "--evidence-dir", str(self.edir),
                           "--profile", str(PROFILE), "--root", str(self.w.root)])
         self.assertEqual(rc, 1)
         self.assertIn("::error::", err.getvalue())

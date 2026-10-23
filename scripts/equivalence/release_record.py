@@ -227,9 +227,26 @@ def check_run(record: dict, run: dict, repository: str) -> list:
     return problems
 
 
+def _cases_in(obj) -> list:
+    if not isinstance(obj, dict):
+        return []
+    if obj.get("schema") == C.CASE_SCHEMA:
+        return [obj]
+    if obj.get("schema") in (Q.CASE_SET_SCHEMA, Q.PACKAGE_INSPECTION_SCHEMA):
+        return [c for c in obj.get("cases", []) if isinstance(c, dict)]
+    return []
+
+
 def verify_candidate_dir(record: dict, profile: dict, root, candidate_dir, tag: str,
-                         platforms=PLATFORMS) -> list:
-    """release.yml's verification of the downloaded candidate artifacts."""
+                         platforms=PLATFORMS, evidence_dir=None) -> list:
+    """release.yml's verification of the downloaded candidate artifacts.
+
+    Binds the record to what the run produced: every evidence file the run
+    uploaded (candidate ``evidence/`` and ``package-inspection.json`` per
+    platform, the ``evidence-*`` artifacts under *evidence_dir*) must equal a
+    result held by the record, and no result the record holds for an entry CI
+    produces (or a package check) may differ from the run's own case.
+    """
     problems = []
     if not _TAG.match(tag or ""):
         return ["tag %r is not of the form vX.Y.Z" % tag]
@@ -239,8 +256,8 @@ def verify_candidate_dir(record: dict, profile: dict, root, candidate_dir, tag: 
     if sorted(cand["platforms"]) != sorted(platforms):
         problems.append("record platforms %s are not %s" % (sorted(cand["platforms"]),
                                                            sorted(platforms)))
-    reviewed = {a.get("payload_sha256") for a in record.get("input_artifacts", [])
-                if isinstance(a, dict)}
+    reviewed = {C.payload_sha256(r) for r in record.get("results", [])}
+    produced = []                      # every evidence object the run uploaded
     artifacts = {}
     for p, v in sorted(cand["platforms"].items()):
         d = candidate_dir / p
@@ -267,13 +284,17 @@ def verify_candidate_dir(record: dict, profile: dict, root, candidate_dir, tag: 
                     problems.append("%s: unexpected files in evidence/: %s"
                                     % (p, sorted(stray)))
                 evidence += sorted(f for f in ed.glob("*.json") if f.is_file())
+        if not (ed / ("ci-%s.json" % p)).is_file():
+            problems.append("%s: evidence/ci-%s.json is missing from the candidate artifact"
+                            % (p, p))
         for f in evidence:
             try:
-                payload = C.payload_sha256(C.load_json_object(f))
+                obj = C.load_json_object(f)
             except (OSError, ValueError, C.ValidationError) as exc:
                 problems.append("%s: evidence file %s unusable: %s" % (p, f.name, exc))
                 continue
-            if payload not in reviewed:
+            produced.append(obj)
+            if C.payload_sha256(obj) not in reviewed:
                 problems.append("%s: %s is not part of the reviewed record" % (p, f.name))
         mf = d / ("candidate-%s.json" % p)
         try:
@@ -295,9 +316,45 @@ def verify_candidate_dir(record: dict, profile: dict, root, candidate_dir, tag: 
         for k, (got, want) in checks.items():
             if got != want:
                 problems.append("%s: manifest %s %r != record %r" % (p, k, got, want))
+    if evidence_dir is None:
+        problems.append("the evidence-* artifacts of the candidate run were not supplied")
+    else:
+        for name in EVIDENCE_ARTIFACTS:
+            files = sorted((Path(evidence_dir) / name).rglob("*.json"))
+            if not files:
+                problems.append("artifact %s of the candidate run is missing or empty" % name)
+            for f in files:
+                try:
+                    obj = C.load_json_object(f)
+                except (OSError, ValueError, C.ValidationError) as exc:
+                    problems.append("%s: %s unusable: %s" % (name, f.name, exc))
+                    continue
+                produced.append(obj)
+                if C.payload_sha256(obj) not in reviewed:
+                    problems.append("%s: %s is not part of the reviewed record"
+                                    % (name, f.name))
+    ci_keys = Q.ci_emitted_keys()
+    made = {C.payload_sha256(c) for o in produced for c in _cases_in(o)}
+    for r in record.get("results", []):
+        for c in _cases_in(r):
+            if (c.get("id"), c.get("lane"), c.get("platform")) in ci_keys \
+                    or c.get("lane") == "native-package":
+                if C.payload_sha256(c) not in made:
+                    problems.append("%s@%s/%s in the record was not produced by the "
+                                    "candidate run's artifacts" % (c.get("id"),
+                                                                   c.get("lane"),
+                                                                   c.get("platform")))
     problems += Q.verify_release_record(record, profile, Path(root), artifacts,
                                         version=version)
     return problems
+
+
+_MD_SPECIAL = re.compile(r"([\\`*_{}\[\]<>()#+!|~&])")
+
+
+def _md(text) -> str:
+    """Plain text safe to put in a Markdown list item (no formatting, links or HTML)."""
+    return _MD_SPECIAL.sub(r"\\\1", " ".join(str(text).split()))
 
 
 def release_notes(record: dict, tag: str) -> str:
@@ -318,8 +375,8 @@ def release_notes(record: dict, tag: str) -> str:
     for w in waived:
         wv = w["waiver"]
         lines.append("- `%s` (%s, %s): %s (reviewer %s, expires with %s)"
-                     % (w["id"], w["platform"], w["status"], wv["reason"], wv["reviewer"],
-                        wv["expires_version"]))
+                     % (_md(w["id"]).replace("\\", ""), _md(w["platform"]), _md(w["status"]),
+                        _md(wv["reason"]), _md(wv["reviewer"]), _md(wv["expires_version"])))
     return "\n".join(lines) + "\n"
 
 
@@ -355,6 +412,19 @@ def _cmd_find_record(a) -> int:
         return 1
     rec = _load_record(path)
     c = rec["candidate"]
+    bad = []
+    if not re.fullmatch(r"\d+", str(c.get("candidate_run_id"))):
+        bad.append("candidate_run_id")
+    if not re.fullmatch(r"[0-9a-f]{40}", str((c.get("source") or {}).get("commit"))):
+        bad.append("commit")
+    if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", str(c.get("repository"))):
+        bad.append("repository")
+    if re.search(r"[\x00-\x1f\x7f]", str(path)):
+        bad.append("record path")
+    if bad:
+        print("::error::the record holds unusable value(s) for %s" % ", ".join(bad),
+              file=sys.stderr)
+        return 1
     print("digest=%s" % digest)
     print("record=%s" % path)
     print("run_id=%s" % c["candidate_run_id"])
@@ -374,7 +444,8 @@ def _cmd_verify_release(a) -> int:
     record = _load_record(a.record)
     profile = Q.load_profile(Path(a.profile))
     problems = verify_candidate_dir(record, profile, Path(a.root), Path(a.candidate_dir),
-                                    a.tag)
+                                    a.tag, evidence_dir=Path(a.evidence_dir)
+                                    if a.evidence_dir else None)
     if problems:
         _emit(problems)
         return 1
@@ -393,7 +464,8 @@ def _cmd_verify_release(a) -> int:
 # Record mode / dry run
 # ---------------------------------------------------------------------------
 
-def _fresh_download(gh, run_id, repo, work: Path, with_evidence: bool):
+def _fresh_download(gh, run_id, repo, work: Path, with_evidence: bool,
+                    strict_evidence: bool = False):
     for sub in ("candidate", "evidence"):
         shutil.rmtree(work / sub, ignore_errors=True)
     for p in PLATFORMS:
@@ -403,6 +475,9 @@ def _fresh_download(gh, run_id, repo, work: Path, with_evidence: bool):
     if with_evidence:
         for name in EVIDENCE_ARTIFACTS:
             if not gh.download(run_id, name, work / "evidence" / name, repo):
+                if strict_evidence:
+                    raise C.ValidationError("artifact %s of run %s is unavailable (expired, "
+                                            "or the job did not produce it)" % (name, run_id))
                 print("warning: artifact %s of run %s is unavailable; its required "
                       "entries will be missing" % (name, run_id), file=sys.stderr)
 
@@ -478,9 +553,10 @@ def _dry_run(a, gh, root: Path, profile_path: Path, repo: str) -> int:
     profile = Q.load_profile(profile_path)
     run = gh.run_json(record["candidate"]["candidate_run_id"], repo)
     _fresh_download(gh, record["candidate"]["candidate_run_id"], repo, work,
-                    with_evidence=False)
+                    with_evidence=True, strict_evidence=True)
     problems = check_run(record, run, repo)
-    problems += verify_candidate_dir(record, profile, root, work / "candidate", a.tag)
+    problems += verify_candidate_dir(record, profile, root, work / "candidate", a.tag,
+                                     evidence_dir=work / "evidence")
     if problems:
         _emit(problems)
         print("dry run: release.yml would refuse this release (%d problem(s))" % len(problems))
@@ -535,6 +611,8 @@ def _sub_parser(name: str):
         ap.add_argument("--profile", default=PROFILE_PATH)
         ap.add_argument("--root", default=".")
         ap.add_argument("--notes-out", default=None)
+        ap.add_argument("--evidence-dir", default=None,
+                        help="directory holding the evidence-* artifacts, one folder each")
     return ap
 
 
