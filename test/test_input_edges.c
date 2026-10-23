@@ -33,6 +33,11 @@ ALLEGRO_EVENT_QUEUE   *a5_event_queue = NULL;
 CONFIG_S glb_config;
 void ds1edit_recreate_render_targets(void) { }
 
+/* Device-loss recovery lives in main.c; the input layer only has to call it at
+   the right moment, which is what the DISPLAY_LOST/FOUND tests check. */
+static int restore_calls;
+void ds1edit_restore_gpu_bitmaps(void) { restore_calls++; }
+
 /* Mirrors compat.h's key_pressed() without pulling in the editor's headers. */
 static bool key_is_down(int k)
 {
@@ -60,6 +65,7 @@ static ALLEGRO_EVENT key_down_event(int keycode)
 
 void setUp(void)
 {
+   restore_calls = 0;
    memset(&a5_kb_state, 0, sizeof(a5_kb_state));
    memset(a5_key_hit, 0, sizeof(a5_key_hit));
    memset(a5_key_suppressed, 0, sizeof(a5_key_suppressed));
@@ -68,6 +74,35 @@ void setUp(void)
 
 void tearDown(void)
 {
+}
+
+void test_editor_undo_shortcuts_fire_once_and_respect_active_property_edits(void)
+{
+   ALLEGRO_EVENT z = key_down_event(ALLEGRO_KEY_Z);
+   ALLEGRO_EVENT u = key_down_event(ALLEGRO_KEY_U);
+   hold_key(ALLEGRO_KEY_LCTRL);
+
+   input_begin_frame();
+   input_note_event(&z);
+   TEST_ASSERT_TRUE(input_undo_shortcut_hit(0));
+   /* A visible but idle panel must not steal undo from the map. */
+   TEST_ASSERT_FALSE(input_properties_panel_owns_undo(1, 0, 0));
+   TEST_ASSERT_TRUE(input_undo_shortcut_hit(
+       input_properties_panel_owns_undo(1, 0, 0)));
+   TEST_ASSERT_TRUE(input_properties_panel_owns_undo(1, 1, 0));
+   TEST_ASSERT_TRUE(input_properties_panel_owns_undo(1, 0, 1));
+   TEST_ASSERT_FALSE(input_undo_shortcut_hit(
+       input_properties_panel_owns_undo(1, 1, 0)));
+   TEST_ASSERT_FALSE(input_undo_shortcut_hit(
+       input_properties_panel_owns_undo(1, 0, 1)));
+   input_begin_frame();
+   TEST_ASSERT_FALSE(input_undo_shortcut_hit(0));
+
+   input_begin_frame();
+   input_note_event(&u);
+   TEST_ASSERT_TRUE(input_undo_shortcut_hit(1));
+   release_key(ALLEGRO_KEY_LCTRL);
+   TEST_ASSERT_FALSE(input_undo_shortcut_hit(0));
 }
 
 /* ---- key_hit: once per press, not once per frame ---------------------- */
@@ -193,9 +228,54 @@ void test_suppress_held_clears_pending_edges(void)
    TEST_ASSERT_FALSE(key_hit(ALLEGRO_KEY_ESCAPE));
 }
 
+/* ---- device loss ------------------------------------------------------- */
+
+static ALLEGRO_EVENT display_event(int type)
+{
+   ALLEGRO_EVENT ev;
+   memset(&ev, 0, sizeof(ev));
+   ev.display.type = type;
+   return ev;
+}
+
+void test_display_lost_marks_the_device_lost_and_restores_nothing_yet(void)
+{
+   ALLEGRO_EVENT lost = display_event(ALLEGRO_EVENT_DISPLAY_LOST);
+
+   input_note_event(&lost);
+
+   TEST_ASSERT_TRUE(input_display_is_lost());
+   TEST_ASSERT_EQUAL_INT(0, restore_calls);
+}
+
+void test_display_found_restores_video_bitmaps_once_and_clears_lost(void)
+{
+   ALLEGRO_EVENT lost = display_event(ALLEGRO_EVENT_DISPLAY_LOST);
+   ALLEGRO_EVENT found = display_event(ALLEGRO_EVENT_DISPLAY_FOUND);
+
+   input_note_event(&lost);
+   input_note_event(&found);
+
+   TEST_ASSERT_FALSE(input_display_is_lost());
+   TEST_ASSERT_EQUAL_INT(1, restore_calls);
+}
+
+void test_display_found_without_a_loss_still_restores(void)
+{
+   ALLEGRO_EVENT found = display_event(ALLEGRO_EVENT_DISPLAY_FOUND);
+
+   input_note_event(&found);
+
+   TEST_ASSERT_EQUAL_INT(1, restore_calls);
+}
+
 int main(void)
 {
    UNITY_BEGIN();
+   RUN_TEST(test_display_lost_marks_the_device_lost_and_restores_nothing_yet);
+   RUN_TEST(test_display_found_restores_video_bitmaps_once_and_clears_lost);
+   RUN_TEST(test_display_found_without_a_loss_still_restores);
+   RUN_TEST(test_editor_undo_shortcuts_fire_once_and_respect_active_property_edits);
    RUN_TEST(test_key_hit_fires_on_the_frame_the_key_goes_down);
    RUN_TEST(test_key_hit_is_clear_on_later_frames_while_still_held);
    RUN_TEST(test_key_hit_fires_again_after_release_and_repress);

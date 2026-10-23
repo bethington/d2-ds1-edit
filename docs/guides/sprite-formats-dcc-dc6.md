@@ -714,6 +714,20 @@ where they *diverge* are worth recording: the repository's DCC parser validates
 no header constant at all (neither signature nor version nor the direction cap
 the game enforces), and its DC6 parser never reads the `flip` field.
 
+### Repository decoders after the 2026-10-22 fixes
+
+The statement above describes the parsers as audited against the binary. Testing
+on 2026-10-22 changed the repository's decoders in these respects, each backed by
+a regression test: DCC, DC6 and DT1 now share one raw index-frame decode path
+(frames are decoded to palette indices and only converted to colour at the end,
+with no RGBA-to-index recovery step); the DCC reader treats the header and frame
+fields that the game reads as signed 32-bit values as signed; a malformed DCC
+header no longer crashes the validator; and a DCC sub-stream that runs past its
+declared length is stopped rather than overrun. A campaign of 6 717 malformed
+inputs (CTest `adversarial_core`) found the sub-stream overrun and two DT1
+32-bit wraparounds, all fixed. AnimData lookups compare names exactly after
+uppercasing, which was confirmed against D2Common.
+
 ---
 
 ## Version differences

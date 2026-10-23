@@ -1619,13 +1619,13 @@ void wedit_keep_tile(int ds1_idx, int x, int y,
    undo_new_tile_buffer(ds1_idx);
 
    for (n = 0; n < glb_ds1[ds1_idx].floor_num; n++)
-      u->dat_flg.f[n] = DF_P1 | DF_P2 | DF_P3 | DF_P4;
+      u->dat_flg.f[n] = DF_P1 | DF_P2 | DF_P3 | DF_P4 | DF_BT;
 
    for (n = 0; n < glb_ds1[ds1_idx].shadow_num; n++)
-      u->dat_flg.s[n] = DF_P1 | DF_P2 | DF_P3 | DF_P4;
+      u->dat_flg.s[n] = DF_P1 | DF_P2 | DF_P3 | DF_P4 | DF_BT;
 
    for (n = 0; n < glb_ds1[ds1_idx].wall_num; n++)
-      u->dat_flg.w[n] = DF_P1 | DF_P2 | DF_P3 | DF_P4 | DF_OR;
+      u->dat_flg.w[n] = DF_P1 | DF_P2 | DF_P3 | DF_P4 | DF_OR | DF_BT;
 
    undo_add_this_tile_to_buffer(ds1_idx, x, y, src_f_ptr, src_w_ptr, src_s_ptr);
    undo_close_tile_buffer(ds1_idx);
@@ -1834,13 +1834,13 @@ void wedit_test(int ds1_idx, int tx, int ty)
       wedit_mouse_tile(mx, my, xn, yn, current_type, &m_idx, &s_idx);
 
       // scroll
-      if (key_pressed(KEY_UP) || my == 0)
+      if (key_pressed(KEY_UP) || (glb_config.mouse_edge_scroll && my == 0))
          yn -= glb_config.scroll.edit.y;
-      if (key_pressed(KEY_DOWN) || my == glb_config.screen.height - 1)
+      if (key_pressed(KEY_DOWN) || (glb_config.mouse_edge_scroll && my == glb_config.screen.height - 1))
          yn += glb_config.scroll.edit.y;
-      if (key_pressed(KEY_LEFT) || mx == 0)
+      if (key_pressed(KEY_LEFT) || (glb_config.mouse_edge_scroll && mx == 0))
          xn -= glb_config.scroll.edit.x;
-      if (key_pressed(KEY_RIGHT) || mx == glb_config.screen.width - 1)
+      if (key_pressed(KEY_RIGHT) || (glb_config.mouse_edge_scroll && mx == glb_config.screen.width - 1))
          xn += glb_config.scroll.edit.x;
       if (key_pressed(KEY_HOME))
          xn = 0;

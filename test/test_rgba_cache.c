@@ -4,6 +4,7 @@
  */
 
 #include <string.h>
+#include <allegro5/allegro.h>
 #include "unity/unity.h"
 #include "core/rgba_cache.h"
 
@@ -213,6 +214,46 @@ void test_rgba_pack_byte_order(void)
     TEST_ASSERT_EQUAL_HEX32(0xDDCCBBAA, packed);
 }
 
+void test_bitmap_upload_preserves_red_and_blue(void)
+{
+    RGBA_PALETTE pal;
+    CACHED_TILE *tile;
+    ALLEGRO_BITMAP *bmp;
+    ALLEGRO_COLOR pixel;
+    unsigned char r, g, b, a;
+    int old_flags;
+
+    TEST_ASSERT_TRUE(al_init());
+    old_flags = al_get_new_bitmap_flags();
+    al_set_new_bitmap_flags(ALLEGRO_MEMORY_BITMAP);
+    memset(&pal, 0, sizeof(pal));
+    pal.colors[1] = (RGBA_COLOR){255, 0, 0, 255};
+    pal.colors[2] = (RGBA_COLOR){0, 0, 255, 255};
+    tile = cache_tile_create(2, 1);
+    TEST_ASSERT_NOT_NULL(tile);
+    tile->indices[0] = 1;
+    tile->indices[1] = 2;
+
+    bmp = cache_tile_to_a5_bitmap(tile, &pal);
+    TEST_ASSERT_NOT_NULL(bmp);
+    pixel = al_get_pixel(bmp, 0, 0);
+    al_unmap_rgba(pixel, &r, &g, &b, &a);
+    TEST_ASSERT_EQUAL_UINT8(255, r);
+    TEST_ASSERT_EQUAL_UINT8(0, g);
+    TEST_ASSERT_EQUAL_UINT8(0, b);
+    TEST_ASSERT_EQUAL_UINT8(255, a);
+    pixel = al_get_pixel(bmp, 1, 0);
+    al_unmap_rgba(pixel, &r, &g, &b, &a);
+    TEST_ASSERT_EQUAL_UINT8(0, r);
+    TEST_ASSERT_EQUAL_UINT8(0, g);
+    TEST_ASSERT_EQUAL_UINT8(255, b);
+    TEST_ASSERT_EQUAL_UINT8(255, a);
+
+    al_destroy_bitmap(bmp);
+    cache_tile_destroy(tile);
+    al_set_new_bitmap_flags(old_flags);
+}
+
 
 /* ---- main ---- */
 
@@ -234,6 +275,7 @@ int main(void)
     /* Pack/unpack */
     RUN_TEST(test_rgba_pack_unpack_roundtrip);
     RUN_TEST(test_rgba_pack_byte_order);
+    RUN_TEST(test_bitmap_upload_preserves_red_and_blue);
 
     return UNITY_END();
 }

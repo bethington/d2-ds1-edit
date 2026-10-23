@@ -2,10 +2,17 @@
 add_library(unity STATIC unity/unity.c)
 target_include_directories(unity PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/unity)
 
-# Placeholder test (validates the test infrastructure)
-add_executable(test_placeholder test_placeholder.c)
-target_link_libraries(test_placeholder PRIVATE unity)
-add_test(NAME placeholder COMMAND test_placeholder)
+add_executable(test_selection_logic test_selection_logic.c ../src/editor/selection_logic.c)
+target_link_libraries(test_selection_logic PRIVATE unity)
+target_include_directories(test_selection_logic PRIVATE ${CMAKE_SOURCE_DIR}/src)
+add_test(NAME selection_logic COMMAND test_selection_logic)
+
+add_executable(test_editor_selection test_editor_selection.c
+    ../src/editor/tiles.c ../src/editor/selection_logic.c)
+target_link_libraries(test_editor_selection PRIVATE unity ds1edit_allegro)
+target_include_directories(test_editor_selection PRIVATE
+    ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/mpq)
+add_test(NAME editor_selection COMMAND test_editor_selection)
 
 # Export helpers: screenshot naming regression checks
 add_executable(test_export_common test_export_common.c ../src/core/export_common.c)
@@ -112,6 +119,13 @@ target_include_directories(test_compose_bbox PRIVATE
     ${CMAKE_SOURCE_DIR}/src
 )
 add_test(NAME compose_bbox COMMAND test_compose_bbox)
+
+# Translucent GPU-path blend convention (memory bitmaps, no display)
+add_executable(test_blend_convention test_blend_convention.c)
+target_link_libraries(test_blend_convention PRIVATE unity ds1edit_allegro)
+target_include_directories(test_blend_convention PRIVATE
+    ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/mpq)
+add_test(NAME blend_convention COMMAND test_blend_convention)
 
 # Compose RGBA blit primitive (pure pixel ops)
 add_executable(test_compose_blit test_compose_blit.c ../src/core/compose_blit.c)
@@ -284,6 +298,19 @@ target_include_directories(test_input_edges PRIVATE
 )
 add_test(NAME input_edges COMMAND test_input_edges)
 
+# Release-qualification test packages. Each package keeps its targets in its
+# own file so the packages can evolve independently. A package that links
+# Allegro appends its target names to DS1EDIT_ALLEGRO_TESTS so the DLL copy
+# below covers it.
+set(DS1EDIT_ALLEGRO_TESTS test_rgba_cache test_asset_export_smoke test_project
+    test_input_edges test_editor_selection test_blend_convention)
+find_package(Python3 COMPONENTS Interpreter)
+# python last: it points py_* tests at probe targets defined by the others.
+# tiers last: it labels every test the packages above registered.
+foreach(_pkg map_integrity visuals equivalence robustness release python perf pd2 golden tiers)
+    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/${_pkg}.cmake OPTIONAL)
+endforeach()
+
 # Copy the Allegro DLLs next to the test executables so they run from the
 # build tree.
 #
@@ -293,15 +320,26 @@ add_test(NAME input_edges COMMAND test_input_edges)
 # during every Allegro-linking link step. Under Ninja those overlapped and the
 # Windows build failed with "open_for_read(...allegro-5.2.dll): permission
 # denied" -- on test_input_edges, the one target that had no copy of its own.
+#
+# Multi-config generators (Visual Studio) put the executables in a per-config
+# subdirectory. CTest happened to find DLLs in its working directory, but a
+# probe launched from anywhere else (the Python runners) needs them beside the
+# executable, or Windows stops it with a "DLL not found" dialog.
+get_property(_ds1_multi_config GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+if(_ds1_multi_config)
+    set(_ds1_test_bin_dir "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>")
+else()
+    set(_ds1_test_bin_dir "${CMAKE_CURRENT_BINARY_DIR}")
+endif()
 if(WIN32 AND DEFINED ALLEGRO5_BIN_DIR AND EXISTS "${ALLEGRO5_BIN_DIR}")
     add_custom_target(test_allegro_dlls
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${ALLEGRO5_BIN_DIR}"
-            "${CMAKE_CURRENT_BINARY_DIR}"
+            "${_ds1_test_bin_dir}"
         COMMENT "Copying Allegro DLLs to the test output directory"
     )
 
-    foreach(_t test_rgba_cache test_asset_export_smoke test_project test_input_edges)
+    foreach(_t ${DS1EDIT_ALLEGRO_TESTS})
         if(TARGET ${_t})
             add_dependencies(${_t} test_allegro_dlls)
         endif()

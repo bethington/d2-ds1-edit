@@ -7,6 +7,7 @@
 #include "misc.h"
 #include "core/txtread.h"
 #include "core/mpq_index.h"
+#include "core/area_metadata.h"
 
 // ---------------------------------------------------------------------------
 // State
@@ -145,6 +146,14 @@ const PRESET_ENTRY_S *mpq_index_find_by_ds1_name(const char *ds1_basename,
                                         ds1_basename, out_file_slot);
 }
 
+const PRESET_ENTRY_S *mpq_index_find_by_ds1_path(const char *ds1_path,
+                                                 int *out_file_slot)
+{
+   if (!s_ready) return NULL;
+   return mpq_index_find_by_ds1_path_in(s_presets, s_preset_num,
+                                       ds1_path, out_file_slot);
+}
+
 int mpq_index_build(void)
 {
    char *buff = NULL;
@@ -227,13 +236,16 @@ int mpq_index_build(void)
          e->ds1_count++;
       }
 
-      // Join Levels -> Act + LevelType
+      // Levels.Act is zero-based. LevelId 0 is the Null placeholder, so use
+      // the Act prefix in LvlPrest.Name when a preset has no real level row.
       e->level_type = -1;
-      e->act        = 0;
-      file_idx = find_level(levels_rows, levels->line_num, level_id);
+      e->act        = area_preset_resolve_act(level_id, -1, e->name);
+      file_idx = level_id > 0
+               ? find_level(levels_rows, levels->line_num, level_id) : -1;
       if (file_idx >= 0)
       {
-         e->act        = levels_rows[file_idx].act;
+         e->act = area_preset_resolve_act(level_id,
+                                          levels_rows[file_idx].act, e->name);
          e->level_type = levels_rows[file_idx].level_type;
       }
 

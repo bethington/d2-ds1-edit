@@ -320,6 +320,26 @@ taken from the non-vanilla tree and was wrong.
 group". Seven files exceed it, one falls short. Stated as consistent, not proven,
 because the tag layer's consumer was not located in the binary.
 
+### C5 — Floor-1 Unwalkable count, bit-table row 17 (fixed 2026-08-21)
+
+**Before:** the bit table gave floor 1's `prop3 & 0x02` count as **152 115**.
+**After:** **152 515**.
+**How it surfaced:** an independent census run for
+[`manual.md`](../getting-started/manual.md)'s third verification pass, over the
+same 2,276-file vanilla corpus, agreed with this table on every other cell in
+the row and in the whole Hidden/IsShadow block — including floor 1's *Hidden*
+count of 4 733, which is produced by the same layer scan over the same cells —
+and differed only here, by exactly 400.
+
+**Evidence that 152 515 is the correct figure:** `act3\jungle\transl.ds1` was
+hand-decoded from raw bytes with offsets derived independently of either
+parser — version 18, 65 × 33 = 2 145 cells per layer, stream order
+`wall1, orient1, floor1, shadow`, floor 1 therefore at byte 17 603 — giving
+**1 303** unwalkable floor-1 cells for that file, matching the census. The
+decode is self-checking: the computed end of the layer block lands exactly on a
+plausible object count (13). A `1`↔`5` transposition in the hundreds digit is
+the likely origin. No other figure in the chapter depends on this one.
+
 ---
 
 ## Reconciled contradictions

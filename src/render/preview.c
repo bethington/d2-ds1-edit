@@ -274,7 +274,7 @@ static void wpreview_draw_trans_bitmap(ALLEGRO_BITMAP *bmp, int x, int y, float 
    }
    if (mul == 1 && div == 1)
    {
-      al_draw_tinted_bitmap(bmp, al_map_rgba_f(alpha, alpha, alpha, alpha),
+      al_draw_tinted_bitmap(bmp, a5_alpha_tint(alpha),
                             (float)x, (float)y, 0);
    }
    else
@@ -283,7 +283,7 @@ static void wpreview_draw_trans_bitmap(ALLEGRO_BITMAP *bmp, int x, int y, float 
       float sh = (float)al_get_bitmap_height(bmp);
       float dw = sw * (float)mul / (float)div;
       float dh = sh * (float)mul / (float)div;
-      al_draw_tinted_scaled_bitmap(bmp, al_map_rgba_f(alpha, alpha, alpha, alpha),
+      al_draw_tinted_scaled_bitmap(bmp, a5_alpha_tint(alpha),
                                    0, 0, sw, sh, (float)x, (float)y, dw, dh, 0);
    }
 }
@@ -342,17 +342,17 @@ static void wpreview_draw_scaled_blended_bitmap(ALLEGRO_BITMAP *bmp, int x, int 
    {
    case 0:
       al_draw_tinted_scaled_bitmap(
-          bmp, al_map_rgba_f(0.25f, 0.25f, 0.25f, 0.25f),
+          bmp, a5_alpha_tint(0.25f),
           0, 0, sw, sh, (float)x, (float)y, dw, dh, 0);
       break;
    case 1:
       al_draw_tinted_scaled_bitmap(
-          bmp, al_map_rgba_f(0.50f, 0.50f, 0.50f, 0.50f),
+          bmp, a5_alpha_tint(0.50f),
           0, 0, sw, sh, (float)x, (float)y, dw, dh, 0);
       break;
    case 2:
       al_draw_tinted_scaled_bitmap(
-          bmp, al_map_rgba_f(0.75f, 0.75f, 0.75f, 0.75f),
+          bmp, a5_alpha_tint(0.75f),
           0, 0, sw, sh, (float)x, (float)y, dw, dh, 0);
       break;
    case 3:
@@ -372,7 +372,7 @@ static void wpreview_draw_scaled_blended_bitmap(ALLEGRO_BITMAP *bmp, int x, int 
       break;
    default:
       al_draw_tinted_scaled_bitmap(
-          bmp, al_map_rgba_f(0.50f, 0.50f, 0.50f, 0.50f),
+          bmp, a5_alpha_tint(0.50f),
           0, 0, sw, sh, (float)x, (float)y, dw, dh, 0);
       break;
    }
@@ -1949,11 +1949,14 @@ void wpreview_obj_animate(void)
 // draw objects while in Tile mode (just simple text)
 void wpreview_draw_objects(int ds1_idx)
 {
-   int dx, dy, o, x1, y1, d;
+   int dx, dy, o, x1, y1, d, oob, col_name, col_id;
    long type, id, x, y;
 
    for (o = 0; o < glb_ds1[ds1_idx].obj_num; o++)
    {
+      oob = editobj_is_out_of_bounds(ds1_idx, o);
+      col_name = oob ? OBJ_OOB_COLOR : 255;
+      col_id = oob ? OBJ_OOB_COLOR : 255;
       type = glb_ds1[ds1_idx].obj[o].type;
       id = glb_ds1[ds1_idx].obj[o].id;
       x = glb_ds1[ds1_idx].obj[o].x;
@@ -1980,7 +1983,7 @@ void wpreview_draw_objects(int ds1_idx)
                wpreview_textprintf(x1 + 1, y1 + 1, 0, "%s",
                                    glb_ds1edit.obj_desc[d].desc);
 
-               wpreview_textprintf(x1, y1, 255, "%s",
+               wpreview_textprintf(x1, y1, col_name, "%s",
                                    glb_ds1edit.obj_desc[d].desc);
             }
          }
@@ -1998,8 +2001,17 @@ void wpreview_draw_objects(int ds1_idx)
          wpreview_textprintf(x1, y1, 11, "%i",
                              (int)glb_ds1[ds1_idx].obj[o].type);
 
-         wpreview_textprintf(x1 + 8, y1, 255, ",%3i",
+         wpreview_textprintf(x1 + 8, y1, col_id, ",%3i",
                              (int)glb_ds1[ds1_idx].obj[o].id);
+      }
+
+      if (oob)
+      {
+         // warning marker: an X at the object's real position, outside the map
+         int mx0 = dx - glb_ds1edit.win_preview.x0;
+         int my0 = dy - glb_ds1edit.win_preview.y0;
+         wpreview_draw_line(mx0 - 4, my0 - 4, mx0 + 4, my0 + 4, OBJ_OOB_COLOR);
+         wpreview_draw_line(mx0 - 4, my0 + 4, mx0 + 4, my0 - 4, OBJ_OOB_COLOR);
       }
    }
 }
@@ -2490,6 +2502,33 @@ void wpreview_draw_obj_tile_1(int ds1_idx, int x, int y, int *cur_idx)
       }
       else
          return;
+   }
+}
+
+// ==========================================================================
+// Objects outside the map (kept like the game does) are never reached by the
+// per-tile object passes above, which only visit tiles of the map. Draw their
+// shadow and sprite here, at their real position (the drawing is clipped to
+// the window by the sprite code; nothing is looked up by tile).
+void wpreview_draw_oob_objects(int ds1_idx)
+{
+   int o_idx, o, pass;
+
+   if (glb_ds1[ds1_idx].animations_layer_mask == 0)
+      return;
+
+   for (pass = 0; pass < 2; pass++)
+   {
+      for (o_idx = 0; o_idx < glb_ds1[ds1_idx].obj_num; o_idx++)
+      {
+         o = glb_ds1[ds1_idx].drawing_order[o_idx];
+         if (! editobj_is_out_of_bounds(ds1_idx, o))
+            continue;
+         if (pass == 0)
+            wpreview_draw_an_object_shad(ds1_idx, o);
+         else
+            wpreview_draw_an_object(ds1_idx, o);
+      }
    }
 }
 
@@ -2996,6 +3035,9 @@ void wpreview_draw_tiles(int ds1_idx)
        &glb_render_perf_stats.cursor_ms_total,
        &glb_render_perf_stats.cursor_ms_max,
        render_perf_now_ms() - perf_section_start_ms);
+
+   // objects outside the map (not reached by the tile passes)
+   wpreview_draw_oob_objects(ds1_idx);
 
    // npc paths
    perf_section_start_ms = render_perf_now_ms();
@@ -3779,6 +3821,9 @@ int wpreview_draw_tiles_big_screenshot(int ds1_idx)
    // tile grid
    if (glb_ds1edit.display_tile_grid == TRUE)
       wpreview_draw_tile_grid(ds1_idx);
+
+   // objects outside the map (not reached by the tile passes)
+   wpreview_draw_oob_objects(ds1_idx);
 
    // npc paths
    if (glb_ds1edit.mode == MOD_P)

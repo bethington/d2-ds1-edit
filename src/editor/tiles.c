@@ -5,6 +5,7 @@
 #include "core/ds1.h"
 #include "editor/undo.h"
 #include "editor/tiles.h"
+#include "editor/selection_logic.h"
 
 
 // ==========================================================================
@@ -1034,9 +1035,120 @@ void edittile_select_new_one(int ds1_idx, int x, int y)
 
 
 // ==========================================================================
-// select a new "Identical tile" selection, search in ALL layers
-void edittile_identical(int ds1_idx, IT_ENUM itype, int tx, int ty)
+// Strict matching compares the complete visible floor/shadow/wall contents
+// of each map cell. The regular I shortcut below keeps its original behavior
+// of matching individual tiles anywhere in those layers.
+static void edittile_identical_strict(int ds1_idx, IT_ENUM itype, int tx, int ty)
 {
+   DS1_S *ds1 = &glb_ds1[ds1_idx];
+   UNDO_S *u = &ds1->undo;
+   int ref_f[FLOOR_MAX_LAYER], ref_s[SHADOW_MAX_LAYER], ref_w[WALL_MAX_LAYER];
+   int cur_f[FLOOR_MAX_LAYER], cur_s[SHADOW_MAX_LAYER], cur_w[WALL_MAX_LAYER];
+   size_t nf = 0, ns = 0, nw = 0, cf, cs, cw;
+   int x, y, i, t, match, changed, selected, desired;
+
+   t = ty * ds1->floor_line + tx * ds1->floor_num;
+   for (i = 0; i < ds1->floor_num; i++)
+      if (ds1->floor_layer_mask[i] && ds1->floor_buff[t+i].bt_idx > 0)
+         ref_f[nf++] = ds1->floor_buff[t+i].bt_idx;
+   t = ty * ds1->shadow_line + tx * ds1->shadow_num;
+   for (i = 0; i < ds1->shadow_num; i++)
+      if (ds1->shadow_layer_mask[i] && ds1->shadow_buff[t+i].bt_idx > 0)
+         ref_s[ns++] = ds1->shadow_buff[t+i].bt_idx;
+   t = ty * ds1->wall_line + tx * ds1->wall_num;
+   for (i = 0; i < ds1->wall_num; i++)
+      if (ds1->wall_layer_mask[i] && ds1->wall_buff[t+i].bt_idx > 0)
+         ref_w[nw++] = ds1->wall_buff[t+i].bt_idx;
+
+   undo_new_tile_buffer(ds1_idx);
+   for (y = 0; y < ds1->height; y++)
+   {
+      for (x = 0; x < ds1->width; x++)
+      {
+         cf = cs = cw = 0;
+         t = y * ds1->floor_line + x * ds1->floor_num;
+         for (i = 0; i < ds1->floor_num; i++)
+            if (ds1->floor_layer_mask[i] && ds1->floor_buff[t+i].bt_idx > 0)
+               cur_f[cf++] = ds1->floor_buff[t+i].bt_idx;
+         t = y * ds1->shadow_line + x * ds1->shadow_num;
+         for (i = 0; i < ds1->shadow_num; i++)
+            if (ds1->shadow_layer_mask[i] && ds1->shadow_buff[t+i].bt_idx > 0)
+               cur_s[cs++] = ds1->shadow_buff[t+i].bt_idx;
+         t = y * ds1->wall_line + x * ds1->wall_num;
+         for (i = 0; i < ds1->wall_num; i++)
+            if (ds1->wall_layer_mask[i] && ds1->wall_buff[t+i].bt_idx > 0)
+               cur_w[cw++] = ds1->wall_buff[t+i].bt_idx;
+         match = selection_tile_multiset_equal(ref_f, nf, cur_f, cf) &&
+                 selection_tile_multiset_equal(ref_s, ns, cur_s, cs) &&
+                 selection_tile_multiset_equal(ref_w, nw, cur_w, cw);
+         changed = FALSE;
+
+         t = y * ds1->floor_line + x * ds1->floor_num;
+         for (i = 0; i < ds1->floor_num; i++)
+         {
+            CELL_F_S *cell = ds1->floor_buff + t + i;
+            u->dat_flg.f[i] = 0;
+            selected = !!IS_SELECTED(cell->flags);
+            desired = match && ds1->floor_layer_mask[i] && cell->bt_idx > 0;
+            if (itype == IT_ADD && !desired) continue;
+            if (itype == IT_DEL && (!desired || !selected)) continue;
+            if (itype == IT_DEL) desired = FALSE;
+            if (selected != desired)
+            {
+               if (desired) SET_SELECTED(cell->flags); else DEL_SELECTED(cell->flags);
+               u->dat_flg.f[i] = DF_FL;
+               changed = TRUE;
+            }
+         }
+         t = y * ds1->shadow_line + x * ds1->shadow_num;
+         for (i = 0; i < ds1->shadow_num; i++)
+         {
+            CELL_S_S *cell = ds1->shadow_buff + t + i;
+            u->dat_flg.s[i] = 0;
+            selected = !!IS_SELECTED(cell->flags);
+            desired = match && ds1->shadow_layer_mask[i] && cell->bt_idx > 0;
+            if (itype == IT_ADD && !desired) continue;
+            if (itype == IT_DEL && (!desired || !selected)) continue;
+            if (itype == IT_DEL) desired = FALSE;
+            if (selected != desired)
+            {
+               if (desired) SET_SELECTED(cell->flags); else DEL_SELECTED(cell->flags);
+               u->dat_flg.s[i] = DF_FL;
+               changed = TRUE;
+            }
+         }
+         t = y * ds1->wall_line + x * ds1->wall_num;
+         for (i = 0; i < ds1->wall_num; i++)
+         {
+            CELL_W_S *cell = ds1->wall_buff + t + i;
+            u->dat_flg.w[i] = 0;
+            selected = !!IS_SELECTED(cell->flags);
+            desired = match && ds1->wall_layer_mask[i] && cell->bt_idx > 0;
+            if (itype == IT_ADD && !desired) continue;
+            if (itype == IT_DEL && (!desired || !selected)) continue;
+            if (itype == IT_DEL) desired = FALSE;
+            if (selected != desired)
+            {
+               if (desired) SET_SELECTED(cell->flags); else DEL_SELECTED(cell->flags);
+               u->dat_flg.w[i] = DF_FL;
+               changed = TRUE;
+            }
+         }
+         if (changed)
+            undo_add_to_tile_buffer(ds1_idx, x, y);
+      }
+   }
+   undo_close_tile_buffer(ds1_idx);
+}
+
+// select a new "Identical tile" selection, search in ALL layers
+void edittile_identical(int ds1_idx, IT_ENUM itype, int tx, int ty, int strict)
+{
+   if (strict)
+   {
+      edittile_identical_strict(ds1_idx, itype, tx, ty);
+      return;
+   }
    CELL_F_S * f_ptr;
    CELL_S_S * s_ptr;
    CELL_W_S * w_ptr;

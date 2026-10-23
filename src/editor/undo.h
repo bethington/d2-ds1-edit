@@ -8,7 +8,7 @@
 void undo_reset_flags              (int ds1_idx);
 void undo_exit                     (void);
 void undo_new_tile_buffer          (int ds1_idx);
-void undo_start_seg_in_tile_buffer (int ds1_idx, UBYTE x, UBYTE y);
+void undo_start_seg_in_tile_buffer (int ds1_idx, int x, int y);
 void undo_close_seg_in_tile_buffer (int ds1_idx);
 void undo_add_to_tile_buffer       (int ds1_idx, int ix, int iy);
 void undo_close_tile_buffer        (int ds1_idx);

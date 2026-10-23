@@ -63,6 +63,10 @@ extern int a5_display_closed;
    match. Cleared by input_take_resize(). */
 int  input_take_resize(void);
 
+/* Nonzero between ALLEGRO_EVENT_DISPLAY_LOST and DISPLAY_FOUND. On FOUND the
+   input layer calls ds1edit_restore_gpu_bitmaps() (misc.h). */
+int  input_display_is_lost(void);
+
 /* Wiring telemetry. A loop that forgets to pump still renders perfectly --
    it just never sees a key again -- so these let --selftest prove the main
    loop is actually connected rather than merely drawing. */
@@ -118,6 +122,11 @@ void input_suppress_held(void);
  * spent inside the browser. Harmless while the main loop only polled; not
  * harmless now that a queued KEY_DOWN means "pressed". */
 void input_discard_pending(void);
+
+/* A pending or in-progress property edit owns Ctrl+Z. A visible idle panel
+ * does not; Ctrl+U remains the editor's legacy undo alias. */
+int input_properties_panel_owns_undo(int visible, int editing, int pending_count);
+int input_undo_shortcut_hit(int properties_panel_owns_undo);
 
 /* Did this key go down since the last pump? */
 #define key_hit(k)     (a5_key_hit[(k)] != 0)

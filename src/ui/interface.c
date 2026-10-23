@@ -25,6 +25,23 @@
 #include "core/export_common.h"
 #include "core/palette.h"
 #include "ui/input.h"
+#include "core/ds1_save_io.h"
+#include <allegro5/allegro_native_dialog.h>
+
+/* Save one map. A failed save changes nothing on disk or in the map (see
+ * core/ds1_save_io.h); tell the user so it is never mistaken for success. */
+static int interface_save_map(int ds1_idx, int is_tmp_file)
+{
+   char error[768];
+
+   if (ds1_save_checked(ds1_idx, is_tmp_file, error, sizeof(error)) == 0)
+      return 0;
+   al_show_native_message_box(a5_display, "DS1Edit",
+      is_tmp_file ? "The autosave (.tmp) was not written"
+                  : "The map was not saved",
+      error, NULL, ALLEGRO_MESSAGEBOX_ERROR);
+   return -1;
+}
 
 typedef struct
 {
@@ -65,6 +82,8 @@ static void perf_accumulate(double *total, double *max, double dt_ms)
       *max = dt_ms;
 }
 
+static void st_fold_sections(void);
+
 static void perf_print_summary(void)
 {
    double inv;
@@ -97,7 +116,189 @@ static void perf_print_summary(void)
            glb_perf_stats.ui_ms_total * inv, glb_perf_stats.ui_ms_max);
    fflush(stderr);
 
+   st_fold_sections();
    memset(&glb_perf_stats, 0, sizeof(glb_perf_stats));
+}
+
+/* ---- --selftest frame-time summary ------------------------------------
+   Per-frame render and present times are kept for the whole run so the report
+   can give percentiles, not just a mean that one slow frame hides. Section
+   totals are folded in from glb_perf_stats because perf_print_summary()
+   zeroes it periodically. */
+static double *st_render = NULL, *st_present = NULL;
+static int st_n = 0, st_cap = 0;
+static double st_t0 = 0.0;
+static int st_win_w = 0, st_win_h = 0;
+static double st_sec_total[9];
+static double st_sec_max[9];
+static const char *const st_sec_name[9] = {
+   "events", "input", "mouse_to_tile", "editobj", "anim",
+   "render", "present", "ui_other", "frame"};
+
+static void st_fold_sections(void)
+{
+   const PERF_STATS_S *p = &glb_perf_stats;
+   const double tot[9] = {p->event_ms_total, p->input_ms_total,
+      p->mouse_to_tile_ms_total, p->editobj_ms_total, p->anim_ms_total,
+      p->render_ms_total, p->present_ms_total, p->ui_ms_total, p->frame_ms_total};
+   const double mx[9] = {p->event_ms_max, p->input_ms_max,
+      p->mouse_to_tile_ms_max, p->editobj_ms_max, p->anim_ms_max,
+      p->render_ms_max, p->present_ms_max, p->ui_ms_max, p->frame_ms_max};
+   int i;
+
+   for (i = 0; i < 9; i++)
+   {
+      st_sec_total[i] += tot[i];
+      if (mx[i] > st_sec_max[i])
+         st_sec_max[i] = mx[i];
+   }
+}
+
+static void st_record(double render_ms, double present_ms)
+{
+   if (st_n == st_cap)
+   {
+      int cap = st_cap ? st_cap * 2 : 1024;
+      double *r = (double *)realloc(st_render, cap * sizeof(double));
+      double *q = (double *)realloc(st_present, cap * sizeof(double));
+      if (r != NULL)
+         st_render = r;
+      if (q != NULL)
+         st_present = q;
+      if (r == NULL || q == NULL)
+         return;   /* a short sample beats a crash in a test harness */
+      st_cap = cap;
+   }
+   st_render[st_n] = render_ms;
+   st_present[st_n] = present_ms;
+   st_n++;
+}
+
+static int st_cmp(const void *a, const void *b)
+{
+   double x = *(const double *)a, y = *(const double *)b;
+   return (x > y) - (x < y);
+}
+
+typedef struct { double avg, p50, p95, p99, max; } ST_DIST_S;
+
+static ST_DIST_S st_dist(const double *v, int n)
+{
+   ST_DIST_S d = {0, 0, 0, 0, 0};
+   double *c, sum = 0.0;
+   int i;
+
+   if (n <= 0)
+      return d;
+   c = (double *)malloc(n * sizeof(double));
+   if (c == NULL)
+      return d;
+   memcpy(c, v, n * sizeof(double));
+   qsort(c, n, sizeof(double), st_cmp);
+   for (i = 0; i < n; i++)
+      sum += c[i];
+   d.avg = sum / n;
+   d.p50 = c[(int)(0.50 * (n - 1) + 0.5)];
+   d.p95 = c[(int)(0.95 * (n - 1) + 0.5)];
+   d.p99 = c[(int)(0.99 * (n - 1) + 0.5)];
+   d.max = c[n - 1];
+   free(c);
+   return d;
+}
+
+static void st_json_string(FILE *f, const char *s)
+{
+   fputc('"', f);
+   for (; s != NULL && *s; s++)
+   {
+      if (*s == '"' || *s == '\\')
+      {
+         fputc('\\', f);
+         fputc(*s, f);
+      }
+      else if ((unsigned char)*s < 0x20)
+         fputc(' ', f);
+      else
+         fputc(*s, f);
+   }
+   fputc('"', f);
+}
+
+/* Prints the summary and, with --selftest-report, writes it as JSON. */
+static void st_report(int win_w, int win_h, double wall_s, int font_bad,
+                      const char *failure)
+{
+   ST_DIST_S r = st_dist(st_render, st_n);
+   ST_DIST_S pr = st_dist(st_present, st_n);
+   int i, slow = -1;
+   double slow_avg = 0.0;
+   const char *path = glb_ds1edit.cmd_line.selftest_report;
+   double fps = (wall_s > 0.0) ? st_n / wall_s : 0.0;
+
+   st_fold_sections();
+   for (i = 0; i < 8; i++)   /* "frame" is the sum, not a section */
+   {
+      double a = (st_n > 0) ? st_sec_total[i] / st_n : 0.0;
+      if (a > slow_avg)
+      {
+         slow_avg = a;
+         slow = i;
+      }
+   }
+
+   fprintf(stdout, "selftest: render avg %.2f ms/frame\n", r.avg);
+   fprintf(stdout,
+           "selftest: frames=%d wall_fps=%.1f window=%dx%d driver=\"%s\"\n",
+           st_n, fps, win_w, win_h, glb_display_driver);
+   fprintf(stdout,
+           "selftest: render ms avg %.2f p50 %.2f p95 %.2f p99 %.2f max %.2f\n",
+           r.avg, r.p50, r.p95, r.p99, r.max);
+   fprintf(stdout, "selftest: present ms avg %.2f max %.2f\n", pr.avg, pr.max);
+   if (slow >= 0)
+      fprintf(stdout, "selftest: slowest section %s avg %.2f ms\n",
+              st_sec_name[slow], slow_avg);
+   fprintf(stdout, "selftest: memory-bitmap draws=%u font_memory=%d\n",
+           a5_gpu_guard_hits, font_bad);
+
+   if (path != NULL)
+   {
+      FILE *f = fopen(path, "wt");
+      if (f == NULL)
+      {
+         fprintf(stdout, "selftest: could not write report %s\n", path);
+         return;
+      }
+      fprintf(f, "{\n  \"schema\": \"ds1edit.fps/1\",\n  \"build\": ");
+      st_json_string(f, ds1edit_build_identity());
+      fprintf(f, ",\n  \"driver\": ");
+      st_json_string(f, glb_display_driver);
+      fprintf(f, ",\n  \"window\": {\"width\": %d, \"height\": %d},\n",
+              win_w, win_h);
+      fprintf(f, "  \"frames\": %d,\n  \"wall_seconds\": %.4f,\n"
+                 "  \"wall_fps\": %.2f,\n", st_n, wall_s, fps);
+      fprintf(f, "  \"render_ms\": {\"avg\": %.4f, \"p50\": %.4f, "
+                 "\"p95\": %.4f, \"p99\": %.4f, \"max\": %.4f},\n",
+              r.avg, r.p50, r.p95, r.p99, r.max);
+      fprintf(f, "  \"present_ms\": {\"avg\": %.4f, \"max\": %.4f},\n",
+              pr.avg, pr.max);
+      if (slow >= 0)
+         fprintf(f, "  \"slowest_section\": {\"name\": \"%s\", "
+                    "\"avg_ms\": %.4f},\n", st_sec_name[slow], slow_avg);
+      else
+         fprintf(f, "  \"slowest_section\": null,\n");
+      fprintf(f, "  \"memory_bitmap_draws\": %u,\n"
+                 "  \"font_memory_bitmap\": %s,\n",
+              a5_gpu_guard_hits, font_bad ? "true" : "false");
+      fprintf(f, "  \"ok\": %s,\n  \"failure\": ", failure == NULL ? "true" : "false");
+      if (failure == NULL)
+         fprintf(f, "null\n}\n");
+      else
+      {
+         st_json_string(f, failure);
+         fprintf(f, "\n}\n");
+      }
+      fclose(f);
+   }
 }
 
 // ==========================================================================
@@ -121,6 +322,7 @@ void interfac_user_handler(int start_ds1_idx)
    ALLEGRO_BITMAP *old_screen_buff = NULL;
    double frame_start_ms, section_start_ms;
    int selftest_rendered = 0;
+   double selftest_render_ms = 0.0;
    int switchbench_done = 0;
    int switchbench_exit_in = 0;
 
@@ -170,7 +372,8 @@ void interfac_user_handler(int start_ds1_idx)
             }
             else if (event.type == ALLEGRO_EVENT_KEY_CHAR)
             {
-               /* Ctrl+Enter = Apply, Ctrl+Z = Discard */
+               /* Ctrl+Enter applies pending properties; Ctrl+Z discards an
+                * active property edit and otherwise undoes a map edit. */
                if (glb_ds1edit.props_panel_visible &&
                    (event.keyboard.modifiers & ALLEGRO_KEYMOD_CTRL))
                {
@@ -180,10 +383,17 @@ void interfac_user_handler(int start_ds1_idx)
                      if (glb_ds1edit.props_panel.pending_count > 0)
                         props_panel_apply();
                   }
-                  else if (event.keyboard.keycode == ALLEGRO_KEY_Z)
+                  else if (event.keyboard.keycode == ALLEGRO_KEY_Z &&
+                           input_properties_panel_owns_undo(
+                               glb_ds1edit.props_panel_visible,
+                               glb_ds1edit.props_panel.editing,
+                               glb_ds1edit.props_panel.pending_count))
                   {
                      glb_ds1edit.props_panel.pending_count = 0;
                      glb_ds1edit.props_panel.editing = FALSE;
+                     /* The panel consumed this press; do not also undo the
+                      * map when its pending state is cleared below. */
+                     a5_key_hit[ALLEGRO_KEY_Z] = 0;
                   }
                }
                else if (glb_ds1edit.props_panel.editing ||
@@ -658,6 +868,18 @@ void interfac_user_handler(int start_ds1_idx)
       else
          misc_draw_screen(a5_mouse_x, a5_mouse_y);
       glb_ds1edit.fps++;
+      selftest_render_ms += perf_now_ms() - section_start_ms - glb_present_ms;
+      if (glb_ds1edit.cmd_line.selftest_frames > 0)
+      {
+         if (st_n == 0)
+         {
+            st_t0 = al_get_time();
+            st_win_w = al_get_display_width(a5_display);
+            st_win_h = al_get_display_height(a5_display);
+         }
+         st_record(perf_now_ms() - section_start_ms - glb_present_ms,
+                   glb_present_ms);
+      }
       perf_accumulate(
           &glb_perf_stats.render_ms_total,
           &glb_perf_stats.render_ms_max,
@@ -717,38 +939,46 @@ void interfac_user_handler(int start_ds1_idx)
       }
       else
       {
-         if (key_pressed(KEY_W))
+         /* WASD and the arrow keys scroll. Ctrl+arrows belong to map
+          * browsing below. Touching the window border scrolls only when
+          * mouse_edge_scroll is enabled: an idle pointer resting on an edge
+          * (common in tests and after alt-tab) otherwise drifts the view off
+          * the map. */
+         int ctrl = key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL);
+         int edge = glb_config.mouse_edge_scroll;
+
+         if (key_pressed(KEY_W) || (!ctrl && key_pressed(KEY_UP)))
          {
             glb_ds1edit.win_preview.y0 -= glb_ds1[ds1_idx].cur_scroll.keyb.y;
          }
-         else if (old_mouse_y == 0)
+         else if (edge && old_mouse_y == 0)
          {
             glb_ds1edit.win_preview.y0 -= glb_ds1[ds1_idx].cur_scroll.mouse.y;
          }
 
-         if (key_pressed(KEY_S))
+         if (key_pressed(KEY_S) || (!ctrl && key_pressed(KEY_DOWN)))
          {
             glb_ds1edit.win_preview.y0 += glb_ds1[ds1_idx].cur_scroll.keyb.y;
          }
-         else if (old_mouse_y == glb_config.screen.height - 1)
+         else if (edge && old_mouse_y == glb_config.screen.height - 1)
          {
             glb_ds1edit.win_preview.y0 += glb_ds1[ds1_idx].cur_scroll.mouse.y;
          }
 
-         if (key_pressed(KEY_A))
+         if (key_pressed(KEY_A) || (!ctrl && key_pressed(KEY_LEFT)))
          {
             glb_ds1edit.win_preview.x0 -= glb_ds1[ds1_idx].cur_scroll.keyb.x;
          }
-         else if (old_mouse_x == 0)
+         else if (edge && old_mouse_x == 0)
          {
             glb_ds1edit.win_preview.x0 -= glb_ds1[ds1_idx].cur_scroll.mouse.x;
          }
 
-         if (key_pressed(KEY_D))
+         if (key_pressed(KEY_D) || (!ctrl && key_pressed(KEY_RIGHT)))
          {
             glb_ds1edit.win_preview.x0 += glb_ds1[ds1_idx].cur_scroll.keyb.x;
          }
-         else if (old_mouse_x == glb_config.screen.width - 1)
+         else if (edge && old_mouse_x == glb_config.screen.width - 1)
          {
             glb_ds1edit.win_preview.x0 += glb_ds1[ds1_idx].cur_scroll.mouse.x;
          }
@@ -873,28 +1103,32 @@ void interfac_user_handler(int start_ds1_idx)
          }
       }
 
-      // DS1 file navigation (arrow keys, PgUp/PgDn, Home/End)
-      if (key_hit(KEY_UP))
+      // DS1 file navigation (Ctrl+arrows, PgUp/PgDn, Home/End). Plain
+      // arrows scroll the map above.
+      {
+      int nav_ctrl = key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL);
+      if (nav_ctrl && key_hit(KEY_UP))
       {
          int nav_idx = area_browser_nav_up();
          if (nav_idx >= 0 && glb_ds1edit.has_loaded_ds1)
             ds1_idx = nav_idx;
       }
-      if (key_hit(KEY_DOWN))
+      if (nav_ctrl && key_hit(KEY_DOWN))
       {
          int nav_idx = area_browser_nav_down();
          if (nav_idx >= 0 && glb_ds1edit.has_loaded_ds1)
             ds1_idx = nav_idx;
       }
-      if (key_hit(KEY_LEFT))
+      if (nav_ctrl && key_hit(KEY_LEFT))
       {
          area_browser_nav_left();
       }
-      if (key_hit(KEY_RIGHT))
+      if (nav_ctrl && key_hit(KEY_RIGHT))
       {
          int nav_idx = area_browser_nav_right();
          if (nav_idx >= 0 && glb_ds1edit.has_loaded_ds1)
             ds1_idx = nav_idx;
+      }
       }
       if (key_hit(KEY_PGUP) && !(key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)))
       {
@@ -1236,18 +1470,21 @@ void interfac_user_handler(int start_ds1_idx)
       if (key_hit(KEY_S) && (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)))
       {
          // CTRL + S : save the ds1, in the current state, incremental save
-         ds1_save(ds1_idx, FALSE);
-         ret = msg_save_main();
-         switch (ret)
+         // (the "saved" message only after a save that actually happened)
+         if (interface_save_map(ds1_idx, FALSE) == 0)
          {
-         case -1:
-            // error
-            done = TRUE;
-            break;
+            ret = msg_save_main();
+            switch (ret)
+            {
+            case -1:
+               // error
+               done = TRUE;
+               break;
 
-         case 0:
-            // ok
-            break;
+            case 0:
+               // ok
+               break;
+            }
          }
       }
       if (key_hit(KEY_S) && (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT)) && glb_ds1edit.mode == MOD_T)
@@ -1385,8 +1622,11 @@ void interfac_user_handler(int start_ds1_idx)
          }
       }
 
-      // CTRL + U : undo tiles modification
-      if (key_pressed(KEY_U) && (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)))
+      // Ctrl+Z / Ctrl+U: undo tiles modification
+      if (input_undo_shortcut_hit(input_properties_panel_owns_undo(
+              glb_ds1edit.props_panel_visible,
+              glb_ds1edit.props_panel.editing,
+              glb_ds1edit.props_panel.pending_count)))
       {
          if (glb_ds1edit.mode == MOD_T)
          {
@@ -1698,8 +1938,8 @@ void interfac_user_handler(int start_ds1_idx)
             }
             else if (tmp_sel.start == FALSE)
             {
-               if ((key_pressed(KEY_I)) &&
-                   (cx != old_identical_x) && (cy != old_identical_y))
+               if (key_pressed(KEY_I) &&
+                   (cx != old_identical_x || cy != old_identical_y))
                {
                   // for all the tiles Identical to the visible ones
 
@@ -1718,7 +1958,8 @@ void interfac_user_handler(int start_ds1_idx)
                      // new selection (delete previous one)
                      itype = IT_NEW;
                   }
-                  edittile_identical(ds1_idx, itype, cx, cy);
+                  edittile_identical(ds1_idx, itype, cx, cy,
+                      key_pressed(KEY_ALT) || key_pressed(KEY_ALTGR));
                   old_identical_x = cx;
                   old_identical_y = cy;
                }
@@ -1861,23 +2102,29 @@ void interfac_user_handler(int start_ds1_idx)
          {
          case -1:
             // error
-            ds1_save(ds1_idx, TRUE); // save a .TMP map
+            interface_save_map(ds1_idx, TRUE); // save a .TMP map
             done = TRUE;
             break;
 
          case 0:
-            // save ALL & quit
-            for (i = 0; i < DS1_MAX; i++)
+            // save ALL & quit -- but stay open if any map could not be
+            // saved, so its edits are not lost with the process
             {
-               if (strlen(glb_ds1[ds1_idx].name))
-                  ds1_save(i, FALSE);
+               int all_saved = TRUE;
+
+               for (i = 0; i < DS1_MAX; i++)
+               {
+                  if (strlen(glb_ds1[i].name) &&
+                      interface_save_map(i, FALSE) != 0)
+                     all_saved = FALSE;
+               }
+               done = all_saved;
             }
-            done = TRUE;
             break;
 
          case 1:
             // quit
-            ds1_save(ds1_idx, TRUE); // save a .TMP map
+            interface_save_map(ds1_idx, TRUE); // save a .TMP map
             done = TRUE;
             break;
 
@@ -2014,6 +2261,34 @@ void interfac_user_handler(int start_ds1_idx)
                        "input layer, so key_hit()/mouse_hit() can never fire\n");
                fflush(stdout);
                exit(1);
+            }
+
+            /* A sprite or glyph left in a MEMORY bitmap still draws a correct
+               picture -- just with the backbuffer locked once per draw. That
+               has shipped twice (sprites in 2.1.1, the HUD font under
+               Direct3D after it), both times at under 1 FPS. A healthy frame
+               composes in about a millisecond; 250 ms is far above any real
+               GPU or software renderer and far below the collapse. */
+            {
+               int font_bad = a5_gpu_guard_font(a5_font, "a5_font");
+               const char *failure = NULL;
+               double wall_s = al_get_time() - st_t0;
+
+               /* Verdict first, so the JSON report carries it. */
+               if (selftest_render_ms / selftest_rendered > 250.0)
+                  failure = "composing a frame averaged over 250 ms; something "
+                            "drawn every frame is probably a MEMORY bitmap";
+               if (a5_gpu_guard_hits > 0)
+                  failure = "a MEMORY bitmap was drawn onto a VIDEO target "
+                            "(see the render: WARNING line in stderr.txt)";
+
+               st_report(st_win_w, st_win_h, wall_s, font_bad, failure);
+               if (failure != NULL)
+               {
+                  fprintf(stdout, "selftest: FAIL -- %s\n", failure);
+                  fflush(stdout);
+                  exit(1);
+               }
             }
             fflush(stdout);
             done = TRUE;

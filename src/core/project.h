@@ -48,7 +48,8 @@ void project_close(void);
 void project_apply_to_config(void);
 
 // Recursively mkdir every intermediate directory of `path` (not including
-// the final basename). Returns 1 on success, 0 on any hard failure.
+// the final basename). Returns 1 if the file's directory exists afterwards,
+// 0 otherwise (e.g. a regular file sits where a directory must go).
 int  project_ensure_parent_dirs(const char *path);
 
 // Copy-on-save: if a project is open and `src` lives outside it, rewrite
@@ -58,7 +59,9 @@ int  project_ensure_parent_dirs(const char *path);
 //
 // Returns 1 if the path was actually redirected (i.e., a copy-on-save just
 // happened); 0 if it was passed through unchanged (no project, already
-// inside the project, or no recognisable tiles segment to rewrite from).
+// inside the project -- at a path-component boundary -- or no recognisable
+// tiles segment to rewrite from); -1 if it must be redirected but the target
+// does not fit in `dst_cap` (dst then holds `src`; do not save in place).
 int  project_redirect_ds1_save_path(const char *src, char *dst, int dst_cap);
 
 /* Everything after the last "/tiles/" in a path, i.e. the form MPQ

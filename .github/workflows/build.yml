@@ -1,16 +1,108 @@
 name: Build & Test
 
+# Every push and pull request builds, runs the whole CTest inventory (native
+# suites plus the py_* Python suites) and packages the result. The three
+# platform jobs also upload the *candidate* artifacts that release.yml
+# consumes: the unrenamed CPack package plus a sealed per-platform manifest.
+# Nothing is rebuilt at release time.
+#
+# The two instrumented Linux jobs (sanitizers, coverage) are not part of the
+# candidate; they are evidence lanes. Coverage is reported honestly: partial
+# coverage stays visible and does not fail the job.
+
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
 
+env:
+  PYTHON_VERSION: '3.12'
+  # The commit release.yml compares against the run's head_sha. For a pull
+  # request that is the PR head, not the synthetic merge commit.
+  CANDIDATE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+
+  # Source identity, recorded BEFORE configure/build so generated files cannot
+  # change it: {commit, source_state_digest, dirty, dirty_sha256}.
+  SOURCE_PY: |
+    import hashlib, json, os, subprocess
+    from pathlib import Path
+    from scripts.equivalence.qualify import source_state_digest
+    def git(*a):
+        return subprocess.run(["git", *a], capture_output=True, check=True).stdout
+    status = git("status", "--porcelain=v1", "-uall")
+    diff = git("diff", "HEAD", "--binary")
+    dirty = bool(status.strip())
+    src = {
+        "commit": os.environ["CANDIDATE_COMMIT"],
+        "source_state_digest": source_state_digest(Path(".")),
+        "dirty": dirty,
+        "dirty_sha256": hashlib.sha256(status + b"\0" + diff).hexdigest() if dirty else None,
+    }
+    Path("source-identity.json").write_text(json.dumps(src, indent=1), encoding="utf-8")
+    print(json.dumps(src, indent=1))
+
+  # Writes candidate-<platform>.json (qualify.platform_manifest) beside the
+  # package. argv: platform, package path, output dir, config name.
+  CANDIDATE_PY: |
+    import glob, json, os, re, sys
+    from pathlib import Path
+    from scripts.equivalence.qualify import platform_manifest
+    platform, package, outdir, config = sys.argv[1:5]
+    src = json.loads(Path("source-identity.json").read_text(encoding="utf-8"))
+    exes = {}
+    for cand in ("bin/ds1edit", "bin/ds1edit.exe"):
+        if Path(cand).is_file():
+            exes["ds1edit"] = cand
+    app = Path("bin/ds1edit.app/Contents/MacOS/ds1edit")
+    if app.is_file():
+        exes["ds1edit.app"] = str(app)
+    # Native probes the portable replays drive (test_*_probe[.exe]).
+    for p in sorted(Path("build/test").rglob("test_*_probe*")):
+        if p.is_file() and p.suffix in ("", ".exe"):
+            exes[p.stem if p.suffix else p.name] = str(p)
+    if "ds1edit" not in exes:
+        sys.exit("no ds1edit executable found under bin/")
+    cc = {"id": "unknown", "version": "unknown"}
+    for f in glob.glob("build/CMakeFiles/*/CMakeCCompiler.cmake"):
+        t = Path(f).read_text(encoding="utf-8", errors="replace")
+        i = re.search(r'set\(CMAKE_C_COMPILER_ID "([^"]*)"', t)
+        v = re.search(r'set\(CMAKE_C_COMPILER_VERSION "([^"]*)"', t)
+        if i:
+            cc = {"id": i.group(1), "version": v.group(1) if v else "unknown"}
+    build = {"config": config, "compiler": "%s %s" % (cc["id"], cc["version"]),
+             "workflow": os.environ.get("GITHUB_WORKFLOW", ""),
+             "runner": os.environ.get("RUNNER_OS", "")}
+    m = platform_manifest(platform, Path(package), exes,
+                          os.environ["GITHUB_RUN_ID"], src, build)
+    out = Path(outdir) / ("candidate-%s.json" % platform)
+    out.write_text(json.dumps(m, indent=1, sort_keys=True) + "\n", encoding="utf-8")
+    print("wrote", out, "executables:", ", ".join(sorted(exes)))
+
+  # Project version from CMakeLists.txt (the CPack package name's version).
+  VERSION_PY: |
+    import re
+    print(re.search(r"project\(d2-ds1-edit VERSION ([0-9.]+)", open("CMakeLists.txt", encoding="utf-8").read()).group(1))
+
 jobs:
   windows:
     runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: test/python/requirements.txt
+      - name: Install Python test dependencies
+        run: python -m pip install -r test/python/requirements.txt
+
+      - name: Record source identity
+        run: python -c "$SOURCE_PY"
 
       # Ninja + the MSVC env rather than a Visual Studio generator: hosted
       # runners rotate VS versions, and a pinned generator breaks on each bump.
@@ -22,20 +114,68 @@ jobs:
       # VCPKG_ROOT. Dependencies come from vcpkg.json in manifest mode, so the
       # toolchain installs them during configure.
       - name: Point VCPKG_ROOT at the runner's vcpkg
-        shell: pwsh
-        run: echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
+        run: echo "VCPKG_ROOT=$VCPKG_INSTALLATION_ROOT" >> "$GITHUB_ENV"
 
       - name: Configure
         run: cmake --preset ci
       - name: Build
         run: cmake --build --preset ci-release
+
+      - name: Check the Python suites are registered
+        run: |
+          ctest --preset ci -N | tee ctest-list.txt
+          grep -q "py_golden_runner" ctest-list.txt || { echo "::error::py_golden_runner is not registered"; exit 1; }
+          if grep -Eq "py_unavailable|py_missing" ctest-list.txt; then
+            echo "::error::Python suites were not registered (py_unavailable/py_missing present)"; exit 1
+          fi
+
       - name: Test
         run: ctest --preset ci
+
+      - name: Package (CPack ZIP)
+        run: |
+          rm -rf dist && mkdir dist
+          cpack --config build/CPackConfig.cmake -B dist
+          ls -l dist
+
+      - name: Inspect the package
+        run: |
+          version=$(python -c "$VERSION_PY")
+          pkg=$(ls dist/DS1Edit-*-win32.zip)
+          python -m scripts.equivalence.package_check --archive "$pkg" \
+            --platform windows-x86 --version "$version" --out-dir tmp/package-check
+
+      - name: Assemble the candidate artifact
+        run: |
+          mkdir -p candidate
+          pkg=$(ls dist/DS1Edit-*-win32.zip)
+          cp "$pkg" candidate/
+          cp tmp/package-check/package-inspection.json candidate/
+          python -c "$CANDIDATE_PY" windows-x86 "$pkg" candidate Release
+          ls -l candidate
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: candidate-windows-x86
+          path: candidate/*
+          if-no-files-found: error
 
   linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: test/python/requirements.txt
+      - name: Install Python test dependencies
+        run: python -m pip install -r test/python/requirements.txt
+
+      - name: Record source identity
+        run: python -c "$SOURCE_PY"
+
       - name: Install deps
         run: |
           sudo apt-get update -qq
@@ -48,13 +188,166 @@ jobs:
       - name: Build
         run: cmake --build --preset linux
 
+      - name: Check the Python suites are registered
+        run: |
+          ctest --preset linux -N | tee ctest-list.txt
+          grep -q "py_golden_runner" ctest-list.txt || { echo "::error::py_golden_runner is not registered"; exit 1; }
+          if grep -Eq "py_unavailable|py_missing" ctest-list.txt; then
+            echo "::error::Python suites were not registered (py_unavailable/py_missing present)"; exit 1
+          fi
+
       - name: Test
         run: ctest --preset linux --output-on-failure
+
+      - name: Package (CPack TGZ)
+        run: |
+          rm -rf dist && mkdir dist
+          cpack --config build/CPackConfig.cmake -B dist
+          ls -l dist
+
+      - name: Inspect the package
+        run: |
+          version=$(python -c "$VERSION_PY")
+          pkg=$(ls dist/DS1Edit-*-linux-x86_64.tar.gz)
+          python -m scripts.equivalence.package_check --archive "$pkg" \
+            --platform linux-x86_64 --version "$version" --out-dir tmp/package-check
+
+      - name: Assemble the candidate artifact
+        run: |
+          mkdir -p candidate
+          pkg=$(ls dist/DS1Edit-*-linux-x86_64.tar.gz)
+          cp "$pkg" candidate/
+          cp tmp/package-check/package-inspection.json candidate/
+          python -c "$CANDIDATE_PY" linux-x86_64 "$pkg" candidate Release
+          ls -l candidate
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: candidate-linux-x86_64
+          path: candidate/*
+          if-no-files-found: error
+
+  # Evidence lane, not a candidate: Clang AddressSanitizer + UBSan (UB is
+  # fatal) over everything labelled `portable`, under a virtual X display so
+  # the tests that open a window can run.
+  sanitizers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: test/python/requirements.txt
+      - name: Install Python test dependencies
+        run: python -m pip install -r test/python/requirements.txt
+
+      - name: Install deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            clang ninja-build cmake pkg-config zlib1g-dev xvfb \
+            liballegro5-dev liballegro-image5-dev liballegro-ttf5-dev \
+            liballegro-dialog5-dev liballegro-acodec5-dev
+
+      - name: Configure (Clang, Debug, ASan + UBSan)
+        run: |
+          cmake -S . -B build-asan -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=clang \
+            -DDS1EDIT_ENABLE_SANITIZERS=ON
+      - name: Build
+        run: cmake --build build-asan
+
+      - name: Test (portable label, sanitizers on)
+        env:
+          ASAN_OPTIONS: abort_on_error=0:strict_string_checks=1:detect_stack_use_after_return=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+        run: xvfb-run -a ctest --test-dir build-asan -L portable --output-on-failure
+
+  # Evidence lane, not a candidate: GCC --coverage over the `portable` suites,
+  # read with `gcov --json-format` and summarised by coverage_report. Partial
+  # coverage (instrumented modules only, uninstrumented ones listed) is shown
+  # and does not fail the job; failing tests and unreadable reports do.
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: test/python/requirements.txt
+      - name: Install Python test dependencies
+        run: python -m pip install -r test/python/requirements.txt
+
+      - name: Install deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            build-essential gcc ninja-build cmake pkg-config zlib1g-dev xvfb \
+            liballegro5-dev liballegro-image5-dev liballegro-ttf5-dev \
+            liballegro-dialog5-dev liballegro-acodec5-dev
+
+      - name: Configure (GCC, Debug, coverage)
+        run: |
+          cmake -S . -B build-cov -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=gcc \
+            -DDS1EDIT_ENABLE_COVERAGE=ON
+      - name: Build
+        run: cmake --build build-cov
+
+      - name: Test (portable label)
+        run: xvfb-run -a ctest --test-dir build-cov -L portable --output-on-failure
+
+      - name: Collect gcov JSON
+        run: |
+          mkdir -p coverage/gcov
+          (cd coverage/gcov && find "$GITHUB_WORKSPACE/build-cov" -name '*.gcda' -print0 \
+            | xargs -0 -r gcov --json-format --preserve-paths >/dev/null)
+          ls coverage/gcov | wc -l
+
+      - name: Summarise coverage
+        run: |
+          set +e
+          reports=()
+          for f in coverage/gcov/*.gcov.json.gz; do reports+=(--report "$f"); done
+          python -m scripts.equivalence.coverage_report --format gcov-json \
+            "${reports[@]}" --source-root . --out coverage/coverage.json | tee coverage/summary.txt
+          rc=${PIPESTATUS[0]}
+          { echo '### Native coverage (gcov, portable suites)'; echo '```'; cat coverage/summary.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$rc" -eq 1 ]; then
+            echo "::warning::Coverage is partial or unavailable (see coverage.json); this does not fail the job."
+            exit 0
+          fi
+          exit "$rc"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-linux-gcc
+          path: coverage/coverage.json
+          if-no-files-found: warn
 
   macos:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: test/python/requirements.txt
+      - name: Install Python test dependencies
+        run: python -m pip install -r test/python/requirements.txt
+
+      - name: Record source identity
+        run: python -c "$SOURCE_PY"
+
       - name: Install deps
         run: brew install allegro ninja pkg-config
       - name: Configure
@@ -62,5 +355,55 @@ jobs:
       - name: Build
         run: cmake --build --preset macos
 
+      - name: Check the Python suites are registered
+        run: |
+          ctest --preset macos -N | tee ctest-list.txt
+          grep -q "py_golden_runner" ctest-list.txt || { echo "::error::py_golden_runner is not registered"; exit 1; }
+          if grep -Eq "py_unavailable|py_missing" ctest-list.txt; then
+            echo "::error::Python suites were not registered (py_unavailable/py_missing present)"; exit 1
+          fi
+
       - name: Test
         run: ctest --preset macos --output-on-failure
+
+      - name: Package (CPack TGZ)
+        run: |
+          rm -rf dist && mkdir dist
+          cpack --config build/CPackConfig.cmake -B dist
+          ls -l dist
+
+      - name: Inspect the package
+        run: |
+          version=$(python -c "$VERSION_PY")
+          pkg=$(ls dist/DS1Edit-*-macos-arm64.tar.gz)
+          python -m scripts.equivalence.package_check --archive "$pkg" \
+            --platform macos-arm64 --version "$version" --out-dir tmp/package-check
+
+      # The .app inside the extracted package: its signature must verify and
+      # its plist version must be the project version.
+      - name: Verify the packaged .app
+        run: |
+          version=$(python -c "$VERSION_PY")
+          app=$(find tmp/package-check/extracted -maxdepth 3 -name ds1edit.app | head -n 1)
+          test -n "$app" || { echo "::error::ds1edit.app not found in the extracted package"; exit 1; }
+          codesign --verify --deep --strict --verbose=2 "$app"
+          for key in CFBundleShortVersionString CFBundleVersion; do
+            got=$(plutil -extract "$key" raw "$app/Contents/Info.plist")
+            echo "$key = $got"
+            test "$got" = "$version" || { echo "::error::$key is $got, expected $version"; exit 1; }
+          done
+
+      - name: Assemble the candidate artifact
+        run: |
+          mkdir -p candidate
+          pkg=$(ls dist/DS1Edit-*-macos-arm64.tar.gz)
+          cp "$pkg" candidate/
+          cp tmp/package-check/package-inspection.json candidate/
+          python -c "$CANDIDATE_PY" macos-arm64 "$pkg" candidate Release
+          ls -l candidate
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: candidate-macos-arm64
+          path: candidate/*
+          if-no-files-found: error

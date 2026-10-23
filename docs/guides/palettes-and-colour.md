@@ -49,8 +49,9 @@ pixel reaches the screen.
 Everything below is anchored to one real value, checked against one real
 file, so the abstractions stay honest. Act I's palette —
 `data\global\palette\ACT1\pal.dat`, read from `Patch_D2.mpq`/`D2Data.mpq` with
-`tools/d2mpq.py` — assigns index **150** the colour **RGB(188, 120, 84)**, a
-warm leather tan. Its neighbouring transform file, `Pal.PL2` in the same
+`tools/d2mpq.py` — assigns index **150** the colour **RGB(84, 120, 188)**, a
+steel blue (the file stores it as the bytes `BC 78 54`, blue first; see the
+correction below). Its neighbouring transform file, `Pal.PL2` in the same
 folder, is 443,175 bytes. By the end of this chapter that number, that index,
 and that colour will each have been traced to an exact byte offset and back
 again.
@@ -58,7 +59,7 @@ again.
 ## The `.dat` palette: 256 colours, 768 bytes, nothing else
 
 A `.dat` palette is the plainest file this chapter covers: 256 entries, 3
-bytes each — red, green, blue, in that order, no header, no padding, no
+bytes each — blue, green, red, in that order, no header, no padding, no
 count. `pal.dat` in Act I's folder is 768 bytes exactly, and every one of
 the sixteen palette files this chapter checked was 768 bytes exactly.
 
@@ -91,13 +92,31 @@ report.
 
 ## Loading the palette writes a second copy, reversed and padded
 
+> **Correction (2026-10-22): which byte is red.** Earlier revisions of this
+> chapter named `pal.dat` red-first and the `Pal.PL2` base table blue-first.
+> The byte relation (`pl2[i*4] = pal[i*3+2]`, `pl2[i*4+2] = pal[i*3]`) was
+> right; the channel names were swapped. A frame captured from a running
+> vanilla 1.13c game (d2-fleet member `lod-113c`, Rogue Encampment) carries
+> the Act I palette exactly as the `Pal.PL2` base table read
+> **red, green, blue, pad** — 256 of 256 entries, against 43 of 256 read
+> blue-first — and the screen's own anchors agree: the life orb is index 5,
+> `Pal.PL2` bytes `5C 00 00 00`, drawn red; the mana orb is index 138, bytes
+> `00 00 58 00`, drawn blue. So `pal.dat` is blue, green, red, and the PL2 base
+> entry is red, green, blue, pad. Evidence: `test/equivalence/contracts/visual-values-113c.json`
+> (`PL2_BASE_ORDER_RGBX`, confirmed). The editor has always read PL2 this way.
+> Statements below that call the first byte of a four-byte entry "blue" (the
+> tint table's brightness source, `FindNearestPaletteColor`'s first colour
+> argument) should read "red".
+
+
 Inside `Pal.PL2`, the copied palette is not 768 bytes — it is 1,024. Each of
 the 256 entries grows a fourth byte, and the first three change order.
 `LoadPaletteFile`'s own copy loop, read at the instruction level, writes each
-RGB triplet as **blue, green, red, pad** — a 4-byte, DWORD-aligned entry that
-reads back as the little-endian value `0x00RRGGBB`. Index 150's tan
-`(188, 120, 84)` is stored as the four bytes `54 78 BC 00` (blue 0x54, green
-0x78, red 0xBC, pad 0x00) — confirmed by reading `Pal.PL2` at offset
+triplet as **red, green, blue, pad** — a 4-byte, DWORD-aligned entry laid
+out like a Windows `PALETTEENTRY` (`peRed, peGreen, peBlue, peFlags`), the
+reverse of `pal.dat`'s blue-first order. Index 150's steel blue
+`RGB(84, 120, 188)` is stored as the four bytes `54 78 BC 00` (red 0x54,
+green 0x78, blue 0xBC, pad 0x00) — confirmed by reading `Pal.PL2` at offset
 `150 × 4 = 600 (0x258)` directly and comparing it against `pal.dat`'s own
 triplet at offset `450`. Every one of the 256 entries, in all sixteen files,
 matches this pattern with zero exceptions: `pl2[i*4] = pal[i*3+2]`,
@@ -190,7 +209,7 @@ reproduced.
 
 | Offset | Size | Contents | Generator (`D2CMP.dll`) | Status |
 |---|---:|---|---|---|
-| `0x0000` | 1,024 B | Base palette, reordered to blue/green/red/pad | `LoadPaletteFile @ 6fe1a2e0` | **Confirmed**, 16 files |
+| `0x0000` | 1,024 B | Base palette, reordered to red/green/blue/pad | `LoadPaletteFile @ 6fe1a2e0` | **Confirmed**, 16 files |
 | `0x0400` | 8,192 B | Distance darkness, 32 levels × 256 | `GenerateDarknessPaletteTable @ 6fe19e60` | **Confirmed**, 6 files |
 | `0x2400` | 4,096 B | Highlight (brighten-toward-white), 16 levels × 256 | `GenerateHighlightPaletteTable @ 6fe19dc0` | **Confirmed**, 6 files |
 | `0x3400` | 256 B | Single saturation-boosted variant (+0.2 HSL saturation) | `AdjustPaletteSaturation @ 6fe1aad0` | Located |
@@ -215,7 +234,7 @@ were not independently accounted for in this pass and are left open.
 
 `GenerateTintPaletteTable`'s formula reads a fixed RGB triple per tint,
 scales it by each palette entry's own brightness (taken from that entry's
-stored blue byte — the first byte of the four-byte copy at offset 0), and
+stored red byte — the first byte of the four-byte copy at offset 0), and
 snaps the result to the nearest palette colour. Reproducing that formula and
 reading the 12 source triples straight out of `ACT1\Pal.PL2`'s own bytes —
 no guessing, no external reference — recovers colours that read like a

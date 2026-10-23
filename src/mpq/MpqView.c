@@ -75,7 +75,7 @@ int mod_load_in_mem(
 {
    FILE * in        = NULL;
    long size        = 0;
-   char strtmp[256] = "";
+   char strtmp[1024] = "";
 
 
    // init

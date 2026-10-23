@@ -1,0 +1,18 @@
+{
+ "schema": "ds1edit.adversarial-profile/1",
+ "id": "adversarial-core",
+ "description": "Portable bounded malformed-input campaign (package E task 1): authored valid samples, deterministic corruptions, exact-id compatibility controls. 10 s per case, 1 MiB authored payload cap. Larger or original-file campaigns belong in separately declared local profiles.",
+ "seed": 20261021,
+ "timeout_s": 10,
+ "max_payload_bytes": 1048576,
+ "campaign_budget_cases": 8000,
+ "roundtrip": true,
+ "kinds": {
+  "ds1": {"samples": ["v03_default", "v06_default", "v13_default", "v18_default", "v18_four_walls"]},
+  "dt1": {"samples": ["synthetic_floor_wall"]},
+  "dcc": {"samples": ["dcc_single", "dcc_sequence", "dcc_flag0", "dcc_empty_dir"]},
+  "dc6": {"samples": ["dc6_rle_basic", "dc6_multi_direction", "dc6_clip"]},
+  "cof": {"samples": ["synthetic_3layer", "authored_amtnhth"]},
+  "animdata": {"samples": ["authored"]}
+ }
+}

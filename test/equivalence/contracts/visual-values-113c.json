@@ -1,0 +1,232 @@
+{
+ "schema": "ds1edit.visual-contract/1",
+ "id": "visual-values-113c",
+ "target": "vanilla-113c",
+ "status": "portable-only",
+ "note": "Portable expectations from authored vectors and the documented 1.13c rules. Not yet bound to a ds1edit.contract/1 original-function reference: each assumption below needs an identified-original result before its value can be called game behaviour.",
+ "transparency": "index0",
+ "cases": [
+  {
+   "id": "tile-keys.exhaustive",
+   "rule": "main=(cell>>20)&0x3F, sub=(cell>>8)&0xFF; walls by orientation, floors 0, shadows 13",
+   "evidence": "ds1-map-format.md [G] D2Common 6fd5c32a",
+   "coverage": "exhaustive 64x256 per layer kind",
+   "tests": [
+    "test_every_floor_key_resolves",
+    "test_every_shadow_key_resolves",
+    "test_every_wall_key_resolves_for_its_orientation"
+   ],
+   "controls": [
+    "seven-bit main mask (test_bit_26_is_not_part_of_the_main_index, test_seven_bit_mask_control_fails)"
+   ]
+  },
+  {
+   "id": "tile-keys.flags",
+   "rule": "non-key bits neither move the key nor are rewritten",
+   "tests": [
+    "test_non_key_bits_neither_change_the_key_nor_get_rewritten"
+   ]
+  },
+  {
+   "id": "tile-keys.missing",
+   "rule": "prop1==0 -> no tile (bt_idx 0); no block -> -1; editor-disabled blocks skipped",
+   "tests": [
+    "test_empty_cell_and_missing_association"
+   ]
+  },
+  {
+   "id": "tile-keys.orientation-18-19",
+   "rule": "editor policy, not a game rule",
+   "tests": [
+    "test_orientation_18_19_editor_fallback"
+   ]
+  },
+  {
+   "id": "orientation.legacy-table",
+   "rule": "v<7 orientation remap table at 0x6fddbcc0",
+   "evidence": "ds1-map-format.md [G]",
+   "tests": [
+    "test_legacy_orientation_table_matches_the_reader"
+   ],
+   "note": "ds1_read() applying the table is package C's reader test"
+  },
+  {
+   "id": "animdata.lookup",
+   "rule": "256 buckets by position, count + 160-byte records, bucket = uppercase byte sum & 0xFF, linear walk",
+   "evidence": "animdata-d2.md [G]",
+   "fixture": "test/equivalence/fixtures/animdata-authored.bin",
+   "tests": [
+    "test_buckets_are_traversed_with_160_byte_records",
+    "test_queries_are_case_insensitive",
+    "test_misses_and_null_arguments",
+    "test_bucket_index_is_the_position_not_the_first_name",
+    "test_a_bucket_running_past_the_file_is_not_used",
+    "test_bytes_after_256_buckets_are_ignored"
+   ],
+   "controls": [
+    "record stride 156",
+    "case-sensitive hash"
+   ]
+  },
+  {
+   "id": "animdata.editor-api",
+   "rule": "editor promise: a .cof extension on the query is ignored",
+   "tests": [
+    "test_cof_extension_is_ignored_as_promised"
+   ]
+  },
+  {
+   "id": "animdata.delay-ms",
+   "rule": "editor policy: ms = 10240 / speed (truncated), default when speed <= 0 or > 65535, capped at 10000",
+   "tests": [
+    "test_frame_delay_policy"
+   ],
+   "note": "kept separate from any game fixed-point claim"
+  },
+  {
+   "id": "palette.base",
+   "rule": "first 1024 bytes of .pl2 are 256 x (c0, c1, c2, pad); index 0 transparent; gamma per channel; < 1024 bytes -> grey ramp",
+   "tests": [
+    "test_assumption_PL2_BASE_ORDER_RGBX_distinguishes_red_and_blue",
+    "test_index_0_is_transparent_whatever_its_bytes_and_gamma",
+    "test_gamma_maps_each_channel_independently",
+    "test_short_base_table_falls_back_to_the_grey_ramp"
+   ]
+  },
+  {
+   "id": "palette.act-selection",
+   "rule": "LvlTypes act 1-5, else DS1 act 1-5, else act 1",
+   "tests": [
+    "test_all_five_act_selection_paths"
+   ]
+  },
+  {
+   "id": "palette.darkness",
+   "rule": "shade c reads row 0x400 + (c/8)*256; short tables read nothing past their end",
+   "evidence": "palettes-and-colour.md (32 levels at 0x400)",
+   "tests": [
+    "test_darkness_rows_follow_the_pl2_layout",
+    "test_short_darkness_table_reads_nothing_past_its_end"
+   ]
+  },
+  {
+   "id": "palette.nearest",
+   "rule": "squared RGB distance over indices 1..255",
+   "tests": [
+    "test_assumption_NEAREST_TIE_LOWEST_with_duplicate_colours",
+    "test_nearest_never_answers_the_transparent_index"
+   ]
+  }
+ ],
+ "assumptions": [
+  {
+   "id": "PL2_BASE_ORDER_RGBX",
+   "assumed": "PL2 base entry bytes are R, G, B, pad (editor's current reading)",
+   "disputed_by": "docs/guides/palettes-and-colour.md describes B, G, R, pad; the D2CMP 0x9d30 nearest-colour check is channel-order-agnostic and does not settle it",
+   "status": "confirmed",
+   "evidence_needed": "an original-game screenshot or framebuffer read of a known index (e.g. Act 3 index 230 ground, Act 1 index 98) with the identified 1.13c Pal.PL2 bytes",
+   "tests": [
+    "test_assumption_PL2_BASE_ORDER_RGBX_distinguishes_red_and_blue",
+    "test_act3_bog_ground_uses_pl2_display_order"
+   ],
+   "settled": "2026-10-22",
+   "evidence": [
+    {
+     "kind": "live-frame",
+     "ref": "d2-fleet member 10.0.10.30:8800 (lod-113c), in game in the Rogue Encampment, fleet_frame PNG sha256 559f0fb8a847f641230bb7b268146eec424d0b500a191fd5768c08a8a657b53c",
+     "observation": "the frame's 256-entry palette equals the vanilla 1.13c Act1 Pal.pl2 base table read as (R,G,B,pad) at all 256 indices (as (B,G,R,pad): 43/256, only the grey/symmetric entries); 99.6% of frame pixels are exactly an Act1 entry read RGBX vs 15.8% read BGRX"
+    },
+    {
+     "kind": "semantic-anchor",
+     "ref": "same frame",
+     "observation": "the life orb is index 5, Pal.pl2 bytes 5C 00 00 00 (red if byte 0 is red); the mana orb is index 138, bytes 00 00 58 00 (blue if byte 2 is blue). The orbs are red and blue."
+    },
+    {
+     "kind": "original-bytes",
+     "ref": "1.13c D2Data/D2Exp act1-5 pal.dat and Pal.pl2",
+     "observation": "for every act, pal.dat read as (B,G,R) equals Pal.pl2 read as (R,G,B,pad) at 256/256 entries: pal.dat is the BGR file, the PL2 base table is RGB+pad"
+    }
+   ],
+   "limitations": [
+    "the member's palette matched the PL2 table exactly, so its in-game gamma was identity (or the capture reads the pre-gamma palette); gamma is not settled here"
+   ],
+   "artifacts": "tmp/visual-diagnosis/pl2/ (local only: frame, extraction script, result)"
+  },
+  {
+   "id": "NEAREST_TIE_LOWEST",
+   "assumed": "equal-distance nearest-colour candidates resolve to the lowest index; index 0 is never chosen",
+   "status": "confirmed",
+   "evidence_needed": "FindNearestPaletteColor (D2CMP 6fe19d30) tie behaviour on a palette with duplicate entries",
+   "tests": [
+    "test_assumption_NEAREST_TIE_LOWEST_with_duplicate_colours"
+   ],
+   "settled": "2026-10-22",
+   "evidence": [
+    {
+     "kind": "live-capture",
+     "ref": "test/equivalence/fixtures/palette-nearest-capture.json (D2CMP 1.13c 0x9d30 / ordinal 10049 on lod-113c)",
+     "observation": "51 captured vectors on the 'ties' palette have two or more equidistant candidates; all 51 answers are the lowest index"
+    }
+   ],
+   "limitations": [
+    "'index 0 is never chosen' is the caller convention (entries = palette + 4, count 255) used by the capture; which callers pass that range is not established here"
+   ]
+  },
+  {
+   "id": "ANIMDATA_NAME_COMPARE_CASE",
+   "assumed": "stored record names compare case-insensitively (queries are uppercased by the game; stored names are uppercase in vanilla)",
+   "status": "refuted",
+   "evidence_needed": "6fd91d00 compare on a mixed-case stored name",
+   "tests": [
+    "test_queries_are_case_insensitive",
+    "test_stored_names_are_compared_exactly_after_uppercasing_the_query",
+    "test_bytes_after_the_stored_name_terminator_take_part"
+   ],
+   "settled": "2026-10-22",
+   "evidence": [
+    {
+     "kind": "ghidra",
+     "ref": "/Vanilla/1.13c/D2Common.dll 6fd91dd0 (Ghidra name LOG_FindLogEntryByTag)",
+     "observation": "uppercases the query in place (a-z minus 0x20), sums its bytes into the bucket index, then walks 0xa0-byte records calling 6fd91d00"
+    },
+    {
+     "kind": "ghidra",
+     "ref": "/Vanilla/1.13c/D2Common.dll 6fd91d00 (Ghidra name LOG_CompareLogTags)",
+     "observation": "after <=8 length guards, returns *(int*)a == *(int*)b && a[1] == b[1]: an exact 8-byte compare, no case folding"
+    }
+   ],
+   "resolution": "src/core/animdata.c now uppercases the query into a zero-padded 8-byte key and memcmp()s all 8 stored bytes (was strnicmp over strlen). Regression tests: test_stored_names_are_compared_exactly_after_uppercasing_the_query, test_bytes_after_the_stored_name_terminator_take_part. Vanilla data is unaffected (every stored name is upper-case and NUL-padded).",
+   "limitations": [
+    "the bytes after the query terminator are assumed zero (the caller's buffer padding was not traced)"
+   ]
+  },
+  {
+   "id": "SHADOW_LEVEL_FROM_SHADE",
+   "assumed": "the editor's shade c maps to darkness level c/8 + 1",
+   "status": "needs_original_confirmation",
+   "evidence_needed": "the game's light-level to darkness-table index mapping at render time",
+   "tests": [
+    "test_darkness_rows_follow_the_pl2_layout"
+   ],
+   "attempted": "2026-10-22: not settled; needs a trace of the game's light level to darkness-row index at draw time (D2Gfx/D2Client), not attempted within this pass's effort budget"
+  },
+  {
+   "id": "COMPOSE_BLEND_OPAQUE",
+   "assumed": "compose_render draws every COF layer opaque-over whatever its trans_a/trans_b",
+   "status": "refuted",
+   "settled": "2026-10-22",
+   "evidence_needed": "n/a",
+   "evidence": [
+    {
+     "kind": "original-bytes+ghidra",
+     "ref": "docs/guides/palettes-and-colour.md (D2CMP 1.13c 6fe1b930 BuildPaletteTransformTables; 344,064 table bytes reproduced, 0 mismatches)",
+     "observation": "the game builds alpha 25/50/75, additive, multiply and screen tables for exactly the COF trans_b modes; a trans_a layer is drawn through them, not opaque"
+    }
+   ],
+   "resolution": "not fixed in this pass: opaque compose export is an editor policy that differs from the game for trans_a layers (the map preview path already blends). Implementing index-domain blending in compose_render is a separate change; the pinning test stays so any change is deliberate.",
+   "tests": [
+    "test_assumption_COMPOSE_BLEND_OPAQUE_layers_with_trans_flags"
+   ]
+  }
+ ]
+}

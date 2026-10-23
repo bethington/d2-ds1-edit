@@ -31,9 +31,11 @@
 > the bitfield-selection dialog restored in words; the mode-legend figure grids
 > re-paired with their captions; the Advanced Tile Editing dialog transcribed
 > into a table so its content survives without the screenshot; and verification
-> notes added where a **DS1 format** claim could be checked. Siramy's wording,
-> his warnings and his own uncertainties are otherwise unchanged, including his
-> spelling.
+> notes added where a **DS1 format** claim could be checked. A later pass
+> (2026-08-21, third) re-sourced every empirical figure from the vanilla 1.13c
+> archives and added evidence from the game's own DS1 loader in Ghidra; see the
+> evidence note below and the companion report. Siramy's wording, his warnings
+> and his own uncertainties are otherwise unchanged, including his spelling.
 >
 > **Rights status: the position taken.** No page in this archive carries a
 > licence, a copyright notice, or a republication grant. The project proceeds
@@ -55,34 +57,57 @@
 > you have.
 >
 > What *is* verifiable is the layer of claims underneath: the **DS1 file
-> format** the editor was exposing. Those claims are checked against this
-> repository's own parser (`src/core/ds1.c`, `src/structs.h`) and against all
-> **2,666 `.ds1` files** in `assets/tiles/` — the strongest evidence available
-> offline, and evidence that does not depend on which game patch produced a
-> given map: the on-disk layer, cell-bit and orientation layout has not
-> changed across Blizzard's own patches. What *does* have version scope is the
-> DS1 file's own internal **format version** (see the path-block note under
-> [Path Editing](#path-editing) and the `## Version differences` table at the
-> end of this chapter) — a property of the file, not of the game patch that
-> shipped it. **A provenance caveat on that corpus:** `assets/tiles/` is *not*
-> a pristine copy of Blizzard's maps. Measured against vanilla 1.13c's own
-> archives, 117 of its files differ byte-for-byte and 390 are absent from them
-> altogether, so the tree is a working set rather than a vanilla reference —
-> the same trap as `assets/excel/` (see [vanilla-data.md](../vanilla-data.md)).
-> The aggregate structural claims below nevertheless stand, because the
-> [DS1 map format chapter](../guides/ds1-map-format.md) re-derived the layer,
-> cell-bit and orientation layout from **2,276 `.ds1` files read directly out
-> of the vanilla 1.13c MPQs** and reached the same layout. Cite that chapter,
-> not this corpus, when a claim has to be sourced.
-> One standing caveat on the evidence: this repository descends from Siramy's
-> editor and shares its struct names, so agreement on *naming* is partly
-> circular. Agreement on *bit masks exercised against real Blizzard map files*
-> is not.
+> format** the editor was exposing. Those claims are settled here against three
+> sources, weakest to strongest:
 >
-> No Ghidra session and no live 1.13c game process were used for this chapter —
-> only the parser and the file corpus. That settles what the **file format**
-> holds, not what a running 1.13c client's D2Common or D2Win actually does with
-> those bits at runtime.
+> - **[R]** this repository's parser (`src/core/ds1.c`, `src/structs.h`) —
+>   **derived from Siramy's own `ds1misc.c`**, so it is never counted as
+>   independent of him. The parser agreeing with the documentation is one
+>   witness wearing two hats.
+> - **[D]** real data — all **2,276 distinct `.ds1` files** read directly out of
+>   **vanilla 1.13c's own archives** (`Patch_D2.mpq` → `D2Exp.mpq` → `D2Data.mpq`,
+>   resolved in MPQ search order with `tools/d2mpq.py`). All 2,276 parse with zero
+>   stream desync.
+> - **[G]** the game's own loader in Ghidra — `D2Common.dll` 1.13c, image base
+>   `6fd50000`, whose DS1 reader is `LoadAndParsePresetArchive` (`6fd5b560`) and
+>   whose cell decoder is `ProcessPresetRoomObjectsAndTiles` (`6fd5c060`). Blizzard's
+>   own source path for this code survives in the binary as
+>   `..\Source\D2Common\DRLG\Preset.cpp` (`6fde6eb0`). This is the source that owes
+>   Siramy nothing, and it is what breaks the circularity above.
+> - **[L]** a **live vanilla 1.13c client**, run for this chapter and driven
+>   through the d2-fleet control API — the game actually playing, observed while
+>   reading a `.ds1` this chapter supplied. Used for exactly one question, the
+>   NPC-path one under [Path Editing](#path-editing), because it is the only
+>   claim here that a file and a disassembly together could not settle.
+>
+> **This is a change from earlier revisions of this chapter, and it moved the
+> numbers.** Every empirical count below previously came from the 2,666-file tree
+> under `assets/tiles/`, which is *not* a pristine copy of Blizzard's maps — 117 of
+> its files differ byte-for-byte from the 1.13c archives and 390 are absent from
+> them altogether (the same trap as `assets/excel/`; see
+> [vanilla-data.md](../vanilla-data.md)). Recomputed against the vanilla corpus,
+> the bit counts, the orientation census and the path census all changed, in
+> several cases by a factor of four or more, and two of the four worked examples
+> in the path correction turned out not to exist in vanilla at all. The corrected
+> figures are below; the superseded ones are itemised in the companion report.
+> **No number in this chapter now comes from `assets/tiles/`.**
+>
+> The structural conclusions were unaffected. The
+> [DS1 map format chapter](../guides/ds1-map-format.md) reached the same layout
+> in a separate derivation, and its cell census and this one agree figure for
+> figure — but the two share a corpus and a set of binaries, so treat that as a
+> check on the arithmetic rather than as a second witness.
+>
+> What *does* have version scope is the DS1 file's own internal **format
+> version** (see the path-block note under [Path Editing](#path-editing) and the
+> `## Version differences` table at the end of this chapter) — a property of the
+> file, not of the game patch that shipped it.
+>
+> One claim below — and only one — was settled by running the game and watching
+> it behave, because nothing else could settle it: whether D2 walks a **Type 2**
+> object along an NPC path. Everything else rests on the file, the parser and the
+> disassembly. Where a statement is about runtime behaviour and carries no
+> **[L]**, it has not been watched, and says so.
 
 ---
 
@@ -182,6 +207,15 @@ This is not a complete tutorial explaining all you need to know, but at least I 
 
 ## Installing the Editor
 
+> **Current DS1Edit (2.2.0) differs from the 2006 steps below.** The Allegro 5
+> build needs no `alleg403.zip` and no `.bat` launchers: copy `Ds1edit.ini.sample`
+> to `Ds1edit.ini`, set `d2_install` (or leave it blank and the editor finds
+> Diablo II from the registry or a common folder; Project Diablo 2 is found the
+> same way, see `use_pd2` and `pd2_dir`), and launch the editor with no
+> arguments to pick a map from the browser. Nothing has to be extracted from the
+> MPQs. Startup details are written to `stderr.txt`. The README's Configuration
+> section is the current reference; the steps below are Siramy's original text.
+
 1.  Extract the **win\_ds1edit.zip** somewhere on your hard disk, its location is not important. Then, extract the **alleg403.zip** in that directory (the **alleg40.dll** must be at the same place of the **win\_ds1edit.exe** ).  
 
 2.  Now, edit **Ds1edit.ini** .  
@@ -228,12 +262,19 @@ This editor is using essentially the keyboard and the mouse together. There's no
 > The one layer of substance underneath the UI *is* verifiable — the layer model
 > the keys toggle is the DS1 file's own. `src/structs.h:30-33` declares
 > `FLOOR_MAX_LAYER 2` (F1, F2), `WALL_MAX_LAYER 4` (F5-F8) and
-> `SHADOW_MAX_LAYER 1` (F11), and across all **2,666 `.ds1` files** in
-> `assets/tiles/` the on-disk counts never exceed those maxima (walls: 0-4,
-> floors: 0-2). Shadow is not even stored as a count — `src/core/ds1.c:528`
-> hardcodes `s_num = 1` with the comment `// # of shadow layer, always here`.
-> So the F-key row across the top of the editor is a direct picture of the file
-> format.  
+> `SHADOW_MAX_LAYER 1` (F11) **[R]**, and across all **2,276 vanilla 1.13c
+> `.ds1` files** the on-disk counts never exceed those maxima **[D]** — walls
+> range 0-4 (0 in 51 files, 1 in 1,151, 2 in 759, 3 in 145, 4 in 170) and floors
+> 0-2 (0 in 3 files, 1 in 1,724, 2 in 549). Shadow is not stored as a count at
+> all — `src/core/ds1.c:528` hardcodes `s_num = 1` with the comment
+> `// # of shadow layer, always here`, and the game's loader likewise reads a
+> wall count and (from version 16) a floor count, but never a shadow count
+> **[G]**. So the F-key row across the top of the editor is a direct picture of
+> the file format.
+>
+> One thing the F-keys do *not* show: the file also has a **tag layer**, present
+> when its `tagType` field is 1 or 2, which the editor exposes nowhere. The
+> editor's layer model is the file's, minus that one stream.  
 
 * * *
 
@@ -454,7 +495,7 @@ More (or Less if Shift is pressed) Gamma Correction. In dark areas you may want 
 
 ### Up, Down, Left, Right / Mouse on the borders of the screen
 
-You can scroll the main editing window by pressing the arrow keys. And you can also place your mouse exactly on the 4 sides of the screen to achieve almost the same result.
+You can scroll the main editing window with the arrow keys or WASD. Ctrl+arrow keys browse to the previous/next map in the area browser. Scrolling by placing the mouse on the 4 sides of the window is off by default; set `mouse_edge_scroll = YES` in **ds1edit.ini** to turn it on.
 
 The scrolling speed when using the arrow keys is in the **ds1edit.ini**, as long as the scrolling speed when using the mouse. If your computer is too old / too powerfull, or simply if you don't like the default scrolling speeds, adjust these values in the .ini to fit your needs.
 
@@ -611,6 +652,11 @@ only the Tree, not its Floor Tile.
 
 ### Ctrl + S
 
+> **Current editor.** Saving is checked: the new map is written to a staging file,
+> the old one is kept as the backup described below, and everything is rolled back
+> if a step fails. A failed save shows an error and leaves the editor open with
+> your edits intact.
+
 **S** ave the map (the .DS1), in its current state. Incremental backups. First, it rename the current .DS1 to the first free name with numbers it found, then it save the current map.
 
 For instance, say that you are editing the map **duriel.ds1** for the first time. When you'll ask to save it, it'll rename **duriel.ds1** to **duriel-000.ds1** and save the current state of the map into the file **duriel.ds1**.
@@ -622,6 +668,12 @@ So, the **duriel-000.ds1** is always you original .ds1, and the next numbers are
 * * *
 
 ### Ctrl + U
+
+> **Current editor.** **Ctrl+Z** undoes map edits too (while a properties-panel
+> field is being edited, the panel owns Ctrl+Z), and **Ctrl+U** acts once per key
+> press. **Alt+I** selects strictly identical tiles and **Alt**-drag box-selects
+> objects. Objects outside the map's `width*5` by `height*5` grid are kept, drawn
+> with a warning tint, and saved. Undo buffers live in a `tmp` folder beside the editor, not in `data` plus `tmp`.
 
 **U** ndo the precedent **Tiles** modifications, up to the very start. Note that when you make some multiple undo and then start to make new modifications, the undo buffers are reseted : the ones you have just used to get back to the current state of the map are lost. Also you can't undo an undo : there's only 1 way of undo.
 
@@ -734,11 +786,14 @@ Invisible Tiles on each side of a Map
 
 > **Partly resolved since.** The flag Siramy describes — a tile that is present
 > in the file but invisible in the game — is the **Hidden** bit, `prop4 & 0x80`
-> on the cell (`src/render/preview.c:1093`). It is exactly the bit the
+> on the cell (`src/render/preview.c:1093`) **[R]**. It is not merely the
+> editor's interpretation: the game's own cell decoder isolates the same bit,
+> `AND EAX,0x80000000` at `6fd5c338` in `ProcessPresetRoomObjectsAndTiles`
+> **[G]**. It is exactly the bit the
 > [Advanced Tile Editing dialog](#ctrl--shift--right-click) exposes, and the one
 > [Tutorial 1](../tutorials/01-basic-map-editing.md) tells you to set on a warp
-> Vis. Empirically it is set on 10,562 wall cells and 25,370 floor cells across
-> the 2,666-file corpus — rare, but far from unused.
+> Vis. Across the 2,276 vanilla 1.13c files it is set on **2,744 wall cells,
+> 6,690 floor cells and 7 shadow cells** **[D]** — rare, but far from unused.
 >
 > His advice still stands, though, and for the reason he gives rather than the
 > mechanism: *why* Blizzard's own maps carry hidden tiles along their top and
@@ -795,23 +850,38 @@ behind the dialog. That one screenshot therefore shows the entire warp recipe of
 [Tutorial 1](../tutorials/01-basic-map-editing.md) in a single frame: a special
 tile, on a wall layer, at orientation 10, with Hidden set.
 
-> **Verified — the format claims, not the UI.** Checked against this
-> repository's own DS1 parser and against all **2,666 `.ds1` files** under
-> `assets/tiles/`, which parse with zero stream desync.
+> **Verified — the format claims, not the UI.** Checked against the game's own
+> loader in `D2Common.dll` 1.13c **[G]**, against all **2,276 vanilla 1.13c
+> `.ds1` files** **[D]** (which parse with zero stream desync), and against this
+> repository's parser **[R]**, which is Siramy-derived and so never counted as
+> independent corroboration of him.
 >
 > - **The layer maxima hold.** `src/structs.h:30-33` declares
->   `FLOOR_MAX_LAYER 2`, `WALL_MAX_LAYER 4`, `SHADOW_MAX_LAYER 1`. Across the
->   corpus the on-disk wall-layer count never exceeds 4 and the floor count never
->   exceeds 2. Shadow is not read from the file at all — `src/core/ds1.c:528`
->   hardcodes `s_num = 1`.
+>   `FLOOR_MAX_LAYER 2`, `WALL_MAX_LAYER 4`, `SHADOW_MAX_LAYER 1` **[R]**. Across
+>   the vanilla corpus the on-disk wall count never exceeds 4 and the floor count
+>   never exceeds 2 **[D]**. Shadow is not read from the file at all —
+>   `src/core/ds1.c:528` hardcodes `s_num = 1`, and the game's loader has no
+>   shadow-count read either **[G]**.
 > - **The two bits Siramy names are real, and are the ones he says.** *Hidden*
 >   is `prop4 & 0x80` (`src/render/preview.c:1093`, whose comment reads
 >   `// binary : 1000-0000`, and which forces the tile's block index to
 >   "unknown"); *Unwalkable* is `prop3 & 0x02` (`src/misc.c:1102-1107` and
->   `:1143-1148`, which marks all 25 sub-tiles unwalkable). Neither has a named
->   constant — both are inline literals. Both genuinely occur in shipped Blizzard
->   data: over 17.5 M wall cells the Hidden bit is set 10,562 times and
->   Unwalkable 22,251 times; over 9.5 M floor cells, 25,370 and 940,661 times.
+>   `:1143-1148`, which marks all 25 sub-tiles unwalkable) **[R]**. Neither has a
+>   named constant — both are inline literals. The Hidden bit is **not** merely
+>   the editor's convention: the game isolates the same bit of the same dword,
+>   `AND EAX,0x80000000` at `6fd5c338` **[G]**. Both bits genuinely occur in
+>   shipped Blizzard data **[D]**:
+>
+>   | | wall 1 | wall 2 | wall 3 | wall 4 | floor 1 | floor 2 | shadow |
+>   |---|---|---|---|---|---|---|---|
+>   | **Hidden** (`prop4 & 0x80`) | 2 371 | 86 | 145 | 142 | 4 733 | 1 957 | 7 |
+>   | **Unwalkable** (`prop3 & 0x02`) | 9 062 | 26 | 65 | 20 | 152 515 | 185 | 150 |
+>
+>   — that is 2,744 Hidden wall cells and 6,690 Hidden floor cells; 9,173
+>   Unwalkable wall cells and 152,700 Unwalkable floor cells, out of 173,437
+>   occupied wall cells and 696,999 occupied floor cells. Note that both bits also
+>   occur on **shadow** cells, which the editor's own dialog exposes but which no
+>   earlier revision of this chapter counted.
 > - **The column labels are exact.** This repository's own bitfield dialog
 >   (`src/ui/bits_window.c:69-92`) carries the identical label strings —
 >   `"Hidden"`, `"?"`, `"IsShadow"`, `"Main-index"`, `"Unwalkable"`,
@@ -819,22 +889,42 @@ tile, on a wall layer, at orientation 10, with Hidden set.
 >   `"Orientation"`. **On its own this is weak evidence**: this repository
 >   descends from Siramy's editor and shares its struct names, so the agreement
 >   is partly circular. The non-circular part is the bit masks above, which are
->   exercised against real game files.
+>   exercised against real game files and confirmed in the game's own code.
+>   `IsShadow` earns its label independently: `prop4 & 0x08` is set on **all
+>   15,146** shadow cells in the vanilla corpus and on **no** wall or floor cell
+>   **[D]**.
 > - **`Main-index` and `Sub-index` are decoded fields, not raw bit runs**:
 >   `main_index = (prop3 >> 4) + ((prop4 & 0x03) << 4)`, `sub_index = prop2`
->   (`src/core/ds1.c:137, 213, 247`).
+>   (`src/core/ds1.c:137, 213, 247`) **[R]**. The game agrees, and shows the
+>   cleaner way to say it: it treats the cell as one 32-bit word and takes
+>   `main_index` as bits 20-25 (`SHR ESI,0x14` then `AND ESI,0x3f`, `6fd5c32f`)
+>   and `sub_index` as bits 8-15 (`MOVZX EBX,AH`, `6fd5c332`) **[G]**. Siramy's
+>   byte-wise formula and Blizzard's bit-field are the same thing.
 > - **Orientation is wall-only, and it is its own on-disk stream.** Each wall
 >   layer is stored as *two* interleaved streams, cells and orientations
->   (`src/core/ds1.c:653-657, 823-837`). The orientation record occupies 4 bytes
->   of which only the low byte is used — empirically the upper 3 bytes are zero
->   in all 17,530,587 records. Floors and shadow have no orientation stream,
->   exactly as the dialog shows.
-> - **Orientation 10 and 11 really are the special/warp values.** Across the
->   corpus orientation 10 occurs 799 times and orientation 11 301 times — rare,
->   and concentrated in 546 files whose names are dominated by `*warp*.ds1`
->   (`ACT1/BARRACKS/barEwarp.ds1`, `jailEwarpCath.ds1`, `jailNwarpPrev.ds1`, and
->   so on). The editor treats exactly these two values as special
->   (`src/misc.c:312-317`, `src/render/preview.c:1085-1091` and `:1413-1442`).
+>   (`src/core/ds1.c:653-657, 823-837`) **[R]**. The orientation record occupies 4
+>   bytes of which only the low byte is used — the upper 3 bytes are zero in all
+>   **1,493,661** orientation records in the vanilla corpus **[D]**. Floors and
+>   shadow have no orientation stream, exactly as the dialog shows.
+> - **Orientation 10 and 11 really are the special values — and the game says so
+>   itself.** Immediately after decoding the cell, `ProcessPresetRoomObjectsAndTiles`
+>   tests the orientation against exactly these two constants and branches away
+>   from the ordinary tile path: `CMP ECX,0xb` at `6fd5c33d` and `CMP ECX,0xa` at
+>   `6fd5c346` **[G]**. The editor treats the same two values as special
+>   (`src/misc.c:312-317`, `src/render/preview.c:1085-1091` and `:1413-1442`)
+>   **[R]**, so here the derived parser and Blizzard's code agree without the
+>   agreement being circular. Empirically they are rare: across the vanilla corpus
+>   orientation 10 occurs **654** times and orientation 11 **285** times, together
+>   939 cells spread over **476** files **[D]**.
+>
+>   **A caution retired here.** Earlier revisions said these files were
+>   "dominated by `*warp*.ds1`". Against vanilla that is simply not so: only
+>   **65 of the 476** files have `warp` in the name, accounting for **97 of the
+>   939** cells — about one in ten. The heaviest users are Act 2 Lut Gholein
+>   (`lutN.ds1`, `lutW.ds1`, `lut2.ds1`), the arena tombs (`dm2.ds1`, `dm3.ds1`)
+>   and the guild houses. Warps are a *conspicuous* use of special tiles, not the
+>   dominant one — which fits Siramy, who introduces the value as the marker of a
+>   special tile generally and never claims it belongs to warps.
 > - **A correction to the mental model, not to Siramy.** There is **no "special"
 >   layer on disk.** Special tiles are ordinary wall-layer cells whose
 >   orientation is 10 or 11; "Special" is a rendering and editing category, not a
@@ -902,32 +992,114 @@ In short : you select 1 and only 1 object in the Object Editing mode. It can be 
 
 > **Verified, with one correction.**
 >
-> *The on-disk structure is as Siramy describes.* The path block exists from DS1
-> **version 14** onward (`src/core/ds1.c:1071-1207`): an `int32` count of path
-> blocks, then per block three `int32` — the number of points, and the owning
-> object's sub-tile X and Y — followed by the points. From **version 15** each
-> point carries a third `int32`, the **`action`** value — precisely the number
-> Siramy's "(Enter) SET ACTION" button writes (`PATH_S { x; y; action; }`,
-> `src/structs.h:825-831`). On version 14 files the parser defaults it to 1.
-> Empirically, 17 files in the corpus carry path data: 138 blocks, 544 points,
-> with `action` values 1 (373×), 2 (102×), 3 (40×), 4 (28×) and 5 (1×) — so the
-> "hardcoded Action" really is a small enumeration.
+> *The on-disk structure is as Siramy describes, and the game's own loader gates
+> it exactly where he says.* The path block exists from DS1 **version 14**
+> onward: `LoadAndParsePresetArchive` reaches the block only past
+> `CMP EBX,0xe / JL` at `6fd5bac2` **[G]**, matching
+> `src/core/ds1.c:1071-1207` **[R]**. It is an `int32` count of path blocks, then
+> per block three `int32` — the number of points, and the owning object's
+> sub-tile X and Y (read at `6fd5bad4`, `6fd5bad6`, `6fd5badc`) — followed by the
+> points. From **version 15** each point carries a third `int32`, the **`action`**
+> value: the loader's own stride arithmetic says so, advancing 8 bytes per point
+> and a further 4 only when the version clears `CMP EBX,0xf` (`6fd5bb05`,
+> `6fd5bb08`, `6fd5bb0d`) **[G]**. That is precisely the number Siramy's
+> "(Enter) SET ACTION" button writes (`PATH_S { x; y; action; }`,
+> `src/structs.h:825-831`).
+>
+> Vanilla is sparing with the feature: **17 files, 136 path blocks, 511 points**,
+> with `action` taking five values — 1 (328×), 2 (105×), 3 (43×), 4 (34×) and 5
+> (once) **[D]**. So the "hardcoded Action" really is a small enumeration.
 >
 > *Paths are keyed by coordinate, not by object index.* That is a real trap the
-> original page does not mention: `src/core/ds1.c:1091-1152` matches a path
-> block to an object by its (x, y), and **discards the paths outright** when two
-> objects share a cell.
+> original page does not mention, and it is the game's design rather than the
+> editor's: the loader walks the object list comparing the block's x and y
+> against each node's `+0x08` and `+0x18` (`6fd5baf4`, `6fd5baf9`) **[G]**.
+> Nothing but the coordinate is consulted.
+>
+> **Where the editor and the game part company.** Siramy's parser detects two
+> objects sharing a cell and **discards the paths outright**
+> (`src/core/ds1.c:1091-1152`) **[R]**. The game does not: its match loop stops at
+> the *first* node whose coordinates agree (`JZ` out of the walk at `6fd5bafc`)
+> and silently gives that object the path **[G]**. The editor is the stricter of
+> the two. The distinction is academic for shipped content — **no vanilla file
+> has two objects on a path anchor's cell** **[D]** — but it matters to anyone
+> authoring new maps, where the editor will drop paths the game would have
+> honoured.
 >
 > **Correction — "only Type 1 objects can use paths" is not a format rule.**
-> The DS1 path record encodes no type at all, and 4 of the 138 path blocks in
-> the corpus resolve to coordinates where the only object present is **Type 2**:
-> `ACT2/Town/lutN.ds1` (84,154), `ACT2/Town/lutW.ds1` (83,154),
-> `ACT3/Docktown/docktown3.ds1` (219,38) and `expansion/Town/townWest.ds1`
-> (143,28). The other 134 are Type 1, so Siramy's statement is a sound rule of
-> thumb about what the *game* does with them — and it may well be right about
-> the runtime. It is not a constraint the *file* imposes. Whether D2 actually
-> walks a Type 2 object along a path was **not** tested; that would need the
-> game, not the parser.
+> The DS1 path record encodes no type at all, and the game's matcher tests only
+> the coordinate — there is no type check anywhere in the path-assignment code
+> **[G]**. In vanilla, **2 of the 136 path blocks** resolve to a cell whose only
+> object is **Type 2**: `ACT3/Docktown/docktown3.ds1` at (219, 38), a 3-point
+> path on Type 2 / Id 110, and `expansion/Town/townWest.ds1` at (143, 28), a
+> 2-point path on Type 2 / Id 126 **[D]**. The other 134 are Type 1.
+>
+> **But look at what those two objects are.** A DS1 object's `id` is not a row
+> in `objects.txt`; it goes through a 5 × 150 table compiled into D2Common at
+> `6fdee2c8`, as `objectsTxtId = table[act * 150 + id]` **[G]**. Resolved that
+> way, the two anchors are `objects.txt` **379** and **543** — and in Siramy's
+> own `obj.txt`, the transcription of that same table, they read:
+>
+> | File | act | DS1 id | → `objects.txt` | what it is |
+> |---|---|---|---|---|
+> | `ACT3/Docktown/docktown3.ds1` | 3 | 110 | 379 | **"Hratli end"** |
+> | `expansion/Town/townWest.ds1` | 5 | 126 | 543 | **"Larzuk Standard"** |
+>
+> Both are **NPC position markers** — the spots where Hratli and Larzuk stand —
+> and both are `Name = Dummy` in `objects.txt`, Blizzard's label for a marker
+> with no behaviour of its own **[D]**. So the two stray path blocks are walking
+> routes attached to *an NPC's marker* instead of to the NPC. That is exactly
+> what an authoring leftover looks like, and it explains why only two exist.
+>
+> **And the game never reads them.** Once the level is generated, the preset
+> object list is walked with the type as the switch: type 1 goes down the monster
+> path, type 2 down the object path, which consults only that object's
+> `objects.txt` record and **never touches the node's path pointer**. In
+> `ProcessPresetRoomObjectsAndTiles` (`6fd5c060`) the type-2 test is
+> `6fd5c590 CMP [ESI+0x14],EDI` with `EDI = 2`, and everything it then does with
+> the node is read its id at `+0x04`, bound it against the `objects.txt` record
+> count, and test one flag byte inside that record
+> (`6fd5c5c1 IMUL EAX,EAX,0x1c0` / `6fd5c5c7 TEST [EAX+EDX+0x167],BL`) before
+> stepping to `+0x0c`, the next node. The path pointer at `+0x10` is never read
+> on that branch **[G]**.
+>
+> So Siramy is **right about the game and wrong only about the reason**. It is
+> not that the format forbids a path on a Type 2 object — it permits one, and the
+> loader will faithfully attach it. It is that nothing downstream ever asks a
+> Type 2 object for its path. The constraint is in the consumer, not the file.
+>
+> **And the running game agrees.** This was put to the experiment rather than
+> left as a reading. A live vanilla 1.13c client was given a modified
+> `act1\town\townE1.ds1` in which one NPC's three-point path block is re-anchored
+> onto the Type 2 object already present in that preset at subtile (164, 81) —
+> act 1, DS1 id 110, which the same table resolves to `objects.txt` **385**,
+> *"cain start position"*: the identical class of object as the two vanilla
+> cases, an NPC position marker, in a level a level-1 character starts in. The
+> file reached the game through the fleet's MPQ override seam, verified
+> byte-for-byte by reading it back out of the running client's own Storm.
+>
+> Over ninety seconds of observation **[L]**:
+>
+> | unit | what it is | moved? | modes seen |
+> |---|---|---|---|
+> | monster #3 | an ordinary path-walking town NPC — the positive control | **yes**, 5 distinct positions | `neutral`, **`walk`** |
+> | object #2 | the Type 2 marker handed the NPC path | **no**, 1 position | `neutral` only |
+>
+> The control proves path-walking was live in that session; the marker never
+> entered `walk` and never moved a subtile. So the answer is not merely "no
+> code appears to read it" — the game was handed the case and did nothing with
+> it.
+>
+> *Scope:* the static half rests on reading the two functions that walk the
+> preset object list, not an exhaustive enumeration of every reader of `+0x10`.
+> The runtime half is one object, in one level, for ninety seconds. Together
+> they agree, which is the most this evidence can say.
+>
+> *(Earlier revisions of this chapter put the count at 4 blocks of 138 and named
+> two Act 2 Town coordinates, `lutN.ds1` (84,154) and `lutW.ds1` (83,154),
+> alongside the two above. Those two anchors do not exist in vanilla 1.13c —
+> neither file has a path block at that coordinate — and the totals came from the
+> non-vanilla `assets/tiles/` tree. The finding survives; its size does not.)*
 
 ## Version differences
 
@@ -936,21 +1108,32 @@ The version axis this chapter's format claims actually depend on is the
 install can load `.ds1` files of any format version the engine supports;
 nothing in this chapter is gated by game patch, and none of the layer,
 Hidden-bit, Unwalkable-bit or orientation claims have any known version
-difference — they were checked directly against 1.13c's own game data and
-this repository's parser, and hold identically across all 2,666 corpus files
-regardless of which patch produced the map.
+difference — they were checked against 1.13c's own game data and its own
+loader, and hold identically across all 2,276 vanilla files regardless of which
+patch produced the map.
 
 | What | DS1 format version ≥ 15 (this book's baseline for path data) | DS1 format version 14 | DS1 format version < 14 |
 |---|---|---|---|
 | Path block present | yes | yes | absent |
 | Point fields | x, y, action | x, y | — |
+| Point size | 12 bytes | 8 bytes | — |
 | `action` value when the file has none | stored explicitly | parser defaults it to `1` | — |
+| Files at this version in vanilla 1.13c | **2,226** | **0** | **50** |
+
+**The version-14 column is a reading of the code, not of any shipped file.**
+Vanilla 1.13c contains no version-14 `.ds1` at all. Its 2,276 files sit at
+versions 3 (1 file), 8 (6), 12 (13), 13 (30), 15 (13), 16 (223), 17 (145) and 18
+(1,845) **[D]** — so the 50 files below the path-block threshold skip straight
+past 14, and every file that *does* carry paths stores the `action` explicitly.
+Both branches are nonetheless real in the loader **[G]**; the 8-byte one is
+simply unexercised by retail content, and would only be reached by a file some
+other tool produced.
 
 No version difference was found, or was checked, for: floor/wall/shadow layer
 maxima (2/4/1), the Hidden bit (`prop4 & 0x80`), the Unwalkable bit
 (`prop3 & 0x02`), orientation being wall-layer-only, or orientation values 10
-and 11 marking special/warp tiles. All were checked directly against 1.13c
-game data.
+and 11 marking special tiles. All were checked directly against 1.13c game data
+and 1.13c's `D2Common.dll`.
 
 ---
 

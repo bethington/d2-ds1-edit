@@ -8,20 +8,19 @@
     "configurePresets": [
         {
             "name": "default",
-            "displayName": "Default (x86, vcpkg)",
-            "description": "Build with vcpkg dependencies, Win32 architecture",
-            "generator": "Visual Studio 16 2019",
+            "displayName": "Visual Studio 2022 (x86)",
+            "description": "Build with the installed x86 vcpkg libraries using Visual Studio 2022",
+            "generator": "Visual Studio 17 2022",
             "architecture": {
                 "value": "Win32",
                 "strategy": "set"
             },
-            "binaryDir": "${sourceDir}/build",
+            "binaryDir": "${sourceDir}/tmp/build-vs2022",
             "cacheVariables": {
-                "CMAKE_TOOLCHAIN_FILE": {
-                    "type": "FILEPATH",
-                    "value": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
-                },
-                "VCPKG_TARGET_TRIPLET": "x86-windows"
+                "CMAKE_PREFIX_PATH": {
+                    "type": "PATH",
+                    "value": "${sourceDir}/build/vcpkg_installed/x86-windows"
+                }
             },
             "condition": {
                 "type": "equals",
@@ -147,6 +146,193 @@
             "configurePreset": "macos",
             "output": {
                 "outputOnFailure": true
+            }
+        },
+        {
+            "name": "fast",
+            "displayName": "Fast (unit suites, no display or game data)",
+            "configurePreset": "default",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "jobs": 8,
+                "noTestsAction": "error"
+            },
+            "configuration": "Release",
+            "filter": {
+                "include": {
+                    "label": "fast"
+                }
+            }
+        },
+        {
+            "name": "check",
+            "displayName": "Check (fast + golden core, adversarial slice, display tests)",
+            "configurePreset": "default",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "jobs": 8,
+                "noTestsAction": "error"
+            },
+            "configuration": "Release",
+            "filter": {
+                "include": {
+                    "label": "fast|check"
+                }
+            }
+        },
+        {
+            "name": "full",
+            "displayName": "Full (everything registered, incl. full adversarial campaign)",
+            "configurePreset": "default",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "jobs": 8,
+                "noTestsAction": "error"
+            },
+            "configuration": "Release"
+        },
+        {
+            "name": "ci-fast",
+            "displayName": "Fast (unit suites, no display or game data)",
+            "configurePreset": "ci",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "jobs": 8,
+                "noTestsAction": "error"
+            },
+            "filter": {
+                "include": {
+                    "label": "fast"
+                }
+            }
+        },
+        {
+            "name": "ci-check",
+            "displayName": "Check (fast + golden core, adversarial slice, display tests)",
+            "configurePreset": "ci",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "jobs": 8,
+                "noTestsAction": "error"
+            },
+            "filter": {
+                "include": {
+                    "label": "fast|check"
+                }
+            }
+        },
+        {
+            "name": "ci-full",
+            "displayName": "Full (everything registered, incl. full adversarial campaign)",
+            "configurePreset": "ci",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "jobs": 8,
+                "noTestsAction": "error"
+            }
+        },
+        {
+            "name": "linux-fast",
+            "displayName": "Fast (unit suites, no display or game data)",
+            "configurePreset": "linux",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "jobs": 8,
+                "noTestsAction": "error"
+            },
+            "filter": {
+                "include": {
+                    "label": "fast"
+                }
+            }
+        },
+        {
+            "name": "linux-check",
+            "displayName": "Check (fast + golden core, adversarial slice, display tests)",
+            "configurePreset": "linux",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "jobs": 8,
+                "noTestsAction": "error"
+            },
+            "filter": {
+                "include": {
+                    "label": "fast|check"
+                }
+            }
+        },
+        {
+            "name": "linux-full",
+            "displayName": "Full (everything registered, incl. full adversarial campaign)",
+            "configurePreset": "linux",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "jobs": 8,
+                "noTestsAction": "error"
+            }
+        },
+        {
+            "name": "macos-fast",
+            "displayName": "Fast (unit suites, no display or game data)",
+            "configurePreset": "macos",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "jobs": 8,
+                "noTestsAction": "error"
+            },
+            "filter": {
+                "include": {
+                    "label": "fast"
+                }
+            }
+        },
+        {
+            "name": "macos-check",
+            "displayName": "Check (fast + golden core, adversarial slice, display tests)",
+            "configurePreset": "macos",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "jobs": 8,
+                "noTestsAction": "error"
+            },
+            "filter": {
+                "include": {
+                    "label": "fast|check"
+                }
+            }
+        },
+        {
+            "name": "macos-full",
+            "displayName": "Full (everything registered, incl. full adversarial campaign)",
+            "configurePreset": "macos",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "jobs": 8,
+                "noTestsAction": "error"
             }
         }
     ]

@@ -360,6 +360,11 @@ int compose_apng_export_method(const COMPOSE_RENDER_PARAMS_S *params,
    if (scale != 1 && scale != 2 && scale != 4) return 0;
 
    if (!compose_render(params, &result)) return 0;
+   if (result.frame_count == 0)     /* empty COF: nothing to write */
+   {
+      compose_render_free(&result);
+      return 1;
+   }
 
    snprintf(cof_name, sizeof(cof_name), "%s%s%s",
             params->token  != NULL ? params->token  : "",
@@ -431,6 +436,11 @@ int compose_apng_export_scaled(const COMPOSE_RENDER_PARAMS_S *params,
 
    if (!compose_render(params, &result))
       return 0;
+   if (result.frame_count == 0)     /* empty COF: nothing to write */
+   {
+      compose_render_free(&result);
+      return 1;
+   }
 
    snprintf(cof_name, sizeof(cof_name), "%s%s%s",
             params->token  != NULL ? params->token  : "",

@@ -250,6 +250,52 @@ static void test_parse_rejects_null_inputs(void)
    TEST_ASSERT_EQUAL_INT(0, compose_cof_parse(buf, 0, &cof));
 }
 
+/* Project Diablo 2 ships COFs (zznuhth, zzonhth, zzophth) with a layer count
+ * of 0: valid, but they compose nothing. They parse as empty. */
+static void test_parse_zero_layer_cof_is_valid_and_empty(void)
+{
+   COMPOSE_COF_S cof;
+   unsigned char buf[64];
+   long frames_flags_at = 28;
+   memset(buf, 0, sizeof(buf));
+   buf[0] = 0;   /* layers */
+   buf[1] = 2;   /* fpd */
+   buf[2] = 1;   /* dirs */
+   buf[3] = 20;
+   (void) frames_flags_at;
+   memset(&cof, 0x5A, sizeof(cof));
+   TEST_ASSERT_EQUAL_INT(1, compose_cof_parse(buf, 28 + 2, &cof));
+   TEST_ASSERT_EQUAL_INT(0, cof.layer_count);
+   TEST_ASSERT_EQUAL_INT(2, cof.frames_per_dir);
+   TEST_ASSERT_EQUAL_INT(1, cof.direction_count);
+   TEST_ASSERT_EQUAL_INT(-1, compose_cof_priority_at(&cof, 0, 0, 0));
+   compose_cof_free(&cof);
+
+   /* the other dimensions stay validated for an empty COF */
+   buf[1] = 0;
+   TEST_ASSERT_EQUAL_INT(0, compose_cof_parse(buf, sizeof(buf), &cof));
+   buf[1] = 2;
+   buf[2] = 0;
+   TEST_ASSERT_EQUAL_INT(0, compose_cof_parse(buf, sizeof(buf), &cof));
+   /* and a truncated frame-flag area is still a truncated COF */
+   buf[2] = 1;
+   TEST_ASSERT_EQUAL_INT(0, compose_cof_parse(buf, 28 + 1, &cof));
+}
+
+/* amblxbow.cof claims 128 layers and is not a real COF. */
+static void test_parse_rejects_128_layer_header(void)
+{
+   COMPOSE_COF_S cof;
+   unsigned char buf[2048];
+   memset(buf, 0, sizeof(buf));
+   buf[0] = 128;
+   buf[1] = 1;
+   buf[2] = 1;
+   TEST_ASSERT_EQUAL_INT(0, compose_cof_parse(buf, sizeof(buf), &cof));
+   buf[0] = 17;  /* one past COMPOSE_COF_MAX_LAYERS */
+   TEST_ASSERT_EQUAL_INT(0, compose_cof_parse(buf, sizeof(buf), &cof));
+}
+
 int main(void)
 {
    UNITY_BEGIN();
@@ -261,5 +307,7 @@ int main(void)
    RUN_TEST(test_parse_rejects_bad_composit_index);
    RUN_TEST(test_parse_rejects_null_inputs);
    RUN_TEST(test_parse_real_d2_dimensions);
+   RUN_TEST(test_parse_zero_layer_cof_is_valid_and_empty);
+   RUN_TEST(test_parse_rejects_128_layer_header);
    return UNITY_END();
 }

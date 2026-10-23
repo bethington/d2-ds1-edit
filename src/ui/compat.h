@@ -51,6 +51,39 @@ static inline ALLEGRO_COLOR pal_color(int index)
     );
 }
 
+/* ---- GPU draw guard ---- */
+/* Drawing a MEMORY bitmap onto a VIDEO target makes Allegro lock the whole
+ * target per draw -- a correct picture at a fraction of a frame per second.
+ * That has shipped three times, so every bitmap draw in the editor goes
+ * through a flag test (the macros below shadow the Allegro calls) and the
+ * first offender is named on stderr. a5_gpu_guard_hits is read by --selftest,
+ * which fails if it is nonzero. Cost: two flag reads per draw. */
+extern unsigned a5_gpu_guard_hits;
+void a5_gpu_guard_report(const char *what, const char *file, int line,
+                         const ALLEGRO_BITMAP *bmp);
+/* Check a font's glyph page once (after creation / after a display-found
+ * conversion) instead of per glyph. Returns nonzero if it is a MEMORY bitmap
+ * that a video target would have to lock for. */
+int a5_gpu_guard_font(const ALLEGRO_FONT *font, const char *name);
+
+static inline ALLEGRO_BITMAP *a5_gpu_guard(ALLEGRO_BITMAP *src, const char *what,
+                                           const char *file, int line)
+{
+    if (src != NULL && (al_get_bitmap_flags(src) & ALLEGRO_MEMORY_BITMAP))
+    {
+        ALLEGRO_BITMAP *dst = al_get_target_bitmap();
+        if (dst != NULL && !(al_get_bitmap_flags(dst) & ALLEGRO_MEMORY_BITMAP))
+            a5_gpu_guard_report(what, file, line, src);
+    }
+    return src;
+}
+
+#define al_draw_bitmap(b, x, y, f)     al_draw_bitmap(a5_gpu_guard((b), "al_draw_bitmap", __FILE__, __LINE__), (x), (y), (f))
+#define al_draw_tinted_bitmap(b, t, x, y, f)     al_draw_tinted_bitmap(a5_gpu_guard((b), "al_draw_tinted_bitmap", __FILE__, __LINE__), (t), (x), (y), (f))
+#define al_draw_bitmap_region(b, sx, sy, sw, sh, dx, dy, f)     al_draw_bitmap_region(a5_gpu_guard((b), "al_draw_bitmap_region", __FILE__, __LINE__), (sx), (sy), (sw), (sh), (dx), (dy), (f))
+#define al_draw_scaled_bitmap(b, sx, sy, sw, sh, dx, dy, dw, dh, f)     al_draw_scaled_bitmap(a5_gpu_guard((b), "al_draw_scaled_bitmap", __FILE__, __LINE__), (sx), (sy), (sw), (sh), (dx), (dy), (dw), (dh), (f))
+#define al_draw_tinted_scaled_bitmap(b, t, sx, sy, sw, sh, dx, dy, dw, dh, f)     al_draw_tinted_scaled_bitmap(a5_gpu_guard((b), "al_draw_tinted_scaled_bitmap", __FILE__, __LINE__), (t), (sx), (sy), (sw), (sh), (dx), (dy), (dw), (dh), (f))
+
 /* ---- Drawing helpers ---- */
 /* These wrap Allegro 5's target-bitmap model with a convenient
  * pass-dst-bitmap calling convention */
@@ -76,6 +109,23 @@ static inline void a5_draw_sprite(ALLEGRO_BITMAP *dst, ALLEGRO_BITMAP *src, int 
     a5_end_target_bitmap(old_target, dst);
 }
 
+/* ---- Blend convention (read before touching any translucent draw) ----
+ * Every editor target runs under ALPHA / INVERSE_ALPHA (a5_clear and
+ * misc_draw_screen set it), i.e. result = src.rgb*src.a + dst.rgb*(1-src.a)
+ * with NON-premultiplied sources. So every translucent tint must be a
+ * non-premultiplied colour: rgb untouched, only alpha carrying the fade.
+ * Use a5_alpha_tint(a) for a fade. Never build the tint as
+ * al_map_rgba_f(a,a,a,a): that is a premultiplied colour and under this
+ * blender weights the source by a*a, so a "50 %" tint drew 0.25*src+0.5*dst.
+ * (A black tint, al_map_rgba_f(0,0,0,a), is identical in both conventions
+ * and is what the shadow helpers use.) Special COF modes (additive, multiply,
+ * screen) switch the blender for one draw and put ALPHA/INVERSE_ALPHA back;
+ * never wrap them in al_hold_bitmap_drawing. test_blend_convention locks it. */
+static inline ALLEGRO_COLOR a5_alpha_tint(float a)
+{
+    return al_map_rgba_f(1.0f, 1.0f, 1.0f, a);
+}
+
 /* Global: set before calling a5_draw_trans_sprite to control blend level.
  * D2 uses trans_b: 0=75% transparent, 1=50%, 2=25%, 3+=screen/luminance */
 extern float a5_trans_alpha;
@@ -84,7 +134,7 @@ static inline void a5_draw_trans_sprite(ALLEGRO_BITMAP *dst, ALLEGRO_BITMAP *src
 {
     float alpha = a5_trans_alpha;
     ALLEGRO_BITMAP *old_target = a5_begin_target_bitmap(dst);
-    al_draw_tinted_bitmap(src, al_map_rgba_f(alpha, alpha, alpha, alpha),
+    al_draw_tinted_bitmap(src, a5_alpha_tint(alpha),
                           (float)x, (float)y, 0);
     a5_end_target_bitmap(old_target, dst);
 }
@@ -108,15 +158,15 @@ static inline void a5_draw_scaled_blended_sprite(ALLEGRO_BITMAP *dst, ALLEGRO_BI
         switch (trans_b)
         {
             case 0:
-                al_draw_tinted_scaled_bitmap(src, al_map_rgba_f(0.25f, 0.25f, 0.25f, 0.25f),
+                al_draw_tinted_scaled_bitmap(src, a5_alpha_tint(0.25f),
                                               0, 0, sw, sh, (float)x, (float)y, dw, dh, 0);
                 break;
             case 1:
-                al_draw_tinted_scaled_bitmap(src, al_map_rgba_f(0.50f, 0.50f, 0.50f, 0.50f),
+                al_draw_tinted_scaled_bitmap(src, a5_alpha_tint(0.50f),
                                               0, 0, sw, sh, (float)x, (float)y, dw, dh, 0);
                 break;
             case 2:
-                al_draw_tinted_scaled_bitmap(src, al_map_rgba_f(0.75f, 0.75f, 0.75f, 0.75f),
+                al_draw_tinted_scaled_bitmap(src, a5_alpha_tint(0.75f),
                                               0, 0, sw, sh, (float)x, (float)y, dw, dh, 0);
                 break;
             case 3: /* Additive */
@@ -135,7 +185,7 @@ static inline void a5_draw_scaled_blended_sprite(ALLEGRO_BITMAP *dst, ALLEGRO_BI
                 al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
                 break;
             default:
-                al_draw_tinted_scaled_bitmap(src, al_map_rgba_f(0.50f, 0.50f, 0.50f, 0.50f),
+                al_draw_tinted_scaled_bitmap(src, a5_alpha_tint(0.50f),
                                               0, 0, sw, sh, (float)x, (float)y, dw, dh, 0);
                 break;
         }

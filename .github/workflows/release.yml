@@ -1,140 +1,212 @@
 name: Release
 
+# Releases publish the packages a qualified candidate build already produced.
+# Nothing is rebuilt here: a rebuilt package has new bytes, and new bytes are
+# not the package the qualification evidence describes.
+#
+# 1. Compute the canonical source-state digest of the tagged checkout.
+# 2. Load the maintainer-reviewed record release/qualification/<digest>.json.
+#    (A metadata-only follow-up commit may carry it; the digest excludes
+#    release/qualification/, and the source identity is checked separately.)
+# 3. Check that the record's candidate run is a successful build.yml run of
+#    this repository, built from the recorded commit.
+# 4. Download that run's candidate artifacts and verify the per-platform
+#    manifests, every package hash, every individual required result and the
+#    profile/contract/baseline identities (scripts/equivalence/qualify.py).
+# 5. Only then attach those exact files to a draft release.
+#
+# If the candidate run's artifacts have expired, this fails: produce a new
+# candidate, requalify it, and review a new record. Reports from any other
+# location are never accepted, and this workflow tags, dispatches and
+# approves nothing.
+
 on:
   push:
     tags: ['v*']
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to build (e.g. v2.0.0)'
+        description: 'Tag to release (e.g. v2.0.0)'
         required: true
 
 permissions:
   contents: write
+  actions: read
+
+env:
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
+  PROFILE: test/equivalence/profiles/release-core.json
+  PLATFORMS: windows-x86 linux-x86_64 macos-arm64
 
 jobs:
-  windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.tag || github.ref }}
-
-      # Ninja + the MSVC env rather than a Visual Studio generator: hosted
-      # runners rotate VS versions, and a pinned generator breaks on each bump.
-      - uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: x86
-
-      - name: Point VCPKG_ROOT at the runner's vcpkg
-        shell: pwsh
-        run: echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
-
-      - name: Configure
-        run: cmake --preset ci
-      - name: Build
-        run: cmake --build --preset ci-release
-      - name: Test
-        run: ctest --preset ci
-      - name: Package
-        run: cmake --build build --target package
-
-      - name: Stage artifact
-        shell: pwsh
-        run: |
-          $tag = "${{ github.event.inputs.tag }}"
-          if (-not $tag) { $tag = "${{ github.ref_name }}" }
-          New-Item -ItemType Directory -Force dist | Out-Null
-          $pkg = Get-ChildItem build -Filter 'DS1Edit-*.zip' | Select-Object -First 1
-          if (-not $pkg) { throw "CPack produced no ZIP in build/" }
-          Move-Item $pkg.FullName "dist/ds1edit-$tag-windows-x86.zip"
-          Get-ChildItem dist
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: pkg-windows
-          path: dist/*
-
-  linux:
+  verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.tag || github.ref }}
 
-      - name: Install deps
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends \
-            build-essential ninja-build cmake pkg-config zlib1g-dev \
-            liballegro5-dev liballegro-image5-dev liballegro-ttf5-dev \
-            liballegro-dialog5-dev liballegro-acodec5-dev
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
-      - name: Configure
-        run: cmake --preset linux
-      - name: Build
-        run: cmake --build --preset linux
-      - name: Test
-        run: ctest --preset linux
-      - name: Package
-        run: cmake --build build --target package
-
-      - name: Stage artifact
+      - name: Find the reviewed qualification record for this source state
+        id: record
         run: |
           set -euo pipefail
-          tag="${{ github.event.inputs.tag || github.ref_name }}"
+          digest=$(python -c "from pathlib import Path; from scripts.equivalence.qualify import source_state_digest; print(source_state_digest(Path('.')))")
+          record="release/qualification/${digest}.json"
+          echo "source state: ${digest}"
+          if [ ! -f "$record" ]; then
+            echo "::error::No reviewed qualification record ${record} for the tagged source state. Qualify a candidate built from this source and commit its record."
+            exit 1
+          fi
+          python - "$record" <<'PY' >> "$GITHUB_OUTPUT"
+          import json, sys
+          r = json.load(open(sys.argv[1], encoding="utf-8"))
+          c = r["candidate"]
+          print("record=%s" % sys.argv[1])
+          print("run_id=%s" % c["candidate_run_id"])
+          print("commit=%s" % c["source"]["commit"])
+          print("repository=%s" % c["repository"])
+          PY
+
+      - name: Check the recorded candidate run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ steps.record.outputs.run_id }}
+          COMMIT: ${{ steps.record.outputs.commit }}
+          RECORD_REPO: ${{ steps.record.outputs.repository }}
+        run: |
+          set -euo pipefail
+          case "$RUN_ID" in (*[!0-9]*|'') echo "::error::candidate_run_id '$RUN_ID' is not a GitHub run ID"; exit 1;; esac
+          if [ "$RECORD_REPO" != "${{ github.repository }}" ]; then
+            echo "::error::record names repository $RECORD_REPO, not ${{ github.repository }}"; exit 1
+          fi
+          gh api "repos/${{ github.repository }}/actions/runs/${RUN_ID}" > run.json
+          python - <<'PY'
+          import json, os, sys
+          run = json.load(open("run.json", encoding="utf-8"))
+          want = {
+              "path": ".github/workflows/build.yml",
+              "conclusion": "success",
+              "head_sha": os.environ["COMMIT"],
+          }
+          bad = ["%s is %r, expected %r" % (k, run.get(k), v)
+                 for k, v in want.items() if run.get(k) != v]
+          if run.get("repository", {}).get("full_name") != "${{ github.repository }}":
+              bad.append("run belongs to another repository")
+          for b in bad:
+              print("::error::candidate run %s: %s" % (run.get("id"), b))
+          sys.exit(1 if bad else 0)
+          PY
+          rm -f run.json
+
+      - name: Download the candidate packages (no rebuild)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ steps.record.outputs.run_id }}
+        run: |
+          set -euo pipefail
+          for p in $PLATFORMS; do
+            if ! gh run download "$RUN_ID" -R "${{ github.repository }}" -n "candidate-$p" -D "candidate/$p"; then
+              echo "::error::candidate-$p from run $RUN_ID is unavailable (expired?). Build a new candidate and requalify it."
+              exit 1
+            fi
+          done
+          find candidate -type f -exec ls -l {} +
+
+      - name: Verify identities, hashes and every required result
+        env:
+          RECORD: ${{ steps.record.outputs.record }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, sys
+          from pathlib import Path
+          from scripts.equivalence import contracts as C
+          from scripts.equivalence import qualify as Q
+
+          record = json.loads(Path(os.environ["RECORD"]).read_text(encoding="utf-8"))
+          profile = Q.load_profile(Path(os.environ["PROFILE"]))
+          cand = record["candidate"]
+          tag = os.environ["TAG"]
+          problems, artifacts = [], {}
+          expected = os.environ["PLATFORMS"].split()
+          if sorted(cand["platforms"]) != sorted(expected):
+              problems.append("record platforms %s are not %s" % (sorted(cand["platforms"]), expected))
+          for p, v in sorted(cand["platforms"].items()):
+              d = Path("candidate") / p
+              pkg = v["package"]["name"]
+              artifacts[p] = d / pkg
+              names = sorted(f.name for f in d.iterdir()) if d.is_dir() else []
+              allowed = {pkg, "candidate-%s.json" % p, "package-inspection.json"}
+              if set(names) - allowed:
+                  problems.append("%s: unexpected files in candidate artifact: %s" % (p, sorted(set(names) - allowed)))
+              if not tag.startswith("v") or "-%s-" % tag[1:] not in pkg:
+                  problems.append("%s: package %s is not version %s" % (p, pkg, tag))
+              mf = d / ("candidate-%s.json" % p)
+              try:
+                  m = json.loads(mf.read_text(encoding="utf-8"))
+                  C._check_digest(m, mf.name)
+              except (OSError, ValueError, C.ValidationError) as exc:
+                  problems.append("%s: manifest unusable: %s" % (p, exc))
+                  continue
+              checks = {
+                  "schema": (m.get("schema"), Q.PLATFORM_MANIFEST_SCHEMA),
+                  "platform": (m.get("platform"), p),
+                  "candidate_run_id": (m.get("candidate_run_id"), cand["candidate_run_id"]),
+                  "commit": (m.get("source", {}).get("commit"), cand["source"]["commit"]),
+                  "source_state_digest": (m.get("source", {}).get("source_state_digest"),
+                                          cand["source"]["source_state_digest"]),
+                  "package": (m.get("package"), v["package"]),
+                  "executables": (m.get("executables"), v["executables"]),
+              }
+              for k, (got, want) in checks.items():
+                  if got != want:
+                      problems.append("%s: manifest %s %r != record %r" % (p, k, got, want))
+          problems += Q.verify_release_record(record, profile, Path("."), artifacts)
+          for pr in problems:
+              print("::error::%s" % pr)
+          if problems:
+              sys.exit(1)
+          print("verified candidate run %s, source state %s, %d required results"
+                % (cand["candidate_run_id"], record["source_state_digest"], len(record["required"])))
+          for p, s in sorted(record["package_hashes"].items()):
+              print("  %s %s" % (s, p))
+          PY
+
+      - name: Stage the verified packages
+        run: |
+          set -euo pipefail
           mkdir -p dist
-          pkg=$(ls build/DS1Edit-*.tar.gz | head -1)
-          mv "$pkg" "dist/ds1edit-$tag-linux-x86_64.tar.gz"
-          ls -la dist
+          for p in $PLATFORMS; do
+            for f in candidate/$p/DS1Edit-*; do
+              case "$f" in
+                *.zip)    cp "$f" "dist/ds1edit-${TAG}-${p}.zip" ;;
+                *.tar.gz) cp "$f" "dist/ds1edit-${TAG}-${p}.tar.gz" ;;
+                *) echo "::error::unexpected package $f"; exit 1 ;;
+              esac
+            done
+          done
+          (cd dist && sha256sum * > SHA256SUMS)
+          cat dist/SHA256SUMS
 
       - uses: actions/upload-artifact@v4
         with:
-          name: pkg-linux
+          name: release-dist
           path: dist/*
-
-  macos:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.tag || github.ref }}
-
-      - name: Install deps
-        run: brew install allegro ninja pkg-config
-
-      - name: Configure
-        run: cmake --preset macos
-      - name: Build
-        run: cmake --build --preset macos
-      - name: Test
-        run: ctest --preset macos
-      - name: Package
-        run: cmake --build build --target package
-
-      - name: Stage artifact
-        run: |
-          set -euo pipefail
-          tag="${{ github.event.inputs.tag || github.ref_name }}"
-          mkdir -p dist
-          pkg=$(ls build/DS1Edit-*.tar.gz | head -1)
-          mv "$pkg" "dist/ds1edit-$tag-macos-arm64.tar.gz"
-          ls -la dist
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: pkg-macos
-          path: dist/*
+          if-no-files-found: error
 
   publish:
-    needs: [windows, linux, macos]
+    needs: [verify]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
         with:
+          name: release-dist
           path: dist
-          merge-multiple: true
-      - run: ls -la dist
+      - run: ls -la dist && (cd dist && sha256sum -c SHA256SUMS)
 
       - uses: softprops/action-gh-release@v2
         with:

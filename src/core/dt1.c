@@ -13,6 +13,7 @@
 #include "core/rgba_cache.h"
 
 #define DT1_FIXED_HEADER_SIZE 276
+#define DT1_MAX_BLOCK_DIM     2048  /* far above any real tile (<= ~160 x 512) */
 #define DT1_BLOCK_HEADER_SIZE 96
 
 // ==========================================================================
@@ -175,7 +176,8 @@ void dt1_bh_update(int i)
    for (b = 0; b < glb_dt1[i].block_num; b++)
    {
       bh_ptr->direction = *(const int32_t *)ptr;
-      bh_ptr->roof_y = *(WORD *)(ptr + 4);
+      /* D2Client zero-extends this roof offset from the DT1's 16-bit word. */
+      bh_ptr->roof_y = *(const uint16_t *)(ptr + 4);
       bh_ptr->sound = *(UBYTE *)(ptr + 6);
       bh_ptr->animated = *(UBYTE *)(ptr + 7);
       bh_ptr->size_y = *(const int32_t *)(ptr + 8);
@@ -208,7 +210,9 @@ static int dt1_headers_are_valid(int i)
       return FALSE;
    if (glb_dt1[i].buff_len < DT1_FIXED_HEADER_SIZE)
       return FALSE;
-   if (glb_dt1[i].x1 != 7 || glb_dt1[i].x2 != 6)
+   /* The second dword is flags, not a minor version. Bit 0 can be set on
+    * serialized tile resources; the disk layout we decode has bits 1/2 set. */
+   if (glb_dt1[i].x1 != 7 || (glb_dt1[i].x2 & ~1) != 6)
       return FALSE;
    if (glb_dt1[i].block_num < 0 || glb_dt1[i].bh_start < 0)
       return FALSE;
@@ -243,7 +247,9 @@ void dt1_fill_subt(SUB_TILE_S *ptr, int i, long tiles_ptr, int s)
    ptr->x_grid = *(UBYTE *)(st_ptr + 6);
    ptr->y_grid = *(UBYTE *)(st_ptr + 7);
    ptr->format = *(WORD *)(st_ptr + 8);
-   ptr->length = *(const int32_t *)(st_ptr + 10);
+   /* The RLE length is a 16-bit field. Bytes 12-15 are reserved, and may
+    * contain data in a modded DT1 without extending this payload. */
+   ptr->length = *(const uint16_t *)(st_ptr + 10);
    // skip 2 bytes : unknown2
    ptr->data_offset = *(const int32_t *)((UBYTE *)st_ptr + 16);
 }
@@ -302,6 +308,9 @@ void dt1_zoom(ALLEGRO_BITMAP *src, int i, int b, int z,
               i, b, z, w, h);
       ds1edit_error(tmp_str);
    }
+   /* al_create_bitmap does not clear, and the blit alpha-blends: without this
+      the transparent pixels kept whatever the allocation held */
+   a5_clear(dst);
    a5_stretch_blit(src, dst, 0, 0, al_get_bitmap_width(src), al_get_bitmap_height(src), 0, 0, w, h);
    *(glb_dt1[i].block_zoom[z] + b) = dst;
 
@@ -330,7 +339,7 @@ void dt1_all_zoom_make(int i)
 {
    BLOCK_S *b_ptr, *my_b_ptr; // pointers to current block header
    SUB_TILE_S st_ptr;         // current sub-tile header
-   ALLEGRO_BITMAP *tmp_bmp, *sprite;
+   ALLEGRO_BITMAP *tmp_bmp;
    int b, w, h, s, x0, y0, length, y_add, z, mem_size;
    UBYTE *data;
    WORD format;
@@ -405,8 +414,11 @@ void dt1_all_zoom_make(int i)
       }
 
       // anti-bug (for empty block)
-      if ((w == 0) || (h == 0))
+      if ((w == 0) || (h == 0)
+          || (w < 0) || (h < 0) || (w > DT1_MAX_BLOCK_DIM) || (h > DT1_MAX_BLOCK_DIM))
       {
+         /* also: a corrupt size must not reach the allocation below, where
+          * w * h wraps a 32-bit size_t and the decoder then writes past it */
          if (verbose_progress)
          {
             fprintf(stderr, "0");
@@ -417,42 +429,39 @@ void dt1_all_zoom_make(int i)
       }
 
       // normal block (non-empty)
-      /* Scratch surface: composed pixel by pixel below, blitted once, then
-         destroyed. It must stay in system memory -- on the GPU each of those
-         writes takes a texture lock, which costs ~280 ms per block against
-         ~0.4 ms here. Only the bitmap dt1_zoom keeps wants to be a texture. */
-      { int prev_flags = al_get_new_bitmap_flags();
-        al_set_new_bitmap_flags(ALLEGRO_MEMORY_BITMAP);
-        tmp_bmp = al_create_bitmap(w, h);
-        al_set_new_bitmap_flags(prev_flags); }
-      if (tmp_bmp == NULL)
+      //
+      // Sub-tiles decode once, into palette indices; the block bitmap is made
+      // from those indices below. (There used to be a second, bitmap-writing
+      // decoder running alongside this one.)
+      idx_buf = (uint8_t *)calloc((size_t)w * (size_t)h, 1);
+      if (idx_buf == NULL)
       {
-         sprintf(tmp_str, "dt1_all_zoom_make(%i), can't make a bitmap "
+         sprintf(tmp_str, "dt1_all_zoom_make(%i), can't make an index buffer "
                           "of %i * %i pixels\n",
                  i, w, h);
          ds1edit_error(tmp_str);
+         b_ptr++;
+         continue;
       }
-      a5_clear(tmp_bmp);
-
-      // allocate index buffer for parallel decode
-      idx_buf = (uint8_t *)calloc(w * h, 1);
-
-      // draw sub-tiles in this bitmap (and index buffer)
-      //
-      // Select the target and take the write lock once for the whole block.
-      // draw_sub_tile_* writes through al_put_pixel, so without this each
-      // pixel would switch the target twice and, with a display up, stall the
-      // pipeline every time.
-      { ALLEGRO_BITMAP *prev_target = al_get_target_bitmap();
-        ALLEGRO_LOCKED_REGION *blk_lock;
-        al_set_target_bitmap(tmp_bmp);
-        blk_lock = al_lock_bitmap(tmp_bmp, ALLEGRO_PIXEL_FORMAT_ANY,
-                                  ALLEGRO_LOCK_READWRITE);
 
       for (s = 0; s < b_ptr->tiles_number; s++) // for each sub-tiles
       {
+         /* 64-bit: tiles_ptr and data_offset come from the file, and their
+          * sums wrap a 32-bit long */
+         int64_t buff_len = glb_dt1[i].buff_len;
+         int64_t hdr = (int64_t) b_ptr->tiles_ptr + 20 * (int64_t) s;
+
+         // the sub-tile header and its data must lie inside the file
+         if ((b_ptr->tiles_ptr < 0) || (hdr < 0) || (hdr + 20 > buff_len))
+            break;
+
          // get the sub-tile info
          dt1_fill_subt(&st_ptr, i, b_ptr->tiles_ptr, s);
+         if ((st_ptr.data_offset < 0)
+             || ((int64_t) b_ptr->tiles_ptr + st_ptr.data_offset > buff_len)
+             || ((int64_t) st_ptr.length
+                 > buff_len - b_ptr->tiles_ptr - (int64_t) st_ptr.data_offset))
+            continue;
 
          // get infos
          x0 = st_ptr.x_pos;
@@ -461,25 +470,11 @@ void dt1_all_zoom_make(int i)
          length = st_ptr.length;
          format = st_ptr.format;
 
-         // draw the sub-tile (legacy BITMAP)
          if (format == 0x0001)
-            draw_sub_tile_isometric(tmp_bmp, x0, y0, data, length);
+            decode_sub_tile_isometric(idx_buf, w, h, x0, y0, data, length);
          else
-            draw_sub_tile_normal(tmp_bmp, x0, y0, data, length);
-
-         // decode to index buffer (new path)
-         if (idx_buf != NULL)
-         {
-            if (format == 0x0001)
-               decode_sub_tile_isometric(idx_buf, w, h, x0, y0, data, length);
-            else
-               decode_sub_tile_normal(idx_buf, w, h, x0, y0, data, length);
-         }
+            decode_sub_tile_normal(idx_buf, w, h, x0, y0, data, length);
       }
-
-        if (blk_lock != NULL)
-           al_unlock_bitmap(tmp_bmp);
-        al_set_target_bitmap(prev_target); }
 
       // if a game's special tile, draw my own info over it
       if ((glb_ds1edit.cmd_line.no_vis_debug == FALSE) &&
@@ -497,11 +492,6 @@ void dt1_all_zoom_make(int i)
                 (my_b_ptr[my_idx].main_index == t_mi) &&
                 (my_b_ptr[my_idx].sub_index == t_si))
             {
-               // found it, draw that tile over the game's gfx
-               sprite = *(glb_dt1[0].block_zoom[ZM_11] + my_idx);
-               if (sprite != NULL)
-                  a5_draw_sprite(tmp_bmp, sprite, 0, al_get_bitmap_height(tmp_bmp) - al_get_bitmap_height(sprite));
-
                // also overlay in the index buffer from the cached tile
                if (idx_buf != NULL && glb_dt1[0].block_cache[ZM_11] != NULL)
                {
@@ -526,6 +516,41 @@ void dt1_all_zoom_make(int i)
             }
          }
       }
+
+      // the block image, from the indices
+      /* Scratch surface, composed pixel by pixel then blitted once by
+         dt1_zoom. It stays in system memory: on the GPU each write takes a
+         texture lock (~280 ms per block against ~0.4 ms here). */
+      { int prev_flags = al_get_new_bitmap_flags();
+        al_set_new_bitmap_flags(ALLEGRO_MEMORY_BITMAP);
+        tmp_bmp = al_create_bitmap(w, h);
+        al_set_new_bitmap_flags(prev_flags); }
+      if (tmp_bmp == NULL)
+      {
+         sprintf(tmp_str, "dt1_all_zoom_make(%i), can't make a bitmap "
+                          "of %i * %i pixels\n",
+                 i, w, h);
+         ds1edit_error(tmp_str);
+         free(idx_buf);
+         idx_buf = NULL;
+         b_ptr++;
+         continue;
+      }
+      { ALLEGRO_BITMAP *prev_target = al_get_target_bitmap();
+        ALLEGRO_LOCKED_REGION *blk_lock;
+        int px, py;
+        al_set_target_bitmap(tmp_bmp);
+        blk_lock = al_lock_bitmap(tmp_bmp, ALLEGRO_PIXEL_FORMAT_ANY,
+                                  ALLEGRO_LOCK_WRITEONLY);
+        for (py = 0; py < h; py++)
+           for (px = 0; px < w; px++)
+           {
+              uint8_t v = idx_buf[(size_t)py * w + px];
+              al_put_pixel(px, py, v ? pal_color(v) : al_map_rgba(0, 0, 0, 0));
+           }
+        if (blk_lock != NULL)
+           al_unlock_bitmap(tmp_bmp);
+        al_set_target_bitmap(prev_target); }
 
       // Only generate ZM_11 (1:1) — all other zoom levels use GPU scaling
       dt1_zoom(tmp_bmp, i, b, ZM_11, idx_buf, w, h);
@@ -693,7 +718,8 @@ int dt1_add_special(char *dt1name)
          {
             // load from ds1edit directory
             entry = mod_load_in_mem(".", dt1name,
-                                    &glb_dt1[i].buffer, &glb_dt1[i].buff_len);
+                                    &glb_dt1[i].buffer, &glb_dt1[i].buff_len,
+                                    TRUE);
             if (entry == -1)
             {
                sprintf(tmp, "(dt1_add_special) file %s not found", dt1name);

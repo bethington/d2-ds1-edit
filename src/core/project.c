@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <ctype.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include "structs.h"
 #include "core/project.h"
@@ -256,6 +258,22 @@ int project_ensure_parent_dirs(const char *path)
          buf[i] = save;
       }
    }
+
+   // What matters is the result: the file's own directory must now exist
+   // as a directory. (EEXIST from mkdir also covers a *file* of that name,
+   // so the loop alone used to report success with a file in the way.)
+   while (n > 0 && buf[n - 1] != '/' && buf[n - 1] != '\\')
+      n--;
+   if (n == 0)
+      return 1;                 // bare filename: the current directory
+   if (n == 1 || (n == 3 && buf[1] == ':'))
+      return 1;                 // a root: "/" or "C:\"
+   buf[n - 1] = 0;
+   {
+      struct stat st;
+      if (stat(buf, &st) != 0 || !(st.st_mode & S_IFDIR))
+         return 0;
+   }
    return 1;
 }
 
@@ -285,21 +303,26 @@ const char *find_tiles_suffix(const char *path)
    return NULL;
 }
 
-// Case-insensitive prefix match, accepting both slash styles as equivalent.
-static int path_starts_with(const char *path, const char *prefix)
+// Is `path` inside directory `dir`? Case-insensitive, both slash styles
+// equivalent, and only at a path-component boundary: "C:\proj2\x" is not
+// inside "C:\proj". (A plain prefix test said it was, and copy-on-save then
+// saved over the sibling folder's original map in place.)
+static int path_starts_with(const char *path, const char *dir)
 {
    int i;
-   if (path == NULL || prefix == NULL) return 0;
-   for (i = 0; prefix[i] != 0; i++)
+   if (path == NULL || dir == NULL || dir[0] == 0) return 0;
+   for (i = 0; dir[i] != 0; i++)
    {
       char a = path[i];
-      char b = prefix[i];
+      char b = dir[i];
       if (a == 0) return 0;
       if (a == '/')  a = '\\';
       if (b == '/')  b = '\\';
       if (tolower((unsigned char) a) != tolower((unsigned char) b)) return 0;
    }
-   return 1;
+   if (dir[i - 1] == '/' || dir[i - 1] == '\\')
+      return 1;                  // dir given with its trailing separator
+   return path[i] == 0 || path[i] == '/' || path[i] == '\\';
 }
 
 int project_redirect_ds1_save_path(const char *src, char *dst, int dst_cap)
@@ -323,8 +346,21 @@ int project_redirect_ds1_save_path(const char *src, char *dst, int dst_cap)
    suffix = find_tiles_suffix(src);
    if (suffix == NULL || suffix[0] == 0)   return 0;
 
-   n = snprintf(dst, dst_cap, "%s%sGlobal%sTiles%s%s",
-                glb_project.path, SEP, SEP, SEP, suffix);
-   if (n < 0 || n >= dst_cap)              return 0;
+   {
+      size_t plen = strlen(glb_project.path);
+      int    has_sep = (glb_project.path[plen - 1] == '/' ||
+                        glb_project.path[plen - 1] == '\\');
+
+      n = snprintf(dst, dst_cap, "%s%sGlobal%sTiles%s%s",
+                   glb_project.path, has_sep ? "" : SEP, SEP, SEP, suffix);
+   }
+   if (n < 0 || n >= dst_cap)
+   {
+      // The copy does not fit. Answering "not redirected" here sent the save
+      // back to the source map it was meant to protect; report it instead.
+      strncpy(dst, src, dst_cap - 1);
+      dst[dst_cap - 1] = 0;
+      return -1;
+   }
    return 1;
 }

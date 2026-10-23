@@ -6,7 +6,7 @@
             "includePath": [
                 "${workspaceFolder}/src",
                 "${workspaceFolder}/src/mpq",
-                "C:/vcpkg/installed/x86-windows/include"
+                "${workspaceFolder}/build/vcpkg_installed/x86-windows/include"
             ],
             "defines": [
                 "_DEBUG",

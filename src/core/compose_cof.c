@@ -45,7 +45,9 @@ int compose_cof_parse(const void *bytes, long len, COMPOSE_COF_S *out)
    out->direction_count= p[2];
    out->version        = p[3];
 
-   if (out->layer_count    <= 0 || out->layer_count    > COMPOSE_COF_MAX_LAYERS)
+   /* layer_count 0 is valid-but-empty (Project Diablo 2 ships a few such
+    * COFs); only counts beyond the layer table are rejected. */
+   if (out->layer_count    < 0 || out->layer_count    > COMPOSE_COF_MAX_LAYERS)
       return 0;
    if (out->frames_per_dir <= 0 || out->frames_per_dir > 1024)
       return 0;
@@ -108,6 +110,10 @@ int compose_cof_parse(const void *bytes, long len, COMPOSE_COF_S *out)
    if (len < pos + out->frames_per_dir)
       return 0;
    pos += out->frames_per_dir;
+
+   /* A COF with no layers has no priority table. */
+   if (out->layer_count == 0)
+      return 1;
 
    /* Priority table. */
    {

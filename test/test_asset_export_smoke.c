@@ -230,6 +230,17 @@ static void test_dt1_header_bounds_validation(void)
       valid_dt1_header_fixture,
       (long) sizeof(valid_dt1_header_fixture)));
 
+   /* The second dword is flags, not a fixed "minor version" of 6. */
+   * (int32_t *) (valid_dt1_header_fixture + 4) = 7;
+   TEST_ASSERT_TRUE(asset_export_dt1_header_looks_valid(
+      valid_dt1_header_fixture,
+      (long) sizeof(valid_dt1_header_fixture)));
+   * (int32_t *) (valid_dt1_header_fixture + 4) = 8;
+   TEST_ASSERT_FALSE(asset_export_dt1_header_looks_valid(
+      valid_dt1_header_fixture,
+      (long) sizeof(valid_dt1_header_fixture)));
+   * (int32_t *) (valid_dt1_header_fixture + 4) = 6;
+
    * (int32_t *) (valid_dt1_header_fixture + 268) = 2;
    TEST_ASSERT_FALSE(asset_export_dt1_header_looks_valid(
       valid_dt1_header_fixture,
@@ -273,6 +284,64 @@ static void test_invalid_dt1_discovery_is_rejected_and_cached(void)
    TEST_ASSERT_EQUAL_INT(0, test_asset_export_stub_get_dt1_add_count());
 }
 
+#ifdef DS1EDIT_VISUAL_FIXTURES
+#include "core/palette.h"
+extern RGBA_PALETTE *a5_current_palette;
+
+/* Export an authored 2-direction x 2-frame DC6 (transparent borders, signed
+ * origins) through the real decoder and PNG path. The files are decoded
+ * independently by scripts/equivalence/export_cases.py (CTest
+ * visual_export_images); here only the count and names are checked. */
+static void test_dc6_directions_export_for_independent_decoding(void)
+{
+   static RGBA_PALETTE pal;
+   char out_root[512], path[768];
+   unsigned char *dc6, *rgba;
+   long dc6_len, pal_len;
+   FILE *fp;
+   int d, f;
+
+   init_allegro_once();
+   fp = fopen(DS1EDIT_VISUAL_FIXTURES "/exports/palette.rgba", "rb");
+   TEST_ASSERT_NOT_NULL(fp);
+   rgba = (unsigned char *) malloc(1024);
+   pal_len = (long) fread(rgba, 1, 1024, fp);
+   fclose(fp);
+   TEST_ASSERT_EQUAL_INT(1024, pal_len);
+   memcpy(pal.colors, rgba, 1024);
+   free(rgba);
+   a5_current_palette = &pal;
+
+   fp = fopen(DS1EDIT_VISUAL_FIXTURES "/exports/sprite.dc6", "rb");
+   TEST_ASSERT_NOT_NULL(fp);
+   dc6 = (unsigned char *) malloc(4096);
+   dc6_len = (long) fread(dc6, 1, 4096, fp);
+   fclose(fp);
+
+   ensure_dir(DS1EDIT_TEST_OUT_DIR);
+   snprintf(out_root, sizeof(out_root), "%s" T_SEP "sprite", DS1EDIT_TEST_OUT_DIR);
+   ensure_dir(out_root);
+   al_set_new_bitmap_flags(ALLEGRO_MEMORY_BITMAP);
+   TEST_ASSERT_EQUAL_INT(4, asset_export_dc6_buffer_png("Data\\Test\\sprite.dc6",
+                                                         dc6, dc6_len, out_root));
+   for (d = 0; d < 2; d++)
+      for (f = 0; f < 2; f++)
+      {
+         snprintf(path, sizeof(path),
+                  "%s" T_SEP "Data" T_SEP "Test" T_SEP "sprite" T_SEP "dir_%02d" T_SEP "frame_%03d.png",
+                  out_root, d, f);
+         TEST_ASSERT_TRUE_MESSAGE(file_exists_nonempty(path), path);
+      }
+
+   /* corrupt input: nothing is claimed */
+   dc6[24] = 0xFF; dc6[25] = 0xFF; dc6[26] = 0xFF; dc6[27] = 0x7F;
+   TEST_ASSERT_EQUAL_INT(0, asset_export_dc6_buffer_png("Data\\Test\\bad.dc6",
+                                                         dc6, dc6_len, out_root));
+   free(dc6);
+   a5_current_palette = NULL;
+}
+#endif
+
 int main(void)
 {
    UNITY_BEGIN();
@@ -282,6 +351,9 @@ int main(void)
    RUN_TEST(test_dt1_header_bounds_validation);
    RUN_TEST(test_invalid_dt1_discovery_is_rejected_and_cached);
    RUN_TEST(test_dc6_fixture_exports_png);
+#ifdef DS1EDIT_VISUAL_FIXTURES
+   RUN_TEST(test_dc6_directions_export_for_independent_decoding);
+#endif
    RUN_TEST(test_dcc_cli_smoke_if_configured);
    return UNITY_END();
 }

@@ -14,56 +14,92 @@
 
 
 // ==========================================================================
-// Create CACHED_TILE array from BITMAP array in a LAY_INF_S.
-// Reads palette indices from each BITMAP via getpixel().
-void anim_build_layer_cache(LAY_INF_S *lay)
+// Fill a layer from decoded palette-index frames, all `w` x `h`.
+//
+// The frames come straight from the decoders' raw output, so the indices are
+// exact: they are never recovered from colours, which is lossy wherever the
+// palette repeats a colour. `palshift` (256 bytes, or NULL) remaps each
+// non-transparent index, as the layer's palette transform does in the game.
+// Index 0 stays transparent.
+// return 0 on success, non-zero on error (the layer is then left empty)
+int anim_layer_from_index_frames(LAY_INF_S *lay, UBYTE * const *frames,
+                                 int count, int w, int h, int off_x, int off_y,
+                                 const UBYTE *palshift)
 {
-   int i, x, y, w, h, size;
+   int i, x, y;
 
-   if (lay->bmp == NULL || lay->bmp_num <= 0)
-      return;
+   if ((lay == NULL) || (frames == NULL) || (count <= 0) || (w <= 0) || (h <= 0))
+      return 1;
 
-   size = lay->bmp_num * sizeof(CACHED_TILE *);
-   lay->cache = (CACHED_TILE **) malloc(size);
-   if (lay->cache == NULL)
-      return;
-   memset(lay->cache, 0, size);
+   lay->bmp   = (ALLEGRO_BITMAP **) calloc((size_t) count, sizeof(ALLEGRO_BITMAP *));
+   lay->cache = (CACHED_TILE **) calloc((size_t) count, sizeof(CACHED_TILE *));
+   if ((lay->bmp == NULL) || (lay->cache == NULL))
+      goto fail;
+   lay->bmp_num = count;
+   lay->off_x   = off_x;
+   lay->off_y   = off_y;
 
-   for (i = 0; i < lay->bmp_num; i++)
+   for (i = 0; i < count; i++)
    {
-      if (lay->bmp[i] == NULL)
-         continue;
+      ALLEGRO_BITMAP        * prev_target;
+      ALLEGRO_LOCKED_REGION * lock;
+      CACHED_TILE           * ct;
 
-      w = al_get_bitmap_width(lay->bmp[i]);
-      h = al_get_bitmap_height(lay->bmp[i]);
-      lay->cache[i] = cache_tile_create(w, h);
-      if (lay->cache[i] == NULL)
-         continue;
+      ct = cache_tile_create(w, h);
+      lay->bmp[i] = al_create_bitmap(w, h);
+      lay->cache[i] = ct;
+      if ((ct == NULL) || (lay->bmp[i] == NULL))
+         goto fail;
 
-      // copy palette indices from BITMAP to CACHED_TILE (batch-locked)
+      prev_target = al_get_target_bitmap();
+      al_set_target_bitmap(lay->bmp[i]);
+      lock = al_lock_bitmap(lay->bmp[i], ALLEGRO_PIXEL_FORMAT_ANY,
+                            ALLEGRO_LOCK_WRITEONLY);
+      for (y = 0; y < h; y++)
       {
-         ALLEGRO_LOCKED_REGION *lock = al_lock_bitmap(
-            lay->bmp[i], ALLEGRO_PIXEL_FORMAT_ABGR_8888_LE, ALLEGRO_LOCK_READONLY);
-         if (lock != NULL)
+         for (x = 0; x < w; x++)
          {
-            for (y = 0; y < h; y++)
+            UBYTE src = (frames[i] != NULL) ? frames[i][(size_t) y * w + x] : 0;
+            UBYTE dst = ((src != 0) && (palshift != NULL)) ? palshift[src] : src;
+
+            ct->indices[(size_t) y * w + x] = dst;
+            if ((src != 0) && (dst == 0))
             {
-               uint8_t *row = (uint8_t *)lock->data + y * lock->pitch;
-               for (x = 0; x < w; x++)
-               {
-                  uint8_t r = row[x * 4];
-                  uint8_t g = row[x * 4 + 1];
-                  uint8_t b = row[x * 4 + 2];
-                  if (a5_current_palette != NULL)
-                     lay->cache[i]->indices[y * w + x] = palette_find_closest(a5_current_palette, r, g, b);
-                  else
-                     lay->cache[i]->indices[y * w + x] = r;
-               }
+               // an opaque pixel shifted onto entry 0 is drawn, not skipped
+               ALLEGRO_COLOR c = pal_color(0);
+               c.a = 1.0f;
+               al_put_pixel(x, y, c);
             }
-            al_unlock_bitmap(lay->bmp[i]);
+            else
+               al_put_pixel(x, y, dst ? pal_color(dst) : al_map_rgba(0, 0, 0, 0));
          }
       }
+      if (lock != NULL)
+         al_unlock_bitmap(lay->bmp[i]);
+      al_set_target_bitmap(prev_target);
+      if (a5_current_palette != NULL)
+         cache_tile_rebuild(ct, a5_current_palette);
    }
+   return 0;
+
+fail:
+   if (lay->bmp != NULL)
+   {
+      for (i = 0; i < count; i++)
+         if (lay->bmp[i] != NULL)
+            al_destroy_bitmap(lay->bmp[i]);
+      free(lay->bmp);
+   }
+   if (lay->cache != NULL)
+   {
+      for (i = 0; i < count; i++)
+         cache_tile_destroy(lay->cache[i]);
+      free(lay->cache);
+   }
+   lay->bmp     = NULL;
+   lay->cache   = NULL;
+   lay->bmp_num = 0;
+   return 1;
 }
 
 
@@ -79,7 +115,8 @@ int anim_load_dcc(
 {
    LAY_INF_S  * lay;
    DCC_S      * dcc;
-   int        entry, i, size, w, h, x, y;
+   UBYTE      ** frames;
+   int        entry, i, rc;
    char       * buff;
    long       dir = 0, len;
 
@@ -109,85 +146,34 @@ int anim_load_dcc(
       case 32 : dir = glb_ds1edit.new_dir32[user_dir]; break;
    }
 
-   // decode dcc direction
-   if (dcc_decode(dcc, 1 << dir))
+   // decode dcc direction, to palette indices only
+   if ((dir < 0) || (dir >= DCC_MAX_DIR) || dcc_decode_raw(dcc, 1L << dir)
+       || (dir >= dcc->header.directions) || ! dcc->direction[dir].decoded)
    {
       dcc_destroy(dcc);
       return 1;
    }
 
-   // allocate the bitmaps
-   size = dcc->header.frames_per_dir * sizeof(ALLEGRO_BITMAP *);
-   lay->bmp_num = dcc->header.frames_per_dir;
-   lay->bmp = (ALLEGRO_BITMAP **) malloc(size);
-   if (lay->bmp == NULL)
+   frames = (UBYTE **) calloc((size_t) dcc->header.frames_per_dir, sizeof(UBYTE *));
+   if (frames == NULL)
    {
       dcc_destroy(dcc);
       return 1;
    }
-   memset(lay->bmp, 0, size);
-   
-   // copy the bitmaps
-   w = al_get_bitmap_width(dcc->frame[dir][0].bmp);
-   h = al_get_bitmap_height(dcc->frame[dir][0].bmp);
-   lay->off_x = dcc->direction[dir].box.xmin;
-   lay->off_y = dcc->direction[dir].box.ymin;
    for (i=0; i < dcc->header.frames_per_dir; i++)
-   {
-      lay->bmp[i] = al_create_bitmap(w, h);
-      if (lay->bmp[i] == NULL)
-      {
-         while (i)
-         {
-            i--;
-            al_destroy_bitmap(lay->bmp[i]);
-         }
-         dcc_destroy(dcc);
-         return 1;
-      }
-      a5_clear(lay->bmp[i]);
-      if (palshift && a5_current_palette != NULL)
-      {
-         // Batch-locked palette shift: read source pixels, remap through palshift, write dest
-         ALLEGRO_LOCKED_REGION *src_lock = al_lock_bitmap(
-            dcc->frame[dir][i].bmp, ALLEGRO_PIXEL_FORMAT_ABGR_8888_LE, ALLEGRO_LOCK_READONLY);
-         ALLEGRO_LOCKED_REGION *dst_lock = al_lock_bitmap(
-            lay->bmp[i], ALLEGRO_PIXEL_FORMAT_ABGR_8888_LE, ALLEGRO_LOCK_WRITEONLY);
-         if (src_lock != NULL && dst_lock != NULL)
-         {
-            for (y=0; y<h; y++)
-            {
-               uint8_t *src_row = (uint8_t *)src_lock->data + y * src_lock->pitch;
-               uint8_t *dst_row = (uint8_t *)dst_lock->data + y * dst_lock->pitch;
-               for (x=0; x<w; x++)
-               {
-                  uint8_t r = src_row[x * 4];
-                  uint8_t g = src_row[x * 4 + 1];
-                  uint8_t b = src_row[x * 4 + 2];
-                  uint8_t a = src_row[x * 4 + 3];
-                  uint8_t src_idx = palette_find_closest(a5_current_palette, r, g, b);
-                  uint8_t dst_idx = palshift[src_idx];
-                  RGBA_COLOR pc = a5_current_palette->colors[dst_idx];
-                  dst_row[x * 4]     = pc.r;
-                  dst_row[x * 4 + 1] = pc.g;
-                  dst_row[x * 4 + 2] = pc.b;
-                  dst_row[x * 4 + 3] = a;  // preserve source alpha
-               }
-            }
-         }
-         if (dst_lock != NULL) al_unlock_bitmap(lay->bmp[i]);
-         if (src_lock != NULL) al_unlock_bitmap(dcc->frame[dir][i].bmp);
-      }
-      else
-         a5_blit(dcc->frame[dir][i].bmp, lay->bmp[i], 0, 0, 0, 0, w, h);
-   }
+      frames[i] = dcc->frame[dir][i].pixels;
 
-   // build CACHED_TILE array from the BITMAP frames
-   anim_build_layer_cache(lay);
+   rc = anim_layer_from_index_frames(lay, frames, dcc->header.frames_per_dir,
+           (int) dcc->direction[dir].box.width,
+           (int) dcc->direction[dir].box.height,
+           (int) dcc->direction[dir].box.xmin,
+           (int) dcc->direction[dir].box.ymin,
+           palshift);
 
    // end
+   free(frames);
    dcc_destroy(dcc);
-   return 0;
+   return rc;
 }
 
 

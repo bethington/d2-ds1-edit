@@ -1,0 +1,4385 @@
+{
+ "digest": "67d6482b199d184fbf5209d8c4ac585647b1f7dc23e2bd4cba04663f7e2c510e",
+ "generator": {
+  "main_palette": "entry i = (i, 73*i mod 256, 151*i mod 256), alpha 0 at i=0 else 255; all RGB distinct",
+  "module": "scripts.equivalence.capture_palette",
+  "queries": "exact colours 1..255; 0/127/255 RGB grid; index-0 colours; ties exact; grid points (step 25/25/50) with >1 nearest index, capped at 48; identical queries deduplicated",
+  "ties_palette": "duplicates (1=3, 2=5, 6=7, 9..255 white), decoy at index 0",
+  "version": "1"
+ },
+ "palettes": {
+  "main": "00000000014997ff02922eff03dbc5ff04245cff056df3ff06b68aff07ff21ff0848b8ff09914fff0adae6ff0b237dff0c6c14ff0db5abff0efe42ff0f47d9ff109070ff11d907ff12229eff136b35ff14b4ccff15fd63ff1646faff178f91ff18d828ff1921bfff1a6a56ff1bb3edff1cfc84ff1d451bff1e8eb2ff1fd749ff2020e0ff216977ff22b20eff23fba5ff24443cff258dd3ff26d66aff271f01ff286898ff29b12fff2afac6ff2b435dff2c8cf4ff2dd58bff2e1e22ff2f67b9ff30b050ff31f9e7ff32427eff338b15ff34d4acff351d43ff3666daff37af71ff38f808ff39419fff3a8a36ff3bd3cdff3c1c64ff3d65fbff3eae92ff3ff729ff4040c0ff418957ff42d2eeff431b85ff44641cff45adb3ff46f64aff473fe1ff488878ff49d10fff4a1aa6ff4b633dff4cacd4ff4df56bff4e3e02ff4f8799ff50d030ff5119c7ff52625eff53abf5ff54f48cff553d23ff5686baff57cf51ff5818e8ff59617fff5aaa16ff5bf3adff5c3c44ff5d85dbff5ece72ff5f1709ff6060a0ff61a937ff62f2ceff633b65ff6484fcff65cd93ff66162aff675fc1ff68a858ff69f1efff6a3a86ff6b831dff6cccb4ff6d154bff6e5ee2ff6fa779ff70f010ff7139a7ff72823eff73cbd5ff74146cff755d03ff76a69aff77ef31ff7838c8ff79815fff7acaf6ff7b138dff7c5c24ff7da5bbff7eee52ff7f37e9ff808080ff81c917ff8212aeff835b45ff84a4dcff85ed73ff86360aff877fa1ff88c838ff8911cfff8a5a66ff8ba3fdff8cec94ff8d352bff8e7ec2ff8fc759ff9010f0ff915987ff92a21eff93ebb5ff94344cff957de3ff96c67aff970f11ff9858a8ff99a13fff9aead6ff9b336dff9c7c04ff9dc59bff9e0e32ff9f57c9ffa0a060ffa1e9f7ffa2328effa37b25ffa4c4bcffa50d53ffa656eaffa79f81ffa8e818ffa931afffaa7a46ffabc3ddffac0c74ffad550bffae9ea2ffafe739ffb030d0ffb17967ffb2c2feffb30b95ffb4542cffb59dc3ffb6e65affb72ff1ffb87888ffb9c11fffba0ab6ffbb534dffbc9ce4ffbde57bffbe2e12ffbf77a9ffc0c040ffc109d7ffc2526effc39b05ffc4e49cffc52d33ffc676caffc7bf61ffc808f8ffc9518fffca9a26ffcbe3bdffcc2c54ffcd75ebffcebe82ffcf0719ffd050b0ffd19947ffd2e2deffd32b75ffd4740cffd5bda3ffd6063affd74fd1ffd89868ffd9e1ffffda2a96ffdb732dffdcbcc4ffdd055bffde4ef2ffdf9789ffe0e020ffe129b7ffe2724effe3bbe5ffe4047cffe54d13ffe696aaffe7df41ffe828d8ffe9716fffeaba06ffeb039dffec4c34ffed95cbffeede62ffef27f9fff07090fff1b927fff202befff34b55fff494ecfff5dd83fff6261afff76fb1fff8b848fff901dffffa4a76fffb930dfffcdca4fffd253bfffe6ed2ffffb769ff",
+  "ties": "28282800640000ff006400ff640000ff000064ff006400ffc8c8c8ffc8c8c8ff3c3c3cffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+ },
+ "schema": "ds1edit.palette-nearest-inputs/1",
+ "vectors": [
+  {
+   "group": "exact",
+   "id": "main-exact-001",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     1,
+     73,
+     151
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-002",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     2,
+     146,
+     46
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-003",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     3,
+     219,
+     197
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-004",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     4,
+     36,
+     92
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-005",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     5,
+     109,
+     243
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-006",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     6,
+     182,
+     138
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-007",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     7,
+     255,
+     33
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-008",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     8,
+     72,
+     184
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-009",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     9,
+     145,
+     79
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-010",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     10,
+     218,
+     230
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-011",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     11,
+     35,
+     125
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-012",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     12,
+     108,
+     20
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-013",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     13,
+     181,
+     171
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-014",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     14,
+     254,
+     66
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-015",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     15,
+     71,
+     217
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-016",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     16,
+     144,
+     112
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-017",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     17,
+     217,
+     7
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-018",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     18,
+     34,
+     158
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-019",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     19,
+     107,
+     53
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-020",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     20,
+     180,
+     204
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-021",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     21,
+     253,
+     99
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-022",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     22,
+     70,
+     250
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-023",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     23,
+     143,
+     145
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-024",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     24,
+     216,
+     40
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-025",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     25,
+     33,
+     191
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-026",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     26,
+     106,
+     86
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-027",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     27,
+     179,
+     237
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-028",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     28,
+     252,
+     132
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-029",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     29,
+     69,
+     27
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-030",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     30,
+     142,
+     178
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-031",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     31,
+     215,
+     73
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-032",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     32,
+     32,
+     224
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-033",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     33,
+     105,
+     119
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-034",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     34,
+     178,
+     14
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-035",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     35,
+     251,
+     165
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-036",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     36,
+     68,
+     60
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-037",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     37,
+     141,
+     211
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-038",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     38,
+     214,
+     106
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-039",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     39,
+     31,
+     1
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-040",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     40,
+     104,
+     152
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-041",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     41,
+     177,
+     47
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-042",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     42,
+     250,
+     198
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-043",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     43,
+     67,
+     93
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-044",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     44,
+     140,
+     244
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-045",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     45,
+     213,
+     139
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-046",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     46,
+     30,
+     34
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-047",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     47,
+     103,
+     185
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-048",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     48,
+     176,
+     80
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-049",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     49,
+     249,
+     231
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-050",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     50,
+     66,
+     126
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-051",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     51,
+     139,
+     21
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-052",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     52,
+     212,
+     172
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-053",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     53,
+     29,
+     67
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-054",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     54,
+     102,
+     218
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-055",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     55,
+     175,
+     113
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-056",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     56,
+     248,
+     8
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-057",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     57,
+     65,
+     159
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-058",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     58,
+     138,
+     54
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-059",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     59,
+     211,
+     205
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-060",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     60,
+     28,
+     100
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-061",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     61,
+     101,
+     251
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-062",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     62,
+     174,
+     146
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-063",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     63,
+     247,
+     41
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-064",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     64,
+     64,
+     192
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-065",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     65,
+     137,
+     87
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-066",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     66,
+     210,
+     238
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-067",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     67,
+     27,
+     133
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-068",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     68,
+     100,
+     28
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-069",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     69,
+     173,
+     179
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-070",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     70,
+     246,
+     74
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-071",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     71,
+     63,
+     225
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-072",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     72,
+     136,
+     120
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-073",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     73,
+     209,
+     15
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-074",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     74,
+     26,
+     166
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-075",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     75,
+     99,
+     61
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-076",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     76,
+     172,
+     212
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-077",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     77,
+     245,
+     107
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-078",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     78,
+     62,
+     2
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-079",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     79,
+     135,
+     153
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-080",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     80,
+     208,
+     48
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-081",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     81,
+     25,
+     199
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-082",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     82,
+     98,
+     94
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-083",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     83,
+     171,
+     245
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-084",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     84,
+     244,
+     140
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-085",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     85,
+     61,
+     35
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-086",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     86,
+     134,
+     186
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-087",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     87,
+     207,
+     81
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-088",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     88,
+     24,
+     232
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-089",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     89,
+     97,
+     127
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-090",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     90,
+     170,
+     22
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-091",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     91,
+     243,
+     173
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-092",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     92,
+     60,
+     68
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-093",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     93,
+     133,
+     219
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-094",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     94,
+     206,
+     114
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-095",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     95,
+     23,
+     9
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-096",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     96,
+     96,
+     160
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-097",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     97,
+     169,
+     55
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-098",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     98,
+     242,
+     206
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-099",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     99,
+     59,
+     101
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-100",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     100,
+     132,
+     252
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-101",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     101,
+     205,
+     147
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-102",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     102,
+     22,
+     42
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-103",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     103,
+     95,
+     193
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-104",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     104,
+     168,
+     88
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-105",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     105,
+     241,
+     239
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-106",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     106,
+     58,
+     134
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-107",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     107,
+     131,
+     29
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-108",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     108,
+     204,
+     180
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-109",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     109,
+     21,
+     75
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-110",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     110,
+     94,
+     226
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-111",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     111,
+     167,
+     121
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-112",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     112,
+     240,
+     16
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-113",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     113,
+     57,
+     167
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-114",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     114,
+     130,
+     62
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-115",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     115,
+     203,
+     213
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-116",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     116,
+     20,
+     108
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-117",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     117,
+     93,
+     3
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-118",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     118,
+     166,
+     154
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-119",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     119,
+     239,
+     49
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-120",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     120,
+     56,
+     200
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-121",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     121,
+     129,
+     95
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-122",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     122,
+     202,
+     246
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-123",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     123,
+     19,
+     141
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-124",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     124,
+     92,
+     36
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-125",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     125,
+     165,
+     187
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-126",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     126,
+     238,
+     82
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-127",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     127,
+     55,
+     233
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-128",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     128,
+     128,
+     128
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-129",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     129,
+     201,
+     23
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-130",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     130,
+     18,
+     174
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-131",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     131,
+     91,
+     69
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-132",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     132,
+     164,
+     220
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-133",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     133,
+     237,
+     115
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-134",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     134,
+     54,
+     10
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-135",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     135,
+     127,
+     161
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-136",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     136,
+     200,
+     56
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-137",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     137,
+     17,
+     207
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-138",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     138,
+     90,
+     102
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-139",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     139,
+     163,
+     253
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-140",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     140,
+     236,
+     148
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-141",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     141,
+     53,
+     43
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-142",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     142,
+     126,
+     194
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-143",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     143,
+     199,
+     89
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-144",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     144,
+     16,
+     240
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-145",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     145,
+     89,
+     135
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-146",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     146,
+     162,
+     30
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-147",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     147,
+     235,
+     181
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-148",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     148,
+     52,
+     76
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-149",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     149,
+     125,
+     227
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-150",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     150,
+     198,
+     122
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-151",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     151,
+     15,
+     17
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-152",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     152,
+     88,
+     168
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-153",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     153,
+     161,
+     63
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-154",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     154,
+     234,
+     214
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-155",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     155,
+     51,
+     109
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-156",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     156,
+     124,
+     4
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-157",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     157,
+     197,
+     155
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-158",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     158,
+     14,
+     50
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-159",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     159,
+     87,
+     201
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-160",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     160,
+     160,
+     96
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-161",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     161,
+     233,
+     247
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-162",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     162,
+     50,
+     142
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-163",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     163,
+     123,
+     37
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-164",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     164,
+     196,
+     188
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-165",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     165,
+     13,
+     83
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-166",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     166,
+     86,
+     234
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-167",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     167,
+     159,
+     129
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-168",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     168,
+     232,
+     24
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-169",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     169,
+     49,
+     175
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-170",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     170,
+     122,
+     70
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-171",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     171,
+     195,
+     221
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-172",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     172,
+     12,
+     116
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-173",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     173,
+     85,
+     11
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-174",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     174,
+     158,
+     162
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-175",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     175,
+     231,
+     57
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-176",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     176,
+     48,
+     208
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-177",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     177,
+     121,
+     103
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-178",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     178,
+     194,
+     254
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-179",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     179,
+     11,
+     149
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-180",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     180,
+     84,
+     44
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-181",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     181,
+     157,
+     195
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-182",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     182,
+     230,
+     90
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-183",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     183,
+     47,
+     241
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-184",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     184,
+     120,
+     136
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-185",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     185,
+     193,
+     31
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-186",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     186,
+     10,
+     182
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-187",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     187,
+     83,
+     77
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-188",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     188,
+     156,
+     228
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-189",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     189,
+     229,
+     123
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-190",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     190,
+     46,
+     18
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-191",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     191,
+     119,
+     169
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-192",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     192,
+     192,
+     64
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-193",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     193,
+     9,
+     215
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-194",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     194,
+     82,
+     110
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-195",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     195,
+     155,
+     5
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-196",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     196,
+     228,
+     156
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-197",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     197,
+     45,
+     51
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-198",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     198,
+     118,
+     202
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-199",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     199,
+     191,
+     97
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-200",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     200,
+     8,
+     248
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-201",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     201,
+     81,
+     143
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-202",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     202,
+     154,
+     38
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-203",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     203,
+     227,
+     189
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-204",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     204,
+     44,
+     84
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-205",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     205,
+     117,
+     235
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-206",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     206,
+     190,
+     130
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-207",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     207,
+     7,
+     25
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-208",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     208,
+     80,
+     176
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-209",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     209,
+     153,
+     71
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-210",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     210,
+     226,
+     222
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-211",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     211,
+     43,
+     117
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-212",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     212,
+     116,
+     12
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-213",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     213,
+     189,
+     163
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-214",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     214,
+     6,
+     58
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-215",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     215,
+     79,
+     209
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-216",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     216,
+     152,
+     104
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-217",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     217,
+     225,
+     255
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-218",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     218,
+     42,
+     150
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-219",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     219,
+     115,
+     45
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-220",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     220,
+     188,
+     196
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-221",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     221,
+     5,
+     91
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-222",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     222,
+     78,
+     242
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-223",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     223,
+     151,
+     137
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-224",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     224,
+     224,
+     32
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-225",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     225,
+     41,
+     183
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-226",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     226,
+     114,
+     78
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-227",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     227,
+     187,
+     229
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-228",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     228,
+     4,
+     124
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-229",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     229,
+     77,
+     19
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-230",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     230,
+     150,
+     170
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-231",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     231,
+     223,
+     65
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-232",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     232,
+     40,
+     216
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-233",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     233,
+     113,
+     111
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-234",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     234,
+     186,
+     6
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-235",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     235,
+     3,
+     157
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-236",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     236,
+     76,
+     52
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-237",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     237,
+     149,
+     203
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-238",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     238,
+     222,
+     98
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-239",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     239,
+     39,
+     249
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-240",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     240,
+     112,
+     144
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-241",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     241,
+     185,
+     39
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-242",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     242,
+     2,
+     190
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-243",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     243,
+     75,
+     85
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-244",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     244,
+     148,
+     236
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-245",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     245,
+     221,
+     131
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-246",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     246,
+     38,
+     26
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-247",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     247,
+     111,
+     177
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-248",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     248,
+     184,
+     72
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-249",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     249,
+     1,
+     223
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-250",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     250,
+     74,
+     118
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-251",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     251,
+     147,
+     13
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-252",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     252,
+     220,
+     164
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-253",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     253,
+     37,
+     59
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-254",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     254,
+     110,
+     210
+    ]
+   }
+  },
+  {
+   "group": "exact",
+   "id": "main-exact-255",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     255,
+     183,
+     105
+    ]
+   }
+  },
+  {
+   "group": "grid",
+   "id": "main-grid-000-000-000",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     0,
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "group": "grid",
+   "id": "main-grid-000-000-127",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     0,
+     0,
+     127
+    ]
+   }
+  },
+  {
+   "group": "grid",
+   "id": "main-grid-000-000-255",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     0,
+     0,
+     255
+    ]
+   }
+  },
+  {
+   "group": "grid",
+   "id": "main-grid-000-127-000",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     0,
+     127,
+     0
+    ]
+   }
+  },
+  {
+   "group": "grid",
+   "id": "main-grid-000-127-127",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     0,
+     127,
+     127
+    ]
+   }
+  },
+  {
+   "group": "grid",
+   "id": "main-grid-000-127-255",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     0,
+     127,
+     255
+    ]
+   }
+  },
+  {
+   "group": "grid",
+   "id": "main-grid-000-255-000",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     0,
+     255,
+     0
+    ]
+   }
+  },
+  {
+   "group": "grid",
+   "id": "main-grid-000-255-127",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     0,
+     255,
+     127
+    ]
+   }
+  },
+  {
+   "group": "grid",
+   "id": "main-grid-000-255-255",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     0,
+     255,
+     255
+    ]
+   }
+  },
+  {
+   "group": "grid",
+   "id": "main-grid-127-000-000",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     127,
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "group": "grid",
+   "id": "main-grid-127-000-127",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     127,
+     0,
+     127
+    ]
+   }
+  },
+  {
+   "group": "grid",
+   "id": "main-grid-127-000-255",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     127,
+     0,
+     255
+    ]
+   }
+  },
+  {
+   "group": "grid",
+   "id": "main-grid-127-127-000",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     127,
+     127,
+     0
+    ]
+   }
+  },
+  {
+   "group": "grid",
+   "id": "main-grid-127-127-127",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     127,
+     127,
+     127
+    ]
+   }
+  },
+  {
+   "group": "grid",
+   "id": "main-grid-127-127-255",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     127,
+     127,
+     255
+    ]
+   }
+  },
+  {
+   "group": "grid",
+   "id": "main-grid-127-255-000",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     127,
+     255,
+     0
+    ]
+   }
+  },
+  {
+   "group": "grid",
+   "id": "main-grid-127-255-127",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     127,
+     255,
+     127
+    ]
+   }
+  },
+  {
+   "group": "grid",
+   "id": "main-grid-127-255-255",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     127,
+     255,
+     255
+    ]
+   }
+  },
+  {
+   "group": "grid",
+   "id": "main-grid-255-000-000",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     255,
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "group": "grid",
+   "id": "main-grid-255-000-127",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     255,
+     0,
+     127
+    ]
+   }
+  },
+  {
+   "group": "grid",
+   "id": "main-grid-255-000-255",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     255,
+     0,
+     255
+    ]
+   }
+  },
+  {
+   "group": "grid",
+   "id": "main-grid-255-127-000",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     255,
+     127,
+     0
+    ]
+   }
+  },
+  {
+   "group": "grid",
+   "id": "main-grid-255-127-127",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     255,
+     127,
+     127
+    ]
+   }
+  },
+  {
+   "group": "grid",
+   "id": "main-grid-255-127-255",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     255,
+     127,
+     255
+    ]
+   }
+  },
+  {
+   "group": "grid",
+   "id": "main-grid-255-255-000",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     255,
+     255,
+     0
+    ]
+   }
+  },
+  {
+   "group": "grid",
+   "id": "main-grid-255-255-127",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     255,
+     255,
+     127
+    ]
+   }
+  },
+  {
+   "group": "grid",
+   "id": "main-grid-255-255-255",
+   "input": {
+    "palette": "main",
+    "palette_sha256": "774169d36b67a129da6ace17a50d02ab8130b626285ec49e8730fe685ce756fb",
+    "rgb": [
+     255,
+     255,
+     255
+    ]
+   }
+  },
+  {
+   "group": "transparent-index-0",
+   "id": "ties-index0-colour",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     40,
+     40,
+     40
+    ]
+   }
+  },
+  {
+   "group": "duplicate",
+   "id": "ties-exact-001",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     100,
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "group": "duplicate",
+   "id": "ties-exact-002",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     100,
+     0
+    ]
+   }
+  },
+  {
+   "group": "duplicate",
+   "id": "ties-exact-004",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     0,
+     100
+    ]
+   }
+  },
+  {
+   "group": "duplicate",
+   "id": "ties-exact-006",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     200,
+     200,
+     200
+    ]
+   }
+  },
+  {
+   "group": "duplicate",
+   "id": "ties-exact-008",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     60,
+     60,
+     60
+    ]
+   }
+  },
+  {
+   "group": "duplicate",
+   "id": "ties-exact-white",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     255,
+     255,
+     255
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-000-000",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-025-000",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     25,
+     0
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-050-000",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     50,
+     0
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-075-000",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     75,
+     0
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-075-050",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     75,
+     50
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-100-050",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     100,
+     50
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-125-000",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     125,
+     0
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-125-050",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     125,
+     50
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-150-000",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     150,
+     0
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-150-050",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     150,
+     50
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-150-100",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     150,
+     100
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-150-250",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     150,
+     250
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-175-000",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     175,
+     0
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-175-050",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     175,
+     50
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-175-100",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     175,
+     100
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-175-250",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     175,
+     250
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-200-000",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     200,
+     0
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-200-050",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     200,
+     50
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-200-100",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     200,
+     100
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-200-200",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     200,
+     200
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-200-250",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     200,
+     250
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-225-000",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     225,
+     0
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-225-050",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     225,
+     50
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-225-100",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     225,
+     100
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-225-150",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     225,
+     150
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-225-200",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     225,
+     200
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-225-250",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     225,
+     250
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-250-000",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     250,
+     0
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-250-050",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     250,
+     50
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-250-100",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     250,
+     100
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-250-150",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     250,
+     150
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-250-200",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     250,
+     200
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-000-250-250",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     0,
+     250,
+     250
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-025-000-000",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     25,
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-025-050-000",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     25,
+     50,
+     0
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-025-075-000",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     25,
+     75,
+     0
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-025-100-000",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     25,
+     100,
+     0
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-025-125-000",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     25,
+     125,
+     0
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-025-125-050",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     25,
+     125,
+     50
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-025-125-250",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     25,
+     125,
+     250
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-025-150-000",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     25,
+     150,
+     0
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-025-150-050",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     25,
+     150,
+     50
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-025-150-250",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     25,
+     150,
+     250
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-025-175-000",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     25,
+     175,
+     0
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-025-175-050",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     25,
+     175,
+     50
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-025-175-200",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     25,
+     175,
+     200
+    ]
+   }
+  },
+  {
+   "group": "equidistant",
+   "id": "ties-equidistant-025-175-250",
+   "input": {
+    "palette": "ties",
+    "palette_sha256": "b3582aa308fd4c49e0d4d4e1c65d6d4e646b3472ce1575f0cb0827220a780a45",
+    "rgb": [
+     25,
+     175,
+     250
+    ]
+   }
+  }
+ ]
+}

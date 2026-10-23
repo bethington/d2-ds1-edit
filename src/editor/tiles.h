@@ -21,7 +21,7 @@ void edittile_deselect_one                (int ds1_idx, int x, int y);
 void edittile_deselect_one_completly      (int ds1_idx, int x, int y);
 void edittile_select_one                  (int ds1_idx, int x, int y);
 void edittile_select_new_one              (int ds1_idx, int x, int y);
-void edittile_identical                   (int ds1_idx, IT_ENUM itype, int tx, int ty);
+void edittile_identical                   (int ds1_idx, IT_ENUM itype, int tx, int ty, int strict);
 
 // HIDE / SHOW (UN-HIDE) MANAGMENT
 void edittile_unhide_all                  (int ds1_idx);

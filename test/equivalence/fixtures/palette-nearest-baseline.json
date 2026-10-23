@@ -1,0 +1,964 @@
+{
+ "archives": [
+  {
+   "name": "Patch_D2.mpq",
+   "priority": 0,
+   "sha256": "b976e7847dda696f54198a9477819f96579c4894f54381c72afb4937e919e0a9",
+   "size": 2108703
+  },
+  {
+   "name": "D2Exp.mpq",
+   "priority": 1,
+   "sha256": "04e35bffeae8d9959042832055702f8b5b4567ca5505ff1df0cf3fd6d5beb6c2",
+   "size": 250156780
+  },
+  {
+   "name": "D2Data.mpq",
+   "priority": 2,
+   "sha256": "99e53768ddb87ca70b54529ff15043aaa71353cc250e757ae20e9c3d002ca431",
+   "size": 267642202
+  },
+  {
+   "name": "D2Char.mpq",
+   "priority": 3,
+   "sha256": "4eaaf370aa3fc598b7f32dd69295acb2f598ea4981d94aa12f08849b1b4abcfa",
+   "size": 266908965
+  }
+ ],
+ "assets": [],
+ "binaries": [
+  {
+   "name": "Binkw32.dll",
+   "pe": {
+    "image_base": "0x10000000",
+    "sections": {
+     ".data": {
+      "bytes": 20480,
+      "characteristics": "0xc0000040",
+      "rva": "0x2a000",
+      "sha256": "0dab86e7dba937a2d5cb48914c6f9397dea34fbb696fb010cb63351fae3d05c3"
+     },
+     ".rdata": {
+      "bytes": 26400,
+      "characteristics": "0x40000040",
+      "rva": "0x23000",
+      "sha256": "6ba0f2294be94d1c2a2069086078041f87d120cc22dc8b8b349d7e0cc8076afb"
+     },
+     ".reloc": {
+      "bytes": 12212,
+      "characteristics": "0x42000040",
+      "rva": "0x3e000",
+      "sha256": "2952a7b605b158fcfdb2e9d5830b0fb579ab49b93f5e55e689e8d86c0a8b7b0b"
+     },
+     ".rsrc": {
+      "bytes": 2328,
+      "characteristics": "0x40000040",
+      "rva": "0x3d000",
+      "sha256": "f1980ddce39de552016b8ee5b3eafa6fde64d2f18d783d814cc8ffcd1c8d2b4f"
+     },
+     ".text": {
+      "bytes": 137614,
+      "characteristics": "0x60000020",
+      "rva": "0x1000",
+      "sha256": "0db068d43eb734d38266b806386929388410d5d306163d766bc352dd0e34f75b"
+     }
+    },
+    "size_of_image": 266240,
+    "timestamp": "0x389fe100"
+   },
+   "sha256": "3cd2c70b7245d5d358a5d7d36c8ec68195818a3197cf02d72debeb6f7cd4f273",
+   "size": 200704
+  },
+  {
+   "name": "Bnclient.dll",
+   "pe": {
+    "image_base": "0x6ff20000",
+    "sections": {
+     ".data": {
+      "bytes": 8192,
+      "characteristics": "0xc0000040",
+      "rva": "0x1d000",
+      "sha256": "cfd130ee471a7075184ac61be21f784c35f0895624e2f72f71b032878957f1c4"
+     },
+     ".rdata": {
+      "bytes": 12555,
+      "characteristics": "0x40000040",
+      "rva": "0x19000",
+      "sha256": "296779a281e8b6f39f7eab88923f8251ad31f306c8bb0b2732c561a6b2ef0412"
+     },
+     ".reloc": {
+      "bytes": 7738,
+      "characteristics": "0x42000040",
+      "rva": "0x22000",
+      "sha256": "32cbd7420d432e5c762174265f36f62f53d88cce6d4d62a5c5c8c10869f07f72"
+     },
+     ".rsrc": {
+      "bytes": 288,
+      "characteristics": "0x40000040",
+      "rva": "0x21000",
+      "sha256": "36d934e78a5dca4da74667e610b6824eda73ee3ccb8fc250e3e9a4feecf6ad05"
+     },
+     ".text": {
+      "bytes": 96044,
+      "characteristics": "0x60000020",
+      "rva": "0x1000",
+      "sha256": "90ec9be8bb0480edc747b259cbbcccb07866b3114e8d02c65dd28f8d9e64576c"
+     }
+    },
+    "size_of_image": 147456,
+    "timestamp": "0x4b95c135"
+   },
+   "sha256": "3631ca889dfa3cb149dd5b1722d3231851661b40514d4fbb4f00c529e76a56f5",
+   "size": 139264
+  },
+  {
+   "name": "D2Client.dll",
+   "pe": {
+    "image_base": "0x6fab0000",
+    "sections": {
+     ".data": {
+      "bytes": 131072,
+      "characteristics": "0xc0000040",
+      "rva": "0xdb000",
+      "sha256": "e9809f2f93d9b4e4cb3e677f32327269b8631e66ecffca0346abbd531416b1c6"
+     },
+     ".rdata": {
+      "bytes": 49290,
+      "characteristics": "0x40000040",
+      "rva": "0xce000",
+      "sha256": "93c6ef12c17638a7afc22f52e9c89a5ee7a62aefaca5dc45f6b4fddd1d0a8984"
+     },
+     ".reloc": {
+      "bytes": 59696,
+      "characteristics": "0x42000040",
+      "rva": "0x126000",
+      "sha256": "ca9b86cb5b1b8b529c21ee66d0bae436913d435d813f38ded68b4c0a54538715"
+     },
+     ".rsrc": {
+      "bytes": 3544,
+      "characteristics": "0x40000040",
+      "rva": "0x125000",
+      "sha256": "5e51f84d7357f4e4cd85517a1413a59cc0718e7f4860f87c232c4f0cfb74b607"
+     },
+     ".text": {
+      "bytes": 839163,
+      "characteristics": "0x60000020",
+      "rva": "0x1000",
+      "sha256": "ff271f0e94051f1ccb5d5bfba64e4b4b9cadfb0653a0f980062cf2c03eb8850b"
+     }
+    },
+    "size_of_image": 1265664,
+    "timestamp": "0x4b95ca3e"
+   },
+   "sha256": "dd8bc6025de921216a97c17f97cd1a50fbb85926e838ec60e13451448836d906",
+   "size": 1093632
+  },
+  {
+   "name": "D2CMP.dll",
+   "pe": {
+    "image_base": "0x6fe10000",
+    "sections": {
+     ".data": {
+      "bytes": 12288,
+      "characteristics": "0xc0000040",
+      "rva": "0x22000",
+      "sha256": "e460ee85e522f6493deec352d0d67d8f6bac9174b8571e3a61a0f230b3003a85"
+     },
+     ".rdata": {
+      "bytes": 20958,
+      "characteristics": "0x40000040",
+      "rva": "0x1c000",
+      "sha256": "6d4f92d7ff56b92807a737f4ca64cc6bbb0162ced3231c637b2aff36f224ef28"
+     },
+     ".reloc": {
+      "bytes": 9512,
+      "characteristics": "0x42000040",
+      "rva": "0x105000",
+      "sha256": "7b97db7af7cd8f2b393fafdda9cd969c599fa2e7975381a8065f84748e80f592"
+     },
+     ".text": {
+      "bytes": 106683,
+      "characteristics": "0x60000020",
+      "rva": "0x1000",
+      "sha256": "983094ac1ab6e5f17e3367ae6586abce887c35ed1d231ae150a9f1c291b067bf"
+     }
+    },
+    "size_of_image": 1081344,
+    "timestamp": "0x4b95c0db"
+   },
+   "sha256": "2ee205f484161c5ed854f30aed12565a7ac3e97fd1a838e697aaefe4dc349756",
+   "size": 163840
+  },
+  {
+   "name": "D2Common.dll",
+   "pe": {
+    "image_base": "0x6fd50000",
+    "sections": {
+     ".data": {
+      "bytes": 28672,
+      "characteristics": "0xc0000040",
+      "rva": "0x99000",
+      "sha256": "068374cfd1d46edb751d580d16360f4db38367556d69f3d114eaf406b464a078"
+     },
+     ".rdata": {
+      "bytes": 64673,
+      "characteristics": "0x40000040",
+      "rva": "0x89000",
+      "sha256": "c34c8700e5ff0d5a4b1056dd2ebd30a692b4d5c157fada019ce75ecbce4ff3f5"
+     },
+     ".reloc": {
+      "bytes": 24194,
+      "characteristics": "0x42000040",
+      "rva": "0xa3000",
+      "sha256": "faa71c5087c58991769365ef70329df81bee62f01bc867d9f7927ea7531b69aa"
+     },
+     ".text": {
+      "bytes": 554963,
+      "characteristics": "0x60000020",
+      "rva": "0x1000",
+      "sha256": "29a4dbcabaf31e673e6f82740dcf2ba52cec5bca04f1ecf7ff7bbb3a1dc8f916"
+     }
+    },
+    "size_of_image": 692224,
+    "timestamp": "0x4b95c439"
+   },
+   "sha256": "59fa5928522f566f2bf99675571206ad70df889c89d3d07fa87edf5083e06e10",
+   "size": 679936
+  },
+  {
+   "name": "D2DDraw.dll",
+   "pe": {
+    "image_base": "0x6f8c0000",
+    "sections": {
+     ".data": {
+      "bytes": 4096,
+      "characteristics": "0xc0000040",
+      "rva": "0xe000",
+      "sha256": "e0149ef52dd4172507a19814d214f823a4f29519895c555e3e97d642c3919668"
+     },
+     ".rdata": {
+      "bytes": 10536,
+      "characteristics": "0x40000040",
+      "rva": "0xb000",
+      "sha256": "1688dc63e22b57a7bf36e2a873d491643d825959bb9aab0bd07b9ec8fc21528b"
+     },
+     ".reloc": {
+      "bytes": 5138,
+      "characteristics": "0x42000040",
+      "rva": "0x11000",
+      "sha256": "fd32257d5c70cef08a41e0a7aff08188cd0a0f3750f340b82fbb26b4a6c25b37"
+     },
+     ".text": {
+      "bytes": 40268,
+      "characteristics": "0x60000020",
+      "rva": "0x1000",
+      "sha256": "6c8a71f4bdf79a16ee595a00a0723b3559c2de3704bd839b5be67150b0aa23b9"
+     }
+    },
+    "size_of_image": 77824,
+    "timestamp": "0x4b95c17d"
+   },
+   "sha256": "32be89c456cd229c5eb9873c0488515539e6a22062b9ab5c2166af16eb05909c",
+   "size": 69632
+  },
+  {
+   "name": "D2Direct3D.dll",
+   "pe": {
+    "image_base": "0x6f880000",
+    "sections": {
+     ".data": {
+      "bytes": 8192,
+      "characteristics": "0xc0000040",
+      "rva": "0x17000",
+      "sha256": "b4beeead80f1265cbe93e7ce7409cb55a8683e7109ea76c3e12eb4df7fe6239d"
+     },
+     ".rdata": {
+      "bytes": 13275,
+      "characteristics": "0x40000040",
+      "rva": "0x13000",
+      "sha256": "450a596f9e8ffda6ce90013e6a422d89dc7c591f38eee64e165130ce2a2e1906"
+     },
+     ".reloc": {
+      "bytes": 7722,
+      "characteristics": "0x42000040",
+      "rva": "0x34000",
+      "sha256": "8f670ecd0420fead4adb44b3e1624b1adb2b4954af5212c73b72334aaeeef860"
+     },
+     ".text": {
+      "bytes": 71661,
+      "characteristics": "0x60000020",
+      "rva": "0x1000",
+      "sha256": "7c42aba1f25a00d2b2e6e7dea0591732862c0c0ed578b0c806d677f168f53643"
+     }
+    },
+    "size_of_image": 221184,
+    "timestamp": "0x4b95c1a3"
+   },
+   "sha256": "61d3b38b852138173835bbf5e7398dbe19240da5445aa7489b4cc4bebb4dc519",
+   "size": 110592
+  },
+  {
+   "name": "D2Game.dll",
+   "pe": {
+    "image_base": "0x6fc20000",
+    "sections": {
+     ".data": {
+      "bytes": 69632,
+      "characteristics": "0xc0000040",
+      "rva": "0xff000",
+      "sha256": "51113a4fa233d97740cccfb9477b5d7ae67eaa91353f39b6dc47d9d6e2942d4f"
+     },
+     ".rdata": {
+      "bytes": 27223,
+      "characteristics": "0x40000040",
+      "rva": "0xf8000",
+      "sha256": "f8786d4646d81dec3895e7f186a682276846bf14d4bbb3c4a135e47dbdaae4b0"
+     },
+     ".reloc": {
+      "bytes": 23990,
+      "characteristics": "0x42000040",
+      "rva": "0x11c000",
+      "sha256": "84281be1c641c4cb5428bdeac2b7487b249d7d3d89089af6c62827c52208410d"
+     },
+     ".text": {
+      "bytes": 1010100,
+      "characteristics": "0x60000020",
+      "rva": "0x1000",
+      "sha256": "347850e79d066732a6d096c0dc4ca34980da1f5f113bad6b1186c8355b2adf87"
+     }
+    },
+    "size_of_image": 1187840,
+    "timestamp": "0x4b95c6b2"
+   },
+   "sha256": "24b293b86f95bea0228826c502ea04737ba21b91ca9832e52aac4b11fef14f53",
+   "size": 1138688
+  },
+  {
+   "name": "D2Gdi.dll",
+   "pe": {
+    "image_base": "0x6f870000",
+    "sections": {
+     ".data": {
+      "bytes": 4096,
+      "characteristics": "0xc0000040",
+      "rva": "0xb000",
+      "sha256": "6b1f945112801ab082b0b6ed656941cbdb83d2f544c7521f3eb6b7208b5596ae"
+     },
+     ".rdata": {
+      "bytes": 6962,
+      "characteristics": "0x40000040",
+      "rva": "0x9000",
+      "sha256": "feb7a539dfc157569c4fa75f5051df1792a65cef4b2182f7085b7c77c9b36b3b"
+     },
+     ".reloc": {
+      "bytes": 4078,
+      "characteristics": "0x42000040",
+      "rva": "0xd000",
+      "sha256": "fe0d8c6e6c175e0eed060b76e10f743162a1e9aa47084ca5662db5fda05c3884"
+     },
+     ".text": {
+      "bytes": 28862,
+      "characteristics": "0x60000020",
+      "rva": "0x1000",
+      "sha256": "a0a8f727213080cddfb6c3568f3aa3cdd3a163c977339a56452018cc781cf9d7"
+     }
+    },
+    "size_of_image": 57344,
+    "timestamp": "0x4b95c1b7"
+   },
+   "sha256": "8737430c828031b29e8c5e59684faba050a7bf3c7cae38d34fa530212cd16047",
+   "size": 53248
+  },
+  {
+   "name": "D2Gfx.dll",
+   "pe": {
+    "image_base": "0x6fa80000",
+    "sections": {
+     ".data": {
+      "bytes": 4096,
+      "characteristics": "0xc0000040",
+      "rva": "0x10000",
+      "sha256": "e1f98e20ce9c33ab4e6ee02399bbfa80b653209c482527236d62d8d7dfb808b3"
+     },
+     ".rdata": {
+      "bytes": 9018,
+      "characteristics": "0x40000040",
+      "rva": "0xd000",
+      "sha256": "33e68858b1cab8d65bb0342ccbf0477b9e25386d5c6db43ebf225ec104581c9a"
+     },
+     ".reloc": {
+      "bytes": 5868,
+      "characteristics": "0x42000040",
+      "rva": "0x1f000",
+      "sha256": "a1d93df2be7366808aba94587985fb8e34fc6dc84014127bd78cf955ebda88ff"
+     },
+     ".text": {
+      "bytes": 48203,
+      "characteristics": "0x60000020",
+      "rva": "0x1000",
+      "sha256": "275314d2181ca99ea1273e588ac9ba760978ebc0044546c19d39563cc63888fe"
+     }
+    },
+    "size_of_image": 135168,
+    "timestamp": "0x4b95c154"
+   },
+   "sha256": "50284647a28e8839028e8acb021a6ebe48c006e431139969ccd0fe126e6e8811",
+   "size": 77824
+  },
+  {
+   "name": "D2Glide.dll",
+   "pe": {
+    "image_base": "0x6f850000",
+    "sections": {
+     ".data": {
+      "bytes": 8192,
+      "characteristics": "0xc0000040",
+      "rva": "0x14000",
+      "sha256": "43a304f95d975181a823da14484abba672c31026a1d56de32804d303705d3a53"
+     },
+     ".rdata": {
+      "bytes": 8824,
+      "characteristics": "0x40000040",
+      "rva": "0x11000",
+      "sha256": "c035e410aed569b486d8ae464d6542ebddf4e50999b1440607cc61c039fdf001"
+     },
+     ".reloc": {
+      "bytes": 6404,
+      "characteristics": "0x42000040",
+      "rva": "0x18000",
+      "sha256": "c7c6f4f4c7da41144f42073022a66728dfae0ff3877cc2f444825ee919184774"
+     },
+     ".text": {
+      "bytes": 62781,
+      "characteristics": "0x60000020",
+      "rva": "0x1000",
+      "sha256": "43165a49a86ca732eb69aac37faffb32548c5c63a3b88355b667da7e73daab33"
+     }
+    },
+    "size_of_image": 106496,
+    "timestamp": "0x4b95c1e2"
+   },
+   "sha256": "7cf5907e9eb19b783b73fa45a5a7aa4491cb750e0d83df8c59b12d089310db6a",
+   "size": 98304
+  },
+  {
+   "name": "D2Lang.dll",
+   "pe": {
+    "image_base": "0x6fc00000",
+    "sections": {
+     ".data": {
+      "bytes": 8192,
+      "characteristics": "0xc0000040",
+      "rva": "0xf000",
+      "sha256": "359d6133a7d32225f78c185e7d1295293912018fad9832bf18f546beb12f41c3"
+     },
+     ".rdata": {
+      "bytes": 9474,
+      "characteristics": "0x40000040",
+      "rva": "0xc000",
+      "sha256": "a64d6be6caa515c4d44bd91ac1a31a4394e5e79534b514938ce2be55a423df64"
+     },
+     ".reloc": {
+      "bytes": 4524,
+      "characteristics": "0x42000040",
+      "rva": "0x12000",
+      "sha256": "5f271b64745809ca6ae42c6a7821826f46616ce8f3b030360ae9c6cf87194eb7"
+     },
+     ".text": {
+      "bytes": 43087,
+      "characteristics": "0x60000020",
+      "rva": "0x1000",
+      "sha256": "5f86ca727f74836c7c8cf8fed5538d9ffa5a03731d61b882e3f7fb232b7f5bf6"
+     }
+    },
+    "size_of_image": 81920,
+    "timestamp": "0x4b95c108"
+   },
+   "sha256": "206386a81f4046c693f2aca60b9ee19fffd05b1157bbb60992c0d4caad9b67ec",
+   "size": 77824
+  },
+  {
+   "name": "D2Launch.dll",
+   "pe": {
+    "image_base": "0x6fa40000",
+    "sections": {
+     ".data": {
+      "bytes": 20480,
+      "characteristics": "0xc0000040",
+      "rva": "0x20000",
+      "sha256": "c789a607feec446abc802f3506b7782b3b4ff37211390c5676c3600ed5b19821"
+     },
+     ".rdata": {
+      "bytes": 15118,
+      "characteristics": "0x40000040",
+      "rva": "0x1c000",
+      "sha256": "ef0afa16eb3d18835bab9c0c024618188692d7627f9b2f4442461e16640928e8"
+     },
+     ".reloc": {
+      "bytes": 13900,
+      "characteristics": "0x42000040",
+      "rva": "0x29000",
+      "sha256": "72dfbfa6b12d7d7dfff43e174e50d8590a990c6f387f2fee92084de8fc14c329"
+     },
+     ".text": {
+      "bytes": 107553,
+      "characteristics": "0x60000020",
+      "rva": "0x1000",
+      "sha256": "62133b33e0d3efc0c1ec1ee1bf8fe8fc3cb4660a1a205561c50d292e7f3a805f"
+     }
+    },
+    "size_of_image": 184320,
+    "timestamp": "0x4b95c258"
+   },
+   "sha256": "99cabc4751c95d035b5e77151b3605b809884fec2c10edf37d4c4e4e231e8479",
+   "size": 167936
+  },
+  {
+   "name": "D2MCPClient.dll",
+   "pe": {
+    "image_base": "0x6fa20000",
+    "sections": {
+     ".data": {
+      "bytes": 4096,
+      "characteristics": "0xc0000040",
+      "rva": "0xa000",
+      "sha256": "8669a1b8837fd9941399d4d50837624bf0b28890500a21012be8d95b2c95f3a1"
+     },
+     ".rdata": {
+      "bytes": 6564,
+      "characteristics": "0x40000040",
+      "rva": "0x8000",
+      "sha256": "a9ac7cb0649b85b946a3845491b1e9dd057fd0aa58100f99796154290aea05fc"
+     },
+     ".reloc": {
+      "bytes": 3890,
+      "characteristics": "0x42000040",
+      "rva": "0x13000",
+      "sha256": "a49bb7ce299dae7a5dc4c7a7a11170f88a1cc0394fcbfc64979407544d3fbed3"
+     },
+     ".text": {
+      "bytes": 26120,
+      "characteristics": "0x60000020",
+      "rva": "0x1000",
+      "sha256": "26032fb912a4238eb9c22070e93b1f5a5fb8cbcff482640f5d4c5c7a30d00bb4"
+     }
+    },
+    "size_of_image": 81920,
+    "timestamp": "0x4b95c0e8"
+   },
+   "sha256": "d40431969cab1cf9b7335dc3de4a51c1330527cc068d4caf9ce2dc1bf67469be",
+   "size": 49152
+  },
+  {
+   "name": "D2Multi.dll",
+   "pe": {
+    "image_base": "0x6f9d0000",
+    "sections": {
+     ".data": {
+      "bytes": 12288,
+      "characteristics": "0xc0000040",
+      "rva": "0x19000",
+      "sha256": "c1f90a4e719c3f06d039a93d83d6caa35b0bff27f1583e7d51ee45b759a9e59e"
+     },
+     ".rdata": {
+      "bytes": 11869,
+      "characteristics": "0x40000040",
+      "rva": "0x16000",
+      "sha256": "1b4602a382983aad4665d9da11c048e49ff87b26b951c00342bb6da6a74c3df5"
+     },
+     ".reloc": {
+      "bytes": 10380,
+      "characteristics": "0x42000040",
+      "rva": "0x3c000",
+      "sha256": "92a4494b5a2cb7d0918d8f588865ccde845f03f0cc25fd341acb2b33bbbf9057"
+     },
+     ".text": {
+      "bytes": 82873,
+      "characteristics": "0x60000020",
+      "rva": "0x1000",
+      "sha256": "1d3b1edc398a647bb0d53900caffdd49332b290fc4b59ea138b5d07fa9e8c429"
+     }
+    },
+    "size_of_image": 258048,
+    "timestamp": "0x4b95c235"
+   },
+   "sha256": "1f95c482971e6da71f12caec63b5939d4871d6d5fe48155aacf8ef3563457490",
+   "size": 126976
+  },
+  {
+   "name": "D2Net.dll",
+   "pe": {
+    "image_base": "0x6fbf0000",
+    "sections": {
+     ".data": {
+      "bytes": 4096,
+      "characteristics": "0xc0000040",
+      "rva": "0xa000",
+      "sha256": "937742d857a3ba15fd88687d47b859cf65468e33c8adcfc16c08d55c9444bb7c"
+     },
+     ".rdata": {
+      "bytes": 6890,
+      "characteristics": "0x40000040",
+      "rva": "0x8000",
+      "sha256": "29b916db737a48c36f759aeb317682c34f3cfdd592fc8adff711ec3255420529"
+     },
+     ".reloc": {
+      "bytes": 3838,
+      "characteristics": "0x42000040",
+      "rva": "0xc000",
+      "sha256": "06b3dc3820f8946e15c28cd1e6ef1b56ca58aba3274a3e886ead11a3e510e3fd"
+     },
+     ".text": {
+      "bytes": 26310,
+      "characteristics": "0x60000020",
+      "rva": "0x1000",
+      "sha256": "802f8eafae912ddf0441b1f0177261efbdf2bffd8e97305aa190eccaea7d6851"
+     }
+    },
+    "size_of_image": 53248,
+    "timestamp": "0x4b95c0fb"
+   },
+   "sha256": "99af2f04a87fdbd91810be963df9c365cef529ae22e6a345193ba5018e9910c9",
+   "size": 49152
+  },
+  {
+   "name": "D2Sound.dll",
+   "pe": {
+    "image_base": "0x6f9b0000",
+    "sections": {
+     ".data": {
+      "bytes": 4096,
+      "characteristics": "0xc0000040",
+      "rva": "0x15000",
+      "sha256": "323b4883215ae119e6303d523291c7565c254ed9d70ae52f05781c8fac1fdc89"
+     },
+     ".rdata": {
+      "bytes": 24272,
+      "characteristics": "0x40000040",
+      "rva": "0xf000",
+      "sha256": "97af087743d89b9df9d35d90aaf5c5bda889af4c705402c2e4474190e1d5f239"
+     },
+     ".reloc": {
+      "bytes": 5690,
+      "characteristics": "0x42000040",
+      "rva": "0x17000",
+      "sha256": "1f391b73a0ca075b65407a2ab5cd7fc27ba0c47eb57aa567cf0c99c66a5c64db"
+     },
+     ".text": {
+      "bytes": 53964,
+      "characteristics": "0x60000020",
+      "rva": "0x1000",
+      "sha256": "f245992eeaaacf3cdbbd0466ac3f0d51798ef7fe774814907199593047b18a74"
+     }
+    },
+    "size_of_image": 102400,
+    "timestamp": "0x4b95c165"
+   },
+   "sha256": "b24dfb0159c76867e7f3d14602e73bccc37d59b7c8d2def88213b01084b61a72",
+   "size": 98304
+  },
+  {
+   "name": "D2Win.dll",
+   "pe": {
+    "image_base": "0x6f8e0000",
+    "sections": {
+     ".data": {
+      "bytes": 8192,
+      "characteristics": "0xc0000040",
+      "rva": "0x1f000",
+      "sha256": "05da13b8df512dcbad01c016078c52b46b5778baaf8e1ef149b860f74458aa89"
+     },
+     ".rdata": {
+      "bytes": 13166,
+      "characteristics": "0x40000040",
+      "rva": "0x1b000",
+      "sha256": "71be5db83f0036a6633149003b5c4ba28175fe9923775aba22009b4a51604d9c"
+     },
+     ".reloc": {
+      "bytes": 9920,
+      "characteristics": "0x42000040",
+      "rva": "0xcc000",
+      "sha256": "4b217e9b4e0259448c1b4bc41620b4037b0f27106f4eee0fdae396771c2961a9"
+     },
+     ".text": {
+      "bytes": 103073,
+      "characteristics": "0x60000020",
+      "rva": "0x1000",
+      "sha256": "7b69438da6cf6978eaaf41319a352f56a9debd4a18e3762fe1b1c530440de59d"
+     }
+    },
+    "size_of_image": 847872,
+    "timestamp": "0x4b95c21d"
+   },
+   "sha256": "a9afb52d5116f77534f3e83eeb71e6d2d980a6b1c59be5dd38d503c2334730fb",
+   "size": 147456
+  },
+  {
+   "name": "Diablo II.exe",
+   "pe": {
+    "image_base": "0x00400000",
+    "sections": {
+     ".data": {
+      "bytes": 2508,
+      "characteristics": "0xc0000040",
+      "rva": "0x6000",
+      "sha256": "78bada95b3aac821c4e278ba0697986e8d35b20353ddb38caa047c48230759ad"
+     },
+     ".rdata": {
+      "bytes": 2090,
+      "characteristics": "0x40000040",
+      "rva": "0x5000",
+      "sha256": "f1efbf65b1858f16a3b220a4b4152c985c72e2f7dd25b951c4f8e6d3c7289edd"
+     },
+     ".rsrc": {
+      "bytes": 5432,
+      "characteristics": "0x40000040",
+      "rva": "0x7000",
+      "sha256": "de334113bc5f6aba273a47ce28aa27314363d2c9af869c2d7f78408033e7f1a6"
+     },
+     ".text": {
+      "bytes": 12396,
+      "characteristics": "0x60000020",
+      "rva": "0x1000",
+      "sha256": "6d3720e6898f19ac5528bcdb8e945ba1312e7f83b18e93f94c1736157733b291"
+     }
+    },
+    "size_of_image": 36864,
+    "timestamp": "0x3aee0454"
+   },
+   "sha256": "147e33cc5d2dd9520d143847b35c1c8410a432c605155e0d9678b5b9450a7938",
+   "size": 36864
+  },
+  {
+   "name": "Fog.dll",
+   "pe": {
+    "image_base": "0x6ff50000",
+    "sections": {
+     ".data": {
+      "bytes": 12288,
+      "characteristics": "0xc0000040",
+      "rva": "0x2e000",
+      "sha256": "74ae5b327278ad23034fdfd14bed07c3537a0db82d0f1e87c25520aab6d866e2"
+     },
+     ".rdata": {
+      "bytes": 36464,
+      "characteristics": "0x40000040",
+      "rva": "0x25000",
+      "sha256": "aeff5cbac8374e1a2c0e24df275bfbd45c9ae4986cf91153b22d97f5e17650e4"
+     },
+     ".reloc": {
+      "bytes": 10854,
+      "characteristics": "0x42000040",
+      "rva": "0x59000",
+      "sha256": "1c4fc80eb7e19ba8e8577d833cebc1f3d46f6206f34d7267e3a4452d6fb3fb71"
+     },
+     ".text": {
+      "bytes": 146379,
+      "characteristics": "0x60000020",
+      "rva": "0x1000",
+      "sha256": "29a841e1438d8779274081c42689cd5a558b1f53e880d34a871be4588add2fd7"
+     }
+    },
+    "size_of_image": 376832,
+    "timestamp": "0x4b95c0aa"
+   },
+   "sha256": "96c05770ab06b71a7a2d6abe5dc7c2f943b30ac8fe367e44bdbad7e2643bb863",
+   "size": 212992
+  },
+  {
+   "name": "Game.exe",
+   "pe": {
+    "image_base": "0x00400000",
+    "sections": {
+     ".data": {
+      "bytes": 8192,
+      "characteristics": "0xc0000040",
+      "rva": "0xb000",
+      "sha256": "726d9d8c2e3e861e07b078923eee85931b2416d23a2cd1544c35a6bb581467f3"
+     },
+     ".rdata": {
+      "bytes": 8112,
+      "characteristics": "0x40000040",
+      "rva": "0x9000",
+      "sha256": "949d8f0b7e03cc7e25dd9ac9c13a082ec6fc4c33f5aa469121920cc08dd217c8"
+     },
+     ".rsrc": {
+      "bytes": 6168,
+      "characteristics": "0x40000040",
+      "rva": "0xf000",
+      "sha256": "b35096aee0d5d16022809312d6d8dbc7760e2bc429aac05b88d95d3083ee80c7"
+     },
+     ".text": {
+      "bytes": 30088,
+      "characteristics": "0x60000020",
+      "rva": "0x1000",
+      "sha256": "c1f6709447a0989d79ae741075cf1f8e80d54c4c27795837fa9e3df6078152f9"
+     }
+    },
+    "size_of_image": 69632,
+    "timestamp": "0x4b95ca4b"
+   },
+   "sha256": "74fe9c092a521f7710392548c82f81544e531107db2358617e83818874db40a2",
+   "size": 61440
+  },
+  {
+   "name": "Ijl11.dll",
+   "pe": {
+    "image_base": "0x60000000",
+    "sections": {
+     ".data": {
+      "bytes": 8192,
+      "characteristics": "0xc0000040",
+      "rva": "0x27000",
+      "sha256": "b35b452e4dcb36c09294cc8b41c473a60569f4bcb3c84529193c39cea6b96986"
+     },
+     ".rdata": {
+      "bytes": 5772,
+      "characteristics": "0x40000040",
+      "rva": "0x25000",
+      "sha256": "8982fd3ff2ee59b64b140811f01ec9fe3096180870179ccc58c3e847fa1cdc06"
+     },
+     ".reloc": {
+      "bytes": 6120,
+      "characteristics": "0x42000040",
+      "rva": "0x2c000",
+      "sha256": "878c48adb2ea67881bf18287df6f71f22f837847287bd4d48bf0139fdeaa6a4f"
+     },
+     ".rsrc": {
+      "bytes": 1048,
+      "characteristics": "0x40000040",
+      "rva": "0x2b000",
+      "sha256": "580cefcd3757b4ac78450185caa5026bf7ca10faa03469c13eddc1f2f2ec3bea"
+     },
+     ".text": {
+      "bytes": 147146,
+      "characteristics": "0x60000020",
+      "rva": "0x1000",
+      "sha256": "aff2e7cb59142583eee59b44df8ecee4ac72f913c7636985cfa32cbeff992656"
+     }
+    },
+    "size_of_image": 188416,
+    "timestamp": "0x37baf34e"
+   },
+   "sha256": "5a0b1c4e5d91fd67a1ad23e5ce869899b79a7282cb6e5533dc5c074eb59306ec",
+   "size": 180224
+  },
+  {
+   "name": "SmackW32.dll",
+   "pe": {
+    "image_base": "0x10000000",
+    "sections": {
+     ".data": {
+      "bytes": 6656,
+      "characteristics": "0xc0000040",
+      "rva": "0x14000",
+      "sha256": "afddc35a0d8aff17aaeac3a4d05d3a6bfa9949b8da878065e6cfca942f13e54b"
+     },
+     ".idata": {
+      "bytes": 2994,
+      "characteristics": "0xc0000040",
+      "rva": "0x16000",
+      "sha256": "818c0d92d4422bca616daaf9d15402dbe4320ddf9ec2caa6280ae1a3395014a9"
+     },
+     ".rdata": {
+      "bytes": 2715,
+      "characteristics": "0x40000040",
+      "rva": "0x13000",
+      "sha256": "dd722e7260bbaa9de70d584628eab9cc3c660e472f2e91baecf51474d6c27bf6"
+     },
+     ".reloc": {
+      "bytes": 5852,
+      "characteristics": "0x42000040",
+      "rva": "0x18000",
+      "sha256": "14b1ea38a31372339db9504b2b6229e52e66a182cc451aee1fe1344c89d5a31f"
+     },
+     ".rsrc": {
+      "bytes": 1996,
+      "characteristics": "0x40000040",
+      "rva": "0x17000",
+      "sha256": "dd848f82fc3ed7db4abd887afb59da5a729881eb47979ca3b1fb39bc861e6edc"
+     },
+     ".text": {
+      "bytes": 50434,
+      "characteristics": "0x60000020",
+      "rva": "0x1000",
+      "sha256": "4ba3a1f28b78bc7b683e542f25f8bf1deae5ea3ed5f8ba8a31047d09c0baa013"
+     },
+     "_UNSTEXT": {
+      "bytes": 19120,
+      "characteristics": "0x60000020",
+      "rva": "0xe000",
+      "sha256": "efabe62ac09240d31d214f85b92db2a03781b7563ad93eb4642a4d77df206bf0"
+     }
+    },
+    "size_of_image": 106496,
+    "timestamp": "0x34bfa011"
+   },
+   "sha256": "5786b7b72667b9ea1cc4bf7762a9e313c2ad1474392907a0f3b52e4e888029bf",
+   "size": 95232
+  },
+  {
+   "name": "Storm.dll",
+   "pe": {
+    "image_base": "0x6fbf0000",
+    "sections": {
+     ".data": {
+      "bytes": 12288,
+      "characteristics": "0xc0000040",
+      "rva": "0x50000",
+      "sha256": "735f28356be88618e712aae0a0dc50f1e07a269164876d6259fb2c5c5dff5dea"
+     },
+     ".rdata": {
+      "bytes": 50026,
+      "characteristics": "0x40000040",
+      "rva": "0x43000",
+      "sha256": "4f05035952bac041e5731bea2fe950673830816303339e0d63b760a92dcb4cc5"
+     },
+     ".reloc": {
+      "bytes": 19372,
+      "characteristics": "0x42000040",
+      "rva": "0x5b000",
+      "sha256": "95523425181023d5dbdf0b8812738185f679916cad10fec940e8326e289d4862"
+     },
+     ".rsrc": {
+      "bytes": 8640,
+      "characteristics": "0x40000040",
+      "rva": "0x58000",
+      "sha256": "223d35bd1e835e23b1819b57a49fb4c1901a446804b94914d462d326d51400fb"
+     },
+     ".text": {
+      "bytes": 268651,
+      "characteristics": "0x60000020",
+      "rva": "0x1000",
+      "sha256": "db11fd0435ded602507382643a1f57ceeacd306476b4940e991525e454157a16"
+     }
+    },
+    "size_of_image": 393216,
+    "timestamp": "0x4b95c049"
+   },
+   "sha256": "4b5fcaf87c98676e6be94f980b06b893c50f1505343cbbf038c5b331a2da2d5b",
+   "size": 372736
+  }
+ ],
+ "build": "vanilla-113c",
+ "digest": "46a1628e3e099497c9d17f3191a68a5c61a48788317293b86154b505e386e265",
+ "enumeration": {
+  "complete": false,
+  "limits": [
+   "identity-only baseline: binaries and archives are hashed, no archive member is enumerated or hashed"
+  ],
+  "scope": "identity",
+  "sources": []
+ },
+ "render": {
+  "frame": 0,
+  "gamma": "none",
+  "mod_directories": "none",
+  "overlays": "disabled",
+  "palette": "data\\global\\palette\\act<N>\\pal.pl2 per act; no gamma table",
+  "seed": 0,
+  "user_preferences": "ignored",
+  "zoom": 1
+ },
+ "schema": "ds1edit.baseline/1"
+}

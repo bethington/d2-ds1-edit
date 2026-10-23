@@ -24,6 +24,9 @@ void palette_d2_to_rgba(const uint8_t *d2_pal, long d2_pal_size,
 
     for (i = 0; i < PAL_COLORS; i++)
     {
+        /* The first PL2 table is in display RGB order. The corresponding
+         * pal.dat triplets have red and blue reversed relative to this table;
+         * swapping PL2 here turns brown ground blue and orange fire cyan. */
         r = d2_pal[4 * i];
         g = d2_pal[4 * i + 1];
         b = d2_pal[4 * i + 2];

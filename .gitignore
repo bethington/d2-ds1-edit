@@ -1,4 +1,5 @@
 # Build output (entire bin/ directory is build output now)
+/.worktrees/
 bin/
 backup/
 build/

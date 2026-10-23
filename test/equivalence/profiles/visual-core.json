@@ -1,0 +1,684 @@
+{
+ "schema": "ds1edit.visual-profile/1",
+ "id": "visual-core",
+ "description": "Package D task 4: the six core golden maps rendered from the pinned vanilla 1.13c asset chain with an owned configuration. Inputs are the effective assets the renderer reads, pinned to B's corpus baseline.",
+ "baseline": {
+  "build": "vanilla-113c",
+  "digest": "22f1db302c21cbb4a1cd1e390f848fb2b5e3d53938fcaf0461ce781736f18cbb"
+ },
+ "render": {
+  "zoom": "1:4",
+  "gamma": "1.20",
+  "gamma_note": "The checked-in references were rendered at gamma 1.20 (the capturing machine's ds1edit.ini). Pinned here so the comparison is like for like; the baseline's own render policy is gamma none (1.00). See tmp/visual-diagnosis proposal.",
+  "mod_dir": "none",
+  "preferences": "isolated",
+  "seed": "headless fixed re-seed (misc.c, --headless)",
+  "frame": "initial frame after the fixed seed",
+  "time": "not consulted by --headless",
+  "repeat": 2
+ },
+ "editor_assets": [
+  {
+   "path": "assets/editor/ds1edit.dt1",
+   "sha256": "abe7bdd6acfd95348f14d8bbb108c3a3e6cd5fc75536ea68443a97542cf7eb17"
+  },
+  {
+   "path": "assets/editor/obj.txt",
+   "sha256": "e1f32671c7cf0a7c128726337f12ddd7fec827b1d2efeca10134ba6508650b01"
+  }
+ ],
+ "aggregate_case": "visual.representative",
+ "cases": [
+  {
+   "id": "visual.core.act1_town",
+   "required": true,
+   "act": 1,
+   "map": {
+    "lvltype": 1,
+    "lvlprest": 1,
+    "ds1": "assets/tiles/ACT1/TOWN/townE1.ds1"
+   },
+   "features": [
+    "act1",
+    "palette-act",
+    "palette-transparency",
+    "dt1-isometric",
+    "dt1-rle",
+    "dcc",
+    "cof-priority",
+    "animdata"
+   ],
+   "inputs": [
+    {
+     "path": "data\\global\\palette\\act1\\pal.pl2",
+     "sha256": "de848a8dfef15e9d8481af985fdaf02087653916493d2f308a336b70a0eb6549"
+    },
+    {
+     "path": "data\\global\\palette\\act2\\pal.pl2",
+     "sha256": "29f8b8f8b638a032ca5218a292aaa8cbfdf73077a7be39d2b2076ab134fd2eaa"
+    },
+    {
+     "path": "data\\global\\palette\\act3\\pal.pl2",
+     "sha256": "53aaf8e15a6377ad2ba6bbbda160eb94c0b32077ec3e6c97b876d51cfe18f7e5"
+    },
+    {
+     "path": "data\\global\\palette\\act4\\pal.pl2",
+     "sha256": "535ff49fda8cca0611302ef33784a265da542d73162fbbe0a01ecd0b05257085"
+    },
+    {
+     "path": "data\\global\\palette\\act5\\pal.pl2",
+     "sha256": "f8d27569a4d8311ea7ad32df06fd5beece323ec0e3a6cac150935d5ee96f46f0"
+    },
+    {
+     "path": "data\\global\\excel\\objects.txt",
+     "sha256": "9363c86bc6ce61549e162d176ad8398567aca1b433f076b729d4246bf478865c"
+    },
+    {
+     "path": "data\\global\\excel\\lvlprest.txt",
+     "sha256": "c2f6a891f07145fcffd8755b6fd163f86b6c3363fc45e9c6fe133436f7ae3f9e"
+    },
+    {
+     "path": "data\\global\\excel\\lvltypes.txt",
+     "sha256": "4d8a6cc08afd6c66a493b677b1601182695a437dcc0ab5fedecc379537e5c84c"
+    },
+    {
+     "path": "data\\global\\excel\\levels.txt",
+     "sha256": "34add892965a7b38f08c7346ffe7a41ede6668b9d5b28277493ddf157e55da0b"
+    },
+    {
+     "path": "data\\global\\tiles\\act1\\town\\towne1.ds1",
+     "sha256": "0b6c775d3a01def7db7eb51f2341835685b2e1e33ae8f0099c4bd35dde87b9d9"
+    },
+    {
+     "path": "data\\global\\tiles\\act1\\town\\floor.dt1",
+     "sha256": "54bed226ef48e11dee81e0091273efbf1385e86e670e35fd4f1899fb87ad2f5c"
+    },
+    {
+     "path": "data\\global\\tiles\\act1\\town\\objects.dt1",
+     "sha256": "c51e476c3aa555f445c9b60bbc4413bf95cd36488e989ae76aada7490fd606df"
+    },
+    {
+     "path": "data\\global\\tiles\\act1\\town\\fence.dt1",
+     "sha256": "95f28e56fb302a902eab331d84711b8cd05b7a9063e17b458c11ef1b9083156e"
+    },
+    {
+     "path": "data\\global\\tiles\\act1\\outdoors\\river.dt1",
+     "sha256": "d9186042835796a1a244c3002af448cdf489eefec7519c5182fd30a549e94811"
+    },
+    {
+     "path": "data\\global\\tiles\\act1\\outdoors\\stonewall.dt1",
+     "sha256": "d7bd437137dfacce498faf9767cb1c5d167f24f5a87e4774434e8d51ff8463f3"
+    },
+    {
+     "path": "data\\global\\tiles\\act1\\town\\trees.dt1",
+     "sha256": "66d77eec2b4d80c576a3f05a6670f8b050f5f002f231cff8ab86bad121edcf8c"
+    },
+    {
+     "path": "data\\global\\tiles\\act1\\outdoors\\objects.dt1",
+     "sha256": "78291fe1227a1549f0c8f803440374fa1b48f2e11c4c69ce82b439f4b1dcce87"
+    },
+    {
+     "path": "data\\global\\tiles\\act1\\outdoors\\treegroups.dt1",
+     "sha256": "5c78cbc2a41ca0f08b6802717c0f4662ce412a48aff25c108c8e25f5aec99733"
+    },
+    {
+     "path": "data\\global\\tiles\\act1\\outdoors\\bridge.dt1",
+     "sha256": "97ecd7c72b33466986be64a33d83a91bc0538b8537b6c9483d4a4e7891dd60fd"
+    }
+   ],
+   "reference": {
+    "path": "test/golden/act1_town.png",
+    "sha256": "cc4a76e3b238e6ecbe221789847b18e423a58c954d0b2d8738c7169318d4fc05",
+    "origin": "Regenerated 2026-10-22 from pinned vanilla 1.13c (no mod_dir, gamma 1.20, zoom 1:4, isolated preferences) with the intentional rarity variant-selection fix in misc_check_tiles_conflicts; see tmp/visual-diagnosis/DIAGNOSIS.md; re-rendered 2026-10-23 after the translucent-tint blend fix (non-premultiplied alpha tints), tint pixels only."
+   },
+   "compare": "exact-rgb"
+  },
+  {
+   "id": "visual.core.act1_cave",
+   "required": true,
+   "act": 1,
+   "map": {
+    "lvltype": 3,
+    "lvlprest": 100,
+    "ds1": "assets/tiles/ACT1/CAVES/caveEcrow.ds1"
+   },
+   "features": [
+    "act1",
+    "palette-act",
+    "palette-transparency",
+    "dt1-isometric",
+    "dt1-rle",
+    "dcc",
+    "cof-priority",
+    "animdata"
+   ],
+   "inputs": [
+    {
+     "path": "data\\global\\palette\\act1\\pal.pl2",
+     "sha256": "de848a8dfef15e9d8481af985fdaf02087653916493d2f308a336b70a0eb6549"
+    },
+    {
+     "path": "data\\global\\palette\\act2\\pal.pl2",
+     "sha256": "29f8b8f8b638a032ca5218a292aaa8cbfdf73077a7be39d2b2076ab134fd2eaa"
+    },
+    {
+     "path": "data\\global\\palette\\act3\\pal.pl2",
+     "sha256": "53aaf8e15a6377ad2ba6bbbda160eb94c0b32077ec3e6c97b876d51cfe18f7e5"
+    },
+    {
+     "path": "data\\global\\palette\\act4\\pal.pl2",
+     "sha256": "535ff49fda8cca0611302ef33784a265da542d73162fbbe0a01ecd0b05257085"
+    },
+    {
+     "path": "data\\global\\palette\\act5\\pal.pl2",
+     "sha256": "f8d27569a4d8311ea7ad32df06fd5beece323ec0e3a6cac150935d5ee96f46f0"
+    },
+    {
+     "path": "data\\global\\excel\\objects.txt",
+     "sha256": "9363c86bc6ce61549e162d176ad8398567aca1b433f076b729d4246bf478865c"
+    },
+    {
+     "path": "data\\global\\excel\\lvlprest.txt",
+     "sha256": "c2f6a891f07145fcffd8755b6fd163f86b6c3363fc45e9c6fe133436f7ae3f9e"
+    },
+    {
+     "path": "data\\global\\excel\\lvltypes.txt",
+     "sha256": "4d8a6cc08afd6c66a493b677b1601182695a437dcc0ab5fedecc379537e5c84c"
+    },
+    {
+     "path": "data\\global\\excel\\levels.txt",
+     "sha256": "34add892965a7b38f08c7346ffe7a41ede6668b9d5b28277493ddf157e55da0b"
+    },
+    {
+     "path": "data\\global\\tiles\\act1\\caves\\caveecrow.ds1",
+     "sha256": "13ae32dc4996aee9d0b4a191465209f21c7fcaae3f354a63eb3138bc6a517c29"
+    },
+    {
+     "path": "data\\global\\tiles\\act1\\caves\\cave.dt1",
+     "sha256": "ca000191b024933dfab6596f1a8d9bfe26e0d01e81ea92ec5f863d58fa4c2c64"
+    }
+   ],
+   "reference": {
+    "path": "test/golden/act1_cave.png",
+    "sha256": "0d41e5e9cdbb0f29951ca472065a88b2d17428fc68b16215af4771967e5df5a2",
+    "origin": "908b8c9 --update (2026-08-20); reproduced exactly by 908b8c9 and HEAD 996bf5f from vanilla 1.13c archives, no mod_dir, gamma 1.20, zoom 1:4."
+   },
+   "compare": "exact-rgb"
+  },
+  {
+   "id": "visual.core.act2_desert",
+   "required": true,
+   "act": 2,
+   "map": {
+    "lvltype": 16,
+    "lvlprest": 362,
+    "ds1": "assets/tiles/ACT2/Town/transW2.ds1"
+   },
+   "features": [
+    "act2",
+    "palette-act",
+    "palette-transparency",
+    "dt1-isometric",
+    "dt1-rle",
+    "dcc",
+    "cof-priority",
+    "animdata"
+   ],
+   "inputs": [
+    {
+     "path": "data\\global\\palette\\act1\\pal.pl2",
+     "sha256": "de848a8dfef15e9d8481af985fdaf02087653916493d2f308a336b70a0eb6549"
+    },
+    {
+     "path": "data\\global\\palette\\act2\\pal.pl2",
+     "sha256": "29f8b8f8b638a032ca5218a292aaa8cbfdf73077a7be39d2b2076ab134fd2eaa"
+    },
+    {
+     "path": "data\\global\\palette\\act3\\pal.pl2",
+     "sha256": "53aaf8e15a6377ad2ba6bbbda160eb94c0b32077ec3e6c97b876d51cfe18f7e5"
+    },
+    {
+     "path": "data\\global\\palette\\act4\\pal.pl2",
+     "sha256": "535ff49fda8cca0611302ef33784a265da542d73162fbbe0a01ecd0b05257085"
+    },
+    {
+     "path": "data\\global\\palette\\act5\\pal.pl2",
+     "sha256": "f8d27569a4d8311ea7ad32df06fd5beece323ec0e3a6cac150935d5ee96f46f0"
+    },
+    {
+     "path": "data\\global\\excel\\objects.txt",
+     "sha256": "9363c86bc6ce61549e162d176ad8398567aca1b433f076b729d4246bf478865c"
+    },
+    {
+     "path": "data\\global\\excel\\lvlprest.txt",
+     "sha256": "c2f6a891f07145fcffd8755b6fd163f86b6c3363fc45e9c6fe133436f7ae3f9e"
+    },
+    {
+     "path": "data\\global\\excel\\lvltypes.txt",
+     "sha256": "4d8a6cc08afd6c66a493b677b1601182695a437dcc0ab5fedecc379537e5c84c"
+    },
+    {
+     "path": "data\\global\\excel\\levels.txt",
+     "sha256": "34add892965a7b38f08c7346ffe7a41ede6668b9d5b28277493ddf157e55da0b"
+    },
+    {
+     "path": "data\\global\\tiles\\act2\\town\\transw2.ds1",
+     "sha256": "cc56494a0b15bf0cf5f59d0bd26b8d23a44964f35b79827b5ed8fa372c6ac3d2"
+    },
+    {
+     "path": "data\\global\\tiles\\act2\\town\\ground.dt1",
+     "sha256": "aca013485a2e09a687d16bdf3959849ee7958dc15da278412c3f2ffd69634fa6"
+    },
+    {
+     "path": "data\\global\\tiles\\act2\\outdoors\\mesa.dt1",
+     "sha256": "02e79863080a11c4b06d66050bfd79070f52ef695507c40ad3d7fb875ed7d285"
+    },
+    {
+     "path": "data\\global\\tiles\\act2\\town\\curbs.dt1",
+     "sha256": "023b1e0b492b27db00b14068430a362216f8864afc5e018a3ac77525a438ee1f"
+    },
+    {
+     "path": "data\\global\\tiles\\act2\\outdoors\\prickly.dt1",
+     "sha256": "ef68e44acee0813d2ef7ad0487d62e41662c82e25b24042b1c3e5991b1d97b39"
+    },
+    {
+     "path": "data\\global\\tiles\\act2\\outdoors\\scrub.dt1",
+     "sha256": "67fbb6baed8afcad054f47f200051207356dd85417fabb01822632b6bc573b36"
+    }
+   ],
+   "reference": {
+    "path": "test/golden/act2_desert.png",
+    "sha256": "19bccd2165e7f4681def10f7dfbbc777ccc37e00aa42604ef4c14f29c17f18d1",
+    "origin": "Regenerated 2026-10-22 from pinned vanilla 1.13c (no mod_dir, gamma 1.20, zoom 1:4, isolated preferences) with the intentional rarity variant-selection fix in misc_check_tiles_conflicts; see tmp/visual-diagnosis/DIAGNOSIS.md; re-rendered 2026-10-23 after the translucent-tint blend fix (non-premultiplied alpha tints), tint pixels only."
+   },
+   "compare": "exact-rgb"
+  },
+  {
+   "id": "visual.core.act3_jungle",
+   "required": true,
+   "act": 3,
+   "map": {
+    "lvltype": 21,
+    "lvlprest": 530,
+    "ds1": "assets/tiles/ACT3/Jungle/rivW.ds1"
+   },
+   "features": [
+    "act3",
+    "palette-act",
+    "palette-transparency",
+    "dt1-isometric",
+    "dt1-rle"
+   ],
+   "inputs": [
+    {
+     "path": "data\\global\\palette\\act1\\pal.pl2",
+     "sha256": "de848a8dfef15e9d8481af985fdaf02087653916493d2f308a336b70a0eb6549"
+    },
+    {
+     "path": "data\\global\\palette\\act2\\pal.pl2",
+     "sha256": "29f8b8f8b638a032ca5218a292aaa8cbfdf73077a7be39d2b2076ab134fd2eaa"
+    },
+    {
+     "path": "data\\global\\palette\\act3\\pal.pl2",
+     "sha256": "53aaf8e15a6377ad2ba6bbbda160eb94c0b32077ec3e6c97b876d51cfe18f7e5"
+    },
+    {
+     "path": "data\\global\\palette\\act4\\pal.pl2",
+     "sha256": "535ff49fda8cca0611302ef33784a265da542d73162fbbe0a01ecd0b05257085"
+    },
+    {
+     "path": "data\\global\\palette\\act5\\pal.pl2",
+     "sha256": "f8d27569a4d8311ea7ad32df06fd5beece323ec0e3a6cac150935d5ee96f46f0"
+    },
+    {
+     "path": "data\\global\\excel\\objects.txt",
+     "sha256": "9363c86bc6ce61549e162d176ad8398567aca1b433f076b729d4246bf478865c"
+    },
+    {
+     "path": "data\\global\\excel\\lvlprest.txt",
+     "sha256": "c2f6a891f07145fcffd8755b6fd163f86b6c3363fc45e9c6fe133436f7ae3f9e"
+    },
+    {
+     "path": "data\\global\\excel\\lvltypes.txt",
+     "sha256": "4d8a6cc08afd6c66a493b677b1601182695a437dcc0ab5fedecc379537e5c84c"
+    },
+    {
+     "path": "data\\global\\excel\\levels.txt",
+     "sha256": "34add892965a7b38f08c7346ffe7a41ede6668b9d5b28277493ddf157e55da0b"
+    },
+    {
+     "path": "data\\global\\tiles\\act3\\jungle\\rivw.ds1",
+     "sha256": "257aa9f8bee5f7c452dfb137274b4e9f5c4dee65cb0bd7e8f20f649c8b0db55d"
+    },
+    {
+     "path": "data\\global\\tiles\\act3\\docktown\\bridge.dt1",
+     "sha256": "df3141907a06de7f197ed56f34e596b9422ea11cac4bd7215220d5345732786a"
+    },
+    {
+     "path": "data\\global\\tiles\\act3\\ground\\darkgrass.dt1",
+     "sha256": "115dbf2a1515791d4b6e67200e129cc1eac2986d0771f6049dd15b0470ecc95a"
+    },
+    {
+     "path": "data\\global\\tiles\\act3\\ground\\darkmud.dt1",
+     "sha256": "3fd2161a220fcf0a78153ca41e341c1306c6fdf5a5b7df4280933f3fc10bef39"
+    },
+    {
+     "path": "data\\global\\tiles\\act3\\ground\\drymud.dt1",
+     "sha256": "7b47ac88425ba2861dcb8b95744465d379b72736b2d0399ebd6733be78096d75"
+    },
+    {
+     "path": "data\\global\\tiles\\act3\\ground\\greenmud.dt1",
+     "sha256": "286e4b777f163af3c8af1c067ee76b5d8b19a2b4b6d0c44c15681c60161c9e17"
+    },
+    {
+     "path": "data\\global\\tiles\\act3\\jungle\\trees.dt1",
+     "sha256": "8bcabd8cf90ef396d4591613b5f240e2b0accd7e7dd9a023c5a8994861aa811c"
+    },
+    {
+     "path": "data\\global\\tiles\\act3\\jungle\\treegrp.dt1",
+     "sha256": "74333e9e13fa7d399de009daa73b234dcce6cb1b3600ecbc9906ac6071c841a7"
+    },
+    {
+     "path": "data\\global\\tiles\\act3\\river\\rivbank.dt1",
+     "sha256": "e0a5caa2f34bde4190c4322cee7e217ae3a800932a4c8f20756c67c71b64890c"
+    }
+   ],
+   "reference": {
+    "path": "test/golden/act3_jungle.png",
+    "sha256": "bba4c679eafc8b78521f77fe25097422e72016084cc13fdda081ce06d608dd32",
+    "origin": "Regenerated 2026-10-22 from pinned vanilla 1.13c (no mod_dir, gamma 1.20, zoom 1:4, isolated preferences) with the intentional rarity variant-selection fix in misc_check_tiles_conflicts; see tmp/visual-diagnosis/DIAGNOSIS.md; re-rendered 2026-10-23 after the translucent-tint blend fix (non-premultiplied alpha tints), tint pixels only."
+   },
+   "compare": "exact-rgb"
+  },
+  {
+   "id": "visual.core.act4_fortress",
+   "required": true,
+   "act": 4,
+   "map": {
+    "lvltype": 26,
+    "lvlprest": 797,
+    "ds1": "assets/tiles/ACT4/Fort/Fortress.ds1"
+   },
+   "features": [
+    "act4",
+    "palette-act",
+    "palette-transparency",
+    "dt1-isometric",
+    "dt1-rle",
+    "dcc",
+    "cof-priority",
+    "animdata"
+   ],
+   "inputs": [
+    {
+     "path": "data\\global\\palette\\act1\\pal.pl2",
+     "sha256": "de848a8dfef15e9d8481af985fdaf02087653916493d2f308a336b70a0eb6549"
+    },
+    {
+     "path": "data\\global\\palette\\act2\\pal.pl2",
+     "sha256": "29f8b8f8b638a032ca5218a292aaa8cbfdf73077a7be39d2b2076ab134fd2eaa"
+    },
+    {
+     "path": "data\\global\\palette\\act3\\pal.pl2",
+     "sha256": "53aaf8e15a6377ad2ba6bbbda160eb94c0b32077ec3e6c97b876d51cfe18f7e5"
+    },
+    {
+     "path": "data\\global\\palette\\act4\\pal.pl2",
+     "sha256": "535ff49fda8cca0611302ef33784a265da542d73162fbbe0a01ecd0b05257085"
+    },
+    {
+     "path": "data\\global\\palette\\act5\\pal.pl2",
+     "sha256": "f8d27569a4d8311ea7ad32df06fd5beece323ec0e3a6cac150935d5ee96f46f0"
+    },
+    {
+     "path": "data\\global\\excel\\objects.txt",
+     "sha256": "9363c86bc6ce61549e162d176ad8398567aca1b433f076b729d4246bf478865c"
+    },
+    {
+     "path": "data\\global\\excel\\lvlprest.txt",
+     "sha256": "c2f6a891f07145fcffd8755b6fd163f86b6c3363fc45e9c6fe133436f7ae3f9e"
+    },
+    {
+     "path": "data\\global\\excel\\lvltypes.txt",
+     "sha256": "4d8a6cc08afd6c66a493b677b1601182695a437dcc0ab5fedecc379537e5c84c"
+    },
+    {
+     "path": "data\\global\\excel\\levels.txt",
+     "sha256": "34add892965a7b38f08c7346ffe7a41ede6668b9d5b28277493ddf157e55da0b"
+    },
+    {
+     "path": "data\\global\\tiles\\act4\\fort\\fortress.ds1",
+     "sha256": "a913485986b5b710861897f2b8d785b751fdbd045934118d20343b5708d873c4"
+    },
+    {
+     "path": "data\\global\\tiles\\act4\\fort\\plaza.dt1",
+     "sha256": "32c14adab36c80f36618f39ec7ee643484454b0e5cf3e998bf9fafd11d38e024"
+    },
+    {
+     "path": "data\\global\\tiles\\act4\\fort\\interior.dt1",
+     "sha256": "6fb24ac4ee0a646d020e72f6e774bd5c073304664f5513af73f941c74cd114a6"
+    },
+    {
+     "path": "data\\global\\tiles\\act4\\fort\\exterior.dt1",
+     "sha256": "be7893d321d457d6d9ee2def5672323ee3bcbd86a5d9ff4a9091df49f50d7a48"
+    },
+    {
+     "path": "data\\global\\tiles\\act4\\fort\\foregate.dt1",
+     "sha256": "df1b346085ced8ca47b8f1f38e05fe994c77d06499cea1cc3c6b9702bc281d2b"
+    },
+    {
+     "path": "data\\global\\tiles\\act4\\mesa\\floor.dt1",
+     "sha256": "a93e65f2288cc58a607f97c3507232c817068dc498bd58dc4520c8a82817ad01"
+    },
+    {
+     "path": "data\\global\\tiles\\act4\\mesa\\inv_wall.dt1",
+     "sha256": "e417f5f302bad044399179bcf5e9e077872a1e1d8ab582bb2db0d0043651ef28"
+    },
+    {
+     "path": "data\\global\\tiles\\act4\\mesa\\stairs.dt1",
+     "sha256": "cbe93246960489155024a725610442e3f3b0a025e608e7e79aa661d631a09af7"
+    }
+   ],
+   "reference": {
+    "path": "test/golden/act4_fortress.png",
+    "sha256": "6e4043c707e3b993c5a675f0dbc09fa03bcd64e0823bd5db823f329e6ae9e8ae",
+    "origin": "Regenerated 2026-10-22 from pinned vanilla 1.13c (no mod_dir, gamma 1.20, zoom 1:4, isolated preferences) with the intentional rarity variant-selection fix in misc_check_tiles_conflicts; see tmp/visual-diagnosis/DIAGNOSIS.md."
+   },
+   "compare": "exact-rgb"
+  },
+  {
+   "id": "visual.core.act5_town",
+   "required": true,
+   "act": 5,
+   "map": {
+    "lvltype": 29,
+    "lvlprest": 863,
+    "ds1": "assets/tiles/expansion/Town/townWest.ds1"
+   },
+   "features": [
+    "act5",
+    "palette-act",
+    "palette-transparency",
+    "dt1-isometric",
+    "dt1-rle",
+    "dcc",
+    "cof-priority",
+    "animdata"
+   ],
+   "inputs": [
+    {
+     "path": "data\\global\\palette\\act1\\pal.pl2",
+     "sha256": "de848a8dfef15e9d8481af985fdaf02087653916493d2f308a336b70a0eb6549"
+    },
+    {
+     "path": "data\\global\\palette\\act2\\pal.pl2",
+     "sha256": "29f8b8f8b638a032ca5218a292aaa8cbfdf73077a7be39d2b2076ab134fd2eaa"
+    },
+    {
+     "path": "data\\global\\palette\\act3\\pal.pl2",
+     "sha256": "53aaf8e15a6377ad2ba6bbbda160eb94c0b32077ec3e6c97b876d51cfe18f7e5"
+    },
+    {
+     "path": "data\\global\\palette\\act4\\pal.pl2",
+     "sha256": "535ff49fda8cca0611302ef33784a265da542d73162fbbe0a01ecd0b05257085"
+    },
+    {
+     "path": "data\\global\\palette\\act5\\pal.pl2",
+     "sha256": "f8d27569a4d8311ea7ad32df06fd5beece323ec0e3a6cac150935d5ee96f46f0"
+    },
+    {
+     "path": "data\\global\\excel\\objects.txt",
+     "sha256": "9363c86bc6ce61549e162d176ad8398567aca1b433f076b729d4246bf478865c"
+    },
+    {
+     "path": "data\\global\\excel\\lvlprest.txt",
+     "sha256": "c2f6a891f07145fcffd8755b6fd163f86b6c3363fc45e9c6fe133436f7ae3f9e"
+    },
+    {
+     "path": "data\\global\\excel\\lvltypes.txt",
+     "sha256": "4d8a6cc08afd6c66a493b677b1601182695a437dcc0ab5fedecc379537e5c84c"
+    },
+    {
+     "path": "data\\global\\excel\\levels.txt",
+     "sha256": "34add892965a7b38f08c7346ffe7a41ede6668b9d5b28277493ddf157e55da0b"
+    },
+    {
+     "path": "data\\global\\tiles\\expansion\\town\\townwest.ds1",
+     "sha256": "cc759b3ae071415d578d5acca3c82dba2e96b46262ee589c1164c23d55ab16f0"
+    },
+    {
+     "path": "data\\global\\tiles\\expansion\\town\\blacksmith.dt1",
+     "sha256": "82b3decf20702d840dbc9e459a538f4c39b1fe3bf1832d575e6bc32f70fa5de9"
+    },
+    {
+     "path": "data\\global\\tiles\\expansion\\town\\ground.dt1",
+     "sha256": "04b165c290daed359d09f8e593f37818f49dbfb0ad6a6f37d684e3b550022454"
+    },
+    {
+     "path": "data\\global\\tiles\\expansion\\town\\keepwall.dt1",
+     "sha256": "c45758b4bf883d82b5e7b9511035b51a12f6b6fd0c2e817ad63b66c5dc1e1d81"
+    },
+    {
+     "path": "data\\global\\tiles\\expansion\\town\\otherwalls.dt1",
+     "sha256": "fe50aafd487ac48554949b1eb48dd048979ac8345dc4819420bd825b3b48279c"
+    },
+    {
+     "path": "data\\global\\tiles\\expansion\\town\\shrine.dt1",
+     "sha256": "7edd8a31b8c40e40f57710e2da98a680f40dbcfbe611d8612da44a4ec2165982"
+    },
+    {
+     "path": "data\\global\\tiles\\expansion\\town\\walls.dt1",
+     "sha256": "19aadcf052fc1abf5bb124fb12334f7b473fb62292c49c9464d8e2a84d9470fe"
+    },
+    {
+     "path": "data\\global\\tiles\\expansion\\siege\\shrub.dt1",
+     "sha256": "feb2ae199a5869548f95ca8dcaed100da2ca5c9dd1f06fe70da5126120513280"
+    },
+    {
+     "path": "data\\global\\tiles\\expansion\\town\\collision.dt1",
+     "sha256": "ad50f5fbe29390ab7e9d83484a2a123e51b4e8076f684241a47db54603ae5b52"
+    },
+    {
+     "path": "data\\global\\tiles\\expansion\\siege\\path.dt1",
+     "sha256": "a185971d1c54aeaaae5aaef57e07d78383a6f9d30e96d638583f2600c1f787e8"
+    },
+    {
+     "path": "data\\global\\tiles\\expansion\\town\\tent.dt1",
+     "sha256": "4a01649183f2e4b054d385dd03cba12ecbfb87180a880144266d355cd6740dea"
+    },
+    {
+     "path": "data\\global\\tiles\\expansion\\siege\\snow.dt1",
+     "sha256": "6128969dd661b1d1feca68bd6cd007a1ba7d931a7e1e9091a05895df78994325"
+    },
+    {
+     "path": "data\\global\\tiles\\expansion\\siege\\trees.dt1",
+     "sha256": "9dc70eab8ecf4ee6f95954133846750d7cd6e5d7a893f4cc0b7341957245c1c5"
+    },
+    {
+     "path": "data\\global\\tiles\\expansion\\town\\buildingses.dt1",
+     "sha256": "535787bbe6f14fbede3e2838d4facda5d5f2d462a86539e4ff32c9f063840bbb"
+    },
+    {
+     "path": "data\\global\\tiles\\expansion\\siege\\fence.dt1",
+     "sha256": "44a6b36f94cfec6dfcf0b2a7f59af121ea1462869fd65f3f6910e0eb6f909919"
+    },
+    {
+     "path": "data\\global\\tiles\\expansion\\town\\waypt.dt1",
+     "sha256": "9e439dfcd2cf154dc63a7c71e791c095a9780a79f22043606b3ac335ed162243"
+    },
+    {
+     "path": "data\\global\\tiles\\expansion\\town\\maingate.dt1",
+     "sha256": "a3c6baf7b5bdd26f72de280e5b61f44f6160690ca27ea723f6eb1afac9e8375c"
+    },
+    {
+     "path": "data\\global\\tiles\\expansion\\town\\clutter.dt1",
+     "sha256": "1fcfd0cc5421152ed0bae6d8fb530b48e1b982e22c67c4bfa8a3313f62ca60e3"
+    },
+    {
+     "path": "data\\global\\tiles\\expansion\\town\\trees.dt1",
+     "sha256": "07d93b589525a637b07c6e536fd867d1fb0cbd49245864420bc0af69d372149d"
+    },
+    {
+     "path": "data\\global\\tiles\\expansion\\siege\\rockcliff.dt1",
+     "sha256": "32328b03c85cb813be6e54b9a0a8bf065810a0efee58cf3903b742f591981580"
+    },
+    {
+     "path": "data\\global\\tiles\\expansion\\siege\\rockclifffloor.dt1",
+     "sha256": "d6b6b18d29ac6e6f65a14bc2453536128f94c15847f0191c2ab7ce17ce8dae6f"
+    }
+   ],
+   "reference": {
+    "path": "test/golden/act5_town.png",
+    "sha256": "718e1a210227df6f38366d004454d9eea8dae5ec6fcd9ba8dea354f3196e22dd",
+    "origin": "Regenerated 2026-10-22 from pinned vanilla 1.13c (no mod_dir, gamma 1.20, zoom 1:4, isolated preferences); the previous reference was a PD2 mod-overlay render. Includes the rarity variant-selection fix; see tmp/visual-diagnosis/DIAGNOSIS.md; re-rendered 2026-10-23 after the translucent-tint blend fix (non-premultiplied alpha tints), tint pixels only."
+   },
+   "compare": "exact-rgb"
+  }
+ ],
+ "required_features": [
+  "act1",
+  "act2",
+  "act3",
+  "act4",
+  "act5",
+  "dt1-isometric",
+  "dt1-rle",
+  "dt1-animation",
+  "dcc",
+  "dc6",
+  "palette-act",
+  "palette-transparency",
+  "animdata",
+  "cof-priority",
+  "cof-blend",
+  "compose-offsets",
+  "export-png",
+  "export-apng"
+ ],
+ "external_features": {
+  "dt1-animation": [
+   "ctest.dt1_load"
+  ],
+  "dc6": [
+   "ctest.dc6_decode",
+   "ctest.visual_reference_probe_decoder_cases"
+  ],
+  "cof-blend": [
+   "ctest.compose_render"
+  ],
+  "compose-offsets": [
+   "ctest.compose_render"
+  ],
+  "export-png": [
+   "ctest.visual_export_images"
+  ],
+  "export-apng": [
+   "ctest.visual_export_images"
+  ]
+ },
+ "limitations": [
+  "COF, DCC and AnimData.d2 reads are not logged with their source by --headless; their identity rests on the archive identity check and mod_dir none.",
+  "The headless renderer exposes neither indexed buffers nor its palette; whole-map first differences are reported at resource-selection, determinism or final-RGB stage.",
+  "References are editor renders, not original-game frames: a pass means the editor still matches its reviewed reference, not that the game draws the same image."
+ ]
+}

@@ -348,6 +348,84 @@ void test_redirect_project_subpath_is_preserved(void)
 }
 
 
+/* ---- project paths: boundaries, capacity, separators (package C) ---- */
+
+void test_redirect_sibling_with_project_name_as_prefix_is_outside(void)
+{
+   char dst[256];
+   int  redirected;
+
+   open_fake_project(T_ROOT);
+   redirected = project_redirect_ds1_save_path(
+      T_ROOT "2" T_SEP "data" T_SEP "global" T_SEP "tiles" T_SEP "ACT1" T_SEP "x.ds1",
+      dst, sizeof(dst));
+   TEST_ASSERT_EQUAL_INT(1, redirected);
+   TEST_ASSERT_EQUAL_STRING(T_PREFIX "ACT1" T_SEP "x.ds1", dst);
+}
+
+void test_redirect_reports_a_target_that_does_not_fit(void)
+{
+   char dst[64];
+   int  redirected;
+
+   open_fake_project(T_ROOT);
+   redirected = project_redirect_ds1_save_path(
+      "assets/tiles/ACT1/CAVES/a_rather_long_map_name_for_this_buffer.ds1",
+      dst, sizeof(dst));
+   TEST_ASSERT_EQUAL_INT(-1, redirected);
+}
+
+void test_redirect_project_path_with_trailing_separator(void)
+{
+   char dst[256];
+   int  redirected;
+
+   open_fake_project(T_ROOT T_SEP);
+   redirected = project_redirect_ds1_save_path(
+      "assets/tiles/ACT1/CAVES/denent.ds1", dst, sizeof(dst));
+   TEST_ASSERT_EQUAL_INT(1, redirected);
+   TEST_ASSERT_EQUAL_STRING(T_PREFIX "ACT1/CAVES/denent.ds1", dst);
+
+   /* and a map already under it counts as inside */
+   {
+      char again[256];
+      redirected = project_redirect_ds1_save_path(dst, again, sizeof(again));
+      TEST_ASSERT_EQUAL_INT(0, redirected);
+   }
+}
+
+void test_redirect_project_root_itself_is_inside(void)
+{
+   char dst[256];
+   open_fake_project(T_ROOT);
+   TEST_ASSERT_EQUAL_INT(0, project_redirect_ds1_save_path(
+      T_ROOT T_SEP "tiles" T_SEP "x.ds1", dst, sizeof(dst)));
+}
+
+void test_ensure_parent_dirs_creates_the_chain(void)
+{
+   char path[256];
+   FILE *f;
+   snprintf(path, sizeof(path), "%s/a b/c/d/file.ds1", SCRATCH_DIR);
+   TEST_ASSERT_EQUAL_INT(1, project_ensure_parent_dirs(path));
+   f = fopen(path, "wb");
+   TEST_ASSERT_NOT_NULL(f);
+   fclose(f);
+}
+
+void test_ensure_parent_dirs_reports_a_file_in_the_way(void)
+{
+   char blocker[256], path[256];
+   FILE *f;
+   snprintf(blocker, sizeof(blocker), "%s/Global", SCRATCH_DIR);
+   f = fopen(blocker, "wb");
+   TEST_ASSERT_NOT_NULL(f);
+   fclose(f);
+   snprintf(path, sizeof(path), "%s/Global/Tiles/x.ds1", SCRATCH_DIR);
+   TEST_ASSERT_EQUAL_INT(0, project_ensure_parent_dirs(path));
+}
+
+
 /* ---- main ---- */
 
 int main(void)
@@ -375,6 +453,12 @@ int main(void)
    RUN_TEST(test_redirect_case_insensitive_tiles_match);
    RUN_TEST(test_redirect_no_tiles_segment_returns_zero);
    RUN_TEST(test_redirect_project_subpath_is_preserved);
+   RUN_TEST(test_redirect_sibling_with_project_name_as_prefix_is_outside);
+   RUN_TEST(test_redirect_reports_a_target_that_does_not_fit);
+   RUN_TEST(test_redirect_project_path_with_trailing_separator);
+   RUN_TEST(test_redirect_project_root_itself_is_inside);
+   RUN_TEST(test_ensure_parent_dirs_creates_the_chain);
+   RUN_TEST(test_ensure_parent_dirs_reports_a_file_in_the_way);
 
    return UNITY_END();
 }

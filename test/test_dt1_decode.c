@@ -201,6 +201,31 @@ void test_scale_down_1x(void)
 
 /* ---- main ---- */
 
+
+/* A run longer than the bytes left in the sub-tile must stop at the
+ * sub-tile's end; the bytes after it belong to something else. A lone
+ * trailing byte is not a pair. */
+void test_normal_decode_never_reads_past_length(void)
+{
+    unsigned char buf[8 * 2];
+    unsigned char data[] = { 0, 5, 7, 8, 0xEE, 0xEE, 0xEE, 0xEE };
+    unsigned char odd[] = { 1, 1, 9, 2, 0xEE };
+    int i;
+
+    memset(buf, 0, sizeof(buf));
+    decode_sub_tile_normal(buf, 8, 2, 0, 0, data, 4);
+    TEST_ASSERT_EQUAL_UINT8(7, buf[0]);
+    TEST_ASSERT_EQUAL_UINT8(8, buf[1]);
+    for (i = 2; i < 16; i++)
+        TEST_ASSERT_EQUAL_UINT8(0, buf[i]);
+
+    memset(buf, 0, sizeof(buf));
+    decode_sub_tile_normal(buf, 8, 2, 0, 0, odd, 4);
+    TEST_ASSERT_EQUAL_UINT8(9, buf[1]);
+    for (i = 2; i < 16; i++)
+        TEST_ASSERT_EQUAL_UINT8(0, buf[i]);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -214,6 +239,7 @@ int main(void)
     RUN_TEST(test_normal_decode_basic);
     RUN_TEST(test_normal_decode_with_offset);
     RUN_TEST(test_normal_decode_bounds_check);
+    RUN_TEST(test_normal_decode_never_reads_past_length);
 
     /* Scale down */
     RUN_TEST(test_scale_down_2x);

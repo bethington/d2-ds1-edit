@@ -34,9 +34,17 @@ void ini_create(char *ininame)
        "; =================================================================\n"
        "d2_install =\n"
        "\n"
+       "; Project Diablo 2. pd2_dir is the folder holding pd2data.mpq (usually\n"
+       "; <Diablo II>\\ProjectD2); blank = auto-detect. use_pd2 is auto (use PD2\n"
+       "; data when found), yes (require it; logs an error if missing) or no\n"
+       "; (vanilla Diablo II data only).\n"
+       "; =================================================================\n"
+       "pd2_dir =\n"
+       "use_pd2 = auto\n"
+       "\n"
        "; Explicit MPQ paths override d2_install / auto-detection per slot.\n"
-       "; File lookup scans mod_dir first, then patch_d2, d2exp, d2data,\n"
-       "; d2char (matching D2's own load order).\n"
+       "; File lookup scans mod_dir first, then the Project Diablo 2 archives\n"
+       "; (when in use), then patch_d2, d2exp, d2data, d2char.\n"
        "; =================================================================\n"
        "d2char   =\n"
        "d2data   =\n"
@@ -143,6 +151,12 @@ void ini_create(char *ininame)
        "; with the mouse on the border of the screen\n"
        "; -------------------------------------------------------------------------\n"
        "winobj_can_scroll_mouse = NO\n"
+       "\n"
+       "\n"
+       "; scroll the map when the mouse touches the window border. The arrow\n"
+       "; keys and WASD always scroll; Ctrl+arrows browse maps\n"
+       "; -------------------------------------------------------------------\n"
+       "mouse_edge_scroll = NO\n"
        "\n"
        "\n"
        "; after a Centering (with the 'C' key), wich zoom ?\n"
@@ -300,14 +314,15 @@ void ini_read(char *ininame)
    } datas[] =
        {
            {"d2_install", T_MOD, &glb_config.d2_install, ""},
+           {"pd2_dir", T_MOD, &glb_config.pd2_dir, ""},
            {"upscale_enabled", T_YES, &glb_config.upscale_enabled, "NO"},
            {"upscale_service_url", T_STR, &glb_config.upscale_service_url, ""},
            {"export_dc6_single_frame_only", T_YES, &glb_config.export_dc6_single_frame_only, "YES"},
            {"compose_use_full_folder_names", T_YES, &glb_config.compose_use_full_folder_names, "NO"},
-           {"d2char", T_MPQ, &glb_config.mpq_file[3], ""},
-           {"d2data", T_MPQ, &glb_config.mpq_file[2], ""},
-           {"d2exp", T_MPQ, &glb_config.mpq_file[1], ""},
-           {"patch_d2", T_MPQ, &glb_config.mpq_file[0], ""},
+           {"d2char", T_MPQ, &glb_config.mpq_file[MPQ_SLOT_D2CHAR], ""},
+           {"d2data", T_MPQ, &glb_config.mpq_file[MPQ_SLOT_D2DATA], ""},
+           {"d2exp", T_MPQ, &glb_config.mpq_file[MPQ_SLOT_D2EXP], ""},
+           {"patch_d2", T_MPQ, &glb_config.mpq_file[MPQ_SLOT_PATCH_D2], ""},
            {"mod_dir", T_MOD, &glb_config.mod_dir[0], ""},
            {"full_screen", T_YES, &glb_config.fullscreen, "YES"},
            {"screen_width", T_INT, &glb_config.screen.width, (void *)800},
@@ -326,6 +341,7 @@ void ini_read(char *ininame)
            {"stretch_sprite", T_YES, &glb_config.stretch_sprites, "YES"},
            {"winobj_can_scroll_keyb", T_YES, &glb_config.winobj_scroll_keyb, "YES"},
            {"winobj_can_scroll_mouse", T_YES, &glb_config.winobj_scroll_mouse, "NO"},
+           {"mouse_edge_scroll", T_YES, &glb_config.mouse_edge_scroll, "NO"},
            {"center_zoom", T_ZOOM, &glb_config.center_zoom, "1:1"},
            {"default_zoom", T_ZOOM, &glb_config.default_zoom, "1:1"},
            {"nb_type1_per_act", T_INT, &glb_config.nb_type1_per_act, (void *)60},
@@ -598,6 +614,21 @@ void ini_read(char *ininame)
       v = al_get_config_value(a5_config, "export_defaults", "verbose");
       if (v != NULL && (v[0] == 'Y' || v[0] == 'y' || v[0] == '1'))
          glb_config.export_default_verbose = 1;
+   }
+
+   // use_pd2 = auto | yes | no (anything else warns and means auto)
+   glb_config.use_pd2 = D2_USE_PD2_AUTO;
+   {
+      const char *v = al_get_config_value(a5_config, "", "use_pd2");
+      if (v != NULL && v[0] != 0)
+      {
+         if (stricmp(v, "yes") == 0 || stricmp(v, "true") == 0 || stricmp(v, "1") == 0)
+            glb_config.use_pd2 = D2_USE_PD2_YES;
+         else if (stricmp(v, "no") == 0 || stricmp(v, "false") == 0 || stricmp(v, "0") == 0)
+            glb_config.use_pd2 = D2_USE_PD2_NO;
+         else if (stricmp(v, "auto") != 0)
+            fprintf(stderr, "config: use_pd2 = %s is not auto, yes or no; using auto\n", v);
+      }
    }
 
    // MPQ slot resolution runs later in main() — after preferences are loaded

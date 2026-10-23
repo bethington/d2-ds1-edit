@@ -30,7 +30,7 @@ typedef struct
 /*
  * Convert a raw Diablo II palette to an RGBA palette.
  *
- * d2_pal: raw D2 palette data (256 entries, 4 bytes each: R, G, B, padding)
+ * d2_pal: raw PL2 palette data (256 entries, 4 bytes each: R, G, B, padding)
  *         If NULL, generates a grayscale ramp.
  * d2_pal_size: size of d2_pal in bytes (expected: 1024+)
  * gamma_table: 256-entry gamma correction table (applied to each channel

@@ -142,6 +142,12 @@ void misc_check_tiles_conflicts(int ds1_idx)
    int bt_max = glb_ds1[ds1_idx].bt_num, b;
    long sum_rarity, max_rarity;
 
+   /* Entry 0 is the synthetic "no tile" block. It has rarity -1 and is
+    * never a candidate for a DS1 cell. */
+   if (bt_max <= 1)
+      return;
+   start_i = 1;
+
    while (!done)
    {
       old_o = bt[start_i].orientation;
@@ -156,19 +162,24 @@ void misc_check_tiles_conflicts(int ds1_idx)
       sum_rarity = bt[start_i].rarity;
       last_block = start_i;
       i = start_i + 1;
-      max_rarity = -1;
+      max_rarity = bt[start_i].rarity > 0 ? bt[start_i].rarity : -1;
       if (bt[start_i].rarity)
          first_block = start_i;
       else
          first_block = -1;
       while (!done2)
       {
+         if (i >= bt_max)
+         {
+            done2 = TRUE;
+            break;
+         }
          o = bt[i].orientation;
          m = bt[i].main_index;
          s = bt[i].sub_index;
          d = bt[i].dt1_idx;
          r = bt[i].rarity;
-         if ((old_o != o) || (old_m != m) || (old_s != s) || (i >= bt_max))
+         if ((old_o != o) || (old_m != m) || (old_s != s))
             done2 = TRUE;
          else
          {
@@ -474,6 +485,7 @@ void misc_update_pal_with_gamma(void)
 
    for (i = 0; i < ACT_MAX; i++)
       misc_pal_d2_2_vga(i);
+   misc_make_cmaps();
 }
 
 // ==========================================================================
@@ -486,18 +498,32 @@ void misc_make_cmaps(void)
 {
    CMAP_E cm;
    int a, cmap_ok;
-   char tmp[100];
+   uint64_t pal_hash[ACT_MAX];
+   char tmp[512];
    FILE *out, *in;
 
+   for (a = 0; a < ACT_MAX; a++)
+   {
+      long b;
+      pal_hash[a] = UINT64_C(14695981039346656037);
+      for (b = 0; glb_ds1edit.d2_pal[a] != NULL &&
+                  b < glb_ds1edit.pal_size[a]; b++)
+         pal_hash[a] = (pal_hash[a] ^ glb_ds1edit.d2_pal[a][b])
+                     * UINT64_C(1099511628211);
+   }
    printf("\n");
    for (cm = 0; cm < CM_MAX; cm++)
    {
       for (a = 0; a < ACT_MAX; a++)
       {
          fprintf(stderr, ".");
-         sprintf(tmp, "%scmap%i_%i.bin", glb_ds1edit_data_dir, a, cm);
+         /* Include the PL2 content and gamma in the cache key. A different
+          * mod or palette curve must never reuse an old color lookup table. */
+         snprintf(tmp, sizeof(tmp), "%scmap2_%i_%i_%016llx_g%i.bin",
+                  glb_ds1edit_data_dir, a, cm,
+                  (unsigned long long)pal_hash[a], glb_ds1edit.cur_gamma);
          cmap_ok = FALSE;
-         if (a5_file_exists(tmp) && (glb_ds1edit.pal_loaded[a] == TRUE))
+         if (a5_file_exists(tmp))
          {
             // load the colormap from disk, instead of making it
             in = fopen(tmp, "rb");
@@ -506,9 +532,9 @@ void misc_make_cmaps(void)
             else
             {
                printf("loading %s\n", tmp);
-               fread(&glb_ds1edit.cmap[cm][a], sizeof(INDEX_COLORMAP), 1, in);
+               cmap_ok = fread(&glb_ds1edit.cmap[cm][a],
+                               sizeof(INDEX_COLORMAP), 1, in) == 1;
                fclose(in);
-               cmap_ok = TRUE;
             }
          }
 
@@ -709,32 +735,107 @@ static double open_now_ms(void)
    return al_get_time() * 1000.0;
 }
 
+/* Old DS1s carry .tg1 tile names. The game archives store the corresponding
+ * .dt1 files. Only consult this list when the TXT chain has no usable type. */
+static void misc_load_ds1_tile_fallback(int ds1_idx)
+{
+   DS1_S *ds1 = &glb_ds1[ds1_idx];
+   const char *p = (const char *)ds1->file_buff;
+   const char *end = p != NULL ? p + ds1->file_len : NULL;
+   int slot = 1, loaded = 0, i;
+   char editor_path[256];
+
+   for (i = 0; i < DT1_IN_DS1_MAX; i++) ds1->dt1_idx[i] = -1;
+   snprintf(editor_path, sizeof(editor_path), "%sds1edit.dt1", glb_ds1edit_data_dir);
+   ds1->dt1_idx[0] = dt1_add_special(editor_path);
+
+   while (p != NULL && p < end && slot < DT1_IN_DS1_MAX)
+   {
+      const char *term = (const char *)memchr(p, 0, (size_t)(end - p));
+      const char *rel;
+      char path[512], *probe = NULL;
+      long probe_len = 0;
+      size_t len;
+      if (term == NULL) break;
+      rel = p;
+      while (*rel == '/' || *rel == '\\') rel++;
+      if (strnicmp(rel, "d2\\", 3) == 0 || strnicmp(rel, "d2/", 3) == 0)
+         rel += 3;
+      if (strnicmp(rel, "DS1EDIT_", 8) == 0) { p = term + 1; continue; }
+      if (strnicmp(rel, "data\\global\\tiles\\", 18) == 0 ||
+          strnicmp(rel, "data/global/tiles/", 18) == 0)
+         snprintf(path, sizeof(path), "%s", rel);
+      else
+         snprintf(path, sizeof(path), "%s%s", glb_tiles_path, rel);
+      len = strlen(path);
+      if (len >= 4 && stricmp(path + len - 4, ".tg1") == 0)
+         memcpy(path + len - 4, ".dt1", 5);
+      else if (len < 4 || stricmp(path + len - 4, ".dt1") != 0)
+      {
+         p = term + 1;
+         continue;
+      }
+      if (misc_load_mpq_file(path, &probe, &probe_len, FALSE) != -1)
+      {
+         free(probe);
+         ds1->dt1_idx[slot] = dt1_add(path);
+         if (ds1->dt1_idx[slot] >= 0) { loaded++; slot++; }
+      }
+      else
+         fprintf(stderr, "DS1 fallback tile not found: %s\n", path);
+      p = term + 1;
+   }
+   printf("DS1 tile fallback: loaded %d DT1 file(s)\n", loaded);
+}
+
 void misc_open_1_ds1(int ds1_idx, char *name, int type, int def,
                      int new_width, int new_height)
 {
+   char error[768];
+
+   if (misc_open_1_ds1_checked(ds1_idx, name, type, def, new_width, new_height,
+                               error, sizeof(error)) != 0)
+      ds1edit_error(error);
+}
+
+int misc_open_1_ds1_checked(int ds1_idx, char *name, int type, int def,
+                            int new_width, int new_height,
+                            char *error, size_t error_cap)
+{
    double t0;
+   const PRESET_ENTRY_S *preset;
+   int rc;
 
    // ds1
    printf("\nreading ds1 : %s\n", name);
    fflush(stdout);
    fprintf(stderr, "reading %s...", name);
    t0 = open_now_ms();
-   ds1_read(name, ds1_idx, new_width, new_height);
+   rc = ds1_read_checked(name, ds1_idx, new_width, new_height, error, error_cap);
    glb_open_profile.ds1_read_ms += open_now_ms() - t0;
+   if (rc != 0)
+   {
+      /* the slot is empty again; nothing below may touch it */
+      fprintf(stderr, "failed\n");
+      return -1;
+   }
    fprintf(stderr, "done\n");
+
+   preset = mpq_index_find_by_ds1_path(name, NULL);
+   if (preset == NULL && strchr(name, '/') == NULL && strchr(name, '\\') == NULL)
+      preset = mpq_index_find_by_ds1_name(glb_ds1[ds1_idx].filename, NULL);
 
    // Auto-resolve missing LvlPrest.Def / LvlTypes.Id from the preset index.
    // Explicit values passed by the caller always win.
    if (type == -1 || def == -1)
    {
       const char *base = glb_ds1[ds1_idx].filename;
-      const PRESET_ENTRY_S *hit =
-          base ? mpq_index_find_by_ds1_name(base, NULL) : NULL;
+      const PRESET_ENTRY_S *hit = preset;
       if (hit != NULL)
       {
          if (def == -1)
             def = hit->def;
-         if (type == -1)
+         if (type == -1 && hit->level_type > 0)
             type = hit->level_type;
          fprintf(stdout,
                  "auto-resolve: %s -> preset \"%s\" (type=%d def=%d act=%d)\n",
@@ -759,7 +860,16 @@ void misc_open_1_ds1(int ds1_idx, char *name, int type, int def,
 
    printf("\nloading dt1 from mpq...\n");
    t0 = open_now_ms();
-   glb_ds1[ds1_idx].txt_act = read_lvltypes_txt(ds1_idx, type);
+   if (type > 0)
+      glb_ds1[ds1_idx].txt_act = read_lvltypes_txt(ds1_idx, type);
+   else
+   {
+      glb_ds1[ds1_idx].txt_act = 0;
+      misc_load_ds1_tile_fallback(ds1_idx);
+   }
+   if (glb_ds1[ds1_idx].txt_act < 1 || glb_ds1[ds1_idx].txt_act > 5)
+      if (preset != NULL && preset->act >= 1 && preset->act <= 5)
+         glb_ds1[ds1_idx].txt_act = preset->act;
    glb_open_profile.lvltypes_dt1_ms += open_now_ms() - t0;
    printf("\ndone\n");
    printf("txt_act = %i\n", glb_ds1[ds1_idx].txt_act);
@@ -785,6 +895,7 @@ void misc_open_1_ds1(int ds1_idx, char *name, int type, int def,
    glb_open_profile.block_table_ms += open_now_ms() - t0;
 
    glb_open_profile.maps++;
+   return 0;
 }
 
 // ==========================================================================
@@ -1206,8 +1317,9 @@ int misc_load_mpq_file(char *filename, char **buffer, long *buf_len, int output)
       entry = mod_load_in_mem(
           glb_config.mod_dir[i],
           glb_ds1edit.strtmp,
-          buffer,
-          buf_len);
+          (void **)buffer,
+          buf_len,
+          output);
       if (entry != -1)
       {
          if (output)
@@ -1224,7 +1336,7 @@ int misc_load_mpq_file(char *filename, char **buffer, long *buf_len, int output)
          glb_mpq = &glb_mpq_struct[i];
          entry = mpq_batch_load_in_mem(
              glb_ds1edit.strtmp,
-             buffer,
+             (void **)buffer,
              buf_len,
              output);
          if (entry != -1)
@@ -1561,6 +1673,20 @@ int misc_cmd_line_parse(int argc, char **argv)
          }
          glb_ds1edit.cmd_line.switchbench_group = g;
          glb_ds1edit.cmd_line.switchbench_count = (n > 1) ? n : 3;
+      }
+      else if (strnicmp(argv[i], "--selftest-report=", 18) == 0
+               || strnicmp(argv[i], "-selftest-report=", 17) == 0)
+      {
+         const char *eq = strchr(argv[i], '=');
+         glb_ds1edit.cmd_line.selftest_report =
+             (eq != NULL && eq[1] != 0) ? (char *) (eq + 1) : NULL;
+         if (glb_ds1edit.cmd_line.selftest_report == NULL)
+         {
+            printf("misc_cmd_line_parse(), error : --selftest-report needs a filename\n");
+            return -1;
+         }
+         if (glb_ds1edit.cmd_line.selftest_frames <= 0)
+            glb_ds1edit.cmd_line.selftest_frames = 30;
       }
       else if (strnicmp(argv[i], "--selftest-shot=", 16) == 0
                || strnicmp(argv[i], "-selftest-shot=", 15) == 0)

@@ -1,0 +1,51 @@
+{
+  "schema": "ds1edit.native-profile/1",
+  "id": "native-core",
+  "description": "Package F task 2: automated native cases run against an extracted release package. Produces ds1edit.case/1 for the native.{platform}.* IDs of release-core.json; GUI workflows and clean-environment runs are manual (docs/testing/native-release-checklist.md).",
+  "platforms": {
+    "windows-x86": {
+      "executable": "ds1edit.exe",
+      "runtime_files": ["vcruntime140.dll", "allegro-5.2.dll", "zlib1.dll"]
+    },
+    "linux-x86_64": {
+      "executable": "ds1edit",
+      "runtime_files": []
+    },
+    "macos-arm64": {
+      "executable": "ds1edit",
+      "startup": "app-bundle",
+      "runtime_files": []
+    }
+  },
+  "timeouts": {"cli": 60, "startup": 120, "selftest": 400},
+  "environment_disclosure": [
+    "env is built from scratch: PATH is the system directory only; HOME/USERPROFILE/APPDATA/XDG_*/TEMP point at a run-owned directory",
+    "working directory is the extraction root, which holds only the run-owned Ds1edit.ini written for the case"
+  ],
+  "cli_cases": [
+    {"name": "help", "args": ["help"], "returncode": 0,
+     "output_contains": ["ds1edit -- Diablo II DS1 area editor (CLI mode)", "Usage:", "Verbs:", "list-mpqs", "export-raw"],
+     "output_absent": ["unknown verb"]},
+    {"name": "dashdash-help", "args": ["--help"], "returncode": 0,
+     "output_contains": ["Usage:", "Verbs:"], "output_absent": ["unknown verb"]},
+    {"name": "dash-h", "args": ["-h"], "returncode": 0,
+     "output_contains": ["Usage:", "Verbs:"], "output_absent": ["unknown verb"]},
+    {"name": "unknown-verb", "args": ["bogusverb"], "returncode": 3,
+     "output_contains": ["unknown verb 'bogusverb'", "Usage:"]},
+    {"name": "probe-missing-argument", "args": ["probe"], "returncode": 3,
+     "output_contains": ["missing path argument", "Usage: ds1edit probe <virtual-path>"]},
+    {"name": "dump-txt-row-missing-argument", "args": ["dump-txt-row"], "returncode": 3,
+     "output_contains": ["too few arguments", "Usage: ds1edit dump-txt-row"]}
+  ],
+  "no_game": {
+    "args": ["assets/act1_town.ini", "--selftest=5"],
+    "output_contains": ["No Mod Directory and no MPQ files available"],
+    "output_absent": ["auto-detected", "seeded from preferences", "selftest: rendered"]
+  },
+  "selftest": {
+    "frames": 30,
+    "maps": ["act1_town", "act1_cave", "act2_desert", "act3_jungle", "act4_fortress", "act5_town"],
+    "output_contains": ["selftest: rendered 30 frame(s), exiting", "selftest: input frames=", "ds1edit_exit()"],
+    "output_absent": ["selftest: FAIL", "auto-detected", "seeded from preferences", "ds1edit_error()"]
+  }
+}

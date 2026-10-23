@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)  # RUNTIME_DEPENDENCY_SET
-project(d2-ds1-edit VERSION 2.1.1 LANGUAGES C)
+project(d2-ds1-edit VERSION 2.2.0 LANGUAGES C)
 
 # Pass version to source code
 add_compile_definitions(
@@ -12,6 +12,7 @@ add_compile_definitions(
 # Options
 option(USE_SOFTWARE_RENDERER "Force software rendering (no GPU)" OFF)
 option(DS1EDIT_PERF_LOG "Enable per-frame perf logging to stderr and perf_log.csv" OFF)
+include(cmake/instrumentation.cmake)  # DS1EDIT_ENABLE_SANITIZERS / _COVERAGE
 
 # Find Allegro 5.
 # Windows: vcpkg (toolchain set via CMakePresets.json or -DCMAKE_TOOLCHAIN_FILE).
@@ -191,6 +192,7 @@ set(SOURCES
     src/core/area_metadata.c
     src/core/d2install.c
     src/core/ds1.c
+    src/core/ds1_save_io.c
     src/core/ds1_manager.c
     src/core/asset_export.c
     src/core/upscale.c
@@ -207,6 +209,7 @@ set(SOURCES
     src/core/export_presets.c
     src/core/export_progress.c
     src/core/glob_match.c
+    src/core/index_frame.c
     src/core/mpq_index.c
     src/core/mpq_index_query.c
     src/core/palette.c
@@ -219,6 +222,7 @@ set(SOURCES
     src/render/gfx.c
     # editor/
     src/editor/tiles.c
+    src/editor/selection_logic.c
     src/editor/objects.c
     src/editor/paths.c
     src/editor/undo.c
@@ -512,6 +516,7 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets/editor/
     PATTERN "pal*.bin"  EXCLUDE   # extracted from the user's MPQs at runtime
     PATTERN "cmap*.bin" EXCLUDE   # computed from those palettes
     PATTERN "gamma.dat" EXCLUDE   # generated in code
+    PATTERN "version"   EXCLUDE   # build stamp ds1edit_init() writes at startup
 )
 install(FILES ${CMAKE_SOURCE_DIR}/Ds1edit.ini.sample DESTINATION .)
 install(FILES ${CMAKE_SOURCE_DIR}/LICENSE DESTINATION .)
@@ -539,6 +544,51 @@ if(WIN32)
         PRE_EXCLUDE_REGEXES  "api-ms-win-.*" "ext-ms-.*"
         POST_EXCLUDE_REGEXES ".*[Ss]ystem32.*" ".*[Ww]indows.*"
         DESTINATION .)
+
+    # The MSVC runtime. ds1edit and every vcpkg DLL link the CRT dynamically
+    # and import VCRUNTIME140.dll, which is not part of Windows -- it comes
+    # from the Visual C++ Redistributable. The dependency walk above resolves
+    # it to System32/SysWOW64 on a developer machine and so excludes it, which
+    # is how the 2.x packages shipped without it and only started on machines
+    # that already had the redistributable.
+    #
+    # InstallRequiredSystemLibraries finds the toolchain's own redist folder
+    # for the target architecture (VC/Redist/MSVC/<ver>/x86/Microsoft.VC143.CRT
+    # for this Win32 build), which is where the app-local copies are meant to
+    # come from. It lists the whole C++ runtime; this is a C program, so keep
+    # only vcruntime. If a C++ dependency ever joins the closure,
+    # scripts/equivalence/package_check.py fails on the missing MSVCP140.dll
+    # instead of the package silently depending on the host. The UCRT
+    # (api-ms-win-crt-*, ucrtbase) is part of Windows 10 and later.
+    if(MSVC)
+        set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_SKIP TRUE)
+        include(InstallRequiredSystemLibraries)
+        set(DS1EDIT_MSVC_RUNTIME ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS})
+        list(FILTER DS1EDIT_MSVC_RUNTIME INCLUDE REGEX "/vcruntime140(_1)?\\.dll$")
+        if(DS1EDIT_MSVC_RUNTIME)
+            message(STATUS "Packaging MSVC runtime: ${DS1EDIT_MSVC_RUNTIME}")
+            install(PROGRAMS ${DS1EDIT_MSVC_RUNTIME} DESTINATION .)
+        else()
+            message(WARNING
+                "No MSVC redistributable vcruntime140.dll found for this "
+                "toolchain; a package built here will not start on a machine "
+                "without the Visual C++ Redistributable.")
+        endif()
+    endif()
+endif()
+
+# macOS: ship the app bundle next to the CLI binary, as bin/ has it.
+#
+# The bundle is the entry point Input Monitoring is granted to (see the
+# bundle rule above), and ds1_mac_fix_working_directory() chdir's from
+# ds1edit.app/Contents/MacOS to the directory holding the bundle -- so it has
+# to sit at the package root beside assets/ and Ds1edit.ini.sample. Installed
+# as a plain directory copy so the ad-hoc signature codesign applied in bin/
+# is carried over byte for byte; install(TARGETS) could rewrite the binary.
+if(APPLE)
+    install(DIRECTORY "${DS1EDIT_BUNDLE}"
+        DESTINATION .
+        USE_SOURCE_PERMISSIONS)
 endif()
 
 include(CPack)

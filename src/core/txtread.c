@@ -1006,12 +1006,11 @@ int read_lvlprest_txt(int ds1_idx, int def)
          }
          else if (def == -1)
          {
-            /* Caller had no Def to give -- an Unlisted map, i.e. one the
-             * tables never named. Not an error: without a LvlPrest row there
-             * is simply no tileset mask, so unmask every slot and let the
-             * DS1's own DT1 references decide what loads. */
+            /* No LvlPrest row means no authoritative mask. Enable all slots
+             * of any valid LvlTypes row; if there is none, misc_open_1_ds1()
+             * loads the DS1's embedded tile references as a fallback. */
             int b;
-            printf("no LvlPrest row for \"%s\"; using the DS1's own DT1 list\n",
+            printf("no LvlPrest row for \"%s\"; enabling all LvlTypes DT1 slots\n",
                    glb_ds1[ds1_idx].filename);
             fflush(stdout);
             for (b = 0; b < 33; b++)
@@ -1082,7 +1081,7 @@ int read_obj_txt(void)
    if (glb_ds1edit.obj_buff == NULL)
    {
       printf("\nwant to read %s from %s\n", obj, glb_ds1edit_data_dir);
-      if (mod_load_in_mem(glb_ds1edit_data_dir, obj, &buff, &len) == -1)
+      if (mod_load_in_mem(glb_ds1edit_data_dir, obj, (void **)&buff, &len, TRUE) == -1)
       {
          sprintf(tmp, "read_obj_txt() : file %s not found", obj);
          ds1edit_error(tmp);

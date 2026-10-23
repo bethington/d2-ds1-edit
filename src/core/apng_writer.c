@@ -16,6 +16,7 @@ struct APNG_WRITER_S
    int       frames_written;
    uint32_t  sequence_number;
    int       had_error;
+   char     *path;      /* removed again if the file does not complete */
 };
 
 static const unsigned char PNG_SIG[8] = {
@@ -144,9 +145,18 @@ APNG_WRITER_S *apng_writer_open(const char *path, int width, int height,
    if (w == NULL)
       return NULL;
 
+   w->path = (char *) malloc(strlen(path) + 1);
+   if (w->path == NULL)
+   {
+      free(w);
+      return NULL;
+   }
+   strcpy(w->path, path);
+
    w->fp = fopen(path, "wb");
    if (w->fp == NULL)
    {
+      free(w->path);
       free(w);
       return NULL;
    }
@@ -205,6 +215,30 @@ int apng_writer_write_frame(APNG_WRITER_S *w,
       delay_num = 0;
    if (delay_den < 0)
       delay_den = 0;
+
+   /* fcTL stores 16-bit fields. Reduce a fraction that does not fit by its
+    * gcd; refuse one that still does not fit rather than let the cast wrap
+    * it into a different delay. */
+   if (delay_num > 0xFFFF || delay_den > 0xFFFF)
+   {
+      int a = delay_num, b = delay_den;
+      while (b != 0)
+      {
+         int t = a % b;
+         a = b;
+         b = t;
+      }
+      if (a > 1)
+      {
+         delay_num /= a;
+         delay_den /= a;
+      }
+      if (delay_num > 0xFFFF || delay_den > 0xFFFF)
+      {
+         w->had_error = 1;
+         return 0;
+      }
+   }
 
    /* fcTL: sequence_number(4) width(4) height(4) x_offset(4) y_offset(4)
     * delay_num(2) delay_den(2) dispose_op(1) blend_op(1) */
@@ -311,6 +345,12 @@ int apng_writer_close(APNG_WRITER_S *w)
    if (w->frames_written != w->num_frames)
       ok = 0;
 
+   /* A failed file must not be left looking like an export: an underfilled
+    * APNG still ends in IEND and opens as a shorter animation. */
+   if (!ok && w->path != NULL)
+      remove(w->path);
+
+   free(w->path);
    free(w);
    return ok;
 }

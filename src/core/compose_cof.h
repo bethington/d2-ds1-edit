@@ -9,7 +9,7 @@
 // metadata, and priority table.
 //
 // COF byte layout:
-//   offset 0  : 1 byte   layer count (1..16)
+//   offset 0  : 1 byte   layer count (0..16; 0 is a valid empty COF)
 //   offset 1  : 1 byte   frames per direction
 //   offset 2  : 1 byte   direction count
 //   offset 3  : 1 byte   version
@@ -52,7 +52,8 @@ typedef struct COMPOSE_COF_S
 } COMPOSE_COF_S;
 
 // Parse a COF byte buffer into a COMPOSE_COF_S. Returns 1 on success,
-// 0 on parse failure (truncated input, absurd dimensions). The caller
+// 0 on parse failure (truncated input, absurd dimensions). A zero-layer
+// COF parses successfully with layer_count 0 and no priority table. The caller
 // owns the returned struct and must call compose_cof_free.
 int  compose_cof_parse(const void *bytes, long len, COMPOSE_COF_S *out);
 

@@ -10,7 +10,258 @@ Companion report for three documents recovered from the preserved
 | [`docs/tutorials/01-basic-map-editing.md`](../tutorials/01-basic-map-editing.md) | `_divers/ds1/doc/tut01/index.html` |
 
 **Verification date:** 2026-08-21 (first pass); **updated 2026-08-21** (second
-pass — 1.13c re-centring and vanilla re-verification, this update).
+pass — 1.13c re-centring and vanilla re-verification); **updated 2026-08-21**
+(third pass — `manual.md` only: vanilla `.ds1` corpus and Ghidra, §-1 below,
+this update).
+
+---
+
+## -1. Third pass — `manual.md` re-sourced to vanilla data and the game's loader
+
+**Scope: `manual.md` only.** `overview.md` and `01-basic-map-editing.md` are
+untouched by this pass.
+
+**Why this pass happened.** The first two passes settled `manual.md`'s *format*
+claims against two sources: this repository's parser, and the 2,666-file tile
+tree under `assets/tiles/`. Both passes flagged the weakness in writing —
+§4.2 Caveat 1 records that the parser is Siramy-derived and so is not an
+independent witness — but neither pass could do anything about it, because
+neither used a disassembler. This pass did, and it also discovered that the
+*data* half of the evidence had the same defect as `assets/excel/` did before
+the second pass: `assets/tiles/` is a working set, not vanilla.
+
+**Ground truth added this pass.**
+
+| Source | What it settled | Detail |
+|---|---|---|
+| **[G]** Ghidra, vanilla 1.13c `D2Common.dll` | The version gates, the cell bit-fields, the special-orientation test, and the path-matching rule — read out of Blizzard's code, owing Siramy nothing | Program `/Vanilla/1.13c/D2Common.dll`, image base `6fd50000`, 2,764 functions. DS1 reader `LoadAndParsePresetArchive` @ `6fd5b560`–`6fd5bbb1`; cell decoder `ProcessPresetRoomObjectsAndTiles` @ `6fd5c060`–`6fd5c678`. Blizzard's own source path for this code survives at `6fde6eb0`: `..\Source\D2Common\DRLG\Preset.cpp` |
+| **[D]** all **2,276 distinct vanilla 1.13c `.ds1` files** | Every empirical count in the chapter | Read with `tools/d2mpq.py` (`selfcheck` passed first) through the MPQ chain in search order — `Patch_D2.mpq` → `D2Exp.mpq` → … → `D2Data.mpq`. All 2,276 parsed with zero stream desync by a Python port of `src/core/ds1.c` written for this pass |
+
+**Independence check on the port.** The Python parser is a port of
+`src/core/ds1.c`, so it inherits that file's Siramy ancestry and is *not* an
+independent witness to the layout. It is used here only to count occurrences of
+bit patterns whose *meaning* is established separately by **[G]**. As a
+cross-check, its output was compared against the independently-written census in
+[`ds1-map-format.md`](../guides/ds1-map-format.md), which used the same vanilla
+corpus: the two agree exactly on file count (2,276), Hidden per layer
+(2 371 / 86 / 145 / 142 / 4 733 / 1 957 / 7), IsShadow (15 146), path totals
+(17 files, 136 blocks, 511 points) and the action histogram
+(328 / 105 / 43 / 34 / 1).
+
+### -1.1 Corrections made to `manual.md`
+
+Every empirical figure in the chapter changed, because every one of them had
+been computed over `assets/tiles/` (2,666 files, 117 of them byte-different from
+vanilla and 390 absent from it) rather than over vanilla's own 2,276.
+
+| Claim | Before (from `assets/tiles/`) | After (vanilla **[D]**) |
+|---|---|---|
+| Corpus | 2,666 files | **2,276 files** |
+| Hidden bit, wall cells | 10,562 | **2,744** (2 371 / 86 / 145 / 142) |
+| Hidden bit, floor cells | 25,370 | **6,690** (4 733 / 1 957) |
+| Hidden bit, shadow cells | *not counted* | **7** |
+| Unwalkable, wall cells | 22,251 | **9,173** (9 062 / 26 / 65 / 20) |
+| Unwalkable, floor cells | 940,661 | **152,700** (152 515 / 185) |
+| Unwalkable, shadow cells | *not counted* | **150** |
+| Wall-cell population | "over 17.5 M" | **1,493,661** slots, 173,437 occupied |
+| Floor-cell population | "over 9.5 M" | **1,254,392** slots, 696,999 occupied |
+| Orientation records | 17,530,587 | **1,493,661** (upper 3 bytes zero in all — claim holds) |
+| Orientation 10 | 799× | **654×** |
+| Orientation 11 | 301× | **285×** |
+| Files using orientation 10/11 | 546 | **476** |
+| Path data | 138 blocks, 544 points | **136 blocks, 511 points** (17 files, unchanged) |
+| `action` histogram | 1 (373×), 2 (102×), 3 (40×), 4 (28×), 5 (1×) | **1 (328×), 2 (105×), 3 (43×), 4 (34×), 5 (1×)** |
+
+**Two substantive claims were corrected, not just renumbered.**
+
+1. **"Dominated by `*warp*.ds1`" — withdrawn.** The chapter said the 10/11
+   orientation values were concentrated in files whose names are dominated by
+   `*warp*.ds1`. Against vanilla: of the 476 files using those orientations,
+   only **65** have `warp` in the name, and they hold **97 of the 939** cells —
+   about 10%. The heaviest users are `act2/town/lutN.ds1` (15), `lutW.ds1` (14),
+   `lut2.ds1` (12), `arena/tombs/dm2.ds1` (17), `dm3.ds1` (12) and the guild
+   houses. The chapter now says warps are a conspicuous use, not the dominant
+   one — which is also closer to what Siramy actually wrote, since he never
+   ties the value to warps.
+
+2. **The Type-2 path finding shrank from 4 blocks to 2.** This was the
+   chapter's headline correction to Siramy ("only Type 1 objects can use
+   paths"). The finding **survives** — but two of its four worked examples do
+   not exist in vanilla. `ACT2/Town/lutN.ds1` (84,154) and `ACT2/Town/lutW.ds1`
+   (83,154) have **no path block at those coordinates** in vanilla 1.13c; they
+   came from the non-vanilla tree. The vanilla census of path-block anchors is
+   `{type 1: 134, type 2: 2}`, the two being:
+
+   | File | Anchor | Object | Points |
+   |---|---|---|---|
+   | `act3/docktown/docktown3.ds1` | (219, 38) | Type 2, Id 110 | 3 |
+   | `expansion/town/townWest.ds1` | (143, 28) | Type 2, Id 126 | 2 |
+
+### -1.2 Claims newly settled by the binary (previously circular or unverified)
+
+These were previously supported only by the Siramy-derived parser. They now rest
+on Blizzard's code.
+
+| Claim | Evidence **[G]** |
+|---|---|
+| Hidden is bit 31 of the cell dword | `6fd5c338 AND EAX,0x80000000` |
+| `main_index` is bits 20–25 | `6fd5c32f SHR ESI,0x14` + `6fd5c335 AND ESI,0x3f` — i.e. Siramy's `(prop3>>4) + ((prop4&3)<<4)` is the same field, expressed byte-wise |
+| `sub_index` is bits 8–15 (`prop2`) | `6fd5c332 MOVZX EBX,AH` |
+| Orientation 10 and 11 are special-cased by the game | `6fd5c33d CMP ECX,0xb`, `6fd5c346 CMP ECX,0xa` |
+| Path block gated at version ≥ 14 | `6fd5bac2 CMP EBX,0xe` / `JL` |
+| Third point dword (`action`) gated at version ≥ 15 | `6fd5bb05 CMP EBX,0xf`; stride `6fd5bb08 LEA ESI,[ESI+EBP*0x8]` then `6fd5bb0d LEA ESI,[ESI+EBP*0x4]` |
+| Paths keyed by coordinate, no object-type test anywhere | `6fd5baf4 CMP [EDI+0x8],EAX`, `6fd5baf9 CMP [EDI+0x18],ECX` — and nothing else is compared |
+| Act field gated at v ≥ 8; `tagType` at v ≥ 10; filenames at v ≥ 3; two skipped dwords for 9 ≤ v ≤ 13; layer counts at v ≥ 4; floor count at v ≥ 16; orientation remap below v 7; groups at v ≥ 12 with `tagType` ∈ {1,2}; extra group dword at v ≥ 18 | `6fd5b58f`, `6fd5b5b9`, `6fd5b5cb`, `6fd5b603`/`6fd5b608`, `6fd5b610`, `6fd5b61a`, `6fd5b6a1`, `6fd5ba0c`/`6fd5ba1d`/`6fd5ba25`, `6fd5ba2e` — the whole version-gate chain of `src/core/ds1.c` reproduced in the game's own loader |
+
+### -1.3 A new finding: the editor is stricter than the game
+
+`src/core/ds1.c:1091-1152` discards a path block outright when two objects share
+the anchor cell. The game does not — its match loop takes the **first** node
+whose coordinates agree and assigns the path to it (`6fd5bafc JZ`, exiting the
+list walk) **[G]**. No vanilla file exercises the difference: **zero** path
+blocks in the corpus have two objects on the anchor cell **[D]**. It matters
+only for newly authored maps, where the editor will drop paths the game would
+have honoured. Added to the chapter.
+
+### -1.4 Also added
+
+- **The tag layer**, which the chapter never mentioned. The file has one when
+  `tagType` is 1 or 2; the editor exposes it nowhere, so the F-key row is the
+  file's layer model *minus one stream*. Noted where the chapter claims the
+  F-keys are "a direct picture of the file format".
+- **The version census**, which turned up something the old version table
+  implied wrongly: vanilla 1.13c has **no version-14 `.ds1` at all**. Versions
+  present are 3 (1), 8 (6), 12 (13), 13 (30), 15 (13), 16 (223), 17 (145), 18
+  (1,845). The table's v14 column is a reading of the loader, not of any shipped
+  file, and now says so.
+- **Layer-count distributions**, replacing the bare assertion that maxima hold:
+  walls 0 (51 files), 1 (1,151), 2 (759), 3 (145), 4 (170); floors 0 (3),
+  1 (1,724), 2 (549).
+- **`IsShadow` given non-circular support**: `prop4 & 0x08` is set on all 15,146
+  shadow cells and on no wall or floor cell **[D]**. Previously the label rested
+  only on this repository's dialog strings matching Siramy's screenshot.
+
+### -1.5 One discrepancy found in a sibling chapter — since corrected
+
+[`ds1-map-format.md`](../guides/ds1-map-format.md) gave floor-1 Unwalkable as
+**152 115**; this pass counts **152 515** over the same 2,276-file vanilla
+corpus, with the two censuses agreeing exactly on every other cell in that
+table — including floor 1's *Hidden* count of 4 733, produced by the same layer
+scan over the same cells, which is what rules out a parse-offset bug on either
+side.
+
+**Settled by hand-decode.** `act3\jungle\transl.ds1` was read from raw bytes
+with offsets derived independently of both parsers (v18, 65 × 33 = 2 145 cells,
+streams `wall1, orient1, floor1, shadow`, floor 1 at byte 17 603): **1 303**
+unwalkable floor-1 cells, matching the census, with the computed end of the
+layer block landing exactly on a plausible object count. **152 515 is correct**;
+the chapter has been fixed and the change recorded as C5 in
+[its own report](../guides/ds1-map-format.verification.md).
+
+### -1.6 The Type-2 path question — resolved, statically and then empirically
+
+This was the largest open item. It is now answered both ways, and they agree.
+
+**What the two vanilla instances actually are — and a correction to this
+report's own first answer.** An intermediate draft identified the two Type 2
+anchors as a *Shrine* and a *hidden stash*, by reading their DS1 `id` as a row
+number in `objects.txt`. **That lookup was wrong.** A DS1 object's `id` is not a
+row index; it passes through a 5 × 150 table compiled into D2Common at
+`6fdee2c8`, `objectsTxtId = table[act * 150 + id]` **[G]** — the table
+[`ds1-map-format.verification.md`](../guides/ds1-map-format.verification.md) §7
+had already established. The error surfaced when a live member reported the
+object under test as `txt_id 385` = `TrappedSoul`, which is not a shrine; the
+mismatch was the tell.
+
+Resolved correctly, with the file's own `act` field:
+
+| File | act | DS1 id | → `objects.txt` | `obj.txt` description |
+|---|---|---|---|---|
+| `act3\docktown\docktown3.ds1` | 3 | 110 | 379 | **"Hratli end"** |
+| `expansion\town\townWest.ds1` | 5 | 126 | 543 | **"Larzuk Standard"** |
+
+Both are `Name = Dummy` in `objects.txt` — Blizzard's label for a marker with no
+behaviour — and both are **NPC position markers**, the spots where Hratli and
+Larzuk stand. So the two stray path blocks are walking routes attached to an
+NPC's *marker* rather than to the NPC. The conclusion the wrong names pointed at
+survives, and is better supported by the right ones.
+
+**What the game does with them.** The preset object list is walked with the type
+field (`+0x14`) as the switch. On the type-2 branch of
+`ProcessPresetRoomObjectsAndTiles` (`6fd5c060`) — entered at
+`6fd5c590 CMP [ESI+0x14],EDI`, `EDI = 2` — the only things read from the node are
+its id (`+0x04`), bounded against the `objects.txt` record count, and one flag
+byte inside that record (`6fd5c5c1 IMUL EAX,EAX,0x1c0`,
+`6fd5c5c7 TEST [EAX+EDX+0x167],BL`), before the walk steps to `+0x0c`. **The path
+pointer at `+0x10` is never read on that branch** **[G]**.
+
+So Siramy's rule of thumb is **right about the game and wrong only about the
+reason**: the format permits a Type 2 path and the loader attaches it faithfully,
+but nothing downstream ever asks a Type 2 object for one. The constraint lives in
+the consumer.
+
+**Scope.** This rests on reading the two functions that walk the preset object
+list (`6fd5c060`, `6fd5b320`), not on an exhaustive enumeration of every reader of
+`+0x10`. A heuristic sweep of 594 D2Common functions for that field surfaced no
+other candidate that both walks the list and reads it, but a regex over
+decompiled text is not a proof.
+
+**The runtime experiment — first blocked, then run.** A dedicated live 1.13c
+member was used throughout (fleet slot 5; the three pre-existing members were
+never touched).
+
+*The first attempt failed and is recorded because the failure is the useful
+part.* The plan was to inject a modified `townE1.ds1` via D2's own `-direct`
+loose-file switch. It had no effect: a control that blanked the floor-1 layer of
+**all thirteen** Act 1 town presets (each `f_num = 1` with an empty floor 2, so
+the town ground should have gone black) produced a screen identical to vanilla.
+Storm resolves data from the loaded archive set only — which `patches.cdkey.cpp`
+had independently measured years earlier. `-direct` is not a path in.
+
+*So the seam was built.* `mpq_override` in d2-fleet hooks Storm's own open and
+serves chosen files from `<rundir>\override\`, documented in
+[`d2-fleet/docs/MPQ-OVERRIDE.md`](../../../d2-fleet/docs/MPQ-OVERRIDE.md). With it
+the experiment ran: `act1\town\townE1.ds1` with one NPC's three-point path block
+re-anchored onto the Type 2 object at subtile (164, 81) — act 1, id 110 →
+`objects.txt` 385, *"cain start position"*, the same class of NPC position marker
+as the two vanilla cases. The served bytes were verified byte-for-byte by reading
+the file back out of the running client's own Storm.
+
+**Result, over ninety seconds [L]:**
+
+| unit | what it is | moved? | modes observed |
+|---|---|---|---|
+| monster #3 | an ordinary path-walking town NPC — positive control | **yes**, 5 distinct positions | `neutral`, **`walk`** |
+| object #2 (`txt_id` 385) | the Type 2 marker given the NPC path | **no**, 1 position | `neutral` only |
+
+The control establishes that path-walking was live in that session. The marker
+never entered `walk`. Static reading and running game agree: **D2 does not walk a
+Type 2 object along a path.**
+
+The member was closed and the override files removed afterwards.
+
+**One thing the live client did settle.** `townE1.ds1` read back through the
+running game's own Storm (`/mpq/read`) is **byte-identical** to the copy in this
+pass's corpus — same 57,691 bytes, same sha256 `0b6c775d3a01def7…`. The corpus
+every count above is drawn from is exactly what a running 1.13c reads.
+
+### -1.7 Still unverified after this pass
+
+- **All tool-UI behaviour** — every key binding and dialog in the chapter. The
+  2006 `win_ds1edit` binary is still not in this repository.
+- **Runtime behaviour.** Still open: Siramy's claim that an NPC "will only use the
+  points on the Pink lines (and randomly), and they'll never go back to their
+  original starting position". The Type 2 question that sat here is **now
+  settled** — see §-1.6.
+- ~~**A way to inject loose game files into a fleet member.**~~ **Built.**
+  `mpq_override` (`d2-fleet/patch/patches.mpqoverride.cpp`, docs at
+  [`MPQ-OVERRIDE.md`](../../../d2-fleet/docs/MPQ-OVERRIDE.md)) serves files from
+  `<rundir>\override\` through a hook on Storm's own open. The class of runtime
+  verification this blocked is now open: any claim testable by handing the game
+  a modified data file can be put to the game directly.
+- **Why Blizzard's maps carry Hidden tiles along their top and bottom edges.**
+  The bit is now understood down to the instruction that tests it; the intent
+  still is not.
 
 ---
 
