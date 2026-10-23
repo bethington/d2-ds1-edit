@@ -329,6 +329,32 @@ baseline for another PD2 version or archive set is reported as `incomparable`,
 never as a pass or a failure. The unit tests (`py_pd2_lane`) use fakes and run
 everywhere.
 
+### Release gate (maintainers)
+
+CI produces the evidence and the release workflow only publishes what a
+reviewed record qualifies. To cut a release (details in
+[release/qualification/README.md](release/qualification/README.md)):
+
+```bash
+# 1. a green build.yml run on the release commit (note its run ID)
+# 2. run the local lanes (corpus, live, native, performance) -> a directory of ds1edit.case/1
+# 3. from a clean checkout of that commit:
+python -m scripts.equivalence.release_record --run-id <RUN> --version X.Y.Z \
+    --waivers waivers.json --evidence-dir <LOCAL_LANES_DIR> --out release/qualification/
+# 4. review and commit release/qualification/<digest>.json, then rehearse release.yml:
+python -m scripts.equivalence.release_record --run-id <RUN> --version X.Y.Z \
+    --out release/qualification/ --dry-run-release
+```
+
+Every CI job writes `ds1edit.case/1` evidence for the entries a CTest or Python
+test proves (`scripts/equivalence/ci_evidence.py`; `ctest --output-junit`). A
+waiver (`kind: waiver`) can excuse a required entry that never ran, for one
+release version only; it never excuses a mismatch, a package check, the main
+test suites or a sanitizer result, and the draft release notes list every
+waived check. Text sources are LF everywhere (`.gitattributes`) and the source
+digest hashes committed blob ids, so a Windows `core.autocrlf` checkout and a
+Linux checkout of one commit agree.
+
 ### Packages
 
 ```bash
