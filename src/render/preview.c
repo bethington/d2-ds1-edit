@@ -274,7 +274,7 @@ static void wpreview_draw_trans_bitmap(ALLEGRO_BITMAP *bmp, int x, int y, float 
    }
    if (mul == 1 && div == 1)
    {
-      al_draw_tinted_bitmap(bmp, al_map_rgba_f(alpha, alpha, alpha, alpha),
+      al_draw_tinted_bitmap(bmp, a5_alpha_tint(alpha),
                             (float)x, (float)y, 0);
    }
    else
@@ -283,7 +283,7 @@ static void wpreview_draw_trans_bitmap(ALLEGRO_BITMAP *bmp, int x, int y, float 
       float sh = (float)al_get_bitmap_height(bmp);
       float dw = sw * (float)mul / (float)div;
       float dh = sh * (float)mul / (float)div;
-      al_draw_tinted_scaled_bitmap(bmp, al_map_rgba_f(alpha, alpha, alpha, alpha),
+      al_draw_tinted_scaled_bitmap(bmp, a5_alpha_tint(alpha),
                                    0, 0, sw, sh, (float)x, (float)y, dw, dh, 0);
    }
 }
@@ -342,17 +342,17 @@ static void wpreview_draw_scaled_blended_bitmap(ALLEGRO_BITMAP *bmp, int x, int 
    {
    case 0:
       al_draw_tinted_scaled_bitmap(
-          bmp, al_map_rgba_f(0.25f, 0.25f, 0.25f, 0.25f),
+          bmp, a5_alpha_tint(0.25f),
           0, 0, sw, sh, (float)x, (float)y, dw, dh, 0);
       break;
    case 1:
       al_draw_tinted_scaled_bitmap(
-          bmp, al_map_rgba_f(0.50f, 0.50f, 0.50f, 0.50f),
+          bmp, a5_alpha_tint(0.50f),
           0, 0, sw, sh, (float)x, (float)y, dw, dh, 0);
       break;
    case 2:
       al_draw_tinted_scaled_bitmap(
-          bmp, al_map_rgba_f(0.75f, 0.75f, 0.75f, 0.75f),
+          bmp, a5_alpha_tint(0.75f),
           0, 0, sw, sh, (float)x, (float)y, dw, dh, 0);
       break;
    case 3:
@@ -372,7 +372,7 @@ static void wpreview_draw_scaled_blended_bitmap(ALLEGRO_BITMAP *bmp, int x, int 
       break;
    default:
       al_draw_tinted_scaled_bitmap(
-          bmp, al_map_rgba_f(0.50f, 0.50f, 0.50f, 0.50f),
+          bmp, a5_alpha_tint(0.50f),
           0, 0, sw, sh, (float)x, (float)y, dw, dh, 0);
       break;
    }

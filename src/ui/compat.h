@@ -109,6 +109,23 @@ static inline void a5_draw_sprite(ALLEGRO_BITMAP *dst, ALLEGRO_BITMAP *src, int 
     a5_end_target_bitmap(old_target, dst);
 }
 
+/* ---- Blend convention (read before touching any translucent draw) ----
+ * Every editor target runs under ALPHA / INVERSE_ALPHA (a5_clear and
+ * misc_draw_screen set it), i.e. result = src.rgb*src.a + dst.rgb*(1-src.a)
+ * with NON-premultiplied sources. So every translucent tint must be a
+ * non-premultiplied colour: rgb untouched, only alpha carrying the fade.
+ * Use a5_alpha_tint(a) for a fade. Never build the tint as
+ * al_map_rgba_f(a,a,a,a): that is a premultiplied colour and under this
+ * blender weights the source by a*a, so a "50 %" tint drew 0.25*src+0.5*dst.
+ * (A black tint, al_map_rgba_f(0,0,0,a), is identical in both conventions
+ * and is what the shadow helpers use.) Special COF modes (additive, multiply,
+ * screen) switch the blender for one draw and put ALPHA/INVERSE_ALPHA back;
+ * never wrap them in al_hold_bitmap_drawing. test_blend_convention locks it. */
+static inline ALLEGRO_COLOR a5_alpha_tint(float a)
+{
+    return al_map_rgba_f(1.0f, 1.0f, 1.0f, a);
+}
+
 /* Global: set before calling a5_draw_trans_sprite to control blend level.
  * D2 uses trans_b: 0=75% transparent, 1=50%, 2=25%, 3+=screen/luminance */
 extern float a5_trans_alpha;
@@ -117,7 +134,7 @@ static inline void a5_draw_trans_sprite(ALLEGRO_BITMAP *dst, ALLEGRO_BITMAP *src
 {
     float alpha = a5_trans_alpha;
     ALLEGRO_BITMAP *old_target = a5_begin_target_bitmap(dst);
-    al_draw_tinted_bitmap(src, al_map_rgba_f(alpha, alpha, alpha, alpha),
+    al_draw_tinted_bitmap(src, a5_alpha_tint(alpha),
                           (float)x, (float)y, 0);
     a5_end_target_bitmap(old_target, dst);
 }
@@ -141,15 +158,15 @@ static inline void a5_draw_scaled_blended_sprite(ALLEGRO_BITMAP *dst, ALLEGRO_BI
         switch (trans_b)
         {
             case 0:
-                al_draw_tinted_scaled_bitmap(src, al_map_rgba_f(0.25f, 0.25f, 0.25f, 0.25f),
+                al_draw_tinted_scaled_bitmap(src, a5_alpha_tint(0.25f),
                                               0, 0, sw, sh, (float)x, (float)y, dw, dh, 0);
                 break;
             case 1:
-                al_draw_tinted_scaled_bitmap(src, al_map_rgba_f(0.50f, 0.50f, 0.50f, 0.50f),
+                al_draw_tinted_scaled_bitmap(src, a5_alpha_tint(0.50f),
                                               0, 0, sw, sh, (float)x, (float)y, dw, dh, 0);
                 break;
             case 2:
-                al_draw_tinted_scaled_bitmap(src, al_map_rgba_f(0.75f, 0.75f, 0.75f, 0.75f),
+                al_draw_tinted_scaled_bitmap(src, a5_alpha_tint(0.75f),
                                               0, 0, sw, sh, (float)x, (float)y, dw, dh, 0);
                 break;
             case 3: /* Additive */
@@ -168,7 +185,7 @@ static inline void a5_draw_scaled_blended_sprite(ALLEGRO_BITMAP *dst, ALLEGRO_BI
                 al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
                 break;
             default:
-                al_draw_tinted_scaled_bitmap(src, al_map_rgba_f(0.50f, 0.50f, 0.50f, 0.50f),
+                al_draw_tinted_scaled_bitmap(src, a5_alpha_tint(0.50f),
                                               0, 0, sw, sh, (float)x, (float)y, dw, dh, 0);
                 break;
         }

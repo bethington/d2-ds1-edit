@@ -120,6 +120,13 @@ target_include_directories(test_compose_bbox PRIVATE
 )
 add_test(NAME compose_bbox COMMAND test_compose_bbox)
 
+# Translucent GPU-path blend convention (memory bitmaps, no display)
+add_executable(test_blend_convention test_blend_convention.c)
+target_link_libraries(test_blend_convention PRIVATE unity ds1edit_allegro)
+target_include_directories(test_blend_convention PRIVATE
+    ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/mpq)
+add_test(NAME blend_convention COMMAND test_blend_convention)
+
 # Compose RGBA blit primitive (pure pixel ops)
 add_executable(test_compose_blit test_compose_blit.c ../src/core/compose_blit.c)
 target_link_libraries(test_compose_blit PRIVATE unity)
