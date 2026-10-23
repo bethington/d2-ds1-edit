@@ -746,6 +746,356 @@ class SourceDigest(unittest.TestCase):
             Q.source_state_digest(self.root / "src")
 
 
+def waiver(**kw):
+    w = {"id": "corpus.ds1.read-all", "kind": "waiver", "platform": "windows-x86",
+         "reason": "needs the vanilla corpus; the release machine has no game install",
+         "reviewer": "maintainer", "expires_version": "9.9.9"}
+    w.update(kw)
+    return w
+
+
+class Waivers(Base):
+    """Maintainer waivers: only a result that never ran may be excused."""
+
+    VERSION = "9.9.9"
+    KEY = Q.key("corpus.ds1.read-all", "corpus", "windows-x86")
+
+    def review(self, *items):
+        return {"schema": Q.REVIEW_SCHEMA, "dispositions": list(items)}
+
+    def qual(self, *items, results=None, version=VERSION, candidate=None, profile=None):
+        base = self.results if results is None else results
+        return Q.qualify(profile or self.profile, candidate or self.candidate,
+                         list(base) + [self.review(*items)], version=version)
+
+    def drop(self, cid, platform):
+        self.results = [r for r in self.results
+                        if not (r["id"] == cid and r["platform"] == platform)]
+
+    def entry(self, report, key):
+        return next(e for e in report["required"] if e["key"] == key)
+
+    def test_waiver_for_a_missing_required_entry_is_ready_and_listed_separately(self):
+        self.drop("corpus.ds1.read-all", "windows-x86")
+        self.assertFalse(self.run_q()["ready"])
+        report = self.qual(waiver())
+        self.assertTrue(report["ready"], report["blocking"])
+        e = self.entry(report, self.KEY)
+        self.assertTrue(e["waived"])
+        self.assertFalse(e["qualifies"])
+        self.assertEqual(e["status"], "missing")
+        self.assertEqual([w["key"] for w in report["waived"]], [self.KEY])
+        w = report["waived"][0]
+        self.assertEqual((w["status"], w["waiver"]["reason"], w["waiver"]["reviewer"],
+                          w["waiver"]["expires_version"]),
+                         ("missing", waiver()["reason"], "maintainer", "9.9.9"))
+        self.assertEqual(report["release_version"], "9.9.9")
+        self.assertEqual(report["blocking"], [])
+        self.assertEqual(report["missing"], [])
+        self.assertEqual([x["id"] for x in report["waivers"]], ["corpus.ds1.read-all"])
+        self.assertEqual(report["review_dispositions"], [])
+        self.assertEqual(report["totals"]["corpus/windows-x86"]["waived"], 1)
+        self.assertEqual(report["digest"], C.canonical_digest(report))
+
+    def test_not_run_and_unavailable_results_can_be_waived(self):
+        for status in ("not_run", "unavailable"):
+            with self.subTest(status=status):
+                results = copy.deepcopy(self.results)
+                case = find(results, "corpus.ds1.read-all")
+                case["status"] = status
+                case["coverage"].update(distinct_inputs_compared=0, inputs_enumerated=0,
+                                        inputs_accounted=0)
+                self.assertFalse(self.run_q(results)["ready"])
+                report = self.qual(waiver(), results=results)
+                self.assertTrue(report["ready"], report["blocking"])
+                self.assertEqual(report["waived"][0]["status"], status)
+
+    def test_other_non_waived_entries_still_have_to_qualify(self):
+        self.drop("corpus.ds1.read-all", "windows-x86")
+        self.drop("perf.first-open", "windows-x86")
+        report = self.qual(waiver())
+        self.assertFalse(report["ready"])
+        self.assertEqual([b["key"] for b in report["blocking"]],
+                         [Q.key("perf.first-open", "performance", "windows-x86")])
+        self.assertEqual([w["key"] for w in report["waived"]], [self.KEY])
+        corpus_req = next(r for r in report["requirements"] if r["id"] == "R2")
+        self.assertTrue(corpus_req["ready"])
+
+    def test_a_waiver_never_excuses_a_mismatch(self):
+        find(self.results, "corpus.ds1.read-all")["status"] = "mismatch"
+        report = self.qual(waiver())
+        self.assertFalse(report["ready"])
+        self.assertIn("status_mismatch", reason_codes(report, "corpus.ds1.read-all",
+                                                      "corpus", "windows-x86"))
+        self.assertEqual(report["waived"], [])
+        self.assertEqual([r["waiver"]["id"] for r in report["rejected_waivers"]],
+                         ["corpus.ds1.read-all"])
+
+    def test_a_waiver_never_excuses_a_partial_result(self):
+        find(self.results, "corpus.ds1.read-all")["status"] = "partial"
+        report = self.qual(waiver())
+        self.assertFalse(report["ready"])
+        self.assertEqual(report["waived"], [])
+
+    def test_a_waiver_never_excuses_a_violated_expected_rejection(self):
+        # the profile expects rejected_expected; the case reports a plain pass
+        find(self.results, "ds1.reject.truncated", "windows-x86").update(
+            status="pass", success_outcome="pass")
+        report = self.qual(waiver(id="ds1.reject.truncated", platform="windows-x86"))
+        self.assertFalse(report["ready"])
+        self.assertIn("invalid_expected_rejection",
+                      reason_codes(report, "ds1.reject.truncated", "portable", "windows-x86"))
+        self.assertEqual(report["waived"], [])
+
+    def test_a_waiver_never_excuses_duplicate_or_stale_evidence(self):
+        dup = copy.deepcopy(find(self.results, "corpus.ds1.read-all"))
+        self.assertFalse(self.qual(waiver(), results=self.results + [dup])["ready"])
+        results = copy.deepcopy(self.results)
+        case = find(results, "corpus.ds1.read-all")
+        case["status"] = "not_run"
+        case["coverage"]["distinct_inputs_compared"] = 0
+        case["provenance"]["candidate"]["source_state"]["source_state_digest"] = H("old")
+        report = self.qual(waiver(), results=results)
+        self.assertFalse(report["ready"])
+        self.assertIn("stale_source", reason_codes(report, "corpus.ds1.read-all",
+                                                   "corpus", "windows-x86"))
+
+    def test_waiving_a_non_waivable_entry_is_invalid(self):
+        self.drop("portable.ctest", "linux-x86_64")
+        self.drop("package.linux-x86_64.archive", "linux-x86_64")
+        for cid, platform in (("portable.ctest", "linux-x86_64"),
+                              ("package.linux-x86_64.archive", "linux-x86_64")):
+            with self.subTest(cid=cid):
+                with self.assertRaises(C.ValidationError) as cm:
+                    self.qual(waiver(id=cid, platform=platform))
+                self.assertIn("cannot be waived", str(cm.exception))
+
+    def test_profile_waivable_false_is_honoured(self):
+        profile = copy.deepcopy(self.profile)
+        for r in profile["requirements"]:
+            for c in r["cases"]:
+                if c["id"] == "corpus.ds1.read-all":
+                    c["waivable"] = False
+        profile = C.seal({k: v for k, v in profile.items() if k != "digest"})
+        candidate = make_candidate(profile)
+        results = [r for r in passing_results(profile, candidate)
+                   if r["id"] != "corpus.ds1.read-all"]
+        self.assertFalse(Q.qualify(profile, candidate, results)["ready"])
+        with self.assertRaises(C.ValidationError):
+            self.qual(waiver(), results=results, candidate=candidate, profile=profile)
+
+    def test_built_in_non_waivable_ids_in_the_release_profile(self):
+        profile = Q.load_profile(RELEASE_PROFILE)
+        waivable = {e["id"]: Q.is_waivable(e) for e in Q.expand_profile(profile)}
+        for cid, ok in waivable.items():
+            if cid.startswith(("package.", "sanitizer.", "control.sanitizer.")) \
+                    or cid in ("portable.ctest", "portable.python-unittest"):
+                self.assertFalse(ok, cid)
+        for cid in ("portable.ctest", "portable.python-unittest", "sanitizer.core",
+                    "control.sanitizer.detector", "package.windows-x86.archive",
+                    "package.macos-arm64.macos_app"):
+            self.assertIn(cid, waivable)
+        self.assertTrue(waivable["perf.first-open"])
+        self.assertTrue(waivable["corpus.ds1.read-all"])
+        self.assertTrue(waivable["coverage.production"])
+
+    def test_wildcard_and_unexact_ids_are_invalid(self):
+        for bad in ("corpus.*", "corpus.ds1.read-al?", "corpus.ds1.read-[a]ll",
+                    " corpus.ds1.read-all", "*"):
+            with self.subTest(id=bad):
+                with self.assertRaises(C.ValidationError):
+                    self.qual(waiver(id=bad))
+
+    def test_wrong_or_expired_version_is_invalid(self):
+        self.drop("corpus.ds1.read-all", "windows-x86")
+        for expires in ("9.9.8", "9.9.10", "10.0.0", "v9.9.9", "9.9", ""):
+            with self.subTest(expires=expires):
+                with self.assertRaises(C.ValidationError):
+                    self.qual(waiver(expires_version=expires))
+        with self.assertRaises(C.ValidationError):
+            self.qual(waiver(), version="9.9.10")
+        with self.assertRaises(C.ValidationError):
+            self.qual(waiver(), version=None)
+        with self.assertRaises(C.ValidationError):
+            self.qual(waiver(expires_version=None))
+
+    def test_incomplete_waivers_are_invalid(self):
+        for field in ("reason", "reviewer", "platform", "expires_version", "id"):
+            with self.subTest(missing=field):
+                w = waiver()
+                del w[field]
+                with self.assertRaises(C.ValidationError):
+                    self.qual(w)
+        for field in ("reason", "reviewer"):
+            with self.subTest(blank=field):
+                with self.assertRaises(C.ValidationError):
+                    self.qual(waiver(**{field: "  "}))
+
+    def test_waiver_for_an_unknown_entry_or_platform_is_invalid(self):
+        for bad in (waiver(id="corpus.ds1.read-none"), waiver(platform="linux-x86_64"),
+                    waiver(lane="live")):
+            with self.subTest(bad=bad):
+                with self.assertRaises(C.ValidationError):
+                    self.qual(bad)
+
+    def test_duplicate_waivers_are_invalid(self):
+        with self.assertRaises(C.ValidationError):
+            self.qual(waiver(), waiver(reason="again"))
+
+    def test_waiver_for_an_entry_that_qualifies_is_unused_not_applied(self):
+        report = self.qual(waiver())
+        self.assertTrue(report["ready"])
+        self.assertEqual(report["waived"], [])
+        self.assertEqual(report["waivers"], [])
+        self.assertEqual([d["id"] for d in report["unused_dispositions"]],
+                         ["corpus.ds1.read-all"])
+        self.assertFalse(self.entry(report, self.KEY)["waived"])
+        self.assertTrue(self.entry(report, self.KEY)["qualifies"])
+
+    def test_waiver_does_not_replace_other_dispositions(self):
+        self.drop("corpus.ds1.read-all", "windows-x86")
+        find(self.results, "perf.first-open")["coverage"]["comparison"] = "regression"
+        report = self.qual(waiver(), disposition())
+        self.assertTrue(report["ready"], report["blocking"])
+        self.assertEqual([d["id"] for d in report["review_dispositions"]], ["perf.first-open"])
+        self.assertEqual([d["id"] for d in report["waivers"]], ["corpus.ds1.read-all"])
+        self.assertEqual(report["unused_dispositions"], [])
+
+    def test_release_record_with_a_waiver_verifies_for_its_version_only(self):
+        self.drop("corpus.ds1.read-all", "windows-x86")
+        report = self.qual(waiver())
+        root = Path(tempfile.mkdtemp(prefix="ds1edit rec "))
+        self.addCleanup(shutil.rmtree, root, True)
+        arts = {}
+        for p, v in self.candidate["platforms"].items():
+            f = root / v["package"]["name"]
+            f.write_bytes(b"x")
+            arts[p] = f
+        # artifact hashes are fake here; only the waiver/version problems matter
+        problems = Q.verify_release_record(report, self.profile, root, arts, version="9.9.9")
+        self.assertFalse([p for p in problems if "waiver" in p or "version" in p], problems)
+        other = Q.verify_release_record(report, self.profile, root, arts, version="9.9.10")
+        self.assertTrue([p for p in other if "version" in p], other)
+        stale = copy.deepcopy(report)
+        stale["release_version"] = "9.9.10"
+        problems = Q.verify_release_record(stale, self.profile, root, arts, version="9.9.10")
+        self.assertTrue([p for p in problems if "waiver" in p], problems)   # expires in 9.9.9
+
+    def test_cli_passes_the_release_version(self):
+        self.drop("corpus.ds1.read-all", "windows-x86")
+        d = Path(tempfile.mkdtemp(prefix="ds1edit waiver cli "))
+        self.addCleanup(shutil.rmtree, d, True)
+        res = d / "results"
+        res.mkdir()
+        for i, r in enumerate(self.results + [self.review(waiver())]):
+            (res / ("r%03d.json" % i)).write_text(json.dumps(r), encoding="utf-8")
+        prof, cand = d / "profile.json", d / "candidate.json"
+        prof.write_text(json.dumps(self.profile), encoding="utf-8")
+        cand.write_text(json.dumps(self.candidate), encoding="utf-8")
+        out = d / "q.json"
+        base = ["--profile", str(prof), "--candidate", str(cand),
+                "--results-dir", str(res), "--out", str(out)]
+        with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+            self.assertEqual(Q.main(base + ["--version", "9.9.9"]), 0)
+            self.assertEqual(Q.main(base + ["--version", "9.9.10"]), 2)
+            self.assertEqual(Q.main(base), 2)
+
+
+def _run_git(root, *args):
+    import subprocess
+    r = subprocess.run(["git", "-C", str(root), "-c", "user.name=t", "-c", "user.email=t@t",
+                        *args], capture_output=True, text=True)
+    if r.returncode:
+        raise AssertionError("git %s failed: %s" % (" ".join(args), r.stderr))
+    return r.stdout
+
+
+@unittest.skipUnless(shutil.which("git"), "git is required")
+class GitSourceDigest(unittest.TestCase):
+    """A checkout's line-ending settings must never change the source digest."""
+
+    INPUTS = {
+        "CMakeLists.txt": b"project(x)\n", "CMakePresets.json": b"{}", "vcpkg.json": b"{}",
+        "LICENSE": b"MIT", "NOTICE": b"n", "README.md": b"r",
+        "Ds1edit.ini.sample": b"s", "allegro5.cfg": b"c",
+        "src/main.c": b"int main(void){return 0;}\r\n",
+        "src/core/ds1.c": b"/* ds1 */\r\n/* crlf */\r\n",
+        "assets/act1_town.ini": b"[a]\r\nx=1\r\n", "assets/editor/obj.txt": b"obj\r\n",
+        "test/test_x.c": b"\n", "scripts/s.py": b"\n",
+    }
+
+    def setUp(self):
+        self.root = Path(tempfile.mkdtemp(prefix="ds1edit qualify git "))
+        self.addCleanup(shutil.rmtree, self.root, True)
+        _run_git(self.root, "init", "-q")
+        _run_git(self.root, "config", "core.autocrlf", "false")
+        for rel, data in self.INPUTS.items():
+            p = self.root / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_bytes(data)
+        _run_git(self.root, "add", "-A")
+        _run_git(self.root, "commit", "-q", "-m", "inputs")
+
+    def digest(self):
+        return Q.source_state_digest(self.root)
+
+    def autocrlf(self, value):
+        _run_git(self.root, "config", "core.autocrlf", value)
+
+    def committed_digest(self):
+        """Independent oracle: the committed blob ids straight from ls-tree."""
+        out = _run_git(self.root, "ls-tree", "-r", "HEAD")
+        files = []
+        for line in out.splitlines():
+            meta, name = line.split("\t", 1)
+            if Q.is_source_input(name):
+                files.append([name, meta.split()[2]])
+        return C.payload_sha256({"schema": Q.SOURCE_STATE_SCHEMA, "files": sorted(files)})
+
+    def test_digest_equals_hashing_the_committed_tree(self):
+        self.assertEqual(self.digest(), self.committed_digest())
+
+    def test_autocrlf_cannot_change_the_digest_of_committed_crlf_blobs(self):
+        before = self.digest()
+        self.autocrlf("true")
+        self.assertEqual(self.digest(), before)
+        self.assertEqual(self.digest(), self.committed_digest())
+        self.autocrlf("input")
+        self.assertEqual(self.digest(), before)
+
+    def test_lf_blobs_checked_out_with_crlf_keep_the_digest(self):
+        for rel in self.INPUTS:                       # recommit as LF blobs
+            p = self.root / rel
+            p.write_bytes(p.read_bytes().replace(b"\r\n", b"\n"))
+        _run_git(self.root, "add", "-A")
+        _run_git(self.root, "commit", "-q", "-m", "lf")
+        lf = self.digest()
+        self.autocrlf("true")                         # a Windows checkout
+        for rel in self.INPUTS:
+            p = self.root / rel
+            p.write_bytes(p.read_bytes().replace(b"\n", b"\r\n"))
+        self.assertEqual(self.digest(), lf)
+        self.assertEqual(self.digest(), self.committed_digest())
+
+    def test_editing_a_tracked_input_still_changes_the_digest(self):
+        before = self.digest()
+        self.autocrlf("true")
+        (self.root / "src/core/ds1.c").write_bytes(b"/* edited */\r\n")
+        self.assertNotEqual(self.digest(), before)
+
+    def test_untracked_declared_input_is_hashed_without_filters(self):
+        (self.root / "src/new.c").write_bytes(b"a\r\nb\r\n")
+        without = self.digest()
+        self.autocrlf("true")
+        self.assertEqual(self.digest(), without)
+        self.assertIn(["src/new.c", Q._blob_id(b"a\r\nb\r\n")], Q.source_inputs(self.root))
+
+    def test_deleted_tracked_input_leaves_the_digest(self):
+        before = self.digest()
+        (self.root / "src/main.c").unlink()
+        self.assertNotEqual(self.digest(), before)
+
+
 class ArtifactHashes(Base):
     def setUp(self):
         super().setUp()
