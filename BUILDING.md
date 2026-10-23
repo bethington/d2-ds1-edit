@@ -226,10 +226,11 @@ every PD2 map through the reader and checked writer, the Levels/LvlPrest/
 LvlTypes/Objects/MonStats tables and the area browser, every PD2 DCC/DC6/DT1/COF
 through the decoders, and a fixed headless render set compared with a local
 baseline. PD2's art is not redistributable, so the lane is never run in CI, is
-registered only when you set `DS1EDIT_PD2_DIR`, and writes only under `tmp/pd2/`.
+registered only when you set `DS1EDIT_PD2_DIR`, and writes only under `DS1EDIT_PD2_OUT`
+(default `<build>/pd2`; set it to `tmp/pd2` to keep one baseline across build directories).
 
 ```bash
-cmake -S . -B tmp/build-pd2 ... -DDS1EDIT_PD2_DIR=C:/Diablo2/ProjectD2      # optional -DDS1EDIT_PD2_BASE_DIR=C:/Diablo2
+cmake -S . -B tmp/build-pd2 ... -DDS1EDIT_PD2_DIR=C:/Diablo2/ProjectD2 -DDS1EDIT_PD2_OUT=tmp/pd2   # optional -DDS1EDIT_PD2_BASE_DIR, -DDS1EDIT_VANILLA_MANIFEST
 cmake --build tmp/build-pd2 --config Debug
 ctest --test-dir tmp/build-pd2 -C Debug -L pd2 --output-on-failure           # pd2_inventory, pd2_sweep, pd2_render
 ```
