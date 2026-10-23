@@ -1175,8 +1175,9 @@ def main(argv=None) -> int:
     _write(report, a.out)
     n = len(report["required"])
     ok = sum(1 for r in report["required"] if r["qualifies"])
-    print("ready: %s  required %d, qualifying %d, blocking %d -> %s"
-          % (str(report["ready"]).lower(), n, ok, n - ok, a.out))
+    waived = len(report["waived"])
+    print("ready: %s  required %d, qualifying %d, waived %d, blocking %d -> %s"
+          % (str(report["ready"]).lower(), n, ok, waived, n - ok - waived, a.out))
     for g in report["global_reasons"]:
         print("  candidate: %s: %s" % (g["code"], g["detail"]))
     for w in report["waived"]:
