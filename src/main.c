@@ -68,6 +68,10 @@ October 30 2011 :
 #endif
 
 #ifdef _WIN32
+#include <allegro5/allegro_windows.h> /* al_get_win_window_handle */
+#endif
+
+#ifdef _WIN32
 /* A laptop with two GPUs hands OpenGL to the integrated one unless the
    executable says otherwise, and a discrete card that never gets used is
    indistinguishable from a slow one -- the editor just draws at a fraction of
@@ -952,11 +956,220 @@ const char *ds1edit_build_identity(void)
 // A single attempt was fatal, which is harsh when a host simply declines one
 // fullscreen mode or refresh rate -- macOS most of all. Try what the config
 // asked for, then a plain resizable window, then a fixed one.
+/* DS1EDIT_TEST_OFFSCREEN=1 (test-only): keep the window out of the way.
+ *
+ * Automated runs (CTest, the Python launchers) create a real window so the
+ * display path is exercised, but they should not flash a window over whatever
+ * the developer is doing. With the switch on, the window is frameless, placed
+ * beyond the right/bottom edge of the virtual desktop, and shown without
+ * taking focus. Rendering, readback and --selftest are unaffected: the
+ * window still exists and still presents. Never honoured for fullscreen. */
+static int ds1edit_offscreen_requested(void)
+{
+   const char *v = getenv("DS1EDIT_TEST_OFFSCREEN");
+   return v != NULL && v[0] == '1' && v[1] == 0 && glb_config.fullscreen != TRUE;
+}
+
+static void ds1edit_offscreen_position(void)
+{
+   int i, n = al_get_num_video_adapters();
+   int right = 0, bottom = 0;
+   for (i = 0; i < n; i++)
+   {
+      ALLEGRO_MONITOR_INFO mi;
+      if (al_get_monitor_info(i, &mi))
+      {
+         if (mi.x2 > right)
+            right = mi.x2;
+         if (mi.y2 > bottom)
+            bottom = mi.y2;
+      }
+   }
+   al_set_new_window_position(right + 2000, bottom + 2000);
+}
+
+#ifdef _WIN32
+static HWND ds1edit_offscreen_prev_fg = NULL;
+#endif
+
+#if defined(_WIN32) && defined(_MSC_VER)
+/* Allegro creates the window on a thread of its own and shows it before
+ * al_create_display() returns, so styling it afterwards is too late: it has
+ * already been activated and has had a taskbar button. Hook the creation
+ * instead. While the offscreen switch is active, a TLS callback runs in every
+ * new thread of this process (Allegro's window thread included) and installs
+ * a thread-local CBT hook on it; the hook makes any top-level window it sees
+ * created non-activating, a tool window (no taskbar / Alt-Tab entry) and not
+ * an app window, and refuses to let it be activated or focused. */
+static volatile LONG ds1edit_offscreen_active = 0;
+
+static LRESULT CALLBACK ds1edit_offscreen_cbt(int code, WPARAM wp, LPARAM lp)
+{
+   if (code == HCBT_CREATEWND)
+   {
+      CBT_CREATEWNDW *c = (CBT_CREATEWNDW *)lp;
+      if (c != NULL && c->lpcs != NULL && c->lpcs->hwndParent == NULL)
+      {
+         /* The CREATESTRUCT copy is not honoured for styles, but the window
+            exists already (wp) and is not yet shown: restyle it directly. */
+         HWND hw = (HWND)wp;
+         LONG_PTR ex = GetWindowLongPtr(hw, GWL_EXSTYLE);
+         ex |= WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW;
+         ex &= ~(LONG_PTR)WS_EX_APPWINDOW;
+         SetWindowLongPtr(hw, GWL_EXSTYLE, ex);
+      }
+   }
+   else if (code == HCBT_ACTIVATE || code == HCBT_SETFOCUS)
+   {
+      return 1; /* nonzero: the system does not activate / focus it */
+   }
+   return CallNextHookEx(NULL, code, wp, lp);
+}
+
+static void NTAPI ds1edit_offscreen_tls(PVOID h, DWORD reason, PVOID reserved)
+{
+   (void)h;
+   (void)reserved;
+   if (reason == DLL_THREAD_ATTACH && ds1edit_offscreen_active)
+      SetWindowsHookExW(WH_CBT, ds1edit_offscreen_cbt, NULL, GetCurrentThreadId());
+}
+
+#pragma section(".CRT$XLB", long, read)
+#ifdef _WIN64
+#pragma comment(linker, "/INCLUDE:_tls_used")
+#pragma comment(linker, "/INCLUDE:ds1edit_offscreen_tls_ptr")
+#else
+#pragma comment(linker, "/INCLUDE:__tls_used")
+#pragma comment(linker, "/INCLUDE:_ds1edit_offscreen_tls_ptr")
+#endif
+__declspec(allocate(".CRT$XLB")) const PIMAGE_TLS_CALLBACK ds1edit_offscreen_tls_ptr =
+    ds1edit_offscreen_tls;
+#endif
+
+#ifdef _WIN32
+static volatile LONG ds1edit_offscreen_stop = 0;
+
+static BOOL CALLBACK ds1edit_offscreen_enum(HWND h, LPARAM lp)
+{
+   DWORD pid = 0;
+   (void)lp;
+   GetWindowThreadProcessId(h, &pid);
+   if (pid == GetCurrentProcessId())
+   {
+      LONG_PTR ex = GetWindowLongPtr(h, GWL_EXSTYLE);
+      if (!(ex & WS_EX_NOACTIVATE) || !(ex & WS_EX_TOOLWINDOW) || (ex & WS_EX_APPWINDOW))
+      {
+         ex |= WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW;
+         ex &= ~(LONG_PTR)WS_EX_APPWINDOW;
+         SetWindowLongPtr(h, GWL_EXSTYLE, ex);
+      }
+   }
+   return TRUE;
+}
+
+/* Second line of defence beside the CBT hook: while the display is being
+ * created, keep restyling this process's windows and, if one still took the
+ * foreground, hand it straight back. */
+static DWORD WINAPI ds1edit_offscreen_watcher(LPVOID arg)
+{
+   (void)arg;
+   while (!ds1edit_offscreen_stop)
+   {
+      HWND fg;
+      EnumWindows(ds1edit_offscreen_enum, 0);
+      fg = GetForegroundWindow();
+      if (fg != NULL && fg != ds1edit_offscreen_prev_fg
+          && ds1edit_offscreen_prev_fg != NULL && IsWindow(ds1edit_offscreen_prev_fg))
+      {
+         DWORD pid = 0;
+         GetWindowThreadProcessId(fg, &pid);
+         if (pid == GetCurrentProcessId())
+            SetForegroundWindow(ds1edit_offscreen_prev_fg);
+      }
+      Sleep(0);
+   }
+   return 0;
+}
+#endif
+
+static void ds1edit_offscreen_remember_foreground(void)
+{
+#ifdef _WIN32
+   ds1edit_offscreen_prev_fg = GetForegroundWindow();
+#endif
+}
+
+/* After creation: make sure the window is off the taskbar and non-activating
+ * even where the creation hook could not be used (non-MSVC builds), show it
+ * without activation, and give focus back to the window that had it if
+ * anything still took it. */
+static void ds1edit_offscreen_show_noactivate(ALLEGRO_DISPLAY *d)
+{
+#ifdef _WIN32
+   HWND hwnd = d ? al_get_win_window_handle(d) : NULL;
+   if (hwnd != NULL)
+   {
+      LONG_PTR ex = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
+      if (!(ex & WS_EX_NOACTIVATE) || (ex & WS_EX_APPWINDOW) || !(ex & WS_EX_TOOLWINDOW))
+      {
+         ex |= WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW;
+         ex &= ~(LONG_PTR)WS_EX_APPWINDOW;
+         ShowWindow(hwnd, SW_HIDE); /* the style only applies on the next show */
+         SetWindowLongPtr(hwnd, GWL_EXSTYLE, ex);
+      }
+      ShowWindow(hwnd, SW_SHOWNOACTIVATE);
+      SetWindowPos(hwnd, HWND_BOTTOM, 0, 0, 0, 0,
+                   SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+      if (GetForegroundWindow() == hwnd && ds1edit_offscreen_prev_fg != NULL
+          && IsWindow(ds1edit_offscreen_prev_fg))
+         SetForegroundWindow(ds1edit_offscreen_prev_fg);
+   }
+#else
+   (void)d;
+#endif
+}
+
+static ALLEGRO_DISPLAY * ds1edit_try_create_display_inner(void);
+
 static ALLEGRO_DISPLAY * ds1edit_try_create_display(void)
+{
+   ALLEGRO_DISPLAY *d;
+#if defined(_WIN32) && defined(_MSC_VER)
+   int hooked = ds1edit_offscreen_requested();
+   HHOOK own_hook = NULL;
+   HANDLE watcher = NULL;
+   if (hooked)
+   {
+      ds1edit_offscreen_stop = 0;
+      watcher = CreateThread(NULL, 0, ds1edit_offscreen_watcher, NULL, 0, NULL);
+      ds1edit_offscreen_remember_foreground();
+      ds1edit_offscreen_active = 1;
+      /* A driver that creates its window on this very thread is covered too. */
+      own_hook = SetWindowsHookExW(WH_CBT, ds1edit_offscreen_cbt, NULL, GetCurrentThreadId());
+   }
+#endif
+   d = ds1edit_try_create_display_inner();
+#if defined(_WIN32) && defined(_MSC_VER)
+   ds1edit_offscreen_active = 0;
+   if (own_hook != NULL)
+      UnhookWindowsHookEx(own_hook);
+   if (watcher != NULL)
+   {
+      ds1edit_offscreen_stop = 1;
+      WaitForSingleObject(watcher, 2000);
+      CloseHandle(watcher);
+   }
+#endif
+   return d;
+}
+
+static ALLEGRO_DISPLAY * ds1edit_try_create_display_inner(void)
 {
    ALLEGRO_DISPLAY *d = NULL;
    int w = glb_config.screen.width;
    int h = glb_config.screen.height;
+   int offscreen = ds1edit_offscreen_requested();
+   int extra = offscreen ? ALLEGRO_FRAMELESS : 0;
 
    /* The editor redraws unconditionally every iteration. Without vsync that
       is whatever the GPU will give -- 120 fps of identical frames on an idle
@@ -979,14 +1192,23 @@ static ALLEGRO_DISPLAY * ds1edit_try_create_display(void)
       half of a mode the host has already turned down. */
    al_set_new_display_refresh_rate(0);
 
-   al_set_new_display_flags(ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE);
+   if (offscreen)
+      ds1edit_offscreen_position();
+   al_set_new_display_flags(ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE | extra);
    d = al_create_display(w, h);
    if (d != NULL)
+   {
+      if (offscreen)
+         ds1edit_offscreen_show_noactivate(d);
       return d;
+   }
    fprintf(stderr, "display: resizable %ix%i refused, trying a fixed window\n", w, h);
 
-   al_set_new_display_flags(ALLEGRO_WINDOWED);
-   return al_create_display(w, h);
+   al_set_new_display_flags(ALLEGRO_WINDOWED | extra);
+   d = al_create_display(w, h);
+   if (d != NULL && offscreen)
+      ds1edit_offscreen_show_noactivate(d);
+   return d;
 }
 
 

@@ -152,12 +152,19 @@ cmake --preset macos && cmake --build --preset macos
 
 ```bash
 pip install -r test/python/requirements.txt     # Python test dependencies (Pillow)
-ctest --preset default                          # Windows (VS2022 build): every suite
+ctest --preset fast                             # ~20 s: every portable unit suite
+ctest --preset check                            # ~35 s: fast + golden core, adversarial slice, display test
+ctest --preset default                          # Windows (VS2022 build): every suite (also: full)
 ctest --preset linux --output-on-failure        # Linux  (or: macos, ci)
 ctest --preset default -L portable              # only the portable suites
 python -m unittest discover -s test/python -t . -p "test_*.py"  # the Python suites directly
 python scripts/run_golden_tests.py --core --tolerance 4   # golden screenshots
 ```
+
+`fast`, `check` and `full` are tiers (see "Test tiers" in [BUILDING.md](BUILDING.md)):
+use `fast` while working, `check` before pushing, `full` for releases. Tests run
+without flashing console windows and keep the editor window off-screen and
+non-activating, so you can keep typing while they run.
 
 About 70 CTest suites run: native Unity suites for the parsers, decoders, editor
 logic and CLI, and `py_*` Python suites that CMake registers from `test/python/`

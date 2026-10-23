@@ -18,6 +18,14 @@ import hashlib
 import json
 import platform
 import subprocess
+try:
+    from scripts.winproc import no_window as _no_window
+except ImportError:  # run as a plain script: put the repo root on the path
+    import os as _os
+    import sys as _sys
+    _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))))
+    _sys.modules.pop("scripts", None)
+    from scripts.winproc import no_window as _no_window
 import sys
 from pathlib import Path
 
@@ -56,7 +64,7 @@ def source_state(repo: Path = REPO_ROOT) -> dict:
     def git(*args):
         try:
             r = subprocess.run(["git", "-C", str(repo), *args], capture_output=True,
-                               timeout=30)
+                               timeout=30, **_no_window())
         except (OSError, subprocess.TimeoutExpired):
             return None
         return r.stdout if r.returncode == 0 else None
@@ -137,7 +145,7 @@ def _run_palette_nearest(contract, capture, probe_cmd, out_dir: Path, inputs_roo
         cmd = [*probe_cmd, "--palette", str(pal_path), "--queries", str(q_path),
                "--out", str(o_path)]
         try:
-            r = subprocess.run(cmd, capture_output=True, timeout=PROBE_TIMEOUT_S)
+            r = subprocess.run(cmd, capture_output=True, timeout=PROBE_TIMEOUT_S, **_no_window())
         except FileNotFoundError as exc:
             raise ReplayUnavailable("probe cannot be started: %s" % exc)
         except subprocess.TimeoutExpired:

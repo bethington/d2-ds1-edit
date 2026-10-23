@@ -28,6 +28,14 @@ import json
 import shutil
 import struct
 import subprocess
+try:
+    from scripts.winproc import no_window as _no_window
+except ImportError:  # run as a plain script: put the repo root on the path
+    import os as _os
+    import sys as _sys
+    _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))))
+    _sys.modules.pop("scripts", None)
+    from scripts.winproc import no_window as _no_window
 import sys
 import tempfile
 from pathlib import Path
@@ -637,7 +645,7 @@ def run_probe(probe: Path, record: dict, fixture_dir: Path, work: Path,
            "--input", str(fixture_dir / record["file"]),
            "--direction", str(record["direction"]), "--out-dir", str(out)]
     proc = subprocess.run(cmd, capture_output=True, text=True, timeout=60,
-                          env=probe_env(probe, dll_dirs))
+                          env=probe_env(probe, dll_dirs), **_no_window())
     result = {"id": record["id"], "returncode": proc.returncode,
               "stderr": proc.stderr[-2000:]}
     if proc.returncode != 0:

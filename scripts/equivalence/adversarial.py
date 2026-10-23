@@ -41,6 +41,14 @@ import random
 import shutil
 import struct
 import subprocess
+try:
+    from scripts.winproc import no_window as _no_window
+except ImportError:  # run as a plain script: put the repo root on the path
+    import os as _os
+    import sys as _sys
+    _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))))
+    _sys.modules.pop("scripts", None)
+    from scripts.winproc import no_window as _no_window
 import sys
 from pathlib import Path
 from typing import Callable, Iterable
@@ -617,7 +625,7 @@ def run_case(case: dict, probes: dict, work: Path, timeout_s: float,
 
     try:
         proc = subprocess.run(argv, cwd=str(cwd), capture_output=True,
-                              timeout=timeout_s, shell=False, env=env)
+                              timeout=timeout_s, shell=False, env=env, **_no_window())
     except subprocess.TimeoutExpired:
         return fail("timeout", "no exit within %.0f s" % timeout_s)
     except OSError as exc:
@@ -662,14 +670,14 @@ def run_case(case: dict, probes: dict, work: Path, timeout_s: float,
         try:
             p2 = subprocess.run([argv[0], "resave", str(inp), "--out", str(resaved)],
                                 cwd=str(cwd), capture_output=True, timeout=timeout_s,
-                                shell=False, env=env)
+                                shell=False, env=env, **_no_window())
         except subprocess.TimeoutExpired:
             return fail("timeout", "resave exceeded %.0f s" % timeout_s)
         if p2.returncode != 0 or not resaved.is_file():
             return fail("resave_failed", "resave of an accepted map exited %d" % p2.returncode)
         p3 = subprocess.run([argv[0], "dump", str(resaved), "--out", str(out / "snap2.json")],
                             cwd=str(cwd), capture_output=True, timeout=timeout_s, shell=False,
-                            env=env)
+                            env=env, **_no_window())
         if p3.returncode != 0:
             return fail("resave_unreadable", "reading the resaved map exited %d" % p3.returncode)
         if sorted(_tree(cwd)):
@@ -732,6 +740,27 @@ def build_cases(profile: dict, sample_source: Callable[[str], dict] = valid_samp
                 cases.append(_case(kind, sid, name, blob, seed, False,
                                    _must_reject(kind, valid, name), cap))
     return cases
+
+
+def select_slice(cases: list[dict], max_cases: int, seed: int) -> list[dict]:
+    """A reproducible subset of at most ``max_cases`` cases.
+
+    Every control and valid-sample case is kept (they are the cheap
+    compatibility anchors); the remaining budget is filled with mutated cases
+    drawn by ``random.Random(seed)`` and returned in the campaign's own
+    order. The same ``(cases, max_cases, seed)`` always gives the same slice,
+    so a failure in a slice reproduces from its id alone.
+    """
+    if max_cases < 0:
+        raise AdversarialError("--max-cases must not be negative")
+    if len(cases) <= max_cases:
+        return list(cases)
+    anchors = [i for i, c in enumerate(cases) if c["control"]]
+    mutated = [i for i, c in enumerate(cases) if not c["control"]]
+    room = max(0, max_cases - len(anchors))
+    pick = set(anchors)
+    pick.update(random.Random(seed).sample(mutated, min(room, len(mutated))))
+    return [cases[i] for i in sorted(pick)]
 
 
 def _case(kind, sample, mutation, blob, seed, control, must_reject, cap) -> dict:
@@ -865,12 +894,22 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("--dll-dir", type=Path,
                      help="directory prepended to PATH for the probes (Allegro DLLs)")
     run.add_argument("--out-dir", required=True, type=Path)
+    run.add_argument("--max-cases", type=int, default=None,
+                     help="run only a seeded slice of at most N cases (all controls kept)")
+    run.add_argument("--seed", type=int, default=None,
+                     help="seed for --max-cases (default: the profile seed)")
     args = ap.parse_args(argv)
 
     profile = load_profile(args.profile)
     probes = {"ds1": args.probe_ds1, "visual": args.probe_visual,
               "robust": args.probe_robust}
-    results = run_adversarial(profile, probes, args.out_dir, dll_dir=args.dll_dir)
+    cases = None
+    if args.max_cases is not None:
+        seed = profile["seed"] if args.seed is None else args.seed
+        cases = select_slice(build_cases(profile), args.max_cases, seed)
+        print("adversarial: seeded slice of %d cases (seed %d)" % (len(cases), seed))
+    results = run_adversarial(profile, probes, args.out_dir, cases=cases,
+                              dll_dir=args.dll_dir)
     summary = summarize(results)
     args.out_dir.mkdir(parents=True, exist_ok=True)
     (args.out_dir / "results.json").write_text(

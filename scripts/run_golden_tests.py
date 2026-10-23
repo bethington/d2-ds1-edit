@@ -30,6 +30,14 @@ import re
 import shutil
 import sys
 import subprocess
+try:
+    from scripts.winproc import no_window as _no_window
+except ImportError:  # run as a plain script: put the repo root on the path
+    import os as _os
+    import sys as _sys
+    _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+    _sys.modules.pop("scripts", None)
+    from scripts.winproc import no_window as _no_window
 import tempfile
 import time
 from dataclasses import dataclass
@@ -167,7 +175,7 @@ def render_case(exe, cwd, ids, ds1_path, output, timeout_s=RENDER_TIMEOUT_S):
     try:
         proc = subprocess.run(cmd, cwd=str(cwd), capture_output=True,
                               text=True, encoding="utf-8", errors="replace",
-                              timeout=timeout_s, shell=False)
+                              timeout=timeout_s, shell=False, **_no_window())
     except subprocess.TimeoutExpired as e:
         return RenderResult(False, f"renderer timed out after {timeout_s}s",
                             None, _text(e.stdout), _text(e.stderr))

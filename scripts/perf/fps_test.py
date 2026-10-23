@@ -36,6 +36,14 @@ import re
 import shutil
 import statistics
 import subprocess
+try:
+    from scripts.winproc import no_window as _no_window, offscreen_env
+except ImportError:  # run as a plain script: put the repo root on the path
+    import os as _os
+    import sys as _sys
+    _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))))
+    _sys.modules.pop("scripts", None)
+    from scripts.winproc import no_window as _no_window, offscreen_env
 import sys
 import time
 from pathlib import Path
@@ -135,12 +143,23 @@ def build_runtime(run_dir: Path, exe: Path, game_dir: str, driver: str,
 Runner = Callable[[list, Path, dict, float], tuple]
 
 
+# Frame-time measurements run with a normal visible window by default: Windows
+# may throttle an occluded or off-screen window and skew the numbers. --offscreen
+# opts into the editor's DS1EDIT_TEST_OFFSCREEN mode for smoke-style runs. The
+# mode used is recorded in summary.json ("window_mode").
+WINDOW_OFFSCREEN = False
+
+
+def _window_env() -> dict:
+    return offscreen_env(visible=not WINDOW_OFFSCREEN)
+
+
 def default_runner(command: list, cwd: Path, env: dict, timeout_s: float) -> tuple:
     """-> (returncode | None on timeout, stdout, stderr)."""
     suppress_error_dialogs()
     kwargs = {"cwd": str(cwd), "stdin": subprocess.DEVNULL,
               "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": env}
-    proc = subprocess.Popen(command, **kwargs)
+    proc = subprocess.Popen(command, **kwargs, **_no_window())
     try:
         out, err = proc.communicate(timeout=timeout_s)
         return proc.returncode, out.decode(errors="replace"), err.decode(errors="replace")
@@ -181,7 +200,7 @@ def run_once(run_dir: Path, rt: Path, exe_name: str, map_name: str, frames: int,
         report.unlink()
     command = selftest_command(rt / exe_name, map_name, frames, report)
     t0 = time.time()
-    rc, out, err = runner(command, rt, dict(os.environ), timeout_s)
+    rc, out, err = runner(command, rt, _window_env(), timeout_s)
     wall = time.time() - t0
     (run_dir / "stdout.txt").write_text(out or "")
     (run_dir / "stderr.txt").write_text(err or "")
@@ -382,7 +401,7 @@ def profile_case(command: list, cwd: Path, run_dir: Path, env: dict,
 
     def go(cmd, timeout=timeout_s + 120):
         return run(cmd, cwd=str(cwd), env=env, capture_output=True, text=True,
-                   timeout=timeout, stdin=subprocess.DEVNULL)
+                   timeout=timeout, stdin=subprocess.DEVNULL, **_no_window())
 
     try:
         if os.name == "nt":
@@ -451,6 +470,8 @@ def profile_case(command: list, cwd: Path, run_dir: Path, env: dict,
 
 def run_matrix(args, runner: Runner = default_runner, profiler=profile_case,
                host: Optional[dict] = None) -> tuple:
+    global WINDOW_OFFSCREEN
+    WINDOW_OFFSCREEN = bool(getattr(args, "offscreen", False))
     exe = Path(args.exe).resolve()
     if not exe.is_file():
         raise SystemExit(f"fps_test: --exe {exe} does not exist")
@@ -501,7 +522,7 @@ def run_matrix(args, runner: Runner = default_runner, profiler=profile_case,
             run_dir.mkdir(parents=True, exist_ok=True)
             rt = build_runtime(run_dir, exe, args.game_dir, driver, size, assets)
             cmd = selftest_command(rt / exe.name, map_name, args.frames, run_dir / "report.json")
-            c["profile"] = profiler(cmd, rt, run_dir, dict(os.environ), args.timeout,
+            c["profile"] = profiler(cmd, rt, run_dir, _window_env(), args.timeout,
                                     args.symbols_dir)
         c.pop("_runs", None)
 
@@ -510,7 +531,8 @@ def run_matrix(args, runner: Runner = default_runner, profiler=profile_case,
         verdict = "FAIL"
     summary = {"schema": SUMMARY_SCHEMA, "verdict": verdict,
                "created": datetime.datetime.now().isoformat(timespec="seconds"),
-               "exe": str(exe), "frames": args.frames, "runs": args.runs,
+               "exe": str(exe), "window_mode": "offscreen" if WINDOW_OFFSCREEN else "visible",
+               "frames": args.frames, "runs": args.runs,
                "budget_ms_1080p": BUDGET_MS_1080P, "host": host_summary(host),
                "baseline": base_head, "cases": cases}
     (out_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
@@ -555,6 +577,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--profile", action="store_true", help="profile every case")
     p.add_argument("--profile-on-fail", action="store_true",
                    help="rerun failing cases under WPR (Windows) or perf (Linux)")
+    p.add_argument("--offscreen", action="store_true",
+                   help="run with DS1EDIT_TEST_OFFSCREEN=1 (default: visible window, "
+                        "so Windows does not throttle the measurement)")
     p.add_argument("--symbols-dir", help="PDB/debug-symbol directory (RelWithDebInfo build)")
     return p
 

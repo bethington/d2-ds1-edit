@@ -60,6 +60,14 @@ import os
 import re
 import shutil
 import subprocess
+try:
+    from scripts.winproc import no_window as _no_window
+except ImportError:  # run as a plain script: put the repo root on the path
+    import os as _os
+    import sys as _sys
+    _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))))
+    _sys.modules.pop("scripts", None)
+    from scripts.winproc import no_window as _no_window
 import sys
 import tempfile
 import threading
@@ -794,7 +802,7 @@ def run_proc(cmd, cwd, env, timeout=PROBE_TIMEOUT):
     """``(rc, stdout, stderr, timed_out)``; never raises on a crash or hang."""
     try:
         p = subprocess.run([str(c) for c in cmd], cwd=str(cwd), env=env, capture_output=True,
-                           timeout=timeout, shell=False)
+                           timeout=timeout, shell=False, **_no_window())
         return (p.returncode, p.stdout.decode("utf-8", "replace"),
                 p.stderr.decode("utf-8", "replace"), False)
     except subprocess.TimeoutExpired as e:

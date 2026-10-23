@@ -147,6 +147,193 @@
             "output": {
                 "outputOnFailure": true
             }
+        },
+        {
+            "name": "fast",
+            "displayName": "Fast (unit suites, no display or game data)",
+            "configurePreset": "default",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "jobs": 8,
+                "noTestsAction": "error"
+            },
+            "configuration": "Release",
+            "filter": {
+                "include": {
+                    "label": "fast"
+                }
+            }
+        },
+        {
+            "name": "check",
+            "displayName": "Check (fast + golden core, adversarial slice, display tests)",
+            "configurePreset": "default",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "jobs": 8,
+                "noTestsAction": "error"
+            },
+            "configuration": "Release",
+            "filter": {
+                "include": {
+                    "label": "fast|check"
+                }
+            }
+        },
+        {
+            "name": "full",
+            "displayName": "Full (everything registered, incl. full adversarial campaign)",
+            "configurePreset": "default",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "jobs": 8,
+                "noTestsAction": "error"
+            },
+            "configuration": "Release"
+        },
+        {
+            "name": "ci-fast",
+            "displayName": "Fast (unit suites, no display or game data)",
+            "configurePreset": "ci",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "jobs": 8,
+                "noTestsAction": "error"
+            },
+            "filter": {
+                "include": {
+                    "label": "fast"
+                }
+            }
+        },
+        {
+            "name": "ci-check",
+            "displayName": "Check (fast + golden core, adversarial slice, display tests)",
+            "configurePreset": "ci",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "jobs": 8,
+                "noTestsAction": "error"
+            },
+            "filter": {
+                "include": {
+                    "label": "fast|check"
+                }
+            }
+        },
+        {
+            "name": "ci-full",
+            "displayName": "Full (everything registered, incl. full adversarial campaign)",
+            "configurePreset": "ci",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "jobs": 8,
+                "noTestsAction": "error"
+            }
+        },
+        {
+            "name": "linux-fast",
+            "displayName": "Fast (unit suites, no display or game data)",
+            "configurePreset": "linux",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "jobs": 8,
+                "noTestsAction": "error"
+            },
+            "filter": {
+                "include": {
+                    "label": "fast"
+                }
+            }
+        },
+        {
+            "name": "linux-check",
+            "displayName": "Check (fast + golden core, adversarial slice, display tests)",
+            "configurePreset": "linux",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "jobs": 8,
+                "noTestsAction": "error"
+            },
+            "filter": {
+                "include": {
+                    "label": "fast|check"
+                }
+            }
+        },
+        {
+            "name": "linux-full",
+            "displayName": "Full (everything registered, incl. full adversarial campaign)",
+            "configurePreset": "linux",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "jobs": 8,
+                "noTestsAction": "error"
+            }
+        },
+        {
+            "name": "macos-fast",
+            "displayName": "Fast (unit suites, no display or game data)",
+            "configurePreset": "macos",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "jobs": 8,
+                "noTestsAction": "error"
+            },
+            "filter": {
+                "include": {
+                    "label": "fast"
+                }
+            }
+        },
+        {
+            "name": "macos-check",
+            "displayName": "Check (fast + golden core, adversarial slice, display tests)",
+            "configurePreset": "macos",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "jobs": 8,
+                "noTestsAction": "error"
+            },
+            "filter": {
+                "include": {
+                    "label": "fast|check"
+                }
+            }
+        },
+        {
+            "name": "macos-full",
+            "displayName": "Full (everything registered, incl. full adversarial campaign)",
+            "configurePreset": "macos",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "jobs": 8,
+                "noTestsAction": "error"
+            }
         }
     ]
 }

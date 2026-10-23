@@ -39,12 +39,35 @@ elseif(TARGET test_adversarial_probe AND TARGET test_ds1_reference_probe
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
     set_tests_properties(adversarial_core PROPERTIES
         ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1")
+
+    # Tier `check`: a fixed-seed slice of the same campaign (all controls plus
+    # a reproducible sample of mutations, ~500 cases) so a typical change gets
+    # real malformed-input coverage without the full campaign's runtime. The
+    # seed is fixed on purpose: the slice is identical on every run, so a
+    # failure reproduces from its case id. adversarial_core is the full run.
+    set(DS1EDIT_ADVERSARIAL_SLICE_CASES 500 CACHE STRING
+        "Cases in the adversarial_slice test (tier check)")
+    set(DS1EDIT_ADVERSARIAL_SLICE_SEED 20261023 CACHE STRING
+        "Seed of the adversarial_slice test (fixed so runs are comparable)")
+    add_test(NAME adversarial_slice
+        COMMAND ${Python3_EXECUTABLE} -m scripts.equivalence.adversarial run
+            --profile ${CMAKE_SOURCE_DIR}/test/equivalence/profiles/adversarial-core.json
+            --probe-ds1 $<TARGET_FILE:test_ds1_reference_probe>
+            --probe-visual $<TARGET_FILE:test_visual_reference_probe>
+            --probe-robust $<TARGET_FILE:test_adversarial_probe>
+            --max-cases ${DS1EDIT_ADVERSARIAL_SLICE_CASES}
+            --seed ${DS1EDIT_ADVERSARIAL_SLICE_SEED}
+            --out-dir ${CMAKE_CURRENT_BINARY_DIR}/adversarial-slice
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+    set_tests_properties(adversarial_slice PROPERTIES
+        LABELS "portable;check" TIMEOUT 900
+        ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1")
 else()
     set(_script "${CMAKE_CURRENT_BINARY_DIR}/adversarial_core.cmake")
     file(WRITE "${_script}" "message(FATAL_ERROR [==[A probe target (test_ds1_reference_probe, test_visual_reference_probe) is missing from this configuration; adversarial_core cannot run.]==])\n")
     add_test(NAME adversarial_core COMMAND ${CMAKE_COMMAND} -P "${_script}")
 endif()
-set_tests_properties(adversarial_core PROPERTIES LABELS portable TIMEOUT 1800)
+set_tests_properties(adversarial_core PROPERTIES LABELS "portable;slow" TIMEOUT 1800)
 
 # Resource-lifetime and minimized-defect regressions. ds1.c is #included into
 # the test's own translation unit behind a tracking allocator, so it is taken

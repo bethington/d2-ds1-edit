@@ -373,7 +373,9 @@ class UserConfigIsolation(NativeSmokeBase):
             self.assertNotIn("HOME", env)
             self.assertNotIn("C:\\Python", env["PATH"])
             self.assertTrue(set(env) <= {"SystemRoot", "windir", "PATH", "USERPROFILE", "APPDATA",
-                                         "LOCALAPPDATA", "HOMEDRIVE", "HOMEPATH", "TEMP", "TMP"})
+                                         "LOCALAPPDATA", "HOMEDRIVE", "HOMEPATH", "TEMP", "TMP",
+                                         "DS1EDIT_TEST_OFFSCREEN"})
+            self.assertEqual(env.get("DS1EDIT_TEST_OFFSCREEN"), "1")
         self.assertEqual(prefs.read_text(), "last_d2_install=C:\\Users\\me\\SECRET-GAME\n")
         self.assertNotIn("SECRET", (user_cwd / "Ds1edit.ini").read_text().replace("SECRET-GAME", ""))
 

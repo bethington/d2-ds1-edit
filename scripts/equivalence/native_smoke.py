@@ -40,6 +40,14 @@ import os
 import platform as _platform
 import re
 import subprocess
+try:
+    from scripts.winproc import no_window as _no_window
+except ImportError:  # run as a plain script: put the repo root on the path
+    import os as _os
+    import sys as _sys
+    _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))))
+    _sys.modules.pop("scripts", None)
+    from scripts.winproc import no_window as _no_window
 import sys
 import time
 from pathlib import Path
@@ -312,7 +320,7 @@ def _run_process(ctx: _Ctx, label: str, args: list, timeout: float, *,
         with open(out_p, "xb") as fo, open(err_p, "xb") as fe:
             cp = ctx.runner(cmd, cwd=str(ctx.root), env=env or ctx.env,
                             stdin=subprocess.DEVNULL, stdout=fo, stderr=fe,
-                            timeout=timeout, shell=False)
+                            timeout=timeout, shell=False, **_no_window())
         rec["returncode"] = cp.returncode
     except subprocess.TimeoutExpired:
         rec["timed_out"] = True
@@ -498,7 +506,7 @@ def run_native_smoke(extracted_root: Path, profile: dict, out_dir: Path, *,
                      platform: str | None = None, runner: Callable | None = None,
                      game_install: str | Path | None = None,
                      inspection: dict | None = None, environ: dict | None = None,
-                     write: bool = True) -> list[dict]:
+                     write: bool = True, visible: bool = False) -> list[dict]:
     """Run the native smoke cases; returns ``ds1edit.case/1`` dicts.
 
     ``out_dir`` must not exist (it is owned by the run): evidence goes under
@@ -651,6 +659,8 @@ def run_native_smoke(extracted_root: Path, profile: dict, out_dir: Path, *,
 
     env = _owned_env(plat, home, profile.get("env", {}), base_env)
     prov["environment"]["declared_env_keys"] = sorted(env)
+    if not visible:  # keep the selftest window off-screen and non-activating
+        env["DS1EDIT_TEST_OFFSCREEN"] = "1"
     ctx = _Ctx(root=root, exe=exe, env=env, runner=runner, evidence=evidence, home=home)
 
     def result(case_name, subs, expected, limitations=(), cov=None, full=None):
@@ -717,6 +727,8 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--out-dir", required=True, type=Path)
     r.add_argument("--platform", choices=PLATFORMS)
     r.add_argument("--game-install", type=Path)
+    r.add_argument("--visible", action="store_true",
+                   help="show the selftest window normally (default: off-screen)")
     m = sub.add_parser("manual", help="record a manual checklist result as a case")
     m.add_argument("--case", required=True, choices=list(CASE_NAMES))
     m.add_argument("--platform", required=True, choices=PLATFORMS)
@@ -739,7 +751,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.cmd == "run":
             profile = load_profile(args.profile)
             cases = run_native_smoke(args.extracted_root, profile, args.out_dir,
-                                     platform=args.platform, game_install=args.game_install)
+                                     platform=args.platform, game_install=args.game_install,
+                                     visible=args.visible)
             for c in cases:
                 print("%-12s %s" % (c["status"], c["id"]))
                 for f in c["failures"][:6]:

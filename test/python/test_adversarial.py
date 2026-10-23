@@ -325,6 +325,40 @@ class Runner(unittest.TestCase):
         self.assertTrue(all(not c["oversize"] for c in a))
 
 
+class SeededSlice(unittest.TestCase):
+    @staticmethod
+    def _cases(n_controls=3, n_mut=100):
+        cs = [{"id": "c%d" % i, "control": True} for i in range(n_controls)]
+        cs += [{"id": "m%d" % i, "control": False} for i in range(n_mut)]
+        return cs
+
+    def test_same_seed_same_slice(self):
+        a = adv.select_slice(self._cases(), 20, 7)
+        b = adv.select_slice(self._cases(), 20, 7)
+        self.assertEqual([c["id"] for c in a], [c["id"] for c in b])
+
+    def test_different_seed_differs(self):
+        a = adv.select_slice(self._cases(), 20, 7)
+        b = adv.select_slice(self._cases(), 20, 8)
+        self.assertNotEqual([c["id"] for c in a], [c["id"] for c in b])
+
+    def test_size_controls_kept_and_order_preserved(self):
+        cases = self._cases()
+        out = adv.select_slice(cases, 20, 1)
+        self.assertEqual(len(out), 20)
+        self.assertEqual([c["id"] for c in out[:3]], ["c0", "c1", "c2"])
+        order = [cases.index(c) for c in out]
+        self.assertEqual(order, sorted(order))
+
+    def test_small_campaign_is_returned_whole(self):
+        cases = self._cases(1, 4)
+        self.assertEqual(adv.select_slice(cases, 50, 1), cases)
+
+    def test_negative_is_an_error(self):
+        with self.assertRaises(adv.AdversarialError):
+            adv.select_slice(self._cases(), -1, 1)
+
+
 class CommittedProfile(unittest.TestCase):
     def test_core_profile_is_valid_and_bounded(self):
         prof = adv.load_profile(REPO_ROOT / "test" / "equivalence" / "profiles"

@@ -44,6 +44,14 @@ import json
 import os
 import re
 import subprocess
+try:
+    from scripts.winproc import no_window as _no_window
+except ImportError:  # run as a plain script: put the repo root on the path
+    import os as _os
+    import sys as _sys
+    _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))))
+    _sys.modules.pop("scripts", None)
+    from scripts.winproc import no_window as _no_window
 import sys
 from pathlib import Path
 
@@ -732,7 +740,7 @@ def _check_cmake_references(root: Path) -> None:
 def _git(root: Path, *args, data=None):
     try:
         r = subprocess.run(["git", "-C", str(root), *args], input=data,
-                           capture_output=True, timeout=120)
+                           capture_output=True, timeout=120, **_no_window())
     except (OSError, subprocess.TimeoutExpired):
         return None
     return r.stdout if r.returncode == 0 else None

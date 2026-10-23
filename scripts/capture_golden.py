@@ -11,6 +11,14 @@ screenshots to test/golden/ for later comparison.
 import os
 import sys
 import subprocess
+try:
+    from scripts.winproc import no_window as _no_window
+except ImportError:  # run as a plain script: put the repo root on the path
+    import os as _os
+    import sys as _sys
+    _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+    _sys.modules.pop("scripts", None)
+    from scripts.winproc import no_window as _no_window
 
 # Paths relative to the project root (script assumes it's run from project root or bin/)
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -63,8 +71,7 @@ def capture_screenshot(map_name, lvltype_id, lvlprest_def, ds1_path, output_path
             cwd=BIN_DIR,
             capture_output=True,
             text=True,
-            timeout=120,
-        )
+            timeout=120, **_no_window())
     except subprocess.TimeoutExpired:
         print(f"    TIMEOUT (>120s, skipping)")
         return False

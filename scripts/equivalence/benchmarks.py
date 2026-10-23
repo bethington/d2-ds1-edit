@@ -45,6 +45,14 @@ import shutil
 import signal
 import statistics
 import subprocess
+try:
+    from scripts.winproc import no_window as _no_window
+except ImportError:  # run as a plain script: put the repo root on the path
+    import os as _os
+    import sys as _sys
+    _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))))
+    _sys.modules.pop("scripts", None)
+    from scripts.winproc import no_window as _no_window
 import sys
 import threading
 import time
@@ -233,7 +241,8 @@ def _popen(command, cwd, env):
     kwargs = {"cwd": str(cwd), "stdin": subprocess.DEVNULL, "stdout": subprocess.PIPE,
               "stderr": subprocess.PIPE, "env": env, "shell": False}
     if os.name == "nt":
-        kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
+        kwargs["creationflags"] = (subprocess.CREATE_NEW_PROCESS_GROUP
+                                   | _no_window().get("creationflags", 0))
     else:
         kwargs["start_new_session"] = True
     return subprocess.Popen(command, **kwargs)
@@ -246,7 +255,7 @@ def kill_tree(proc) -> None:
     try:
         if os.name == "nt":
             subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)],
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15)
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15, **_no_window())
         else:
             os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
     except Exception:
@@ -626,7 +635,7 @@ def sha256_file(path) -> str:
 def _ps(command: str) -> Optional[str]:
     try:
         r = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", command],
-                           capture_output=True, text=True, timeout=30)
+                           capture_output=True, text=True, timeout=30, **_no_window())
         return r.stdout.strip() or None
     except Exception:
         return None
@@ -675,7 +684,7 @@ def build_identity(exe: Path, build_dir: Optional[Path], repo: Optional[Path],
     if repo:
         def git(*a):
             try:
-                r = subprocess.run(["git", "-C", str(repo), *a], capture_output=True, timeout=60)
+                r = subprocess.run(["git", "-C", str(repo), *a], capture_output=True, timeout=60, **_no_window())
                 return r.stdout if r.returncode == 0 else None
             except Exception:
                 return None

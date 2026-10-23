@@ -34,6 +34,14 @@ import copy
 import json
 import os
 import subprocess
+try:
+    from scripts.winproc import no_window as _no_window
+except ImportError:  # run as a plain script: put the repo root on the path
+    import os as _os
+    import sys as _sys
+    _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))))
+    _sys.modules.pop("scripts", None)
+    from scripts.winproc import no_window as _no_window
 from pathlib import Path
 
 SCHEMA = "ds1edit.map/1"
@@ -144,7 +152,7 @@ def run_probe(probe_exe: Path, ds1_path: Path, out_json: Path,
     """Run ``probe dump`` on one file. Returns (exit code, snapshot or None)."""
     proc = subprocess.run([str(probe_exe), "dump", str(ds1_path), "--out", str(out_json)],
                           capture_output=True, timeout=timeout,
-                          cwd=str(Path(out_json).parent), env=_probe_env(probe_exe))
+                          cwd=str(Path(out_json).parent), env=_probe_env(probe_exe), **_no_window())
     snap = load_snapshot(out_json) if Path(out_json).exists() else None
     return proc.returncode, snap
 
@@ -154,5 +162,5 @@ def run_resave(probe_exe: Path, ds1_path: Path, out_ds1: Path,
     """Read ``ds1_path`` with the editor and save it with the checked writer."""
     proc = subprocess.run([str(probe_exe), "resave", str(ds1_path), "--out", str(out_ds1)],
                           capture_output=True, timeout=timeout,
-                          cwd=str(Path(out_ds1).parent), env=_probe_env(probe_exe))
+                          cwd=str(Path(out_ds1).parent), env=_probe_env(probe_exe), **_no_window())
     return proc.returncode
