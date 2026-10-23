@@ -138,6 +138,7 @@ CATEGORY_NAMES = ("missing", "mismatching", "stale", "partial", "unexecuted",
 
 _HEX64 = re.compile(r"^[0-9a-f]{64}$")
 _WILDCARD = re.compile(r"[*?\[\]]")
+_CONTROL = re.compile(r"[\x00-\x1f\x7f\u2028\u2029]")
 
 
 def key(case_id: str, lane: str, platform: str) -> str:
@@ -278,9 +279,32 @@ def expand_profile(profile: dict) -> list:
     return out
 
 
+_CI_EMITTED = None
+
+
+def ci_emitted_keys() -> frozenset:
+    """``(id, lane, platform)`` of every entry ci_evidence produces in CI."""
+    global _CI_EMITTED
+    if _CI_EMITTED is None:
+        try:
+            from . import ci_evidence as _ci
+        except ImportError:  # run as a plain script
+            from scripts.equivalence import ci_evidence as _ci
+        _CI_EMITTED = frozenset((r["id"], r["lane"], p)
+                                for r in _ci.RULES for p in r["platforms"])
+    return _CI_EMITTED
+
+
 def is_waivable(entry: dict) -> bool:
-    """May a maintainer waive this expanded required entry at all?"""
+    """May a maintainer waive this expanded required entry at all?
+
+    Never an entry CI itself produces evidence for (a missing result there is
+    a broken job, not a lane the maintainer cannot run), nor the fixed
+    non-waivable ids, nor one the profile marks ``"waivable": false``.
+    """
     if entry.get("waivable", True) is False:
+        return False
+    if (entry["id"], entry["lane"], entry["platform"]) in ci_emitted_keys():
         return False
     return not any(fnmatch.fnmatchcase(entry["id"], g) for g in NON_WAIVABLE_IDS)
 
@@ -370,6 +394,9 @@ def _validate_disposition(d: dict, where: str) -> dict:
             v = d.get(field)
             if not isinstance(v, str) or not v.strip():
                 raise C.ValidationError("%s.%s is required on a waiver" % (where, field))
+            if _CONTROL.search(v):
+                raise C.ValidationError("%s.%s contains control characters or a line break"
+                                        % (where, field))
         if d.get("lane") is not None:
             C._nonempty_str(d, "lane", where)
         if "evidence" in d:
@@ -1069,6 +1096,14 @@ def verify_release_record(record: dict, profile: dict, root: Path,
         problems.append("record's per-case results differ from their recomputation")
     if again["waived"] != record.get("waived"):
         problems.append("record's waived checks differ from their recomputation")
+    # input_artifacts must describe results one-to-one: the evidence a reviewer
+    # was shown is the evidence the verdict was computed from.
+    listed = sorted(str(a.get("payload_sha256")) for a in record.get("input_artifacts", [])
+                    if isinstance(a, dict))
+    held = sorted(C.payload_sha256(r) for r in record.get("results", []))
+    if listed != held:
+        problems.append("record's input_artifacts do not match its results one-to-one "
+                        "(%d listed, %d held)" % (len(listed), len(held)))
     if record.get("profile", {}).get("digest") != profile.get("digest"):
         problems.append("record was qualified against another profile")
     try:

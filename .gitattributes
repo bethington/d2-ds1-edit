@@ -23,4 +23,9 @@ allegro5.cfg   text eol=lf
 # Runtime data whose bytes are pinned by hash (test/equivalence/profiles/
 # visual-core.json): stored and checked out exactly as committed (CRLF).
 assets/editor/obj.txt -text
+
+# Preserved third-party archives are verbatim: some files are CRLF in the
+# index, so they must never be converted (a text eol=lf rule from above would
+# make a fresh clone's tree dirty at random).
+docs/preservation/** -text
 .gitattributes text eol=lf

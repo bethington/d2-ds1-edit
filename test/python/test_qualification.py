@@ -897,7 +897,13 @@ class Waivers(Base):
             self.assertIn(cid, waivable)
         self.assertTrue(waivable["perf.first-open"])
         self.assertTrue(waivable["corpus.ds1.read-all"])
-        self.assertTrue(waivable["coverage.production"])
+        # entries CI itself produces evidence for can never be "made missing"
+        for e in Q.expand_profile(profile):
+            if (e["id"], e["lane"], e["platform"]) in Q.ci_emitted_keys():
+                self.assertFalse(Q.is_waivable(e), e["key"])
+        self.assertFalse(waivable["coverage.production"])
+        self.assertFalse(waivable["editor.undo.tiles"])
+        self.assertFalse(waivable["dc6.rle.basic"])
 
     def test_wildcard_and_unexact_ids_are_invalid(self):
         for bad in ("corpus.*", "corpus.ds1.read-al?", "corpus.ds1.read-[a]ll",
@@ -905,6 +911,23 @@ class Waivers(Base):
             with self.subTest(id=bad):
                 with self.assertRaises(C.ValidationError):
                     self.qual(waiver(id=bad))
+
+    def test_control_characters_and_line_breaks_in_waiver_fields_are_invalid(self):
+        for field in ("reason", "reviewer", "platform", "expires_version"):
+            for bad in ("x\ny", "x\r", "x\x00", "x\u2028y", "x\ty"):
+                with self.subTest(field=field, bad=bad):
+                    with self.assertRaises(C.ValidationError):
+                        self.qual(waiver(**{field: bad}))
+
+    def test_a_record_whose_input_artifacts_do_not_match_its_results_is_refused(self):
+        report = self.qual(waiver())
+        root = Path(tempfile.mkdtemp(prefix="ds1edit rec "))
+        self.addCleanup(shutil.rmtree, root, True)
+        forged = copy.deepcopy(report)
+        forged["input_artifacts"] = forged["input_artifacts"][1:]
+        forged = C.seal({k: v for k, v in forged.items() if k != "digest"})
+        problems = Q.verify_release_record(forged, self.profile, root, {}, version="9.9.9")
+        self.assertTrue([p for p in problems if "input_artifacts" in p], problems)
 
     def test_wrong_or_expired_version_is_invalid(self):
         self.drop("corpus.ds1.read-all", "windows-x86")
