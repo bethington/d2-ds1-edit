@@ -111,11 +111,47 @@ def unity_results(output: str) -> dict:
     return {m.group(1): m.group(2) for m in _UNITY.finditer(output)}
 
 
+def _dotted(method: str, path: str) -> str:
+    """``Class.method`` from unittest's ``method (pkg.mod.Class.method)``."""
+    parts = path.split(".")
+    return ".".join(parts[-2:]) if len(parts) >= 2 else method
+
+
 def unittest_results(output: str) -> dict:
+    """``{Class.method: ok|FAIL|ERROR|skipped|...}`` from ``unittest -v`` output."""
     out = {}
     for m in _UNITTEST.finditer(output):
         v = m.group(3)
-        out[m.group(1)] = "skipped" if v.startswith("skipped") else v
+        out[_dotted(m.group(1), m.group(2))] = "skipped" if v.startswith("skipped") else v
+    return out
+
+
+_SKIP_REASON = re.compile(r"^skipped '(.*)'$")
+_APPLIES_TO = re.compile(r"^applies-to=([a-z0-9_,-]+):")
+
+
+def unittest_skips(output: str) -> dict:
+    """``{Class.method: skip reason}`` for every skipped test."""
+    out = {}
+    for m in _UNITTEST.finditer(output):
+        if m.group(3).startswith("skipped"):
+            r = _SKIP_REASON.match(m.group(3))
+            out[_dotted(m.group(1), m.group(2))] = r.group(1) if r else ""
+    return out
+
+
+def not_applicable_skips(output: str, platform: str) -> dict:
+    """Skips that declare ``applies-to=<platforms>:`` and exclude *platform*.
+
+    A skip is explained only by an explicit, expected platform condition in its
+    reason (``unittest.skipUnless(sys.platform == "win32", "applies-to=windows-x86: ...")``).
+    Any other skip, or one that claims to apply here, is not.
+    """
+    out = {}
+    for name, reason in unittest_skips(output).items():
+        m = _APPLIES_TO.match(reason)
+        if m and platform not in m.group(1).split(","):
+            out[name] = reason
     return out
 
 
@@ -160,7 +196,7 @@ def _rule(cid, platforms, checks=(), *, lane="portable", job="build", type="chec
             "control": control}
 
 
-_MATRIX_PROOF = _py("ds1_cases", "test_reader_matches_every_authored_expectation")
+_MATRIX_PROOF = _py("ds1_cases", "ProbeIntegrationTests.test_reader_matches_every_authored_expectation")
 _PROBE = "test_visual_reference_probe"
 _DECODER_CTEST = "visual_reference_probe_decoder_cases"
 
@@ -233,25 +269,25 @@ RULES = (
     # Wrong-model controls: each is shown detected by a Python test that feeds
     # the deliberately wrong model to the real comparison and requires a diff.
     _rule("control.palette-nearest-113c.constant", WIN, _py(
-        "py_equivalence_controls", "test_constant_control_diverges"), control=True),
+        "py_equivalence_controls", "ControlTests.test_constant_control_diverges"), control=True),
     _rule("control.palette-nearest-113c.channel-swap", WIN, _py(
-        "py_equivalence_controls", "test_channel_swap_control_diverges"), control=True),
+        "py_equivalence_controls", "ControlTests.test_channel_swap_control_diverges"), control=True),
     _rule("control.palette-nearest-113c.last-tie", WIN, _py(
-        "py_equivalence_controls", "test_last_tie_control_diverges_only_on_ties"),
+        "py_equivalence_controls", "ControlTests.test_last_tie_control_diverges_only_on_ties"),
         control=True),
     _rule("control.palette-nearest-113c.relative-index", WIN, _py(
-        "py_equivalence_controls", "test_missing_offset_normalization_diverges"),
+        "py_equivalence_controls", "ControlTests.test_missing_offset_normalization_diverges"),
         control=True),
     _rule("control.visual-values-113c.seven-bit-mask", WIN, _py(
-        "py_visual_values", "test_seven_bit_mask_control_fails"), control=True),
+        "py_visual_values", "TileKeys.test_seven_bit_mask_control_fails"), control=True),
     _rule("control.decoders-113c.wrong-origin", WIN, _py(
-        "py_decoder_cases", "test_wrong_origin"), control=True),
+        "py_decoder_cases", "Controls.test_wrong_origin"), control=True),
     _rule("control.decoders-113c.dropped-delta-reuse", WIN, _py(
-        "py_decoder_cases", "test_dropped_delta_reuse"), control=True),
+        "py_decoder_cases", "Controls.test_dropped_delta_reuse"), control=True),
     _rule("control.compose.priority-reversal", WIN, _py(
-        "py_export_images", "test_priority_reversal_fails"), control=True),
+        "py_export_images", "ExportImages.test_priority_reversal_fails"), control=True),
     _rule("control.export.wrong-delay", WIN, _py(
-        "py_export_images", "test_wrong_delay_fails_serialized_and_reader_checks"),
+        "py_export_images", "ExportImages.test_wrong_delay_fails_serialized_and_reader_checks"),
         control=True),
 
     # Linux sanitizer job (ctest -L portable under ASan + UBSan).
@@ -367,7 +403,10 @@ def _outcome(check, results) -> str:
                   "unavailable": "absent"}
     if v is None:
         return "fail" if r.status == "fail" else "absent"
-    return mapped[v]
+    out = mapped[v]
+    # A named check can't be better than the CTest that owns it: if that CTest
+    # failed or timed out, the executable did not finish cleanly.
+    return "fail" if out == "pass" and r.status == "fail" else out
 
 
 def _describe(check) -> str:
@@ -436,7 +475,8 @@ LOCAL_ONLY_TESTS = ("golden_core", "display_selftest", "perf_fps",
 
 def _eval_all_ctests(rule, results, ctx) -> dict:
     local = sorted(n for n, r in results.items()
-                   if r.status == "skipped" and n in LOCAL_ONLY_TESTS)
+                   if r.status == "skipped" and n in LOCAL_ONLY_TESTS
+                   and ("SKIPPED %s:" % n) in r.output)
     counted = {n: r for n, r in results.items() if n not in local}
     ran = [r for r in counted.values() if r.status in ("pass", "fail")]
     failed = [r for r in ran if r.status == "fail"]
@@ -460,6 +500,7 @@ def _eval_python(rule, results, ctx) -> dict:
     ran = skipped = 0
     failures, outputs = [], []
     failed = 0
+    explained = {}
     for name, r in sorted(suites.items()):
         outputs.append(r.output)
         n, sk = unittest_summary(r.output)
@@ -469,17 +510,44 @@ def _eval_python(rule, results, ctx) -> dict:
         elif r.status == "skipped" or n == 0:
             skipped += 1                      # no unittest summary: not counted as run
         else:
+            na = not_applicable_skips(r.output, ctx.platform)
+            explained.update({"%s %s" % (name, k): v for k, v in na.items()})
             ran += n
-            skipped += sk
-    return _make_case(
+            skipped += max(sk - len(na), 0)
+    notes = ["unittest counts from %d py_* CTest suite(s)" % len(suites)]
+    if explained:
+        notes.append("%d test(s) skipped as not applicable on %s (declared applies-to): %s"
+                     % (len(explained), ctx.platform, "; ".join(sorted(explained))[:400]))
+    case = _make_case(
         rule, ctx, ran=ran, failed=failed, skipped=skipped, failures=failures,
-        outputs=outputs, tests=set(suites),
-        limitations=["unittest counts from %d py_* CTest suite(s)" % len(suites)])
+        outputs=outputs, tests=set(suites), limitations=notes)
+    if explained:
+        case["coverage"]["not_applicable_skips"] = sorted(explained)
+    return case
+
+
+def _git_head(repo_root):
+    out = Q._git(Path(repo_root), "rev-parse", "HEAD")
+    return out.decode("ascii").strip() if out else None
 
 
 def _eval_replay(rule, results, ctx) -> dict:
     ct = results.get("equivalence_palette_replay")
     rc = ctx.replay_case
+    refuse = None
+    if isinstance(rc, dict):
+        st = ((rc.get("provenance") or {}).get("candidate") or {}).get("source_state") or {}
+        head = _git_head(ctx.repo_root)
+        if head is None or st.get("commit") != head:
+            refuse = ("the replay ran on commit %s, not this checkout's HEAD %s"
+                      % (st.get("commit"), head))
+        elif st.get("dirty") is not False:
+            refuse = "the replay ran on a dirty working tree"
+    if refuse:
+        case = _make_case(rule, ctx, ran=0, failed=0, skipped=1, failures=[], outputs=[],
+                          tests={"equivalence_palette_replay"}, limitations=[refuse])
+        case["failures"] = [{"kind": "not_run", "detail": refuse}]
+        return case
     if rc is None or ct is None:
         why = ("no replay case.json was produced" if rc is None else
                "equivalence_palette_replay did not run")
@@ -561,7 +629,7 @@ def build_coverage_evidence(ctx: Context, doc) -> dict:
     totals = doc.get("totals") or {}
     lines = totals.get("lines") or {}
     branches = totals.get("branches") or {}
-    unins = doc.get("uninstrumented") or []
+    unins = doc.get("uninstrumented_modules") or []
     cov.update(report_status=doc["status"], lines_total=lines.get("total"),
                lines_covered=lines.get("covered"), lines_percent=lines.get("percent"),
                branches_total=branches.get("total"), branches_covered=branches.get("covered"),

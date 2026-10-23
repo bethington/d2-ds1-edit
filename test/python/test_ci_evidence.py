@@ -14,6 +14,7 @@ import sys
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
+from unittest import mock
 from pathlib import Path
 from xml.sax.saxutils import escape
 
@@ -66,8 +67,10 @@ def unity_line(func, verdict="PASS"):
     return "C:\\src\\test\\test_x.c:12:%s:%s\n" % (func, verdict)
 
 
-def py_line(method, verdict="ok", module="test.python.test_x.Case"):
-    return "%s (%s.%s) ... %s\n" % (method, module, method, verdict)
+def py_line(dotted, verdict="ok"):
+    """A ``unittest -v`` result line for ``Class.method``."""
+    method = dotted.split(".")[-1]
+    return "%s (test.python.test_x.%s) ... %s\n" % (method, dotted, verdict)
 
 
 def passing_output(rule_checks):
@@ -168,12 +171,12 @@ class Parsing(unittest.TestCase):
                           "test_d": "IGNORE"})
 
     def test_unittest_results_and_summary(self):
-        out = (py_line("test_a") + py_line("test_b", "FAIL") + py_line("test_c", "ERROR")
-               + py_line("test_d", "skipped 'why'") + py_line("test_e", "expected failure")
+        out = (py_line("C.test_a") + py_line("C.test_b", "FAIL") + py_line("C.test_c", "ERROR")
+               + py_line("C.test_d", "skipped 'why'") + py_line("C.test_e", "expected failure")
                + "\nRan 5 tests in 1.0s\n\nFAILED (failures=1, errors=1, skipped=1)\n")
         self.assertEqual(CI.unittest_results(out),
-                         {"test_a": "ok", "test_b": "FAIL", "test_c": "ERROR",
-                          "test_d": "skipped", "test_e": "expected failure"})
+                         {"C.test_a": "ok", "C.test_b": "FAIL", "C.test_c": "ERROR",
+                          "C.test_d": "skipped", "C.test_e": "expected failure"})
         self.assertEqual(CI.unittest_summary(out), (5, 1))
         self.assertEqual(CI.unittest_summary("Ran 1 test in 0.1s\n\nOK (skipped=2)\n"), (1, 2))
         self.assertEqual(CI.unittest_summary("nothing"), (0, 0))
@@ -181,7 +184,7 @@ class Parsing(unittest.TestCase):
     def test_unittest_result_with_a_docstring_line(self):
         out = ("test_a (m.C.test_a)\nDoes a thing ... ok\n"
                "test_b (m.C.test_b) ... ok\n")
-        self.assertEqual(CI.unittest_results(out), {"test_a": "ok", "test_b": "ok"})
+        self.assertEqual(CI.unittest_results(out), {"C.test_a": "ok", "C.test_b": "ok"})
 
     def test_decoder_lines(self):
         out = ("dc6.rle.basic                pass\ndcc.sequence                 mismatch\n"
@@ -260,7 +263,9 @@ class Mapping(unittest.TestCase):
                     self.assertIn("void %s(void)" % ch.name, c_all, ch)
                     self.assertRegex(c_all, r"(?:PKGC_RUN|RUN_TEST)\(%s\)" % ch.name, ch)
                 elif ch.kind == "py":
-                    self.assertIn("def %s(" % ch.name, pytext, ch)
+                    cls, method = ch.name.split(".")
+                    self.assertRegex(pytext, r"class %s\(" % cls, ch)
+                    self.assertIn("def %s(" % method, pytext, ch)
                 if rule["job"] == "build":
                     self.assertTrue(CI.ctest_is_registered(ch.test, ctests), ch)
 
@@ -370,6 +375,62 @@ class BuildEvidence(unittest.TestCase):
         self.assertGreaterEqual(c["coverage"]["tests_run"], 10)
         self.assertEqual(c["coverage"]["tests_skipped"], 0)
 
+    def test_a_declared_platform_skip_is_disclosed_but_any_other_skip_stays_partial(self):
+        base = build_job_tests("linux-x86_64")
+        skip = ("test_x (test.python.test_x.Wpr.test_x) ... skipped "
+                "'applies-to=windows-x86: WPR path is Windows-only'\n")
+        tail1 = "Ran 3 tests in 0.1s\n\nOK (skipped=1)\n"
+        t = copy.deepcopy(base)
+        t["py_b"]["out"] = skip + tail1
+        c = by_id(build("linux-x86_64", tests=t))["portable.python-unittest"]
+        self.assertEqual(c["status"], "pass")
+        self.assertEqual(c["coverage"]["tests_skipped"], 0)
+        self.assertEqual(len(c["coverage"]["not_applicable_skips"]), 1)
+        self.assertTrue(any("not applicable on linux-x86_64" in l for l in c["limitations"]))
+        # the same skip on the platform it claims to apply to is a real skip
+        w = build_job_tests("windows-x86")
+        w["py_b"]["out"] = skip + tail1
+        c = by_id(build("windows-x86", tests=w))["portable.python-unittest"]
+        self.assertEqual(c["status"], "partial")
+        # an unexplained skip, a vague reason, or more skips than were explained
+        for out in ("test_x (m.C.test_x) ... skipped 'symlinks unavailable'\n" + tail1,
+                    "test_x (m.C.test_x) ... skipped 'Windows-only'\n" + tail1,
+                    skip + "Ran 3 tests in 0.1s\n\nOK (skipped=2)\n"):
+            t = copy.deepcopy(base)
+            t["py_b"]["out"] = out
+            self.assertEqual(by_id(build("linux-x86_64", tests=t))
+                             ["portable.python-unittest"]["status"], "partial", out)
+
+    def test_a_named_check_cannot_pass_inside_a_failed_or_timed_out_ctest(self):
+        tests = build_job_tests("windows-x86")
+        tests["ds1_save"]["status"] = "fail"           # PASS lines present, CTest failed
+        got = by_id(build("windows-x86", tests=tests))
+        self.assertEqual(got["ds1.save.tmp"]["status"], "mismatch")
+        self.assertEqual(got["project.save-redirection"]["status"], "mismatch")
+        tests = build_job_tests("windows-x86")
+        tests["py_export_images"]["status"] = "fail"
+        self.assertEqual(by_id(build("windows-x86", tests=tests))
+                         ["control.export.wrong-delay"]["status"], "mismatch")
+        tests = build_job_tests("windows-x86")
+        tests["visual_reference_probe_decoder_cases"]["status"] = "fail"
+        self.assertEqual(by_id(build("windows-x86", tests=tests))["dcc.sequence"]["status"],
+                         "mismatch")
+
+    def test_a_skip_of_a_local_only_test_counts_only_with_the_stub_reason(self):
+        tests = build_job_tests("windows-x86")
+        tests["golden_core"] = {"status": "skipped", "out": "something else skipped it"}
+        self.assertEqual(by_id(build("windows-x86", tests=tests))["portable.ctest"]["status"],
+                         "partial")
+
+    def test_python_checks_are_keyed_on_class_and_method(self):
+        tests = build_job_tests("windows-x86")
+        out = tests["py_export_images"]["out"]
+        # the right method name in a different class proves nothing
+        tests["py_export_images"]["out"] = out.replace(
+            "ExportImages.test_priority_reversal_fails", "Other.test_priority_reversal_fails")
+        got = by_id(build("windows-x86", tests=tests))
+        self.assertEqual(got["control.compose.priority-reversal"]["status"], "not_run")
+
     def test_python_unittest_skips_failures_and_missing_suites(self):
         tests = build_job_tests("linux-x86_64")
         tests["py_b"]["out"] = "Ran 3 tests in 0.1s\n\nOK (skipped=2)\n"
@@ -447,8 +508,8 @@ class BuildEvidence(unittest.TestCase):
         self.assertEqual(sorted(got["coverage"]["features_covered"]),
                          sorted(CI.ds1_fixture_features(REPO)))
         tests = build_job_tests("windows-x86")
-        tests["ds1_cases"]["out"] = py_line("test_reader_matches_every_authored_expectation",
-                                            "FAIL", "test.python.test_ds1_cases.Reader")
+        tests["ds1_cases"]["out"] = py_line(
+            "ProbeIntegrationTests.test_reader_matches_every_authored_expectation", "FAIL")
         got = by_id(build("windows-x86", tests=tests))["ds1.format.matrix"]
         self.assertEqual(got["status"], "mismatch")
         self.assertEqual(got["coverage"]["features_covered"], [])
@@ -473,8 +534,8 @@ class BuildEvidence(unittest.TestCase):
             self.assertTrue(got[i]["coverage"]["control_detected"], i)
         tests = build_job_tests("windows-x86")
         tests["py_export_images"]["out"] = tests["py_export_images"]["out"].replace(
-            "test_priority_reversal_fails (test.python.test_x.Case.test_priority_reversal_fails)"
-            " ... ok", "test_priority_reversal_fails (a.b.c) ... FAIL")
+            py_line("ExportImages.test_priority_reversal_fails").strip(),
+            py_line("ExportImages.test_priority_reversal_fails", "FAIL").strip())
         got = by_id(build("windows-x86", tests=tests))
         c = got["control.compose.priority-reversal"]
         self.assertEqual(c["status"], "mismatch")
@@ -497,6 +558,11 @@ class BuildEvidence(unittest.TestCase):
 
 
 class ReplayCase(unittest.TestCase):
+    def setUp(self):
+        p = mock.patch.object(CI, "_git_head", return_value="d" * 40)
+        p.start()
+        self.addCleanup(p.stop)
+
     def replay(self, **kw):
         case = {
             "schema": C.CASE_SCHEMA, "id": "palette-nearest-113c", "lane": "portable",
@@ -506,8 +572,8 @@ class ReplayCase(unittest.TestCase):
             "coverage": {"distinct_inputs_compared": 40, "uncovered_required_axes": []},
             "failures": [], "limitations": [],
             "provenance": {
-                "candidate": {"source_state": {"commit": "d" * 40, "dirty": True,
-                                               "dirty_sha256": H("dirty")},
+                "candidate": {"source_state": {"commit": "d" * 40, "dirty": False,
+                                               "dirty_sha256": None},
                               "executable": {
                                   "name": "test_palette_reference_probe",
                                   "sha256": manifest("windows-x86")["executables"][
@@ -550,6 +616,22 @@ class ReplayCase(unittest.TestCase):
         c = by_id(build("windows-x86", tests=tests, replay_case=self.replay()))[
             "palette-nearest-113c"]
         self.assertEqual(c["status"], "mismatch")
+
+    def test_a_replay_from_another_commit_or_a_dirty_tree_is_not_rebound(self):
+        r = self.replay()
+        r["provenance"]["candidate"]["source_state"]["commit"] = "e" * 40
+        c = by_id(build("windows-x86", replay_case=r))["palette-nearest-113c"]
+        self.assertEqual(c["status"], "not_run")
+        self.assertIn("HEAD", c["failures"][0]["detail"])
+        self.assertNotIn("rebound", c["provenance"])
+        r = self.replay()
+        r["provenance"]["candidate"]["source_state"].update(dirty=True, dirty_sha256=H("x"))
+        c = by_id(build("windows-x86", replay_case=r))["palette-nearest-113c"]
+        self.assertEqual(c["status"], "not_run")
+        self.assertIn("dirty", c["failures"][0]["detail"])
+        with mock.patch.object(CI, "_git_head", return_value=None):
+            c = by_id(build("windows-x86", replay_case=self.replay()))["palette-nearest-113c"]
+        self.assertEqual(c["status"], "not_run")
 
     def test_a_replay_case_for_another_contract_is_refused(self):
         with self.assertRaises(C.ValidationError):
@@ -599,10 +681,18 @@ class SanitizerAndCoverage(unittest.TestCase):
         self.assertEqual(got["sanitizer.core"]["status"], "not_run")
 
     def coverage(self, status, **extra):
-        doc = {"schema": "ds1edit.coverage/1", "status": status, "status_reason": "r",
-               "instrumented_modules": 12, "uninstrumented": ["src/a.c", "src/b.c"],
-               "totals": {"lines": {"total": 100, "covered": 60, "percent": 60.0},
-                          "branches": {"total": 10, "covered": 4, "percent": 40.0}}}
+        """A real coverage_report document (never a hand-shaped one)."""
+        from scripts.equivalence import coverage_report as cr
+        gc = {"format_version": "1", "gcc_version": "13.2.0",
+              "current_working_directory": "/repo",
+              "files": [{"file": "src/core/a.c", "functions": [], "lines": [
+                  {"line_number": n, "count": c, "branches": []}
+                  for n, c in ((1, 3), (2, 0), (3, 1))]}]}
+        production = ["src/core/a.c"] + ["src/core/u%d.c" % i for i in range(2)]
+        if status == "complete":
+            production = production[:1]
+        doc = cr.aggregate([("a", json.dumps(gc).encode())], Path("/repo"),
+                           fmt="gcov-json", production_files=production)
         doc.update(extra)
         return doc
 
@@ -617,9 +707,11 @@ class SanitizerAndCoverage(unittest.TestCase):
             c = self.cov_case(self.coverage(status))
             self.assertEqual((c["id"], c["lane"], c["status"]),
                              ("coverage.production", "sanitizer", "pass"))
-            self.assertEqual(c["coverage"]["distinct_inputs_compared"], 12)
-            self.assertEqual(c["coverage"]["lines_covered"], 60)
-            self.assertEqual(c["coverage"]["uninstrumented_modules"], 2)
+            self.assertEqual(c["status"], "pass")
+            self.assertEqual(c["coverage"]["distinct_inputs_compared"], 1)
+            self.assertEqual(c["coverage"]["lines_covered"], 2)
+            self.assertEqual(c["coverage"]["uninstrumented_modules"],
+                             0 if status == "complete" else 2)
         self.assertTrue(any("uninstrumented" in l for l in
                             self.cov_case(self.coverage("partial"))["limitations"]))
 
@@ -716,6 +808,9 @@ class AgainstTheReleaseProfile(unittest.TestCase):
 
 class Cli(unittest.TestCase):
     def setUp(self):
+        hp = mock.patch.object(CI, "_git_head", return_value="d" * 40)
+        hp.start()
+        self.addCleanup(hp.stop)
         self.d = Path(tempfile.mkdtemp(prefix="ds1edit ci cli "))
         self.addCleanup(shutil.rmtree, self.d, True)
         (self.d / "junit.xml").write_text(junit_xml(build_job_tests("linux-x86_64")),
