@@ -3,6 +3,28 @@
 Notable changes to DS1Edit. Releases before 2.1.1 are described on the
 [GitHub releases page](https://github.com/bethington/d2-ds1-edit/releases).
 
+## 2.2.1 (unreleased)
+
+### Changed
+
+- **The release gate is workable.** It still fails closed, but it can now be
+  satisfied from CI plus a few local lanes instead of being impossible.
+  The source-state digest hashes committed Git blob ids and `.gitattributes`
+  keeps the text inputs LF, so Windows (`core.autocrlf`), Linux and macOS
+  checkouts of one commit compute the same digest. Every CI job now writes
+  `ds1edit.case/1` evidence from its CTest results (`ctest --output-junit`,
+  `scripts/equivalence/ci_evidence.py`) for the 72 portable and sanitizer
+  entries a CTest or Python test proves, bound to that job's source digest and
+  executables; the sanitizer job gains a seeded-overflow detector control
+  (`sanitizer_detector_control`) and the coverage job emits `coverage.production`.
+  A maintainer waiver (`kind: waiver`) may excuse a required entry that never
+  ran, for one release version only, never a mismatch, `package.*`,
+  `portable.ctest`, `portable.python-unittest` or a sanitizer result; waived
+  checks are listed apart in the record and in the draft release notes.
+  `python -m scripts.equivalence.release_record` builds the record from a CI
+  run and `--dry-run-release` rehearses `release.yml`, which now uses the same
+  verification code. See `release/qualification/README.md`.
+
 ## 2.2.0
 
 ### Added

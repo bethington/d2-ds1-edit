@@ -305,9 +305,17 @@ add_test(NAME input_edges COMMAND test_input_edges)
 set(DS1EDIT_ALLEGRO_TESTS test_rgba_cache test_asset_export_smoke test_project
     test_input_edges test_editor_selection test_blend_convention)
 find_package(Python3 COMPONENTS Interpreter)
+# CTest cuts the output it keeps for a passed test at 1 KiB. The CI evidence
+# (scripts/equivalence/ci_evidence.py) reads per-test lines (Unity PASS lines,
+# unittest results) from `ctest --output-junit`, so keep all of it.
+file(WRITE "${CMAKE_BINARY_DIR}/CTestCustom.cmake"
+"set(CTEST_CUSTOM_MAXIMUM_PASSED_TEST_OUTPUT_SIZE 4000000)
+set(CTEST_CUSTOM_MAXIMUM_FAILED_TEST_OUTPUT_SIZE 4000000)
+")
 # python last: it points py_* tests at probe targets defined by the others.
+# sanitizers: control for the instrumented lane (only with DS1EDIT_ENABLE_SANITIZERS).
 # tiers last: it labels every test the packages above registered.
-foreach(_pkg map_integrity visuals equivalence robustness release python perf pd2 golden tiers)
+foreach(_pkg map_integrity visuals equivalence robustness release python perf pd2 golden sanitizers tiers)
     include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/${_pkg}.cmake OPTIONAL)
 endforeach()
 

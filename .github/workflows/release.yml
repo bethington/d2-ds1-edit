@@ -11,9 +11,16 @@ name: Release
 # 3. Check that the record's candidate run is a successful build.yml run of
 #    this repository, built from the recorded commit.
 # 4. Download that run's candidate artifacts and verify the per-platform
-#    manifests, every package hash, every individual required result and the
+#    manifests, every package hash, the evidence files (each must be part of
+#    the reviewed record), every individual required result and the
 #    profile/contract/baseline identities (scripts/equivalence/qualify.py).
+#    Waivers in the record excuse only results that never ran, only for this
+#    version; they are listed in the draft release notes ("Waived checks").
 # 5. Only then attach those exact files to a draft release.
+#
+# Steps 1-4 are scripts/equivalence/release_record.py (find-record, check-run,
+# verify-release): `python -m scripts.equivalence.release_record ... --dry-run-release`
+# runs them locally against the same run and tag before anything is pushed.
 #
 # If the candidate run's artifacts have expired, this fails: produce a new
 # candidate, requalify it, and review a new record. Reports from any other
@@ -30,12 +37,11 @@ on:
         required: true
 
 permissions:
-  contents: write
+  contents: read
   actions: read
 
 env:
   TAG: ${{ github.event.inputs.tag || github.ref_name }}
-  PROFILE: test/equivalence/profiles/release-core.json
   PLATFORMS: windows-x86 linux-x86_64 macos-arm64
 
 jobs:
@@ -54,52 +60,19 @@ jobs:
         id: record
         run: |
           set -euo pipefail
-          digest=$(python -c "from pathlib import Path; from scripts.equivalence.qualify import source_state_digest; print(source_state_digest(Path('.')))")
-          record="release/qualification/${digest}.json"
-          echo "source state: ${digest}"
-          if [ ! -f "$record" ]; then
-            echo "::error::No reviewed qualification record ${record} for the tagged source state. Qualify a candidate built from this source and commit its record."
-            exit 1
-          fi
-          python - "$record" <<'PY' >> "$GITHUB_OUTPUT"
-          import json, sys
-          r = json.load(open(sys.argv[1], encoding="utf-8"))
-          c = r["candidate"]
-          print("record=%s" % sys.argv[1])
-          print("run_id=%s" % c["candidate_run_id"])
-          print("commit=%s" % c["source"]["commit"])
-          print("repository=%s" % c["repository"])
-          PY
+          python -m scripts.equivalence.release_record find-record >> "$GITHUB_OUTPUT"
 
       - name: Check the recorded candidate run
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_ID: ${{ steps.record.outputs.run_id }}
-          COMMIT: ${{ steps.record.outputs.commit }}
-          RECORD_REPO: ${{ steps.record.outputs.repository }}
+          RECORD: ${{ steps.record.outputs.record }}
         run: |
           set -euo pipefail
           case "$RUN_ID" in (*[!0-9]*|'') echo "::error::candidate_run_id '$RUN_ID' is not a GitHub run ID"; exit 1;; esac
-          if [ "$RECORD_REPO" != "${{ github.repository }}" ]; then
-            echo "::error::record names repository $RECORD_REPO, not ${{ github.repository }}"; exit 1
-          fi
           gh api "repos/${{ github.repository }}/actions/runs/${RUN_ID}" > run.json
-          python - <<'PY'
-          import json, os, sys
-          run = json.load(open("run.json", encoding="utf-8"))
-          want = {
-              "path": ".github/workflows/build.yml",
-              "conclusion": "success",
-              "head_sha": os.environ["COMMIT"],
-          }
-          bad = ["%s is %r, expected %r" % (k, run.get(k), v)
-                 for k, v in want.items() if run.get(k) != v]
-          if run.get("repository", {}).get("full_name") != "${{ github.repository }}":
-              bad.append("run belongs to another repository")
-          for b in bad:
-              print("::error::candidate run %s: %s" % (run.get("id"), b))
-          sys.exit(1 if bad else 0)
-          PY
+          python -m scripts.equivalence.release_record check-run \
+            --record "$RECORD" --run-json run.json --repository "${{ github.repository }}"
           rm -f run.json
 
       - name: Download the candidate packages (no rebuild)
@@ -115,66 +88,26 @@ jobs:
             fi
           done
           find candidate -type f -exec ls -l {} +
+          # The instrumented Linux jobs' evidence: bound to the record like the
+          # candidate artifacts' own evidence/.
+          for n in evidence-linux-sanitizers evidence-linux-coverage; do
+            if ! gh run download "$RUN_ID" -R "${{ github.repository }}" -n "$n" -D "evidence/$n"; then
+              echo "::error::$n from run $RUN_ID is unavailable (expired, or the job did not produce it). It can not be waived: rebuild and requalify."
+              exit 1
+            fi
+          done
+          find evidence -type f -exec ls -l {} +
 
-      - name: Verify identities, hashes and every required result
+      - name: Verify identities, hashes, evidence and every required result
         env:
           RECORD: ${{ steps.record.outputs.record }}
         run: |
           set -euo pipefail
-          python - <<'PY'
-          import json, os, sys
-          from pathlib import Path
-          from scripts.equivalence import contracts as C
-          from scripts.equivalence import qualify as Q
-
-          record = json.loads(Path(os.environ["RECORD"]).read_text(encoding="utf-8"))
-          profile = Q.load_profile(Path(os.environ["PROFILE"]))
-          cand = record["candidate"]
-          tag = os.environ["TAG"]
-          problems, artifacts = [], {}
-          expected = os.environ["PLATFORMS"].split()
-          if sorted(cand["platforms"]) != sorted(expected):
-              problems.append("record platforms %s are not %s" % (sorted(cand["platforms"]), expected))
-          for p, v in sorted(cand["platforms"].items()):
-              d = Path("candidate") / p
-              pkg = v["package"]["name"]
-              artifacts[p] = d / pkg
-              names = sorted(f.name for f in d.iterdir()) if d.is_dir() else []
-              allowed = {pkg, "candidate-%s.json" % p, "package-inspection.json"}
-              if set(names) - allowed:
-                  problems.append("%s: unexpected files in candidate artifact: %s" % (p, sorted(set(names) - allowed)))
-              if not tag.startswith("v") or "-%s-" % tag[1:] not in pkg:
-                  problems.append("%s: package %s is not version %s" % (p, pkg, tag))
-              mf = d / ("candidate-%s.json" % p)
-              try:
-                  m = json.loads(mf.read_text(encoding="utf-8"))
-                  C._check_digest(m, mf.name)
-              except (OSError, ValueError, C.ValidationError) as exc:
-                  problems.append("%s: manifest unusable: %s" % (p, exc))
-                  continue
-              checks = {
-                  "schema": (m.get("schema"), Q.PLATFORM_MANIFEST_SCHEMA),
-                  "platform": (m.get("platform"), p),
-                  "candidate_run_id": (m.get("candidate_run_id"), cand["candidate_run_id"]),
-                  "commit": (m.get("source", {}).get("commit"), cand["source"]["commit"]),
-                  "source_state_digest": (m.get("source", {}).get("source_state_digest"),
-                                          cand["source"]["source_state_digest"]),
-                  "package": (m.get("package"), v["package"]),
-                  "executables": (m.get("executables"), v["executables"]),
-              }
-              for k, (got, want) in checks.items():
-                  if got != want:
-                      problems.append("%s: manifest %s %r != record %r" % (p, k, got, want))
-          problems += Q.verify_release_record(record, profile, Path("."), artifacts)
-          for pr in problems:
-              print("::error::%s" % pr)
-          if problems:
-              sys.exit(1)
-          print("verified candidate run %s, source state %s, %d required results"
-                % (cand["candidate_run_id"], record["source_state_digest"], len(record["required"])))
-          for p, s in sorted(record["package_hashes"].items()):
-              print("  %s %s" % (s, p))
-          PY
+          python -m scripts.equivalence.release_record verify-release \
+            --record "$RECORD" --candidate-dir candidate --evidence-dir evidence \
+            --tag "$TAG" --notes-out release-notes/RELEASE_NOTES.md
+          echo '### Release notes (draft)' >> "$GITHUB_STEP_SUMMARY"
+          cat release-notes/RELEASE_NOTES.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Stage the verified packages
         run: |
@@ -198,19 +131,34 @@ jobs:
           path: dist/*
           if-no-files-found: error
 
+      # The draft notes carry the qualification identity and the "Waived
+      # checks" section; they are the release body, not a release asset.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-notes
+          path: release-notes/RELEASE_NOTES.md
+          if-no-files-found: error
+
   publish:
     needs: [verify]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write        # only the job that creates the draft release
     steps:
       - uses: actions/download-artifact@v4
         with:
           name: release-dist
           path: dist
-      - run: ls -la dist && (cd dist && sha256sum -c SHA256SUMS)
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-notes
+          path: notes
+      - run: ls -la dist notes && (cd dist && sha256sum -c SHA256SUMS)
 
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.tag || github.ref_name }}
           files: dist/*
+          body_path: notes/RELEASE_NOTES.md
           draft: true
           generate_release_notes: false

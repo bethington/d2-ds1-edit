@@ -257,7 +257,8 @@ def proc(rc=0, out="", err=""):
     return subprocess.CompletedProcess([], rc, out, err)
 
 
-@unittest.skipUnless(sys.platform == "win32", "WPR path is Windows-only")
+@unittest.skipUnless(sys.platform == "win32",
+                     "applies-to=windows-x86: WPR path is Windows-only")
 class WprProfileTests(unittest.TestCase):
     def go(self, which, run):
         with tempfile.TemporaryDirectory() as d:

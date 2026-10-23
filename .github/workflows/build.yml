@@ -6,9 +6,17 @@ name: Build & Test
 # consumes: the unrenamed CPack package plus a sealed per-platform manifest.
 # Nothing is rebuilt at release time.
 #
+# Every platform job also turns its CTest results (ctest --output-junit) into
+# ds1edit.case/1 evidence with scripts/equivalence/ci_evidence.py and puts it
+# in the candidate artifact under evidence/. Each case names the CTest or
+# Python unittest that proves it and is bound to this job's source digest and
+# executables; entries no CI test proves are not emitted, and stay missing
+# until a local lane supplies them (release/qualification/README.md).
+#
 # The two instrumented Linux jobs (sanitizers, coverage) are not part of the
-# candidate; they are evidence lanes. Coverage is reported honestly: partial
-# coverage stays visible and does not fail the job.
+# candidate; they are evidence lanes that upload their own evidence-* artifact.
+# Coverage is reported honestly: partial coverage stays visible and does not
+# fail the job.
 
 on:
   push:
@@ -57,10 +65,13 @@ env:
     app = Path("bin/ds1edit.app/Contents/MacOS/ds1edit")
     if app.is_file():
         exes["ds1edit.app"] = str(app)
-    # Native probes the portable replays drive (test_*_probe[.exe]).
-    for p in sorted(Path("build/test").rglob("test_*_probe*")):
-        if p.is_file() and p.suffix in ("", ".exe"):
-            exes[p.stem if p.suffix else p.name] = str(p)
+    # Every test executable (the probes the portable replays drive and the
+    # suites the CI evidence cites): evidence binds to these hashes.
+    for p in sorted(Path("build/test").rglob("test_*")):
+        if "CMakeFiles" in p.parts:
+            continue
+        if p.is_file() and p.suffix in ("", ".exe") and os.access(p, os.X_OK):
+            exes[p.stem] = str(p)
     if "ds1edit" not in exes:
         sys.exit("no ds1edit executable found under bin/")
     cc = {"id": "unknown", "version": "unknown"}
@@ -101,6 +112,9 @@ jobs:
       - name: Install Python test dependencies
         run: python -m pip install -r test/python/requirements.txt
 
+      - name: Keep CI scratch files out of git status
+        run: printf '%s\n' source-identity.json ctest-junit.xml ctest-list.txt candidate/ dist/ >> .git/info/exclude
+
       - name: Record source identity
         run: python -c "$SOURCE_PY"
 
@@ -130,7 +144,7 @@ jobs:
           fi
 
       - name: Test
-        run: ctest --preset ci
+        run: ctest --preset ci --output-junit "$(pwd -W 2>/dev/null || pwd)/ctest-junit.xml"
 
       - name: Package (CPack ZIP)
         run: |
@@ -154,6 +168,15 @@ jobs:
           python -c "$CANDIDATE_PY" windows-x86 "$pkg" candidate Release
           ls -l candidate
 
+      - name: Emit CI evidence
+        run: |
+          python -m scripts.equivalence.ci_evidence build --platform windows-x86 \
+            --junit ctest-junit.xml --source-identity source-identity.json \
+            --manifest candidate/candidate-windows-x86.json \
+            --replay-case build/test/equivalence/palette-nearest-113c/case.json \
+            --out candidate/evidence/ci-windows-x86.json
+          ls -l candidate/evidence
+
       - uses: actions/upload-artifact@v4
         with:
           name: candidate-windows-x86
@@ -172,6 +195,9 @@ jobs:
           cache-dependency-path: test/python/requirements.txt
       - name: Install Python test dependencies
         run: python -m pip install -r test/python/requirements.txt
+
+      - name: Keep CI scratch files out of git status
+        run: printf '%s\n' source-identity.json ctest-junit.xml ctest-list.txt candidate/ dist/ >> .git/info/exclude
 
       - name: Record source identity
         run: python -c "$SOURCE_PY"
@@ -197,7 +223,7 @@ jobs:
           fi
 
       - name: Test
-        run: ctest --preset linux --output-on-failure
+        run: ctest --preset linux --output-on-failure --output-junit "$(pwd -W 2>/dev/null || pwd)/ctest-junit.xml"
 
       - name: Package (CPack TGZ)
         run: |
@@ -221,6 +247,15 @@ jobs:
           python -c "$CANDIDATE_PY" linux-x86_64 "$pkg" candidate Release
           ls -l candidate
 
+      - name: Emit CI evidence
+        run: |
+          python -m scripts.equivalence.ci_evidence build --platform linux-x86_64 \
+            --junit ctest-junit.xml --source-identity source-identity.json \
+            --manifest candidate/candidate-linux-x86_64.json \
+            --replay-case build/test/equivalence/palette-nearest-113c/case.json \
+            --out candidate/evidence/ci-linux-x86_64.json
+          ls -l candidate/evidence
+
       - uses: actions/upload-artifact@v4
         with:
           name: candidate-linux-x86_64
@@ -243,6 +278,9 @@ jobs:
       - name: Install Python test dependencies
         run: python -m pip install -r test/python/requirements.txt
 
+      - name: Record source identity
+        run: python -c "$SOURCE_PY"
+
       - name: Install deps
         run: |
           sudo apt-get update -qq
@@ -260,11 +298,29 @@ jobs:
       - name: Build
         run: cmake --build build-asan
 
+      # sanitizer_detector_control (test/cmake/sanitizers.cmake) overflows a
+      # heap block on purpose and passes only when ASan reports it.
       - name: Test (portable label, sanitizers on)
+        id: test
         env:
           ASAN_OPTIONS: abort_on_error=0:strict_string_checks=1:detect_stack_use_after_return=1
           UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
-        run: xvfb-run -a ctest --test-dir build-asan -L portable --output-on-failure
+        run: xvfb-run -a ctest --test-dir build-asan -L portable --output-on-failure --output-junit "$PWD/ctest-junit.xml"
+
+      # Written even when a test failed, so a mismatch is evidence, not absence.
+      - name: Emit sanitizer evidence
+        if: ${{ always() && steps.test.conclusion != 'skipped' }}
+        run: |
+          python -m scripts.equivalence.ci_evidence sanitizer --platform linux-x86_64 \
+            --junit ctest-junit.xml --source-identity source-identity.json \
+            --out evidence-out/ci-sanitizers.json
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() && steps.test.conclusion != 'skipped' }}
+        with:
+          name: evidence-linux-sanitizers
+          path: evidence-out/*.json
+          if-no-files-found: warn
 
   # Evidence lane, not a candidate: GCC --coverage over the `portable` suites,
   # read with `gcov --json-format` and summarised by coverage_report. Partial
@@ -282,6 +338,9 @@ jobs:
           cache-dependency-path: test/python/requirements.txt
       - name: Install Python test dependencies
         run: python -m pip install -r test/python/requirements.txt
+
+      - name: Record source identity
+        run: python -c "$SOURCE_PY"
 
       - name: Install deps
         run: |
@@ -325,11 +384,29 @@ jobs:
           fi
           exit "$rc"
 
+      # coverage.production: the report as evidence. Partial coverage is
+      # disclosed in the case; an unreadable report is "unavailable" (never a
+      # pass, never waivable: exit 1 only warns here because the case is still
+      # written and blocks the release; any other exit code fails the job).
+      - name: Emit coverage evidence
+        run: |
+          python -m scripts.equivalence.ci_evidence coverage --platform linux-x86_64 \
+            --coverage coverage/coverage.json --source-identity source-identity.json \
+            --out evidence-out/ci-coverage.json \
+            || { rc=$?; if [ "$rc" -eq 1 ]; then echo "::warning::coverage.production evidence is unavailable (it can not be waived)"; else exit "$rc"; fi; }
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: coverage-linux-gcc
           path: coverage/coverage.json
+          if-no-files-found: warn
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: evidence-linux-coverage
+          path: evidence-out/*.json
           if-no-files-found: warn
 
   macos:
@@ -344,6 +421,9 @@ jobs:
           cache-dependency-path: test/python/requirements.txt
       - name: Install Python test dependencies
         run: python -m pip install -r test/python/requirements.txt
+
+      - name: Keep CI scratch files out of git status
+        run: printf '%s\n' source-identity.json ctest-junit.xml ctest-list.txt candidate/ dist/ >> .git/info/exclude
 
       - name: Record source identity
         run: python -c "$SOURCE_PY"
@@ -364,7 +444,7 @@ jobs:
           fi
 
       - name: Test
-        run: ctest --preset macos --output-on-failure
+        run: ctest --preset macos --output-on-failure --output-junit "$(pwd -W 2>/dev/null || pwd)/ctest-junit.xml"
 
       - name: Package (CPack TGZ)
         run: |
@@ -401,6 +481,15 @@ jobs:
           cp tmp/package-check/package-inspection.json candidate/
           python -c "$CANDIDATE_PY" macos-arm64 "$pkg" candidate Release
           ls -l candidate
+
+      - name: Emit CI evidence
+        run: |
+          python -m scripts.equivalence.ci_evidence build --platform macos-arm64 \
+            --junit ctest-junit.xml --source-identity source-identity.json \
+            --manifest candidate/candidate-macos-arm64.json \
+            --replay-case build/test/equivalence/palette-nearest-113c/case.json \
+            --out candidate/evidence/ci-macos-arm64.json
+          ls -l candidate/evidence
 
       - uses: actions/upload-artifact@v4
         with:
