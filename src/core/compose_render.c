@@ -261,6 +261,16 @@ int compose_render(const COMPOSE_RENDER_PARAMS_S *params,
       return 0;
    }
 
+   /* A zero-layer COF is valid but composes nothing: success with an
+    * empty result (frame_count 0, no frames), not an error. */
+   if (cof.layer_count == 0)
+   {
+      fprintf(stderr, "compose: %s has no layers; nothing to export\n",
+              cof_path);
+      compose_cof_free(&cof);
+      return 1;
+   }
+
    /* 2. For each composit slot 0..15, attempt to load its sprite for
     *    the requested direction. Slots without a sprite file (the
     *    common case for many mode/weapon combos) silently skip.

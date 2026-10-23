@@ -33,6 +33,13 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
 
 ### Fixed
 
+- **Zero-layer COFs compose to nothing instead of failing.** Project Diablo 2 ships
+  three COFs with a layer count of 0 (`zznuhth`, `zzonhth`, `zzophth`); the map
+  renderer accepted them but the export composer rejected them. They now parse as
+  valid-but-empty, and exporting one writes no file and logs
+  `compose: <cof> has no layers; nothing to export`. Every other COF check is
+  unchanged (a header claiming more than 16 layers, such as `amblxbow.cof`, and
+  truncated headers are still rejected).
 - **The GPU path is guarded against silent slowdowns.** Every bitmap draw now
   checks for a memory bitmap on a video target and warns once; `--selftest`
   fails on any, and reports frame-time percentiles (`--selftest-report=`). The

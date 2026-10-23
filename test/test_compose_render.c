@@ -21,6 +21,7 @@
 #define BASE "data\\global\\monsters"
 
 static RGBA_PALETTE s_pal_a, s_pal_b;
+static void make_dir(const char *path);
 
 /* ---- authoring ------------------------------------------------------------- */
 
@@ -278,6 +279,41 @@ void test_zero_loadable_components_fails_cleanly(void)
    TEST_ASSERT_EQUAL_INT(0, compose_render(&p, &r));
 }
 
+/* A zero-layer COF (three ship with Project Diablo 2) is valid but empty:
+ * composing it is a success with nothing to write, not an error. */
+void test_zero_layer_cof_composes_to_nothing_without_error(void)
+{
+   COMPOSE_RENDER_PARAMS_S p;
+   COMPOSE_RENDER_RESULT_S r;
+   char out[512];
+   FILE *f;
+
+   {
+      static const COF_LAYER none[1] = { {0, 0, 0, ""} };
+      static const uint8_t noprio[1] = { 0 };
+      add_cof(BASE "\\ZL\\COF\\ZLNUHTH.cof", 1, 1, none, 0, noprio);
+   }
+   params(&p, "ZL", 0);
+   memset(&r, 0x5A, sizeof(r));
+   TEST_ASSERT_EQUAL_INT(1, compose_render(&p, &r));
+   TEST_ASSERT_NULL(r.frames);
+   TEST_ASSERT_EQUAL_INT(0, r.frame_count);
+   compose_render_free(&r);
+
+   params(&p, "ZL", 1);                            /* direction still checked */
+   TEST_ASSERT_EQUAL_INT(0, compose_render(&p, &r));
+
+   make_dir(DS1EDIT_TEST_OUT_DIR);
+   snprintf(out, sizeof(out), "%s/zero_layer.apng", DS1EDIT_TEST_OUT_DIR);
+   remove(out);
+   params(&p, "ZL", 0);
+   TEST_ASSERT_EQUAL_INT(1, compose_apng_export_scaled(&p, out, 1));
+   TEST_ASSERT_EQUAL_INT(1, compose_apng_export_scaled(&p, out, 2));
+   TEST_ASSERT_EQUAL_INT(1, compose_apng_export_method(&p, out, 2, "nn"));
+   f = fopen(out, "rb");
+   TEST_ASSERT_NULL(f);                            /* no output written */
+}
+
 void test_dcc_layer_decodes_through_the_shared_seam(void)
 {
    /* dcc.single_frame from the decoder fixtures as the torso: 8x6 at
@@ -429,6 +465,7 @@ int main(int argc, char **argv)
    RUN_TEST(test_palette_selection_changes_colours_not_indices);
    RUN_TEST(test_absent_optional_layer_and_duplicate_component);
    RUN_TEST(test_zero_loadable_components_fails_cleanly);
+   RUN_TEST(test_zero_layer_cof_composes_to_nothing_without_error);
    RUN_TEST(test_dcc_layer_decodes_through_the_shared_seam);
    RUN_TEST(test_assumption_COMPOSE_BLEND_OPAQUE_layers_with_trans_flags);
    RUN_TEST(test_compose_exports_write_apng);

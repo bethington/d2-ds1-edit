@@ -55,7 +55,9 @@ typedef struct COMPOSE_RENDER_RESULT_S
 // Compose one (token, mode, wclass, direction) tuple. Returns 1 on
 // success (out populated), 0 on any of: COF load/parse failure,
 // invalid direction, no layers loadable, allocation failure. Caller
-// frees the result via compose_render_free regardless of return.
+// frees the result via compose_render_free regardless of return. A
+// zero-layer COF returns 1 with an empty result (frame_count 0, frames
+// NULL) and a one-line note on stderr: valid, but nothing to export.
 int  compose_render(const COMPOSE_RENDER_PARAMS_S *params,
                     COMPOSE_RENDER_RESULT_S *out);
 
