@@ -1,0 +1,26 @@
+# Line endings are part of a file's identity here: the release gate hashes the
+# declared build inputs (scripts/equivalence/qualify.py), and a Windows
+# core.autocrlf checkout used to disagree with Linux/macOS about 40 assets/*.ini
+# files. Text sources are stored and checked out with LF on every platform.
+# (source_state_digest also hashes committed blob ids, so a checkout's
+# conversion settings cannot change it; this file keeps the committed blobs
+# themselves LF.)
+*.ini   text eol=lf
+*.c     text eol=lf
+*.h     text eol=lf
+*.py    text eol=lf
+*.cmake text eol=lf
+*.json  text eol=lf
+*.yml   text eol=lf
+*.sh    text eol=lf
+CMakeLists.txt text eol=lf
+README.md      text eol=lf
+LICENSE        text eol=lf
+NOTICE         text eol=lf
+Ds1edit.ini.sample text eol=lf
+allegro5.cfg   text eol=lf
+
+# Runtime data whose bytes are pinned by hash (test/equivalence/profiles/
+# visual-core.json): stored and checked out exactly as committed (CRLF).
+assets/editor/obj.txt -text
+.gitattributes text eol=lf
