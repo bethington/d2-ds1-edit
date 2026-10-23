@@ -229,6 +229,7 @@ set(SOURCES
     # ui/
     src/ui/input.c
     src/ui/interface.c
+    src/ui/selftest_verdict.c
     src/ui/dialogs.c
     src/ui/edit_window.c
     src/ui/bits_window.c
