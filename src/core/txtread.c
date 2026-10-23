@@ -1081,7 +1081,7 @@ int read_obj_txt(void)
    if (glb_ds1edit.obj_buff == NULL)
    {
       printf("\nwant to read %s from %s\n", obj, glb_ds1edit_data_dir);
-      if (mod_load_in_mem(glb_ds1edit_data_dir, obj, &buff, &len, TRUE) == -1)
+      if (mod_load_in_mem(glb_ds1edit_data_dir, obj, (void **)&buff, &len, TRUE) == -1)
       {
          sprintf(tmp, "read_obj_txt() : file %s not found", obj);
          ds1edit_error(tmp);
