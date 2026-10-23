@@ -299,7 +299,7 @@ set(DS1EDIT_ALLEGRO_TESTS test_rgba_cache test_asset_export_smoke test_project
     test_input_edges test_editor_selection)
 find_package(Python3 COMPONENTS Interpreter)
 # python last: it points py_* tests at probe targets defined by the others.
-foreach(_pkg map_integrity visuals equivalence robustness release python perf)
+foreach(_pkg map_integrity visuals equivalence robustness release python perf pd2)
     include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/${_pkg}.cmake OPTIONAL)
 endforeach()
 

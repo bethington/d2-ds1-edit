@@ -22,6 +22,11 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
   set is active. Windows reads the registry; Linux and macOS probe common
   folders. The CLI gains `--pd2-dir=` and `--use-pd2=`. The scripted vanilla
   lanes (smoke, render cases, frame-rate test) pin `use_pd2 = no`.
+- **Project Diablo 2 compatibility lane (local only).** `scripts/equivalence/pd2_lane.py`
+  (CTest label `pd2`, registered only with `-DDS1EDIT_PD2_DIR=...`, never in CI)
+  binds results to the SHA-256 of the PD2 archives and reads every PD2 map, table,
+  decoder input and a fixed headless render set through the editor; it never
+  commits PD2 art. See BUILDING.md.
 - **Frame-rate test.** `scripts/perf/fps_test.py` measures render time per map,
   driver and window size, fails on memory-bitmap draws or >16.7 ms at 1080p,
   and can profile failing cases with WPR or perf. Local CTest `perf_fps`.

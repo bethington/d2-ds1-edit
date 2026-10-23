@@ -65,6 +65,12 @@ SOURCE_STATE_SCHEMA = "ds1edit.source-state/1"
 
 LANES = ("portable", "corpus", "live", "native-package", "native-workflow",
          "sanitizer", "performance")
+#: Local-only lanes whose results are reported but can never be required: the
+#: Project Diablo 2 compatibility lane (scripts/equivalence/pd2_lane.py) reads
+#: art that is not redistributable, so it cannot run in CI or on a release
+#: machine without PD2. Its cases are ``required: false`` and land under the
+#: report's ``optional`` list like any result the profile does not name.
+OPTIONAL_LANES = ("pd2",)
 KINDS = ("suite", "comparison", "corpus", "negative_control", "package",
          "workflow", "performance", "report")
 BINDINGS = ("source", "executable", "package")
@@ -171,6 +177,10 @@ def validate_profile(profile: dict) -> dict:
         for j, c in enumerate(cases):
             cw = "%s.cases[%d]" % (rw, j)
             C._nonempty_str(c, "id", cw)
+            if c.get("lane") in OPTIONAL_LANES:
+                raise C.ValidationError(
+                    "%s.lane %r is an optional local-only lane and cannot be required"
+                    % (cw, c["lane"]))
             if C._nonempty_str(c, "lane", cw) not in LANES:
                 raise C.ValidationError("%s.lane must be one of %s" % (cw, ", ".join(LANES)))
             for p in _str_list(c, "platforms", cw, nonempty=True):

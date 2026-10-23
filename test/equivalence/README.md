@@ -151,6 +151,27 @@ out-of-range result. A partial capture is never written. Never replace a
 tracked capture with candidate output; a changed contract, baseline, or adapter
 needs a fresh live capture.
 
+## Project Diablo 2 lane (`pd2_lane.py`)
+
+Local only (CTest label `pd2`, registered by `test/cmake/pd2.cmake` only when
+`DS1EDIT_PD2_DIR` is set, never in CI). It reads a Project Diablo 2 installation
+you own (`--pd2-dir`, plus `--d2-dir` for the vanilla archives behind it; no
+auto-detection) and writes only under `tmp/pd2/`: PD2's art and data are not
+redistributable and must never be committed.
+
+| Part | What it does | Case ids (`ds1edit.case/1`, lane `pd2`, `required: false`) |
+| --- | --- | --- |
+| identity | SHA-256 of every PD2 and vanilla chain archive, the PD2 version from `ProjectDiablo.json` (recorded as unversioned when the file has no version field), MD5 cross-check against `local_metadata.json`. Every result carries the identity digest. | `pd2/identity` |
+| inventory | Names per archive (`(listfile)`; limits recorded when it is missing, names recovered from sibling listfiles), each DS1/DT1/TXT/DCC/DC6/COF classed `pd2_unique`, `overrides_vanilla` or `identical` against the vanilla archives actually in the chain | `pd2/inventory` |
+| sweep | Every unique/overriding DS1 through `ds1_sweep.sweep_one` (reader, checked-writer resave, re-read), DT1/LvlPrest/LvlTypes resolution through the PD2 chain, the five tables and the area browser through the CLI, every PD2 DCC/DC6/DT1 through `test_visual_reference_probe`, every COF and AnimData through `test_adversarial_probe`. Exit 1 is the probes' declared rejection; any other nonzero exit or a hang is a defect, with a repro under `failures/` | `pd2/maps/...`, `pd2/maps/summary`, `pd2/maps/dependencies`, `pd2/tables/...`, `pd2/graphics/...` |
+| render | A fixed set (PD2-unique maps spread over areas plus one PD2-overridden town) rendered twice headless from an owned windowed runtime (`full_screen = NO`, `use_pd2 = yes`, explicit `pd2_dir`); fails without the "Project Diablo 2 data from" line, on differing renders, or when LvlPrest was read outside the PD2 folder. Compared with `tmp/pd2/baseline/` (hashes and images), created `reviewed: false` on the first run | `pd2/render/...` |
+
+`incomparable` (a baseline for another PD2 identity) is stored as status
+`unavailable` with `comparison: incomparable`. Everything compares the editor with
+itself; none of it is an original-game comparison. `qualify.py` lists these cases
+under `optional` and rejects a profile that tries to require lane `pd2`
+(`OPTIONAL_LANES`).
+
 ## Other tools in `scripts/equivalence/`
 
 Each module's docstring is the authoritative description; `--help` on the

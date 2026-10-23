@@ -217,6 +217,36 @@ test/equivalence/requirements-local.txt` (adds `mpyq`); see
 [test/equivalence/README.md](test/equivalence/README.md). The recorded replay
 `equivalence_palette_replay` is portable and runs in CTest.
 
+### Project Diablo 2 lane (local only)
+
+`scripts/equivalence/pd2_lane.py` checks the editor against the Project Diablo 2
+installation on your machine: archive identity and version, an inventory of
+every PD2 DS1/DT1/TXT/DCC/DC6/COF (unique, overriding vanilla, or identical),
+every PD2 map through the reader and checked writer, the Levels/LvlPrest/
+LvlTypes/Objects/MonStats tables and the area browser, every PD2 DCC/DC6/DT1/COF
+through the decoders, and a fixed headless render set compared with a local
+baseline. PD2's art is not redistributable, so the lane is never run in CI, is
+registered only when you set `DS1EDIT_PD2_DIR`, and writes only under `tmp/pd2/`.
+
+```bash
+cmake -S . -B tmp/build-pd2 ... -DDS1EDIT_PD2_DIR=C:/Diablo2/ProjectD2      # optional -DDS1EDIT_PD2_BASE_DIR=C:/Diablo2
+cmake --build tmp/build-pd2 --config Debug
+ctest --test-dir tmp/build-pd2 -C Debug -L pd2 --output-on-failure           # pd2_inventory, pd2_sweep, pd2_render
+```
+
+or directly (`inventory | sweep | render | all`, all paths explicit):
+
+```bash
+python -m scripts.equivalence.pd2_lane all --pd2-dir C:/Diablo2/ProjectD2 --d2-dir C:/Diablo2     --exe bin/ds1edit.exe --probe-ds1 <build>/test/Debug/test_ds1_reference_probe.exe     --probe-visual <build>/test/Debug/test_visual_reference_probe.exe     --probe-robust <build>/test/Debug/test_adversarial_probe.exe
+```
+
+Needs `mpyq` (`test/equivalence/requirements-local.txt`). Results are
+`ds1edit.case/1` files in `tmp/pd2/run-<timestamp>/cases/` with a summary table;
+the first render run creates `tmp/pd2/baseline/` marked `reviewed: false`. A
+baseline for another PD2 version or archive set is reported as `incomparable`,
+never as a pass or a failure. The unit tests (`py_pd2_lane`) use fakes and run
+everywhere.
+
 ### Packages
 
 ```bash
