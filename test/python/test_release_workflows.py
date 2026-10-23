@@ -74,6 +74,30 @@ class Parse(unittest.TestCase):
             self.assertTrue(wf.get("on") or wf.get(True), name)
 
 
+class Attributes(unittest.TestCase):
+    """.gitattributes must never convert a file whose committed bytes are CRLF."""
+
+    def test_no_crlf_blob_is_marked_text_eol_lf(self):
+        import shutil
+        import subprocess
+        if not shutil.which("git") or not (REPO / ".git").exists():
+            self.skipTest("not a git checkout")
+        out = subprocess.run(["git", "-C", str(REPO), "ls-files", "--eol"],
+                             capture_output=True, text=True, check=True).stdout
+        bad = []
+        for line in out.splitlines():
+            meta, _, path = line.partition("\t")
+            index, _, attr = meta.split()[0], meta.split()[1], meta.split(None, 2)[2]
+            if index in ("i/crlf", "i/mixed") and "eol=lf" in attr:
+                bad.append(path)
+        self.assertEqual(bad, [], "a fresh clone would show these as modified")
+
+    def test_preserved_archives_are_never_converted(self):
+        text = (REPO / ".gitattributes").read_text(encoding="utf-8")
+        self.assertIn("docs/preservation/** -text", text)
+        self.assertLess(text.index("*.c "), text.index("docs/preservation/** -text"))
+
+
 class Build(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -177,6 +201,24 @@ class Build(unittest.TestCase):
                      "candidate-")}
         self.assertEqual(cands, {"candidate-%s" % p for p in RR.PLATFORMS})
 
+    def test_platform_jobs_keep_scratch_files_out_of_git_status_before_the_identity(self):
+        # the palette replay records `git status`; CI's own scratch files must not
+        # make it "dirty" (the evidence step refuses a dirty replay)
+        for job_name in self.PLATFORM_JOBS:
+            job = self.jobs[job_name]
+            names = [s.get("name", "") for s in steps(job)]
+            keep = step(job, "Keep CI scratch files out of git status")
+            self.assertIn(".git/info/exclude", keep["run"])
+            for f in ("source-identity.json", "ctest-junit.xml", "ctest-list.txt"):
+                self.assertIn(f, keep["run"])
+            self.assertLess(names.index(keep["name"]), names.index("Record source identity"))
+
+    def test_coverage_evidence_step_only_tolerates_exit_one(self):
+        run = step(self.jobs["coverage"], "Emit coverage evidence")["run"]
+        self.assertIn('-eq 1', run)
+        self.assertIn('exit "$rc"', run)
+        self.assertNotIn("|| echo", run)
+
     def test_embedded_python_snippets_compile(self):
         for key in ("SOURCE_PY", "CANDIDATE_PY", "VERSION_PY"):
             compile(self.wf["env"][key], key, "exec")
@@ -238,6 +280,18 @@ class Release(unittest.TestCase):
         self.assertTrue(pub["with"]["draft"])
         self.assertFalse(pub["with"]["generate_release_notes"])
         self.assertEqual(pub["with"]["files"], "dist/*")       # notes are not an asset
+
+    def test_contents_write_is_scoped_to_the_publish_job(self):
+        self.assertEqual(self.wf["permissions"]["contents"], "read")
+        self.assertEqual(self.publish["permissions"]["contents"], "write")
+        self.assertNotIn("permissions", self.verify)
+
+    def test_the_instrumented_jobs_evidence_is_downloaded_and_verified(self):
+        runs = "\n".join(s.get("run", "") for s in steps(self.verify))
+        for n in RR.EVIDENCE_ARTIFACTS:
+            self.assertIn(n, runs)
+        v = step(self.verify, "Verify identities")
+        self.assertIn("--evidence-dir evidence", v["run"])
 
     def test_candidate_artifacts_are_downloaded_without_rebuilding(self):
         runs = "\n".join(s.get("run", "") for s in steps(self.verify))

@@ -37,7 +37,7 @@ on:
         required: true
 
 permissions:
-  contents: write
+  contents: read
   actions: read
 
 env:
@@ -88,6 +88,15 @@ jobs:
             fi
           done
           find candidate -type f -exec ls -l {} +
+          # The instrumented Linux jobs' evidence: bound to the record like the
+          # candidate artifacts' own evidence/.
+          for n in evidence-linux-sanitizers evidence-linux-coverage; do
+            if ! gh run download "$RUN_ID" -R "${{ github.repository }}" -n "$n" -D "evidence/$n"; then
+              echo "::error::$n from run $RUN_ID is unavailable (expired, or the job did not produce it). It can not be waived: rebuild and requalify."
+              exit 1
+            fi
+          done
+          find evidence -type f -exec ls -l {} +
 
       - name: Verify identities, hashes, evidence and every required result
         env:
@@ -95,8 +104,8 @@ jobs:
         run: |
           set -euo pipefail
           python -m scripts.equivalence.release_record verify-release \
-            --record "$RECORD" --candidate-dir candidate --tag "$TAG" \
-            --notes-out release-notes/RELEASE_NOTES.md
+            --record "$RECORD" --candidate-dir candidate --evidence-dir evidence \
+            --tag "$TAG" --notes-out release-notes/RELEASE_NOTES.md
           echo '### Release notes (draft)' >> "$GITHUB_STEP_SUMMARY"
           cat release-notes/RELEASE_NOTES.md >> "$GITHUB_STEP_SUMMARY"
 
@@ -133,6 +142,8 @@ jobs:
   publish:
     needs: [verify]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write        # only the job that creates the draft release
     steps:
       - uses: actions/download-artifact@v4
         with:

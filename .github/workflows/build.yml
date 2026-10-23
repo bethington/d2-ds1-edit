@@ -112,6 +112,9 @@ jobs:
       - name: Install Python test dependencies
         run: python -m pip install -r test/python/requirements.txt
 
+      - name: Keep CI scratch files out of git status
+        run: printf '%s\n' source-identity.json ctest-junit.xml ctest-list.txt candidate/ dist/ >> .git/info/exclude
+
       - name: Record source identity
         run: python -c "$SOURCE_PY"
 
@@ -192,6 +195,9 @@ jobs:
           cache-dependency-path: test/python/requirements.txt
       - name: Install Python test dependencies
         run: python -m pip install -r test/python/requirements.txt
+
+      - name: Keep CI scratch files out of git status
+        run: printf '%s\n' source-identity.json ctest-junit.xml ctest-list.txt candidate/ dist/ >> .git/info/exclude
 
       - name: Record source identity
         run: python -c "$SOURCE_PY"
@@ -380,13 +386,14 @@ jobs:
 
       # coverage.production: the report as evidence. Partial coverage is
       # disclosed in the case; an unreadable report is "unavailable" (never a
-      # pass) and does not fail the job, like the summary above.
+      # pass, never waivable: exit 1 only warns here because the case is still
+      # written and blocks the release; any other exit code fails the job).
       - name: Emit coverage evidence
         run: |
           python -m scripts.equivalence.ci_evidence coverage --platform linux-x86_64 \
             --coverage coverage/coverage.json --source-identity source-identity.json \
             --out evidence-out/ci-coverage.json \
-            || echo "::warning::coverage.production evidence is unavailable"
+            || { rc=$?; if [ "$rc" -eq 1 ]; then echo "::warning::coverage.production evidence is unavailable (it can not be waived)"; else exit "$rc"; fi; }
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -414,6 +421,9 @@ jobs:
           cache-dependency-path: test/python/requirements.txt
       - name: Install Python test dependencies
         run: python -m pip install -r test/python/requirements.txt
+
+      - name: Keep CI scratch files out of git status
+        run: printf '%s\n' source-identity.json ctest-junit.xml ctest-list.txt candidate/ dist/ >> .git/info/exclude
 
       - name: Record source identity
         run: python -c "$SOURCE_PY"

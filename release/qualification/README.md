@@ -86,6 +86,15 @@ invalidates a record: requalify instead of editing it.
 | `review_dispositions` | Exact case/issue IDs accepted by review (performance, defect), each with rationale, evidence and reviewer. |
 | `results` | Every evidence object the verdict was computed from (cases, review dispositions and waivers, defect lists). |
 
+The record is bound to the run's evidence: every file in a candidate
+artifact's `evidence/` and `package-inspection.json`, and in the
+`evidence-linux-sanitizers` and `evidence-linux-coverage` artifacts (which
+`release.yml` downloads too), must equal a result the record holds; each
+platform must have `evidence/ci-<platform>.json`; `input_artifacts` must list
+the record's results one-to-one; and no result for an entry CI produces may
+differ from the run's own case. A record that omits a failing CI case cannot
+pass.
+
 The release workflow recomputes the verdict from `results` with the tagged
 profile and refuses the record if it is not ready, if its per-case results or
 waived checks differ from the recomputation, if its digest does not match its
@@ -131,9 +140,15 @@ way to release with a required entry unqualified, and it is deliberately narrow.
   qualifies is reported as unused.
 * **Never these.** Waiving any of the following is invalid input (exit 2):
   every `package.*` check, `portable.ctest`, `portable.python-unittest`, the
-  sanitizer lane (`sanitizer.*`, `control.sanitizer.*`), and any profile entry
-  marked `"waivable": false`. A sanitizer failure is a mismatch and can never
-  be waived either.
+  sanitizer lane (`sanitizer.*`, `control.sanitizer.*`), any profile entry
+  marked `"waivable": false`, and **every entry CI produces evidence for**
+  (everything in the "What CI proves" table, `coverage.production` included):
+  a result CI should have produced and did not is a broken job, not a lane the
+  maintainer cannot run. A sanitizer failure is a mismatch and can never be
+  waived either. Only the local lanes (corpus, live, native, performance) and
+  the two unproven portable comparisons can be waived.
+* **Plain text.** Waiver fields may not contain control characters or line
+  breaks; the release notes escape Markdown and HTML in them.
 * **Visible.** `ready` stays true only if every non-waived required entry
   qualifies. The report lists waived entries apart (`waived`, `waivers`, the
   per-entry `waived` flag, `totals.*.waived`), and `release.yml` puts a
@@ -152,7 +167,7 @@ a local lane. For the portable and sanitizer entries of `release-core.json`:
 | Required entry | Proved by |
 | --- | --- |
 | `portable.ctest` | every CTest of the job (count and failures from the JUnit file) |
-| `portable.python-unittest` | the `py_*` CTests, with the counts `unittest` prints (skips are partial) |
+| `portable.python-unittest` | the `py_*` CTests, with the counts `unittest` prints. A skip is partial unless its reason starts `applies-to=<platform[,platform]>:` and excludes the job's platform (e.g. the Windows-only WPR tests); such skips are disclosed in the case (`not_applicable_skips`) |
 | `palette-nearest-113c` (portable) | `equivalence_palette_replay`: the replay's own case, re-attested to the job |
 | `editor.undo.tiles` | CTest `editor_undo` |
 | `editor.edits.objects-paths` | CTest `object_path_edits` |
@@ -168,11 +183,14 @@ a local lane. For the portable and sanitizer entries of `release-core.json`:
 | `control.palette-nearest-113c.*` (4), `control.visual-values-113c.seven-bit-mask`, `control.decoders-113c.*` (2), `control.compose.priority-reversal`, `control.export.wrong-delay` (Windows) | the named `unittest` methods of `py_equivalence_controls`, `py_visual_values`, `py_decoder_cases`, `py_export_images`, which feed a deliberately wrong model to the real comparison and require a difference |
 | `sanitizer.core` (Linux) | the whole `-L portable` CTest run under ASan + UBSan |
 | `control.sanitizer.detector` (Linux) | CTest `sanitizer_detector_control`: a seeded heap overflow that passes only when ASan reports it (`test/cmake/sanitizers.cmake`) |
-| `coverage.production` (Linux) | the `ds1edit.coverage/1` report of the coverage job. A readable report is the evidence the entry asks for (`kind: report`); partial coverage is passed with the uninstrumented modules disclosed in the case, never hidden. An unreadable report is `unavailable` |
+| `coverage.production` (Linux) | the `ds1edit.coverage/1` report of the coverage job. **Pass rule: the report was read and has at least one instrumented production module. There is no coverage threshold**: the entry asks that a report exists (`kind: report`), not how high it is. Partial coverage passes with the line/branch totals and the uninstrumented modules disclosed in the case, never hidden; a missing, unreadable or empty report is `unavailable`, which can not be waived |
 | `package.<platform>.*` | `package_check` (`package-inspection.json`) |
 
-`ci_evidence` fails closed: a failing check is a `mismatch`, a check that did
-not run or was ignored leaves the case `partial`, none run is `not_run`. A test
+`ci_evidence` fails closed: a failing check is a `mismatch` (also when the
+CTest that owns it failed or timed out), a check that did not run or was
+ignored leaves the case `partial`, none run is `not_run`. Python checks are
+keyed on `Class.method`. The palette replay is re-attested only if it ran on
+this checkout's `HEAD` with a clean tree. A test
 rename breaks `test_ci_evidence` (every named check must exist), not a release.
 
 **Required entries no CI test proves**, which therefore stay missing until a
