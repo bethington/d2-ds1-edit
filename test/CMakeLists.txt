@@ -303,7 +303,7 @@ add_test(NAME input_edges COMMAND test_input_edges)
 # Allegro appends its target names to DS1EDIT_ALLEGRO_TESTS so the DLL copy
 # below covers it.
 set(DS1EDIT_ALLEGRO_TESTS test_rgba_cache test_asset_export_smoke test_project
-    test_input_edges test_editor_selection)
+    test_input_edges test_editor_selection test_blend_convention)
 find_package(Python3 COMPONENTS Interpreter)
 # python last: it points py_* tests at probe targets defined by the others.
 foreach(_pkg map_integrity visuals equivalence robustness release python perf pd2)
