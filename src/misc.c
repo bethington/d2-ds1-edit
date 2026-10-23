@@ -1336,7 +1336,7 @@ int misc_load_mpq_file(char *filename, char **buffer, long *buf_len, int output)
          glb_mpq = &glb_mpq_struct[i];
          entry = mpq_batch_load_in_mem(
              glb_ds1edit.strtmp,
-             buffer,
+             (void **)buffer,
              buf_len,
              output);
          if (entry != -1)
