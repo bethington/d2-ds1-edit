@@ -25,6 +25,15 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
   run and `--dry-run-release` rehearses `release.yml`, which now uses the same
   verification code. See `release/qualification/README.md`.
 
+### Added
+
+- **Readable bars and side panels at any resolution.** The top and bottom bars
+  and both side panels now use a real font (Inter) and a UI scale, picked from
+  the screen height (200% at 2160 pixels tall) or set with `ui_scale` in
+  `Ds1edit.ini` (100 to 300). A window opens at its configured size times the
+  scale, so it keeps its layout on a denser screen. Dialogs and other screens
+  are not scaled yet.
+
 ### Fixed
 
 - **The pointer works on any Mac, including over a remote desktop.** macOS now

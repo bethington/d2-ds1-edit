@@ -118,3 +118,11 @@ Other credits
 Mark Nevill ('DarthDevilous') wrote the original GUI loader for win_ds1edit
 (not part of this repository). The Phrozen Keep community
 (https://d2mods.info/) documented the Diablo II file formats over two decades.
+
+
+Inter (assets/ui/fonts/Inter.ttf)
+---------------------------------
+
+The editor's interface font. Copyright 2020 The Inter Project Authors
+(https://github.com/rsms/inter), under the SIL Open Font License 1.1, which is
+in assets/ui/fonts/Inter-OFL.txt.

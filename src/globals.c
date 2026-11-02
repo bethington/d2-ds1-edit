@@ -10,6 +10,8 @@
 
 ALLEGRO_DISPLAY     *a5_display      = NULL;
 ALLEGRO_FONT        *a5_font         = NULL;
+ALLEGRO_FONT        *a5_ui_font      = NULL;
+float                a5_ui_scale     = 1.0f;
 ALLEGRO_EVENT_QUEUE *a5_event_queue  = NULL;
 ALLEGRO_TIMER       *a5_tick_timer   = NULL;
 ALLEGRO_TIMER       *a5_fps_timer    = NULL;

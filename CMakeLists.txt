@@ -53,6 +53,7 @@ if(PKG_CONFIG_FOUND AND NOT WIN32)
     pkg_check_modules(ALLEGRO5_FONT QUIET allegro_font-5)
     pkg_check_modules(ALLEGRO5_PRIMITIVES QUIET allegro_primitives-5)
     pkg_check_modules(ALLEGRO5_DIALOG QUIET allegro_dialog-5)
+    pkg_check_modules(ALLEGRO5_TTF QUIET allegro_ttf-5)
     pkg_check_modules(ALLEGRO5_MAIN QUIET allegro_main-5)
 endif()
 
@@ -66,6 +67,7 @@ else()
     find_library(ALLEGRO5_FONT_LIB allegro_font)
     find_library(ALLEGRO5_PRIMITIVES_LIB allegro_primitives)
     find_library(ALLEGRO5_DIALOG_LIB allegro_dialog)
+    find_library(ALLEGRO5_TTF_LIB allegro_ttf)
     # allegro_main exists on Windows and macOS but not on Linux.
     find_library(ALLEGRO5_MAIN_LIB allegro_main)
 
@@ -117,19 +119,22 @@ if(ALLEGRO5_FOUND)
         ${ALLEGRO5_IMAGE_INCLUDE_DIRS}
         ${ALLEGRO5_FONT_INCLUDE_DIRS}
         ${ALLEGRO5_PRIMITIVES_INCLUDE_DIRS}
-        ${ALLEGRO5_DIALOG_INCLUDE_DIRS})
+        ${ALLEGRO5_DIALOG_INCLUDE_DIRS}
+        ${ALLEGRO5_TTF_INCLUDE_DIRS})
     target_link_directories(ds1edit_allegro INTERFACE
         ${ALLEGRO5_LIBRARY_DIRS}
         ${ALLEGRO5_IMAGE_LIBRARY_DIRS}
         ${ALLEGRO5_FONT_LIBRARY_DIRS}
         ${ALLEGRO5_PRIMITIVES_LIBRARY_DIRS}
-        ${ALLEGRO5_DIALOG_LIBRARY_DIRS})
+        ${ALLEGRO5_DIALOG_LIBRARY_DIRS}
+        ${ALLEGRO5_TTF_LIBRARY_DIRS})
     target_link_libraries(ds1edit_allegro INTERFACE
         ${ALLEGRO5_LIBRARIES}
         ${ALLEGRO5_IMAGE_LIBRARIES}
         ${ALLEGRO5_FONT_LIBRARIES}
         ${ALLEGRO5_PRIMITIVES_LIBRARIES}
         ${ALLEGRO5_DIALOG_LIBRARIES}
+        ${ALLEGRO5_TTF_LIBRARIES}
         ${ALLEGRO5_MAIN_LIBRARIES})
 else()
     target_include_directories(ds1edit_allegro INTERFACE ${ALLEGRO5_INCLUDE_DIR})
@@ -138,7 +143,8 @@ else()
         ${ALLEGRO5_IMAGE_LIB}
         ${ALLEGRO5_FONT_LIB}
         ${ALLEGRO5_PRIMITIVES_LIB}
-        ${ALLEGRO5_DIALOG_LIB})
+        ${ALLEGRO5_DIALOG_LIB}
+        ${ALLEGRO5_TTF_LIB})
     if(ALLEGRO5_MAIN_LIB)
         target_link_libraries(ds1edit_allegro INTERFACE ${ALLEGRO5_MAIN_LIB})
     endif()
@@ -245,6 +251,7 @@ set(SOURCES
     src/ui/bits_window.c
     src/ui/props_panel.c
     src/ui/tile_picker.c
+    src/ui/ui_scale.c
     src/ui/project_menu.c
     src/ui/export_type_picker.c
     src/ui/upscale_mode_picker.c
@@ -304,6 +311,7 @@ if(WIN32)
         ${ALLEGRO5_PRIMITIVES_LIB}
         ${ALLEGRO5_MAIN_LIB}
         ${ALLEGRO5_DIALOG_LIB}
+        ${ALLEGRO5_TTF_LIB}
         ZLIB::ZLIB
         user32 gdi32 ole32 winmm shlwapi advapi32 comctl32 comdlg32 shell32 uuid
     )
@@ -331,6 +339,7 @@ else()
             ${ALLEGRO5_FONT_INCLUDE_DIRS}
             ${ALLEGRO5_PRIMITIVES_INCLUDE_DIRS}
             ${ALLEGRO5_DIALOG_INCLUDE_DIRS}
+            ${ALLEGRO5_TTF_INCLUDE_DIRS}
         )
         target_link_directories(ds1edit PRIVATE
             ${ALLEGRO5_LIBRARY_DIRS}
@@ -338,6 +347,7 @@ else()
             ${ALLEGRO5_FONT_LIBRARY_DIRS}
             ${ALLEGRO5_PRIMITIVES_LIBRARY_DIRS}
             ${ALLEGRO5_DIALOG_LIBRARY_DIRS}
+            ${ALLEGRO5_TTF_LIBRARY_DIRS}
         )
         target_link_libraries(ds1edit PRIVATE
             ${ALLEGRO5_LIBRARIES}
@@ -345,6 +355,7 @@ else()
             ${ALLEGRO5_FONT_LIBRARIES}
             ${ALLEGRO5_PRIMITIVES_LIBRARIES}
             ${ALLEGRO5_DIALOG_LIBRARIES}
+            ${ALLEGRO5_TTF_LIBRARIES}
             ${ALLEGRO5_MAIN_LIBRARIES}
             ZLIB::ZLIB
             m
@@ -356,6 +367,7 @@ else()
             ${ALLEGRO5_FONT_LIB}
             ${ALLEGRO5_PRIMITIVES_LIB}
             ${ALLEGRO5_DIALOG_LIB}
+            ${ALLEGRO5_TTF_LIB}
             ZLIB::ZLIB
             m
         )

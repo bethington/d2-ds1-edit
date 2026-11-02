@@ -298,6 +298,12 @@ target_include_directories(test_input_edges PRIVATE
 )
 add_test(NAME input_edges COMMAND test_input_edges)
 
+# How the UI scale is chosen.
+add_executable(test_ui_scale test_ui_scale.c)
+target_link_libraries(test_ui_scale PRIVATE unity)
+target_include_directories(test_ui_scale PRIVATE ${CMAKE_SOURCE_DIR}/src)
+add_test(NAME ui_scale COMMAND test_ui_scale)
+
 # The macOS pointer. Needs a window, so it skips (exit 77) on a host without one.
 if(APPLE)
     add_executable(test_mac_pointer test_mac_pointer.m)

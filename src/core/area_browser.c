@@ -1857,8 +1857,8 @@ void area_browser_draw_sidebar(int width, int height)
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
    int y, i, last_act = -1;
    int draw_row = 0;
-   int top_bar_h = glb_ds1edit.show_2nd_row ? 20 : 9;
-   int bottom_bar_h = 10;
+   int top_bar_h = UI_TOP_BAR_H;
+   int bottom_bar_h = UI_BAR_H;
    int panel_top = top_bar_h;
    int panel_bottom = height - bottom_bar_h;
    ALLEGRO_COLOR col_title    = al_map_rgb(255, 200, 80);
@@ -1882,10 +1882,10 @@ void area_browser_draw_sidebar(int width, int height)
    /* Header */
    al_draw_filled_rectangle(0, (float)panel_top, (float)width,
                              (float)(panel_top + SB_HEADER_H), al_map_rgba(36, 30, 24, 220));
-   al_draw_textf(a5_font, col_title, (float)SB_MARGIN_X, (float)(panel_top + 7), 0, "Areas");
+   ui_textf(col_title, (float)SB_MARGIN_X, (float)(panel_top + 7), 0, "Areas");
 
    /* Close button "X" */
-   al_draw_textf(a5_font, col_close, (float)(width - 16), (float)(panel_top + 7), 0, "X");
+   ui_textf(col_close, (float)(width - 16), (float)(panel_top + 7), 0, "X");
 
    /* Area list */
    y = panel_top + SB_HEADER_H + 4;
@@ -1900,10 +1900,10 @@ void area_browser_draw_sidebar(int width, int height)
          if (draw_row >= ab->scroll_offset && y + SB_LINE_H < panel_bottom)
          {
             if (g->act > 0)
-               al_draw_textf(a5_font, col_act, (float)SB_MARGIN_X, (float)y, 0,
+               ui_textf(col_act, (float)SB_MARGIN_X, (float)y, 0,
                               "Act %d", g->act);
             else
-               al_draw_textf(a5_font, col_act, (float)SB_MARGIN_X, (float)y, 0,
+               ui_textf(col_act, (float)SB_MARGIN_X, (float)y, 0,
                               "Other");
             y += SB_LINE_H;
          }
@@ -1932,16 +1932,16 @@ void area_browser_draw_sidebar(int width, int height)
 
          /* Arrow */
          if (g->entry_count > 0)
-            al_draw_textf(a5_font, text_col, (float)(SB_MARGIN_X + 4), (float)y, 0,
+            ui_textf(text_col, (float)(SB_MARGIN_X + 4), (float)y, 0,
                            "%s", arrow);
 
          /* Name */
-         al_draw_textf(a5_font, text_col, (float)(SB_MARGIN_X + 16), (float)y, 0,
+         ui_textf(text_col, (float)(SB_MARGIN_X + 16), (float)y, 0,
                         "%s", g->name);
 
          /* Count */
          sprintf(count_str, "%d", g->entry_count);
-         al_draw_textf(a5_font, is_selected ? col_sel_text : col_count,
+         ui_textf(is_selected ? col_sel_text : col_count,
                         (float)(width - 32), (float)y, 0,
                         "%s", count_str);
 
@@ -1977,7 +1977,7 @@ void area_browser_draw_sidebar(int width, int height)
                   fc = col_file_sel;
                }
 
-               al_draw_textf(a5_font, fc, (float)(SB_MARGIN_X + 22), (float)y, 0,
+               ui_textf(fc, (float)(SB_MARGIN_X + 22), (float)y, 0,
                               "%s", fname);
 
                y += SB_LINE_H;
@@ -1991,8 +1991,8 @@ void area_browser_draw_sidebar(int width, int height)
 /* Draw collapsed sidebar tab — small ">" button at left edge. */
 void area_browser_draw_sidebar_tab(int height)
 {
-   int top_bar_h = glb_ds1edit.show_2nd_row ? 20 : 9;
-   int bottom_bar_h = 10;
+   int top_bar_h = UI_TOP_BAR_H;
+   int bottom_bar_h = UI_BAR_H;
    int panel_top = top_bar_h;
    int panel_bottom = height - bottom_bar_h;
    ALLEGRO_COLOR col_bg   = al_map_rgba(36, 30, 24, 180);
@@ -2002,7 +2002,7 @@ void area_browser_draw_sidebar_tab(int height)
    al_draw_line((float)SB_TAB_W - 0.5f, (float)panel_top,
                 (float)SB_TAB_W - 0.5f, (float)panel_bottom,
                 al_map_rgb(60, 50, 40), 1.0f);
-   al_draw_textf(a5_font, col_text, 4, (float)((panel_top + panel_bottom) / 2 - 4), 0, ">");
+   ui_textf(col_text, 4, (float)((panel_top + panel_bottom) / 2 - 4), 0, ">");
 }
 
 /* Handle a mouse click in the sidebar.
@@ -2013,7 +2013,7 @@ int area_browser_sidebar_click(int mx, int my, int sidebar_w, int disp_h)
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
    int y, i, last_act = -1;
    int draw_row = 0;
-   int top_bar_h = glb_ds1edit.show_2nd_row ? 20 : 9;
+   int top_bar_h = UI_TOP_BAR_H;
    int panel_top = top_bar_h;
 
    /* Close button */

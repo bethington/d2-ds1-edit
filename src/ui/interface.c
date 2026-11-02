@@ -482,16 +482,16 @@ void interfac_user_handler(int start_ds1_idx)
 
       /* Sidebar: handle click on collapsed tab to expand */
       if (!glb_ds1edit.sidebar_visible && a5_mouse_b &&
-          a5_mouse_x < 16) /* collapsed tab width */
+          ui_mouse_x() < 16) /* collapsed tab width */
       {
          glb_ds1edit.sidebar_visible = TRUE;
       }
 
       /* Properties panel: handle click on collapsed tab to expand */
       {
-         int pp_disp_w = al_get_display_width(a5_display);
+         int pp_disp_w = ui_w();
          if (!glb_ds1edit.props_panel_visible && a5_mouse_b &&
-             a5_mouse_x > pp_disp_w - 16)
+             ui_mouse_x() > pp_disp_w - 16)
          {
             glb_ds1edit.props_panel_visible = TRUE;
          }
@@ -499,7 +499,7 @@ void interfac_user_handler(int start_ds1_idx)
 
       /* Sidebar: handle mouse interactions */
       if (glb_ds1edit.sidebar_visible &&
-          a5_mouse_x < glb_ds1edit.sidebar_width)
+          ui_mouse_x() < glb_ds1edit.sidebar_width)
       {
          /* Mouse wheel scrolls the sidebar (consume delta so zoom doesn't fire) */
          if (cur_mouse_z != old_mouse_z)
@@ -512,9 +512,9 @@ void interfac_user_handler(int start_ds1_idx)
          if (mouse_hit(1))
          {
             int click_result = area_browser_sidebar_click(
-                a5_mouse_x, a5_mouse_y,
+                ui_mouse_x(), ui_mouse_y(),
                 glb_ds1edit.sidebar_width,
-                al_get_display_height(a5_display));
+                ui_h());
 
             if (click_result == -2)
             {
@@ -669,7 +669,7 @@ void interfac_user_handler(int start_ds1_idx)
          {
             AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
             int sy, si, s_last_act = -1, s_draw_row = 0;
-            int s_top = glb_ds1edit.show_2nd_row ? 20 : 9;
+            int s_top = UI_TOP_BAR_H;
             int found = 0;
 
             ab->selected_entry = -1;
@@ -686,7 +686,7 @@ void interfac_user_handler(int start_ds1_idx)
                /* Group row */
                if (s_draw_row >= ab->scroll_offset)
                {
-                  if (a5_mouse_y >= sy && a5_mouse_y < sy + 14)
+                  if (ui_mouse_y() >= sy && ui_mouse_y() < sy + 14)
                   {
                      ab->selected_group = si;
                      found = 1;
@@ -703,7 +703,7 @@ void interfac_user_handler(int start_ds1_idx)
                   {
                      if (s_draw_row >= ab->scroll_offset)
                      {
-                        if (a5_mouse_y >= sy && a5_mouse_y < sy + 14)
+                        if (ui_mouse_y() >= sy && ui_mouse_y() < sy + 14)
                         {
                            ab->selected_group = si;
                            ab->selected_entry = sj;
@@ -721,9 +721,9 @@ void interfac_user_handler(int start_ds1_idx)
 
       /* Properties panel: handle mouse interactions (right side) */
       {
-         int pp_disp_w = al_get_display_width(a5_display);
+         int pp_disp_w = ui_w();
          if (glb_ds1edit.props_panel_visible &&
-             a5_mouse_x > pp_disp_w - glb_ds1edit.props_panel_width)
+             ui_mouse_x() > pp_disp_w - glb_ds1edit.props_panel_width)
          {
             /* Mouse wheel scrolls the panel (or zooms tile picker with Ctrl) */
             if (cur_mouse_z != old_mouse_z)
@@ -741,9 +741,9 @@ void interfac_user_handler(int start_ds1_idx)
             if (mouse_hit(1))
             {
                int pp_result = props_panel_click(
-                   a5_mouse_x, a5_mouse_y,
+                   ui_mouse_x(), ui_mouse_y(),
                    glb_ds1edit.props_panel_width,
-                   al_get_display_height(a5_display));
+                   ui_h());
 
                if (pp_result == -2)
                   glb_ds1edit.props_panel_visible = FALSE;
@@ -762,9 +762,9 @@ void interfac_user_handler(int start_ds1_idx)
       /* Click outside properties panel removes its focus */
       if (glb_ds1edit.props_panel.has_focus && (a5_mouse_b & 1))
       {
-         int pp_dw = al_get_display_width(a5_display);
+         int pp_dw = ui_w();
          if (!glb_ds1edit.props_panel_visible ||
-             a5_mouse_x <= pp_dw - glb_ds1edit.props_panel_width)
+             ui_mouse_x() <= pp_dw - glb_ds1edit.props_panel_width)
          {
             glb_ds1edit.props_panel.has_focus = FALSE;
          }
@@ -1902,11 +1902,11 @@ void interfac_user_handler(int start_ds1_idx)
              glb_ds1edit.props_panel.tiles.brush.valid &&
              glb_ds1edit.has_loaded_ds1)
          {
-            int pp_disp_w = al_get_display_width(a5_display);
+            int pp_disp_w = ui_w();
             int panel_left = glb_ds1edit.props_panel_visible
                                  ? pp_disp_w - glb_ds1edit.props_panel_width
                                  : pp_disp_w;
-            if (a5_mouse_x < panel_left)
+            if (ui_mouse_x() < panel_left)
             {
                if (cx != tp_last_paint_x || cy != tp_last_paint_y)
                {
