@@ -12,8 +12,8 @@ For each manifest DS1, exactly once:
    act+1 from version 8) against the reader's result;
 4. ``resave`` through the checked writer, read the result back and compare
    canonical snapshots under the writer's *declared* transformations only
-   (``writer_v18_upgrade``, ``source_ignored``, and ``legacy_tag_layer_dropped``
-   for pre-v4 sources whose tag layer the writer does not emit);
+   (``writer_v18_upgrade``, ``source_ignored``). Pre-v4 sources must be refused
+   instead: the writer has no place for their tag layer;
 5. resolve the DT1 inputs the editor would need (LvlPrest ``File1..6`` ->
    ``Def``/``Dt1Mask``/``LevelId`` -> Levels ``LevelType`` -> LvlTypes
    ``File 1..32``) against the manifest and classify every key.
@@ -163,10 +163,7 @@ def version_family(v) -> str:
 
 
 def resave_policy(source_snap: dict) -> list[str]:
-    pol = list(BASE_POLICY)
-    if isinstance(source_snap.get("version"), int) and source_snap["version"] < 4:
-        pol.append("legacy_tag_layer_dropped")
-    return pol
+    return list(BASE_POLICY)
 
 
 # ---------------------------------------------------------------------------
@@ -391,7 +388,15 @@ def sweep_one(asset: dict, local: Path | None, extract_error: str | None, probe_
         rrc = ds1_cases.run_resave(probe_exe, local, saved)
         if is_environment_failure(rrc):
             raise RuntimeError("probe could not start (STATUS_DLL_NOT_FOUND)")
-        if rrc != 0 or not saved.is_file():
+        if isinstance(snap.get("version"), int) and snap["version"] < 4:
+            if rrc == 0 or saved.is_file():
+                case["failures"].append({"kind": "resave", "path": "resave",
+                                         "expected": "refused", "actual": rrc})
+            else:
+                case["round_trip"] = {"policy": [], "status": "refused",
+                                      "saved_version": None, "differences": [],
+                                      "differences_total": 0}
+        elif rrc != 0 or not saved.is_file():
             case["failures"].append({"kind": "resave", "path": "resave",
                                      "expected": 0, "actual": rrc})
         else:
@@ -462,7 +467,7 @@ def aggregate(cases: list[dict], manifest: dict) -> dict:
             feat_tot["max_walls"] = max(feat_tot["max_walls"], f["walls"] or 0)
             feat_tot["max_floors"] = max(feat_tot["max_floors"], f["floors"] or 0)
         rt = c.get("round_trip")
-        if rt and rt["status"] != "pass":
+        if rt and rt["status"] not in ("pass", "refused"):
             rt_mismatch.append({"id": c["id"], "differences": rt["differences"][:4]})
         if any(x["kind"] == "header" for x in c["failures"]):
             header_mm.append({"id": c["id"], "failures": [x for x in c["failures"]

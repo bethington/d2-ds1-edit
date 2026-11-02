@@ -13,10 +13,6 @@ Named normalizations (the editor's declared writer transformations):
 ``writer_v18_upgrade``
     The writer always emits version 18. Compare a re-saved map with its
     source without the version field.
-``legacy_tag_layer_dropped``
-    Below version 4 a tag layer is read although the file has no tagType;
-    the writer only emits a tag layer for tagType 1/2, so a re-saved
-    pre-v4 map has none.
 ``workspace_files_ignored``
     With workspace data enabled the writer appends ``DS1EDIT_WRKSPC_*``
     entries to the tileset name list; drop them.
@@ -51,13 +47,6 @@ def _writer_v18_upgrade(snap: dict) -> None:
     snap.pop("version", None)
 
 
-def _legacy_tag_layer_dropped(snap: dict) -> None:
-    for cell in snap.get("cells", []):
-        cell["tags"] = []
-    if "layers" in snap:
-        snap["layers"]["tags"] = 0
-
-
 def _workspace_files_ignored(snap: dict) -> None:
     snap["files"] = [f for f in snap.get("files", [])
                      if not f.startswith("DS1EDIT_WRKSPC_")]
@@ -69,7 +58,6 @@ def _source_ignored(snap: dict) -> None:
 
 NORMALIZATIONS = {
     "writer_v18_upgrade": _writer_v18_upgrade,
-    "legacy_tag_layer_dropped": _legacy_tag_layer_dropped,
     "workspace_files_ignored": _workspace_files_ignored,
     "source_ignored": _source_ignored,
 }
