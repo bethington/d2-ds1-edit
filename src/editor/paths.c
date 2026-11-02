@@ -3,6 +3,7 @@
 
 #include "structs.h"
 #include "editor/paths.h"
+#include "core/map_state.h"
 #include "misc.h"
 #include "ui/input.h"
 
@@ -493,6 +494,7 @@ void editpath_draw(int ds1_idx, int mx, int my, int mb, long tx, long ty)
 
                   done = TRUE;
                   pwin->mode = PEM_NONE;
+                  map_dirty_mark(ds1_idx);
                   pwin->obj_dirty = FALSE;
                   break;
 

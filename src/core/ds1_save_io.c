@@ -19,6 +19,7 @@
 #include "core/project.h"
 #include "core/ds1.h"
 #include "core/ds1_save_io.h"
+#include "core/map_state.h"
 #include "render/preview.h"
 
 // ==========================================================================
@@ -550,6 +551,8 @@ int ds1_save_with_io(int ds1_idx, int is_tmp_file, const DS1_SAVE_IO * io,
    if (redirected)
       snprintf(d->name, sizeof(d->name), "%s", target);
    d->save_count = new_save_count;
+   if (! is_tmp_file)
+      map_dirty_mark_saved(ds1_idx);
    return 0;
 }
 

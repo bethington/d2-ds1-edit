@@ -2,6 +2,7 @@
 #include "misc.h"
 #include "core/area_browser.h"
 #include "core/ds1_manager.h"
+#include "core/map_state.h"
 #include "core/txtread.h"
 #include "ui/compat.h"
 #include "ui/props_panel.h"
@@ -1251,16 +1252,16 @@ void props_panel_apply(void)
          {
             case 0:  /* filename — read-only, skip */
                break;
-            case 1:  glb_ds1[idx].version  = val; break;
+            case 1:  glb_ds1[idx].version  = val; map_dirty_mark(idx); break;
             case 2:  /* width — structural, warn */
                printf("props_panel: width change requires reload (not applied)\n");
                break;
             case 3:  /* height — structural, warn */
                printf("props_panel: height change requires reload (not applied)\n");
                break;
-            case 4:  glb_ds1[idx].act      = val; break;
-            case 5:  glb_ds1[idx].txt_act  = (int)val; break;
-            case 6:  glb_ds1[idx].tag_type = val; break;
+            case 4:  glb_ds1[idx].act      = val; map_dirty_mark(idx); break;
+            case 5:  glb_ds1[idx].txt_act  = (int)val; map_dirty_mark(idx); break;
+            case 6:  glb_ds1[idx].tag_type = val; map_dirty_mark(idx); break;
             case 7:  /* wall_num — structural */
                printf("props_panel: wall_num change requires reload (not applied)\n");
                break;

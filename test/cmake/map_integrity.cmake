@@ -21,6 +21,7 @@ set(DS1EDIT_PKGC_PRODUCTION
     ${CMAKE_SOURCE_DIR}/src/core/ds1.c
     ${CMAKE_SOURCE_DIR}/src/core/ds1_save_io.c
     ${CMAKE_SOURCE_DIR}/src/core/project.c
+    ${CMAKE_SOURCE_DIR}/src/core/map_state.c
     ${CMAKE_SOURCE_DIR}/src/editor/objects.c
     ${CMAKE_SOURCE_DIR}/src/editor/paths.c
     ${CMAKE_SOURCE_DIR}/src/editor/undo.c
@@ -52,6 +53,10 @@ set_tests_properties(ds1_format PROPERTIES LABELS "portable")
 ds1edit_pkgc_test(test_ds1_save test_ds1_save.c)
 add_test(NAME ds1_save COMMAND test_ds1_save)
 set_tests_properties(ds1_save PROPERTIES LABELS "portable")
+
+ds1edit_pkgc_test(test_map_state test_map_state.c)
+add_test(NAME map_state COMMAND test_map_state)
+set_tests_properties(map_state PROPERTIES LABELS "portable")
 
 ds1edit_pkgc_test(test_editor_undo test_editor_undo.c)
 add_test(NAME editor_undo COMMAND test_editor_undo)

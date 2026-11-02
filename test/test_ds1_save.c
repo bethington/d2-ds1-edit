@@ -17,6 +17,7 @@
 #include "core/ds1.h"
 #include "core/project.h"
 #include "core/ds1_save_io.h"
+#include "core/map_state.h"
 
 #include "support/editor_test_state.h"
 #include "support/ds1_fixture.h"
@@ -692,6 +693,31 @@ void test_legacy_wrapper_returns_the_failure(void)
    TEST_ASSERT_EQUAL_STRING(src, glb_ds1[0].name);
 }
 
+void test_a_real_save_clears_dirty_and_a_tmp_save_does_not(void)
+{
+   FX_SPEC s;
+   char src[512];
+
+   load_fixture(&s, 18, "dirty.ds1", 0, src, sizeof(src));
+   map_dirty_mark(0);
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, SAVE(0, TRUE), err);
+   TEST_ASSERT_TRUE(map_is_dirty(0));
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, SAVE(0, FALSE), err);
+   TEST_ASSERT_FALSE(map_is_dirty(0));
+}
+
+void test_a_failed_save_leaves_the_map_dirty(void)
+{
+   FX_SPEC s;
+   char src[512];
+
+   load_fixture(&s, 18, "dirty.ds1", 0, src, sizeof(src));
+   map_dirty_mark(0);
+   faults.fail_open = 1;
+   TEST_ASSERT_EQUAL_INT(-1, save_faulty(0, FALSE));
+   TEST_ASSERT_TRUE(map_is_dirty(0));
+}
+
 int main(int argc, char **argv)
 {
    pkgc_test_filter = argc > 1 ? argv[1] : NULL;
@@ -729,5 +755,7 @@ int main(int argc, char **argv)
    PKGC_RUN(test_failed_copy_on_save_keeps_the_original_name);
    PKGC_RUN(test_empty_slot_is_not_an_error);
    PKGC_RUN(test_legacy_wrapper_returns_the_failure);
+   PKGC_RUN(test_a_real_save_clears_dirty_and_a_tmp_save_does_not);
+   PKGC_RUN(test_a_failed_save_leaves_the_map_dirty);
    return UNITY_END();
 }

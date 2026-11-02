@@ -215,6 +215,7 @@ set(SOURCES
     src/core/palette.c
     src/core/preferences.c
     src/core/project.c
+    src/core/map_state.c
     src/core/rgba_cache.c
     src/core/txtread.c
     # render/

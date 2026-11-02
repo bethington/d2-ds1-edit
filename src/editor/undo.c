@@ -5,6 +5,7 @@
 #include "error.h"
 #include "core/ds1.h"
 #include "editor/undo.h"
+#include "core/map_state.h"
 
 /* Undo buffer file layout (one file per edit, private to this process):
  *
@@ -115,6 +116,8 @@ void undo_new_tile_buffer(int ds1_idx)
       ds1edit_error(tmp);
    }
       
+   map_dirty_before_tile_edit(ds1_idx);
+
    // some undo have been made ?
    if (u->cur_buf_num < u->buf_num - 1)
    {

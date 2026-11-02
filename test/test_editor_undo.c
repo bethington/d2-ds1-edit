@@ -17,6 +17,7 @@
 #include "editor/undo.h"
 #include "core/ds1.h"
 #include "core/ds1_save_io.h"
+#include "core/map_state.h"
 
 #include "support/editor_test_state.h"
 
@@ -470,6 +471,35 @@ void test_deleted_and_undone_edits_survive_save_and_reload(void)
    TEST_ASSERT_NOT_EQUAL(0, F(1, 1, 1, 0)->prop1);
 }
 
+void test_tile_edits_and_undo_set_and_clear_dirty(void)
+{
+   TEST_ASSERT_TRUE(editor_test_state_init(1, 3, 2));
+   fill_map(0);
+   TEST_ASSERT_FALSE(map_is_dirty(0));
+   select_cell(0, 1, 0);
+   delete_selected(0);
+   TEST_ASSERT_TRUE(map_is_dirty(0));
+   undo(0);
+   TEST_ASSERT_FALSE(map_is_dirty(0));
+}
+
+void test_a_new_edit_after_undoing_past_a_save_stays_dirty(void)
+{
+   TEST_ASSERT_TRUE(editor_test_state_init(1, 3, 2));
+   fill_map(0);
+   select_cell(0, 1, 0);
+   delete_selected(0);
+   map_dirty_mark_saved(0);
+   TEST_ASSERT_FALSE(map_is_dirty(0));
+   undo(0);
+   TEST_ASSERT_TRUE(map_is_dirty(0));
+
+   /* A different edit reaches the same depth, but not the saved content. */
+   select_cell(0, 2, 0);
+   delete_selected(0);
+   TEST_ASSERT_TRUE(map_is_dirty(0));
+}
+
 int main(int argc, char **argv)
 {
    pkgc_test_filter = argc > 1 ? argv[1] : NULL;
@@ -485,5 +515,7 @@ int main(int argc, char **argv)
    PKGC_RUN(test_map_slots_keep_independent_histories);
    PKGC_RUN(test_a_new_edit_after_undo_discards_the_undone_branch);
    PKGC_RUN(test_deleted_and_undone_edits_survive_save_and_reload);
+   PKGC_RUN(test_tile_edits_and_undo_set_and_clear_dirty);
+   PKGC_RUN(test_a_new_edit_after_undoing_past_a_save_stays_dirty);
    return UNITY_END();
 }

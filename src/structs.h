@@ -1170,6 +1170,11 @@ typedef struct DS1_S
    // save count
    UDWORD save_count;
 
+   // unsaved-edit tracking; see core/map_state.h
+   int  other_dirty;       // an object, path or DS1 field edit is unsaved
+   int  undo_other_dirty;  // other_dirty as it was before the last object edit
+   long saved_undo_depth;  // tile edits applied at the last save; -1 = unreachable
+
    // current number of objects
    long current_obj_max;
 } DS1_S;
