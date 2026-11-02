@@ -134,6 +134,7 @@ void area_group_add_entry(AREA_GROUP_S * grp, int lvltype_id,
    e = &grp->entries[grp->entry_count];
    e->lvltype_id = lvltype_id;
    e->lvlprest_def = def;
+   e->state = MAP_STATE_GAME;
    strncpy(e->ds1_path, ds1_path, sizeof(e->ds1_path) - 1);
    e->ds1_path[sizeof(e->ds1_path) - 1] = '\0';
    grp->entry_count++;

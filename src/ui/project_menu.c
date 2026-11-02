@@ -65,6 +65,17 @@ static const char *basename_of(const char *path)
    return last;
 }
 
+// Rebuild the area list for the project now in effect, telling the user if the
+// tables could not be read.
+static void reload_area_browser(void)
+{
+   if (area_browser_reload() != 0)
+      al_show_native_message_box(a5_display, "DS1Edit",
+         "The area list could not be reloaded",
+         "The game's tables could not be read for this project. The list may be out of date.",
+         NULL, ALLEGRO_MESSAGEBOX_ERROR);
+}
+
 // On successful open/create, record the project into prefs and persist.
 static void record_and_persist(const char *project_path)
 {
@@ -180,7 +191,7 @@ static int action_new_project(void)
    }
 
    project_apply_to_config();
-   area_browser_reload();
+   reload_area_browser();
    record_and_persist(path);
 
    fprintf(stderr, "project_menu: created and opened <%s>\n", path);
@@ -238,7 +249,7 @@ static int action_open_project(void)
       area_browser_unload_all();
 
    project_apply_to_config();
-   area_browser_reload();
+   reload_area_browser();
    record_and_persist(path);
 
    fprintf(stderr, "project_menu: opened <%s>\n", path);
@@ -264,7 +275,7 @@ static void action_close_project(void)
 
    project_close();
    area_browser_unload_all();
-   area_browser_reload();
+   reload_area_browser();
 }
 
 static int make_virtual_prefix_from_mod_path(const char *picked_path,
