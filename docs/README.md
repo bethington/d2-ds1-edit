@@ -1,6 +1,6 @@
 # DS1Edit Documentation
 
-DS1Edit 2.2.0 is a level editor for Diablo II, allowing creation and modification of game maps (.ds1 files). Built with Allegro 5 for GPU-accelerated rendering. See the [changelog](../CHANGELOG.md) for what changed in this release. It continues Paul Siramy's `win_ds1edit` (2002-2011): the user guides below are his original documentation, and [NOTICE](../NOTICE) records the provenance of the code.
+DS1Edit 2.2.1 is a level editor for Diablo II, allowing creation and modification of game maps (.ds1 files). Built with Allegro 5 for GPU-accelerated rendering. See the [changelog](../CHANGELOG.md) for what changed in this release. It continues Paul Siramy's `win_ds1edit` (2002-2011): the user guides below are his original documentation, and [NOTICE](../NOTICE) records the provenance of the code.
 
 ## Documentation Index
 
@@ -34,7 +34,7 @@ DS1Edit 2.2.0 is a level editor for Diablo II, allowing creation and modificatio
 - **[Qualification records](../release/qualification/README.md)** - What a reviewed record binds and what CI must upload
 - **[Vanilla 1.13c testing design](superpowers/specs/2026-10-21-vanilla-113c-testing-design.md)** and its [roadmap](superpowers/plans/2026-10-21-vanilla-113c-testing.md) with package plans [A results](superpowers/plans/2026-10-21-testing-a-results.md), [B equivalence](superpowers/plans/2026-10-21-testing-b-equivalence.md), [C map integrity](superpowers/plans/2026-10-21-testing-c-map-integrity.md), [D visuals](superpowers/plans/2026-10-21-testing-d-visuals.md), [E robustness](superpowers/plans/2026-10-21-testing-e-robustness.md), [F release](superpowers/plans/2026-10-21-testing-f-release.md)
 
-### Software renderer (in development, not in 2.2.0)
+### Software renderer (in development, planned for 2.3.0)
 - **[Software renderer design](superpowers/specs/2026-10-22-software-renderer-design.md)** - Goal: run without 3D hardware (design only; not shipped yet)
 - **[Phase 1 plan](superpowers/plans/2026-10-22-software-renderer-phase1.md)** - First implementation phase
 

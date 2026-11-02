@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)  # RUNTIME_DEPENDENCY_SET
-project(d2-ds1-edit VERSION 2.2.0 LANGUAGES C)
+project(d2-ds1-edit VERSION 2.2.1 LANGUAGES C)
 if(APPLE)
     enable_language(OBJC)  # src/mac_pointer.m
 endif()

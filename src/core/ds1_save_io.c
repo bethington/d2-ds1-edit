@@ -422,6 +422,15 @@ int ds1_save_with_io(int ds1_idx, int is_tmp_file, const DS1_SAVE_IO * io,
    if (strlen(d->name) == 0)
       return 0;
 
+   // the writer has no place for the tag layer that v2 and v3 maps always
+   // carry (tag_type 0 means none from v10 on), so a real save would lose it.
+   // The rolling .TMP autosave replaces nothing and stays allowed.
+   if ((! is_tmp_file) && (d->version < 4))
+      return fail(error, error_cap,
+                  "%s uses an old DS1 format (before version 4) that this editor "
+                  "cannot save without losing its tag layer; nothing was saved%s",
+                  d->name, NULL);
+
    snprintf(target, sizeof(target), "%s", d->name);
 
    // Phase 6 copy-on-save: on a real save (not the rolling .TMP autosave),

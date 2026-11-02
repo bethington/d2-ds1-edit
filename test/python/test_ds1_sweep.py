@@ -65,8 +65,7 @@ class HeaderTests(unittest.TestCase):
         self.assertEqual(S.version_family(3), "v3")
         self.assertEqual(S.version_family(13), "v13-14")
         self.assertEqual(S.version_family(18), "v18")
-        self.assertIn("legacy_tag_layer_dropped", S.resave_policy({"version": 3}))
-        self.assertNotIn("legacy_tag_layer_dropped", S.resave_policy({"version": 8}))
+        self.assertEqual(S.resave_policy({"version": 3}), S.BASE_POLICY)
 
 
 class TileInputTests(unittest.TestCase):
@@ -140,7 +139,7 @@ class ExtractionTests(unittest.TestCase):
 class CaseTests(unittest.TestCase):
     """sweep_one with a fake probe."""
 
-    def run_one(self, data, dump, resave_rc=0, redump=None):
+    def run_one(self, data, dump, resave_rc=0, redump=None, resave_writes=True):
         asset = {"path": vp("act1/t.ds1"), "archive": "D2Data.mpq", "size": len(data),
                  "sha256": hashlib.sha256(data).hexdigest()}
 
@@ -149,7 +148,8 @@ class CaseTests(unittest.TestCase):
             return (2 if snap.get("status") == "error" else 0), copy.deepcopy(snap)
 
         def fake_resave(exe, src, out):
-            Path(out).write_bytes(b"x")
+            if resave_writes:
+                Path(out).write_bytes(b"x")
             return resave_rc
         with tempfile.TemporaryDirectory() as d, \
                 mock.patch.object(S.ds1_cases, "run_probe", fake_probe), \
@@ -198,6 +198,18 @@ class CaseTests(unittest.TestCase):
         spec = fx.default_spec(18)
         data, _ = fx.encode(spec)
         case = self.run_one(data, fx.expected_snapshot(spec), resave_rc=3)
+        self.assertEqual(case["status"], "mismatch")
+
+    def test_pre_v4_map_must_be_refused(self):
+        spec = fx.default_spec(3)
+        data, _ = fx.encode(spec)
+        snap = fx.expected_snapshot(spec)
+        case = self.run_one(data, snap, resave_rc=3, resave_writes=False)
+        self.assertEqual(case["status"], "pass", case["failures"])
+        self.assertEqual(case["round_trip"]["status"], "refused")
+        self.assertEqual(case["coverage"]["writer_round_trip"], "refused")
+
+        case = self.run_one(data, snap)
         self.assertEqual(case["status"], "mismatch")
 
     def test_missing_dll_is_environment_not_rejection(self):
