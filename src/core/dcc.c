@@ -9,6 +9,9 @@
 
 #include "core/dcc.h"
 
+// largest direction box side the frame buffer holds
+#define DCC_MAX_BOX_SIDE 4096
+
 /* Definitions for the extern declarations in dcc.h. */
 char dcc_error[512];
 int  dcc_bits_width_table[16];
@@ -233,6 +236,19 @@ int dcc_frame_header_bitstream(DCC_S *dcc, DCC_BITSTREAM_S *bs, int d, int f)
       }
    }
       
+   // a frame the direction box could not hold: refuse it here, because a
+   // huge width or offset wraps `long` below and hides from the box check
+   if ((dcc->frame[d][f].width > DCC_MAX_BOX_SIDE)
+       || (dcc->frame[d][f].height > DCC_MAX_BOX_SIDE)
+       || (dcc->frame[d][f].xoffset > INT32_MAX - DCC_MAX_BOX_SIDE)
+       || (dcc->frame[d][f].yoffset > INT32_MAX - DCC_MAX_BOX_SIDE)
+       || (dcc->frame[d][f].yoffset < INT32_MIN + DCC_MAX_BOX_SIDE))
+   {
+      sprintf(add_error, "frame header %i, geometry is not decodable\n", f);
+      strcat(dcc_error, add_error);
+      return 1;
+   }
+
    // frame box
    dcc->frame[d][f].box.xmin = dcc->frame[d][f].xoffset;
    dcc->frame[d][f].box.xmax =
@@ -1392,7 +1408,8 @@ int dcc_dir_bitstream(DCC_S * dcc, int d)
 
    // a direction box the frame buffer cannot hold (empty, or absurd)
    if ((dcc->direction[d].box.width < 1) || (dcc->direction[d].box.height < 1)
-       || (dcc->direction[d].box.width > 4096) || (dcc->direction[d].box.height > 4096))
+       || (dcc->direction[d].box.width > DCC_MAX_BOX_SIDE)
+       || (dcc->direction[d].box.height > DCC_MAX_BOX_SIDE))
    {
       sprintf(dcc_error, "direction %i : box %li x %li is not decodable\n", d,
               dcc->direction[d].box.width, dcc->direction[d].box.height);

@@ -542,12 +542,9 @@ void *txt_read_in_mem(char *txtname)
       ds1edit_error(tmp);
    }
 
-   if (new_buff != buff)
-      memcpy(new_buff, buff, len - 1);
-
    *(((char *)new_buff) + len - 1) = 0;
 
-   return buff;
+   return new_buff;
 }
 
 // ==========================================================================

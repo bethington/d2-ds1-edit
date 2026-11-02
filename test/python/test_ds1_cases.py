@@ -183,14 +183,16 @@ class ProbeIntegrationTests(unittest.TestCase):
             with self.subTest(case=case["id"]):
                 saved = self.root / "out" / f"{case['id']} resaved.ds1"
                 rc = ds1_cases.run_resave(self.probe, self.root / "in" / case["file"], saved)
+                if case["version"] < 4:
+                    self.assertNotEqual(rc, 0)
+                    self.assertFalse(saved.exists())
+                    continue
                 self.assertEqual(rc, 0)
                 out = self.root / "out" / f"{case['id']} resaved.json"
                 rc, snap = ds1_cases.run_probe(self.probe, saved, out)
                 self.assertEqual(rc, 0)
                 self.assertEqual(snap["version"], 18)
                 names = ["source_ignored", "writer_v18_upgrade"]
-                if case["version"] < 4:
-                    names.append("legacy_tag_layer_dropped")
                 result = ds1_cases.compare_maps(case["expected"], snap, {"normalizations": names})
                 self.assertEqual(result["status"], "pass", "\n".join(result["differences"][:20]))
 

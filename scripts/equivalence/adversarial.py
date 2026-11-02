@@ -673,13 +673,20 @@ def run_case(case: dict, probes: dict, work: Path, timeout_s: float,
                                 shell=False, env=env, **_no_window())
         except subprocess.TimeoutExpired:
             return fail("timeout", "resave exceeded %.0f s" % timeout_s)
-        if p2.returncode != 0 or not resaved.is_file():
-            return fail("resave_failed", "resave of an accepted map exited %d" % p2.returncode)
-        p3 = subprocess.run([argv[0], "dump", str(resaved), "--out", str(out / "snap2.json")],
-                            cwd=str(cwd), capture_output=True, timeout=timeout_s, shell=False,
-                            env=env, **_no_window())
-        if p3.returncode != 0:
-            return fail("resave_unreadable", "reading the resaved map exited %d" % p3.returncode)
+        # the editor refuses to save a pre-v4 map: it would lose the tag layer
+        if struct.unpack("<i", Path(inp).read_bytes()[:4])[0] < 4:
+            if p2.returncode == 0 or resaved.is_file():
+                return fail("resave_not_refused", "a pre-v4 map was saved")
+        else:
+            if p2.returncode != 0 or not resaved.is_file():
+                return fail("resave_failed",
+                            "resave of an accepted map exited %d" % p2.returncode)
+            p3 = subprocess.run([argv[0], "dump", str(resaved), "--out", str(out / "snap2.json")],
+                                cwd=str(cwd), capture_output=True, timeout=timeout_s, shell=False,
+                                env=env, **_no_window())
+            if p3.returncode != 0:
+                return fail("resave_unreadable",
+                            "reading the resaved map exited %d" % p3.returncode)
         if sorted(_tree(cwd)):
             return fail("stray_file", "resave wrote into the working directory")
 

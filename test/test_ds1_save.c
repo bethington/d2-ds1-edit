@@ -206,8 +206,6 @@ static void check_upgrade(int version)
 }
 
 #define UPGRADE_TEST(v) void test_save_upgrades_v##v##_and_preserves_fields(void) { check_upgrade(v); }
-UPGRADE_TEST(2)
-UPGRADE_TEST(3)
 UPGRADE_TEST(6)
 UPGRADE_TEST(7)
 UPGRADE_TEST(9)
@@ -218,6 +216,31 @@ UPGRADE_TEST(15)
 UPGRADE_TEST(16)
 UPGRADE_TEST(17)
 UPGRADE_TEST(18)
+
+static void check_old_format_is_refused(int version)
+{
+   FX_SPEC s;
+   char src[512], dst[512];
+   char rel[64];
+   FILE *f;
+
+   snprintf(rel, sizeof(rel), "v%d.ds1", version);
+   load_fixture(&s, version, rel, 0, src, sizeof(src));
+   root_path(dst, sizeof(dst), "refused.ds1");
+   snprintf(glb_ds1[0].name, sizeof(glb_ds1[0].name), "%s", dst);
+
+   TEST_ASSERT_NOT_EQUAL(0, SAVE(0, FALSE));
+   TEST_ASSERT_NOT_NULL(strstr(err, "tag layer"));
+   TEST_ASSERT_EQUAL_STRING(dst, glb_ds1[0].name);
+   f = fopen(dst, "rb");
+   TEST_ASSERT_NULL(f);
+
+   /* The autosave replaces nothing, so it still works. */
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, SAVE(0, TRUE), err);
+}
+
+void test_save_refuses_v2_rather_than_drop_its_tag_layer(void) { check_old_format_is_refused(2); }
+void test_save_refuses_v3_rather_than_drop_its_tag_layer(void) { check_old_format_is_refused(3); }
 
 void test_out_of_bounds_objects_survive_read_save_read(void)
 {
@@ -643,8 +666,8 @@ int main(int argc, char **argv)
 {
    pkgc_test_filter = argc > 1 ? argv[1] : NULL;
    UNITY_BEGIN();
-   PKGC_RUN(test_save_upgrades_v2_and_preserves_fields);
-   PKGC_RUN(test_save_upgrades_v3_and_preserves_fields);
+   PKGC_RUN(test_save_refuses_v2_rather_than_drop_its_tag_layer);
+   PKGC_RUN(test_save_refuses_v3_rather_than_drop_its_tag_layer);
    PKGC_RUN(test_save_upgrades_v6_and_preserves_fields);
    PKGC_RUN(test_save_upgrades_v7_and_preserves_fields);
    PKGC_RUN(test_save_upgrades_v9_and_preserves_fields);
