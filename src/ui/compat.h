@@ -16,6 +16,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 /* ---- Boolean constants ---- */
 /* Allegro 5 does not define TRUE/FALSE */
@@ -466,6 +467,30 @@ extern ALLEGRO_MOUSE_STATE a5_ms_state;
 #define a5_mouse_y (a5_ms_state.y)
 #define a5_mouse_b (a5_ms_state.buttons)
 #define a5_mouse_z (a5_ms_state.z)
+
+/* The editor runs without a mouse when al_install_mouse() fails (Allegro's
+   macOS driver refuses when HID enumeration finds no pointing device). Allegro
+   dereferences its driver in these calls without checking it, so the editor
+   goes through these instead. With no mouse the state reads as all zeroes:
+   pointer at the origin, no buttons down. */
+static inline void a5_get_mouse_state(ALLEGRO_MOUSE_STATE *state)
+{
+   if (al_is_mouse_installed())
+      al_get_mouse_state(state);
+   else
+      memset(state, 0, sizeof(*state));
+}
+
+static inline bool a5_set_mouse_xy(ALLEGRO_DISPLAY *display, int x, int y)
+{
+   return al_is_mouse_installed() && al_set_mouse_xy(display, x, y);
+}
+
+static inline void a5_register_mouse_events(ALLEGRO_EVENT_QUEUE *queue)
+{
+   if (al_is_mouse_installed())
+      al_register_event_source(queue, al_get_mouse_event_source());
+}
 
 /* ---- Misc compat ---- */
 #define rest(ms) al_rest((double)(ms) / 1000.0)

@@ -45,7 +45,7 @@ void input_init(void)
 
    memset(a5_key_suppressed, 0, sizeof(a5_key_suppressed));
    al_get_keyboard_state(&a5_kb_state);
-   al_get_mouse_state(&a5_ms_state);
+   a5_get_mouse_state(&a5_ms_state);
 }
 
 void input_begin_frame(void)
@@ -165,7 +165,7 @@ void input_end_frame(void)
 {
    a5_input_frames++;
    al_get_keyboard_state(&a5_kb_state);
-   al_get_mouse_state(&a5_ms_state);
+   a5_get_mouse_state(&a5_ms_state);
 }
 
 void input_pump(void)

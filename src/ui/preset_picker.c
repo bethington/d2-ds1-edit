@@ -353,7 +353,7 @@ static int run_modal(PICKER_S *s)
       }
 
       /* Mouse: click on a row selects; double-click opens. */
-      al_get_mouse_state(&a5_ms_state);
+      a5_get_mouse_state(&a5_ms_state);
       mx = a5_mouse_x; my = a5_mouse_y; mb = a5_mouse_b;
 
       if (mb && !prev_mb &&
