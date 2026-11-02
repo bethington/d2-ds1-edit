@@ -8,7 +8,7 @@ target_include_directories(test_selection_logic PRIVATE ${CMAKE_SOURCE_DIR}/src)
 add_test(NAME selection_logic COMMAND test_selection_logic)
 
 add_executable(test_editor_selection test_editor_selection.c
-    ../src/editor/tiles.c ../src/editor/selection_logic.c)
+    ../src/editor/tiles.c ../src/editor/selection_logic.c ../src/core/map_state.c)
 target_link_libraries(test_editor_selection PRIVATE unity ds1edit_allegro)
 target_include_directories(test_editor_selection PRIVATE
     ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/mpq)

@@ -500,6 +500,56 @@ void test_a_new_edit_after_undoing_past_a_save_stays_dirty(void)
    TEST_ASSERT_TRUE(map_is_dirty(0));
 }
 
+/* Selection steps open and close an undo buffer without changing any saved
+ * tile content, so they must never make a map unsaved. */
+static void empty_buffer_step(int m)
+{
+   undo_new_tile_buffer(m);
+   undo_close_tile_buffer(m);
+}
+
+void test_selecting_tiles_does_not_dirty_the_map(void)
+{
+   TEST_ASSERT_TRUE(editor_test_state_init(1, 3, 2));
+   fill_map(0);
+   empty_buffer_step(0);
+   TEST_ASSERT_FALSE(map_is_dirty(0));
+   select_cell(0, 1, 0);           /* flags only */
+   empty_buffer_step(0);
+   TEST_ASSERT_FALSE(map_is_dirty(0));
+   TEST_ASSERT_FALSE(map_any_dirty());
+}
+
+void test_a_selection_step_does_not_hide_a_real_edit(void)
+{
+   TEST_ASSERT_TRUE(editor_test_state_init(1, 3, 2));
+   fill_map(0);
+   select_cell(0, 1, 0);
+   delete_selected(0);
+   TEST_ASSERT_TRUE(map_is_dirty(0));
+   empty_buffer_step(0);
+   TEST_ASSERT_TRUE(map_is_dirty(0));
+   undo(0);
+   TEST_ASSERT_TRUE(map_is_dirty(0));
+   undo(0);
+   TEST_ASSERT_FALSE(map_is_dirty(0));
+}
+
+void test_undoing_to_the_saved_state_after_selection_is_clean(void)
+{
+   TEST_ASSERT_TRUE(editor_test_state_init(1, 3, 2));
+   fill_map(0);
+   select_cell(0, 1, 0);
+   delete_selected(0);
+   map_dirty_mark_saved(0);
+   empty_buffer_step(0);
+   TEST_ASSERT_FALSE(map_is_dirty(0));
+   undo(0);
+   TEST_ASSERT_FALSE(map_is_dirty(0));
+   undo(0);
+   TEST_ASSERT_TRUE(map_is_dirty(0));
+}
+
 int main(int argc, char **argv)
 {
    pkgc_test_filter = argc > 1 ? argv[1] : NULL;
@@ -517,5 +567,8 @@ int main(int argc, char **argv)
    PKGC_RUN(test_deleted_and_undone_edits_survive_save_and_reload);
    PKGC_RUN(test_tile_edits_and_undo_set_and_clear_dirty);
    PKGC_RUN(test_a_new_edit_after_undoing_past_a_save_stays_dirty);
+   PKGC_RUN(test_selecting_tiles_does_not_dirty_the_map);
+   PKGC_RUN(test_a_selection_step_does_not_hide_a_real_edit);
+   PKGC_RUN(test_undoing_to_the_saved_state_after_selection_is_clean);
    return UNITY_END();
 }

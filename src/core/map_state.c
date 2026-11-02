@@ -15,6 +15,79 @@ void map_dirty_mark(int ds1_idx)
       glb_ds1[ds1_idx].other_dirty = 1;
 }
 
+// FNV-1a over the tile fields ds1_serialize writes, field by field. Flags and
+// block indexes are display state, not saved content.
+static unsigned long long fnv(unsigned long long h, unsigned long v)
+{
+   int i;
+
+   for (i = 0; i < 4; i++)
+   {
+      h ^= (v >> (8 * i)) & 0xFF;
+      h *= 1099511628211ULL;
+   }
+   return h;
+}
+
+static unsigned long long hash_tiles(const DS1_S *d)
+{
+   unsigned long long h = 14695981039346656037ULL;
+   long x, y, i, t;
+
+   h = fnv(h, (unsigned long) d->width);
+   h = fnv(h, (unsigned long) d->height);
+   h = fnv(h, (unsigned long) d->wall_num);
+   h = fnv(h, (unsigned long) d->floor_num);
+   h = fnv(h, (unsigned long) d->shadow_num);
+   h = fnv(h, (unsigned long) d->tag_num);
+
+   for (y = 0; y < d->height; y++)
+      for (x = 0; x < d->width; x++)
+      {
+         if (d->wall_buff != NULL)
+            for (i = 0; i < d->wall_num; i++)
+            {
+               const CELL_W_S *w;
+               t = (y * d->wall_line) + (x * d->wall_num);
+               w = d->wall_buff + t + i;
+               h = fnv(h, (unsigned long) w->prop1);
+               h = fnv(h, (unsigned long) w->prop2);
+               h = fnv(h, (unsigned long) w->prop3);
+               h = fnv(h, (unsigned long) w->prop4);
+               h = fnv(h, (unsigned long) w->orientation);
+            }
+         if (d->floor_buff != NULL)
+            for (i = 0; i < d->floor_num; i++)
+            {
+               const CELL_F_S *f;
+               t = (y * d->floor_line) + (x * d->floor_num);
+               f = d->floor_buff + t + i;
+               h = fnv(h, (unsigned long) f->prop1);
+               h = fnv(h, (unsigned long) f->prop2);
+               h = fnv(h, (unsigned long) f->prop3);
+               h = fnv(h, (unsigned long) f->prop4);
+            }
+         if (d->shadow_buff != NULL)
+            for (i = 0; i < d->shadow_num; i++)
+            {
+               const CELL_S_S *s;
+               t = (y * d->shadow_line) + (x * d->shadow_num);
+               s = d->shadow_buff + t + i;
+               h = fnv(h, (unsigned long) s->prop1);
+               h = fnv(h, (unsigned long) s->prop2);
+               h = fnv(h, (unsigned long) s->prop3);
+               h = fnv(h, (unsigned long) s->prop4);
+            }
+         if (d->tag_type && d->tag_buff != NULL)
+            for (i = 0; i < d->tag_num; i++)
+            {
+               t = (y * d->tag_line) + (x * d->tag_num);
+               h = fnv(h, (unsigned long) (d->tag_buff + t + i)->num);
+            }
+      }
+   return h;
+}
+
 void map_dirty_before_tile_edit(int ds1_idx)
 {
    DS1_S *d;
@@ -22,10 +95,23 @@ void map_dirty_before_tile_edit(int ds1_idx)
    if (!slot_has_map(ds1_idx)) return;
    d = &glb_ds1[ds1_idx];
 
-   // The saved state was undone and this edit discards it for good, so a
-   // later edit reaching the same depth must not count as clean.
-   if (d->saved_undo_depth > d->undo.cur_buf_num + 1)
-      d->saved_undo_depth = -1;
+   // Nothing has changed since load or save before the first edit, so the
+   // map as it is now is the baseline.
+   if (!d->tile_hash_valid)
+   {
+      d->saved_tile_hash = d->current_tile_hash = hash_tiles(d);
+      d->tile_hash_valid = 1;
+   }
+}
+
+void map_dirty_after_tile_change(int ds1_idx)
+{
+   DS1_S *d;
+
+   if (!slot_has_map(ds1_idx)) return;
+   d = &glb_ds1[ds1_idx];
+   if (d->tile_hash_valid)
+      d->current_tile_hash = hash_tiles(d);
 }
 
 void map_dirty_before_object_edit(int ds1_idx)
@@ -52,7 +138,8 @@ void map_dirty_mark_saved(int ds1_idx)
    d = &glb_ds1[ds1_idx];
    d->other_dirty = 0;
    d->undo_other_dirty = 1;   // the object undo backup now differs from disk
-   d->saved_undo_depth = d->undo.cur_buf_num + 1;
+   d->saved_tile_hash = d->current_tile_hash = hash_tiles(d);
+   d->tile_hash_valid = 1;
 }
 
 int map_is_dirty(int ds1_idx)
@@ -61,7 +148,8 @@ int map_is_dirty(int ds1_idx)
 
    if (!slot_has_map(ds1_idx)) return 0;
    d = &glb_ds1[ds1_idx];
-   return d->other_dirty || d->saved_undo_depth != d->undo.cur_buf_num + 1;
+   return d->other_dirty ||
+          (d->tile_hash_valid && d->current_tile_hash != d->saved_tile_hash);
 }
 
 int map_any_dirty(void)

@@ -4,6 +4,7 @@
 #include "structs.h"
 #include "core/ds1.h"
 #include "editor/undo.h"
+#include "core/map_state.h"
 #include "editor/tiles.h"
 #include "editor/selection_logic.h"
 
@@ -357,7 +358,7 @@ void edittile_paste_final(int ds1_idx)
    CELL_F_S * f_ptr = glb_ds1[ds1_idx].floor_buff,  * f2;
    CELL_S_S * s_ptr = glb_ds1[ds1_idx].shadow_buff, * s2;
    CELL_W_S * w_ptr = glb_ds1[ds1_idx].wall_buff,   * w2;
-   int      i, f, tf, ts, tw, x, y, make_undo;
+   int      i, f, tf, ts, tw, x, y, make_undo, real_change = FALSE;
    UNDO_S   * u = & glb_ds1[ds1_idx].undo;
 
 
@@ -471,12 +472,26 @@ void edittile_paste_final(int ds1_idx)
             if (u->dat_flg.w[i])
                make_undo = TRUE;
          }
+         for (i=0; i<glb_ds1[ds1_idx].floor_num; i++)
+            if (u->dat_flg.f[i] & (DF_P1 | DF_P2 | DF_P3 | DF_P4))
+               real_change = TRUE;
+         for (i=0; i<glb_ds1[ds1_idx].shadow_num; i++)
+            if (u->dat_flg.s[i] & (DF_P1 | DF_P2 | DF_P3 | DF_P4))
+               real_change = TRUE;
+         for (i=0; i<glb_ds1[ds1_idx].wall_num; i++)
+            if (u->dat_flg.w[i] & (DF_P1 | DF_P2 | DF_P3 | DF_P4 | DF_OR))
+               real_change = TRUE;
          if (make_undo)
             undo_add_this_tile_to_buffer(ds1_idx, x, y, f2, w2, s2);
       }
    }
    
    undo_close_tile_buffer(ds1_idx);
+
+   // The preview already wrote the pasted tiles into the live map, so the
+   // undo buffer's baseline includes them: mark the paste directly.
+   if (real_change)
+      map_dirty_mark(ds1_idx);
 }
 
 

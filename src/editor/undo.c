@@ -430,6 +430,7 @@ void undo_close_tile_buffer(int ds1_idx)
    u->buf_num++;
    u->fptr = NULL;
    strcpy(u->name, "");
+   map_dirty_after_tile_change(ds1_idx);
 }
 
 
@@ -603,6 +604,7 @@ void undo_apply_tile_buffer(int ds1_idx)
    }
    fclose(in);
    u->cur_buf_num--;
+   map_dirty_after_tile_change(ds1_idx);
 }
 
 
