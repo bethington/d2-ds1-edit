@@ -302,7 +302,7 @@ void test_redirect_handles_mpq_extracted_path(void)
 
    TEST_ASSERT_EQUAL_INT(1, redirected);
    TEST_ASSERT_EQUAL_STRING(
-      T_PREFIX "ACT2\\TOWN\\lutn1.ds1", dst);
+      T_PREFIX "ACT2" T_SEP "TOWN" T_SEP "lutn1.ds1", dst);
 }
 
 void test_redirect_case_insensitive_tiles_match(void)
