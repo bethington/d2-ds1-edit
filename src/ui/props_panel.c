@@ -118,6 +118,7 @@ static void pp_sync_act_from_txt(int ds1_idx)
    printf("props_panel: sync act %ld -> %d (from txt_act)\n",
           glb_ds1[ds1_idx].act, glb_ds1[ds1_idx].txt_act);
    glb_ds1[ds1_idx].act = glb_ds1[ds1_idx].txt_act;
+   map_dirty_mark(ds1_idx);
 }
 
 /* Sync DS1 embedded file list from LvlTypes.txt File 1-32 columns. */
@@ -197,6 +198,7 @@ static void pp_sync_files_from_lvltypes(int ds1_idx)
       glb_ds1[ds1_idx].file_num = 0;
    }
 
+   map_dirty_mark(ds1_idx);
    printf("props_panel: synced %d DT1 files from LvlTypes.txt\n", new_count);
    fflush(stdout);
 }

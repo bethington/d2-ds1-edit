@@ -1,5 +1,3 @@
-#include <string.h>
-
 #include "structs.h"
 #include "core/map_state.h"
 
