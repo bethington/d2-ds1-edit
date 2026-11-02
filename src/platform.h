@@ -24,6 +24,7 @@
 
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #ifdef WIN32
    #include <direct.h>
@@ -122,6 +123,23 @@ void ds1_path_normalize(char *path);
 #ifdef __APPLE__
 int  ds1_mac_request_input_monitoring(void);
 void ds1_mac_fix_working_directory(void);
+#endif
+
+/* ---- native dialogs --------------------------------------------------- */
+/*
+ * Allegro's GTK dialogs wrap the editor's X11 window with
+ * gdk_x11_window_foreign_new_for_display(), which segfaults when GTK chose its
+ * Wayland backend. Allegro's display is X11 either way, so GTK has to match,
+ * even if the user's environment asked for something else. Call this before
+ * the first dialog; GTK reads the variable once, when it initialises.
+ */
+#if defined(WIN32) || defined(__APPLE__)
+   static inline void ds1_prepare_native_dialogs(void) {}
+#else
+   static inline void ds1_prepare_native_dialogs(void)
+   {
+      setenv("GDK_BACKEND", "x11", 1);
+   }
 #endif
 
 /* ---- directory enumeration -------------------------------------------- */

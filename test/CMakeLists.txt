@@ -127,6 +127,13 @@ target_include_directories(test_blend_convention PRIVATE
     ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/mpq)
 add_test(NAME blend_convention COMMAND test_blend_convention)
 
+# GTK backend choice for Allegro's native dialogs
+add_executable(test_platform_dialogs test_platform_dialogs.c)
+target_link_libraries(test_platform_dialogs PRIVATE unity)
+target_include_directories(test_platform_dialogs PRIVATE
+    ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/test)
+add_test(NAME platform_dialogs COMMAND test_platform_dialogs)
+
 # Compose RGBA blit primitive (pure pixel ops)
 add_executable(test_compose_blit test_compose_blit.c ../src/core/compose_blit.c)
 target_link_libraries(test_compose_blit PRIVATE unity)

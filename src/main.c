@@ -1487,6 +1487,7 @@ int main(int argc, char *argv[])
       is relative. Do this first -- it has to precede the INI read. */
    ds1_mac_fix_working_directory();
 #endif
+   ds1_prepare_native_dialogs();
    srand(time(NULL));
    if (!al_init())
       ds1edit_error("main(), error.\nCan't initialize Allegro 5.");
