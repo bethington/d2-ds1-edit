@@ -35,5 +35,10 @@ int  area_browser_switch_single (int group_idx, int entry_idx);
 void area_browser_list_files    (const char * filter);
 int  area_browser_open_by_file  (const char * ds1_path);
 int  area_browser_audit_lvltypes(FILE * out);
+void area_browser_refresh_states(void);
+
+// `guard` runs before anything unloads the open maps, and returns 0 to stop.
+void area_browser_set_unload_guard(int (*guard)(void));
+void area_browser_unload_all(void);
 
 #endif

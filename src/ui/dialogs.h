@@ -8,5 +8,7 @@
 int wmsg_main     (WMSG_S * wmsg);
 int msg_quit_main (void);
 int msg_save_main (void);
+int msg_unsaved_main          (const char *text);
+int msg_project_required_main (void);
 
 #endif

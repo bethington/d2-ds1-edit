@@ -610,6 +610,7 @@ typedef struct AREA_BROWSER_S
    int  scroll_offset;         /* First visible group index            */
    int  is_active;             /* TRUE if browser is showing           */
    int  loaded_group;          /* group_idx of currently loaded area, -1=none */
+   int  loaded_entry;          /* entry within loaded_group, -1=none   */
    int  lvltypes_act_mismatch_count; /* mismatched Name prefix vs Act column */
 } AREA_BROWSER_S;
 

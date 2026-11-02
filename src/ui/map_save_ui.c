@@ -1,0 +1,77 @@
+#include <stdio.h>
+
+#include <allegro5/allegro.h>
+#include <allegro5/allegro_native_dialog.h>
+
+#include "structs.h"
+#include "ui/compat.h"
+#include "ui/dialogs.h"
+#include "ui/input.h"
+#include "ui/map_save_ui.h"
+#include "ui/project_menu.h"
+#include "core/area_browser.h"
+#include "core/ds1_save_io.h"
+#include "core/map_state.h"
+#include "core/project.h"
+
+static int require_project(void)
+{
+   if (glb_project.is_open)
+      return 1;
+
+   switch (msg_project_required_main())
+   {
+   case 0:  return project_menu_new_project();
+   case 1:  return project_menu_open_project();
+   default: return 0;
+   }
+}
+
+int map_save_ui_save(int ds1_idx, int is_tmp_file)
+{
+   char error[768];
+
+   if (!is_tmp_file && glb_ds1[ds1_idx].name[0] != 0 && !require_project())
+      return -1;
+
+   if (ds1_save_checked(ds1_idx, is_tmp_file, error, sizeof(error)) == 0)
+   {
+      if (!is_tmp_file)
+         area_browser_refresh_states();
+      return 0;
+   }
+   al_show_native_message_box(a5_display, "DS1Edit",
+      is_tmp_file ? "The autosave (.tmp) was not written"
+                  : "The map was not saved",
+      error, NULL, ALLEGRO_MESSAGEBOX_ERROR);
+   return -1;
+}
+
+int map_save_ui_save_dirty(void)
+{
+   int i, rc = 0;
+
+   for (i = 0; i < DS1_MAX; i++)
+      if (map_is_dirty(i) && map_save_ui_save(i, FALSE) != 0)
+         rc = -1;
+   return rc;
+}
+
+int map_save_ui_resolve_unsaved(const char *what)
+{
+   if (!map_any_dirty())
+      return 1;
+
+   switch (msg_unsaved_main(what))
+   {
+   case 0:  return map_save_ui_save_dirty() == 0;
+   case 1:  return 1;
+   default: return 0;
+   }
+}
+
+int map_save_ui_unload_guard(void)
+{
+   return map_save_ui_resolve_unsaved(
+      "\nOpening this map closes the open maps, and they have unsaved edits.");
+}

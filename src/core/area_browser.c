@@ -788,6 +788,38 @@ static void area_browser_unload_current(void)
     * anim_update_gfx() frees those the next map does not use. */
 }
 
+static int (*s_unload_guard)(void);
+
+void area_browser_set_unload_guard(int (*guard)(void))
+{
+   s_unload_guard = guard;
+}
+
+void area_browser_unload_all(void)
+{
+   area_browser_unload_current();
+   glb_ds1edit.has_loaded_ds1 = FALSE;
+   glb_ds1edit.area_browser.loaded_group = -1;
+   glb_ds1edit.area_browser.loaded_entry = -1;
+}
+
+/* Returns TRUE if the open maps may go. Otherwise it puts the highlight back
+ * on the map that stays open, since navigation moves it before switching. */
+static int area_browser_may_unload(void)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+
+   if (s_unload_guard == NULL || s_unload_guard())
+      return TRUE;
+   ab->selected_group = ab->loaded_group;
+   ab->selected_entry = ab->loaded_entry;
+   return FALSE;
+}
+
+void area_browser_refresh_states(void)
+{
+}
+
 static int area_browser_open_entry_into_slot(int group_idx, int entry_idx, int ds1_idx)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
@@ -930,6 +962,9 @@ int area_browser_switch_area(int group_idx)
    if (ab->groups[group_idx].entry_count == 0)
       return -1;
 
+   if (!area_browser_may_unload())
+      return -1;
+
    printf("Switching to area: ");
    fflush(stdout);
 
@@ -944,6 +979,7 @@ int area_browser_switch_area(int group_idx)
    }
 
    area_browser_finish_load(group_idx, 0, opened);
+   ab->loaded_entry = 0;
 
    printf("done (%d maps loaded)\n", opened);
    fflush(stdout);
@@ -998,6 +1034,9 @@ int area_browser_switch_single(int group_idx, int entry_idx)
    if (entry_idx < 0 || entry_idx >= ab->groups[group_idx].entry_count)
       return -1;
 
+   if (!area_browser_may_unload())
+      return -1;
+
    printf("Switching to DS1 entry %d in group %d\n", entry_idx, group_idx);
    fflush(stdout);
 
@@ -1027,6 +1066,7 @@ int area_browser_switch_single(int group_idx, int entry_idx)
    fflush(stdout);
 
    area_browser_finish_load(group_idx, 0, 1);
+   ab->loaded_entry = entry_idx;
    return 0;
 }
 

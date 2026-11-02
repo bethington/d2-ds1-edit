@@ -11,4 +11,8 @@
 // nothing overlaps the top header bar.
 void project_menu_handle_shortcuts(void);
 
+// Run the New or Open Project flow. Returns 1 if a project is now open.
+int project_menu_new_project(void);
+int project_menu_open_project(void);
+
 #endif

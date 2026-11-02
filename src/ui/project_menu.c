@@ -15,12 +15,15 @@
 #include "ui/compose_category_picker.h"
 #include "ui/compose_mode_modal.h"
 #include "ui/compose_preset_picker.h"
+#include "ui/dialogs.h"
 #include "ui/export_type_picker.h"
+#include "ui/map_save_ui.h"
 #include "ui/project_menu.h"
 #include "ui/scope_picker.h"
 #include "ui/upscale_mode_picker.h"
 #include "ui/win_folder_picker.h"
 
+#include "core/area_browser.h"
 #include "core/asset_export.h"
 #include "core/compose_apng.h"
 #include "core/compose_cof_path.h"
@@ -28,6 +31,7 @@
 #include "core/compose_iter.h"
 #include "core/compose_naming.h"
 #include "core/compose_palette.h"
+#include "core/map_state.h"
 #include "core/compose_palette_index.h"
 #include "core/compose_render.h"
 #include "core/export_progress.h"
@@ -120,7 +124,7 @@ static int pick_folder(const char *title, const char *initial,
 
 /* ---- actions ---- */
 
-static void action_new_project(void)
+static int action_new_project(void)
 {
    char path[PROJECT_PATH_MAX];
    char ini[PROJECT_PATH_MAX];
@@ -132,7 +136,7 @@ static void action_new_project(void)
          "New Project — click \"New folder\" to create one, then Select",
          glb_prefs.last_d2_install[0] ? glb_prefs.last_d2_install : NULL,
          path, sizeof(path)))
-      return;
+      return 0;
 
    // Refuse to overwrite an existing project.
    if (project_ini_path(path, ini, sizeof(ini)))
@@ -147,7 +151,7 @@ static void action_new_project(void)
             "Use Open Project (Ctrl+Shift+O) to load it instead.",
             NULL,
             ALLEGRO_MESSAGEBOX_WARN);
-         return;
+         return 0;
       }
    }
 
@@ -163,7 +167,7 @@ static void action_new_project(void)
          "Check folder permissions and try again.",
          NULL,
          ALLEGRO_MESSAGEBOX_ERROR);
-      return;
+      return 0;
    }
 
    if (!project_load(path))
@@ -172,16 +176,17 @@ static void action_new_project(void)
          "Create Project failed",
          "Project was written but could not be re-loaded.",
          NULL, NULL, ALLEGRO_MESSAGEBOX_ERROR);
-      return;
+      return 0;
    }
 
    project_apply_to_config();
    record_and_persist(path);
 
    fprintf(stderr, "project_menu: created and opened <%s>\n", path);
+   return 1;
 }
 
-static void action_open_project(void)
+static int action_open_project(void)
 {
    char path[PROJECT_PATH_MAX];
    char ini[PROJECT_PATH_MAX];
@@ -193,9 +198,13 @@ static void action_open_project(void)
            ? glb_prefs.recent_projects[0]
            : (glb_prefs.last_d2_install[0] ? glb_prefs.last_d2_install : NULL);
 
+   if (!map_save_ui_resolve_unsaved(
+          "\nSave the open maps before changing project ?"))
+      return 0;
+
    if (!pick_folder("Open Project — pick the project folder",
                     initial, path, sizeof(path)))
-      return;
+      return 0;
 
    if (!project_ini_path(path, ini, sizeof(ini)) ||
        (fp = fopen(ini, "rb")) == NULL)
@@ -206,7 +215,7 @@ static void action_open_project(void)
          "Use Ctrl+Shift+N to create a new project here.",
          NULL,
          ALLEGRO_MESSAGEBOX_ERROR);
-      return;
+      return 0;
    }
    fclose(fp);
 
@@ -216,38 +225,38 @@ static void action_open_project(void)
          "Open Project failed",
          "project.ini could not be parsed.",
          NULL, NULL, ALLEGRO_MESSAGEBOX_ERROR);
-      return;
+      return 0;
    }
+
+   if (map_any_dirty())
+      area_browser_unload_all();
 
    project_apply_to_config();
    record_and_persist(path);
 
    fprintf(stderr, "project_menu: opened <%s>\n", path);
+   return 1;
 }
 
 static void action_close_project(void)
 {
-   char msg[PROJECT_PATH_MAX + 64];
-
    if (!glb_project.is_open) return;
 
-   snprintf(msg, sizeof(msg),
-            "Close project \"%s\"?\n\nEdits already saved to disk are kept.\n"
-            "Open DS1 files remain open.",
-            glb_project.name[0] ? glb_project.name : glb_project.path);
+   if (map_any_dirty())
+   {
+      int choice = msg_unsaved_main(
+         "\nClosing the project closes its open maps, and they have unsaved edits.");
 
-   int rc = al_show_native_message_box(a5_display,
-      "Close Project",
-      msg,
-      "Closing will clear the current mod overlay; new saves will go to the raw filesystem.",
-      NULL,
-      ALLEGRO_MESSAGEBOX_YES_NO | ALLEGRO_MESSAGEBOX_QUESTION);
-
-   if (rc != 1) return; // Yes == 1
+      if (choice == 0 && map_save_ui_save_dirty() != 0)
+         return;
+      if (choice != 0 && choice != 1)
+         return;
+   }
 
    fprintf(stderr, "project_menu: closing <%s>\n", glb_project.path);
 
    project_close();
+   area_browser_unload_all();
 }
 
 static int make_virtual_prefix_from_mod_path(const char *picked_path,
@@ -1343,6 +1352,9 @@ static void action_export_unified(void)
 
 
 /* ---- public entry points ---- */
+
+int project_menu_new_project(void)  { return action_new_project(); }
+int project_menu_open_project(void) { return action_open_project(); }
 
 void project_menu_handle_shortcuts(void)
 {

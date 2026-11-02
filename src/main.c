@@ -53,6 +53,7 @@ October 30 2011 :
 #include "core/project.h"
 #include "core/palette.h"
 #include "ui/interface.h"
+#include "ui/map_save_ui.h"
 #include "render/preview.h"
 #include "cli/cli.h"
 #include "platform.h"
@@ -2243,6 +2244,7 @@ int main(int argc, char *argv[])
               "WARNING: LvlTypes.txt contains %d Name/Act mismatches; palette selection uses the Act column as the source of truth. Run --audit-lvltypes for details.\n",
               glb_ds1edit.area_browser.lvltypes_act_mismatch_count);
    }
+   area_browser_set_unload_guard(map_save_ui_unload_guard);
    interfac_user_handler(ds1_idx);
 
    // cleanup

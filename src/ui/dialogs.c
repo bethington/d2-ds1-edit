@@ -248,6 +248,71 @@ int wmsg_main(WMSG_S * wmsg)
 }
 
 
+// A warning window with three buttons, styled like the quit window.
+// return value : -1 : error, otherwise the index of the chosen button
+static int msg_three_buttons(char *title, char *text,
+                             char *label0, int key0,
+                             char *label1, int key1)
+{
+   WMSG_BUT_S buttons[4]; // 4th button is NULL, needed
+   WMSG_S     wmsg;
+   int        col_black    = makecol(0, 0, 0),
+              col_midgreen = makecol(0, 128, 0),
+              col_white    = makecol(255, 255, 255),
+              col_green    = makecol(0, 255, 0);
+   int        i;
+   char      *labels[3];
+   int        keys[3];
+
+   labels[0] = label0;           keys[0] = key0;
+   labels[1] = label1;           keys[1] = key1;
+   labels[2] = " (Esc) CANCEL "; keys[2] = KEY_ESC;
+
+   memset(buttons, 0, sizeof(buttons));
+   for (i = 0; i < 3; i++)
+   {
+      buttons[i].text               = labels[i];
+      buttons[i].right_spaces       = (i < 2) ? 3 : 0;
+      buttons[i].on.fg              = col_black;
+      buttons[i].on.bg              = col_midgreen;
+      buttons[i].on.border          = col_white;
+      buttons[i].off.fg             = col_green;
+      buttons[i].off.bg             = col_black;
+      buttons[i].off.border         = col_green;
+      buttons[i].shortcut[0].key[0] = keys[i];
+   }
+
+   wmsg.title        = title;
+   wmsg.text         = text;
+   wmsg.font_width   = 8;
+   wmsg.font_height  = 8;
+   wmsg.col_win.bg   = col_black;
+   wmsg.col_win.fg   = col_white;
+   wmsg.col_title.bg = col_green;
+   wmsg.col_title.fg = col_black;
+   wmsg.col_text.bg  = -1;
+   wmsg.col_text.fg  = col_green;
+   wmsg.button       = & buttons[0];
+
+   return wmsg_main( & wmsg);
+}
+
+int msg_unsaved_main(const char *text)
+{
+   return msg_three_buttons("WARNING", (char *) text,
+                            "(S) SAVE ALL", KEY_S,
+                            "(D) DISCARD", KEY_D);
+}
+
+int msg_project_required_main(void)
+{
+   return msg_three_buttons("PROJECT NEEDED",
+      "\nSaved maps live in a project folder. Choose one to continue.",
+      "(N) NEW PROJECT", KEY_N,
+      "(O) OPEN PROJECT", KEY_O);
+}
+
+
 // ==========================================================================
 // Message Window that appear when user ask to QUIT
 // return value :

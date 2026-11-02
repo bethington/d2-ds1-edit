@@ -27,22 +27,9 @@
 #include "ui/input.h"
 #include "ui/selftest_verdict.h"
 #include "core/ds1_save_io.h"
+#include "ui/map_save_ui.h"
+#include "core/map_state.h"
 #include <allegro5/allegro_native_dialog.h>
-
-/* Save one map. A failed save changes nothing on disk or in the map (see
- * core/ds1_save_io.h); tell the user so it is never mistaken for success. */
-static int interface_save_map(int ds1_idx, int is_tmp_file)
-{
-   char error[768];
-
-   if (ds1_save_checked(ds1_idx, is_tmp_file, error, sizeof(error)) == 0)
-      return 0;
-   al_show_native_message_box(a5_display, "DS1Edit",
-      is_tmp_file ? "The autosave (.tmp) was not written"
-                  : "The map was not saved",
-      error, NULL, ALLEGRO_MESSAGEBOX_ERROR);
-   return -1;
-}
 
 typedef struct
 {
@@ -307,6 +294,36 @@ static void st_report(int win_w, int win_h, double wall_s, int font_bad,
    }
 }
 
+/* Decide whether the editor may close. Only unsaved maps need a question.
+ * Returns TRUE to close. */
+static int interface_confirm_quit(void)
+{
+   int i;
+
+   if (!map_any_dirty())
+      return TRUE;
+
+   /* The close request has been taken; the dialog must not see it as well. */
+   a5_display_closed = 0;
+
+   switch (msg_quit_main())
+   {
+   case 0:
+      // stay open if any map could not be saved
+      return map_save_ui_save_dirty() == 0;
+
+   case -1:
+   case 1:
+      for (i = 0; i < DS1_MAX; i++)
+         if (map_is_dirty(i))
+            map_save_ui_save(i, TRUE); // save a .TMP map
+      return TRUE;
+
+   default:
+      return FALSE;
+   }
+}
+
 // ==========================================================================
 // MAIN loop
 void interfac_user_handler(int start_ds1_idx)
@@ -423,7 +440,10 @@ void interfac_user_handler(int start_ds1_idx)
       /* Close is a request, not an event to be swallowed: honour it here so
          it behaves the same whether or not a panel has focus. */
       if (a5_display_closed)
-         done = TRUE;
+      {
+         done = interface_confirm_quit();
+         a5_display_closed = 0;
+      }
 
       perf_accumulate(
           &glb_perf_stats.input_ms_total,
@@ -434,6 +454,8 @@ void interfac_user_handler(int start_ds1_idx)
 
       /* Project workflow: Ctrl+Shift+{N,O,W} */
       project_menu_handle_shortcuts();
+      if (!glb_ds1edit.has_loaded_ds1)
+         ds1_idx = 0;  /* closing a project can discard the open maps */
 
       /* Preset picker: Ctrl+Shift+P */
       preset_picker_handle_shortcut();
@@ -1473,11 +1495,18 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       // S
-      if (key_hit(KEY_S) && (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)))
+      if (key_hit(KEY_S) && (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)) &&
+          (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT)))
+      {
+         // CTRL + SHIFT + S : save every map with unsaved edits
+         map_save_ui_save_dirty();
+      }
+      else if (key_hit(KEY_S) && (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)) &&
+               glb_ds1[ds1_idx].name[0] != 0)
       {
          // CTRL + S : save the ds1, in the current state, incremental save
          // (the "saved" message only after a save that actually happened)
-         if (interface_save_map(ds1_idx, FALSE) == 0)
+         if (map_save_ui_save(ds1_idx, FALSE) == 0)
          {
             ret = msg_save_main();
             switch (ret)
@@ -2103,42 +2132,7 @@ void interfac_user_handler(int start_ds1_idx)
       // quit
       if (key_hit(KEY_ESC) && (glb_ds1[ds1_idx].draw_edit_obj == FALSE))
       {
-         ret = msg_quit_main();
-         switch (ret)
-         {
-         case -1:
-            // error
-            interface_save_map(ds1_idx, TRUE); // save a .TMP map
-            done = TRUE;
-            break;
-
-         case 0:
-            // save ALL & quit -- but stay open if any map could not be
-            // saved, so its edits are not lost with the process
-            {
-               int all_saved = TRUE;
-
-               for (i = 0; i < DS1_MAX; i++)
-               {
-                  if (strlen(glb_ds1[i].name) &&
-                      interface_save_map(i, FALSE) != 0)
-                     all_saved = FALSE;
-               }
-               done = all_saved;
-            }
-            break;
-
-         case 1:
-            // quit
-            interface_save_map(ds1_idx, TRUE); // save a .TMP map
-            done = TRUE;
-            break;
-
-         case 2:
-         default:
-            // cancel
-            break;
-         }
+         done = interface_confirm_quit();
       }
 
       perf_accumulate(
