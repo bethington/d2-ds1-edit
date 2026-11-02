@@ -248,7 +248,6 @@ static void action_close_project(void)
    fprintf(stderr, "project_menu: closing <%s>\n", glb_project.path);
 
    project_close();
-   glb_config.mod_dir[0] = NULL; // clear overlay
 }
 
 static int make_virtual_prefix_from_mod_path(const char *picked_path,

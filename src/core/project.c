@@ -26,6 +26,10 @@
 
 PROJECT_S glb_project;
 
+// The mod_dir[0] the project replaced, restored when it closes.
+static char *s_configured_mod_dir;
+static int   s_mod_dir_replaced;
+
 static int file_exists(const char *path)
 {
    FILE *fp = fopen(path, "rb");
@@ -186,6 +190,11 @@ int project_save(void)
 
 void project_close(void)
 {
+   if (s_mod_dir_replaced)
+   {
+      glb_config.mod_dir[0] = s_configured_mod_dir;
+      s_mod_dir_replaced = 0;
+   }
    memset(&glb_project, 0, sizeof(glb_project));
 }
 
@@ -204,6 +213,11 @@ void project_apply_to_config(void)
    if (buf != NULL)
    {
       memcpy(buf, glb_project.path, len + 1);
+      if (!s_mod_dir_replaced)
+      {
+         s_configured_mod_dir = glb_config.mod_dir[0];
+         s_mod_dir_replaced = 1;
+      }
       glb_config.mod_dir[0] = buf;
    }
 

@@ -718,6 +718,21 @@ void test_a_failed_save_leaves_the_map_dirty(void)
    TEST_ASSERT_TRUE(map_is_dirty(0));
 }
 
+void test_closing_a_project_restores_the_configured_mod_dir(void)
+{
+   char configured[] = "my_mod";
+   char *before = glb_config.mod_dir[0];
+
+   glb_config.mod_dir[0] = configured;
+   open_project("proj");
+   project_apply_to_config();
+   TEST_ASSERT_EQUAL_STRING(glb_project.path, glb_config.mod_dir[0]);
+
+   project_close();
+   TEST_ASSERT_TRUE(glb_config.mod_dir[0] == configured);
+   glb_config.mod_dir[0] = before;
+}
+
 int main(int argc, char **argv)
 {
    pkgc_test_filter = argc > 1 ? argv[1] : NULL;
@@ -757,5 +772,6 @@ int main(int argc, char **argv)
    PKGC_RUN(test_legacy_wrapper_returns_the_failure);
    PKGC_RUN(test_a_real_save_clears_dirty_and_a_tmp_save_does_not);
    PKGC_RUN(test_a_failed_save_leaves_the_map_dirty);
+   PKGC_RUN(test_closing_a_project_restores_the_configured_mod_dir);
    return UNITY_END();
 }
