@@ -32,7 +32,9 @@ October 30 2011 :
 #define DS1EDIT_BUILD_MODE "unknown"
 #endif
 
+#include <allegro5/allegro_ttf.h>
 #include "structs.h"
+#include "ui/ui_scale.h"
 #include "error.h"
 #include "mpq/MpqView.h"
 #include "core/dt1.h"
@@ -543,6 +545,8 @@ void ds1edit_recreate_render_targets(void)
    int old_width;
    int old_height;
    int prev_flags;
+
+   ui_scale_refresh();
    char tmp[160];
 
    /* Everything the editor draws is composed into these two surfaces, so if
@@ -1374,6 +1378,8 @@ void ds1edit_restore_gpu_bitmaps(void)
    /* The font cannot be promoted by cloning, so confirm the conversion took
       once here instead of testing every glyph draw. */
    a5_gpu_guard_font(a5_font, "a5_font");
+   if (a5_ui_font != NULL)
+      a5_gpu_guard_font(a5_ui_font, "a5_ui_font");
 }
 
 /* Free the editor's GPU bitmaps while the display still exists. If they are
@@ -1452,6 +1458,7 @@ static void ds1edit_release_gpu_bitmaps(void)
    DS1_RELEASE_BMP(glb_ds1edit.big_screen_buff);
 #undef DS1_RELEASE_BMP
 
+   ui_scale_release();
    if (a5_font != NULL)
    {
       al_destroy_font(a5_font);
@@ -1500,6 +1507,7 @@ int main(int argc, char *argv[])
 
    al_init_image_addon();
    al_init_font_addon();
+   al_init_ttf_addon();
    al_init_primitives_addon();
    a5_font = al_create_builtin_font();
 
@@ -2125,6 +2133,9 @@ int main(int argc, char *argv[])
    // display setup (skip if already created by the area browser)
    if (a5_display == NULL)
    {
+      /* Not for --selftest, whose frame times are compared at the size asked for. */
+      if (glb_config.fullscreen != TRUE && glb_ds1edit.cmd_line.selftest_frames <= 0)
+         ui_scale_window_size(&glb_config.screen.width, &glb_config.screen.height);
       a5_display = ds1edit_try_create_display();
       ds1edit_report_display_driver(a5_display);
       if (a5_display == NULL)
