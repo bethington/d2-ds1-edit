@@ -246,6 +246,8 @@ Tests that create the editor window run with `DS1EDIT_TEST_OFFSCREEN=1`
 switch the editor creates a frameless window beyond the edge of the virtual
 desktop, makes it non-activating and a tool window (no taskbar or Alt-Tab
 entry), refuses activation, and hands focus back if anything still took it.
+On macOS the window keeps its title bar, because AppKit aborts on a frameless
+window made main, and none of the non-activating steps apply.
 Rendering, presents and `--selftest` are unaffected (verified on Direct3D and
 OpenGL). Never honoured in fullscreen. `scripts/perf/fps_test.py` stays
 **visible by default** because Windows may throttle an occluded window;

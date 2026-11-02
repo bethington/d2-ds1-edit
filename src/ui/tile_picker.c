@@ -715,7 +715,7 @@ int tile_picker_popup_run(int ds1_idx, int cx, int cy,
                        : popup_y + 4;
       int best_idx = -1;
 
-      al_get_mouse_state(&a5_ms_state);
+      a5_get_mouse_state(&a5_ms_state);
       al_get_keyboard_state(&a5_kb_state);
       mx = al_get_mouse_state_axis(&a5_ms_state, 0);
       my = al_get_mouse_state_axis(&a5_ms_state, 1);

@@ -951,7 +951,7 @@ void interfac_user_handler(int start_ds1_idx)
           * (common in tests and after alt-tab) otherwise drifts the view off
           * the map. */
          int ctrl = key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL);
-         int edge = glb_config.mouse_edge_scroll;
+         int edge = glb_config.mouse_edge_scroll && a5_mouse_available();
 
          if (key_pressed(KEY_W) || (!ctrl && key_pressed(KEY_UP)))
          {
@@ -1083,7 +1083,7 @@ void interfac_user_handler(int start_ds1_idx)
                glb_ds1[ds1_idx].own_wpreview.h = glb_ds1edit.win_preview.h;
                glb_ds1edit.win_preview.x0 = glb_ds1[ds1_idx].own_wpreview.x0;
                glb_ds1edit.win_preview.y0 = glb_ds1[ds1_idx].own_wpreview.y0;
-               al_set_mouse_xy(a5_display, glb_ds1edit.win_preview.w / 2, glb_ds1edit.win_preview.h / 2);
+               a5_set_mouse_xy(a5_display, glb_ds1edit.win_preview.w / 2, glb_ds1edit.win_preview.h / 2);
             }
             else
             {
@@ -1104,7 +1104,7 @@ void interfac_user_handler(int start_ds1_idx)
                glb_ds1[ds1_idx].own_wpreview.h = glb_ds1edit.win_preview.h;
                glb_ds1edit.win_preview.x0 = glb_ds1[ds1_idx].own_wpreview.x0;
                glb_ds1edit.win_preview.y0 = glb_ds1[ds1_idx].own_wpreview.y0;
-               al_set_mouse_xy(a5_display, glb_ds1edit.win_preview.w / 2, glb_ds1edit.win_preview.h / 2);
+               a5_set_mouse_xy(a5_display, glb_ds1edit.win_preview.w / 2, glb_ds1edit.win_preview.h / 2);
             }
          }
       }
@@ -1550,7 +1550,7 @@ void interfac_user_handler(int start_ds1_idx)
                   change_zoom(ds1_idx, glb_config.center_zoom);
                glb_ds1edit.win_preview.x0 = glb_ds1[ds1_idx].own_wpreview.x0;
                glb_ds1edit.win_preview.y0 = glb_ds1[ds1_idx].own_wpreview.y0;
-               al_set_mouse_xy(a5_display, glb_ds1edit.win_preview.w / 2, glb_ds1edit.win_preview.h / 2);
+               a5_set_mouse_xy(a5_display, glb_ds1edit.win_preview.w / 2, glb_ds1edit.win_preview.h / 2);
             }
          }
          else
@@ -1579,7 +1579,7 @@ void interfac_user_handler(int start_ds1_idx)
                   change_zoom(ds1_idx, glb_config.center_zoom);
                glb_ds1edit.win_preview.x0 = glb_ds1[ds1_idx].own_wpreview.x0;
                glb_ds1edit.win_preview.y0 = glb_ds1[ds1_idx].own_wpreview.y0;
-               al_set_mouse_xy(a5_display, glb_ds1edit.win_preview.w / 2, glb_ds1edit.win_preview.h / 2);
+               a5_set_mouse_xy(a5_display, glb_ds1edit.win_preview.w / 2, glb_ds1edit.win_preview.h / 2);
             }
          }
       }
@@ -1939,7 +1939,7 @@ void interfac_user_handler(int start_ds1_idx)
                while (a5_mouse_b & 1) // NOT old_mouse_b else infinite loop
                {
                   al_rest(0.01);
-                  al_get_mouse_state(&a5_ms_state);
+                  a5_get_mouse_state(&a5_ms_state);
                }
             }
             else if (tmp_sel.start == FALSE)
@@ -2081,13 +2081,13 @@ void interfac_user_handler(int start_ds1_idx)
             {
                /* Ctrl+Shift+right-click: advanced bits window (legacy) */
                wbits_main(ds1_idx, cx, cy);
-               al_set_mouse_xy(a5_display, old_mouse_x, old_mouse_y);
+               a5_set_mouse_xy(a5_display, old_mouse_x, old_mouse_y);
             }
             else if (rc_shift)
             {
                /* Shift+right-click: full wedit_test (legacy) */
                wedit_test(ds1_idx, cx, cy);
-               al_set_mouse_xy(a5_display, old_mouse_x, old_mouse_y);
+               a5_set_mouse_xy(a5_display, old_mouse_x, old_mouse_y);
             }
             else
             {
@@ -2095,7 +2095,7 @@ void interfac_user_handler(int start_ds1_idx)
                 * popup_run runs its own modal loop while button held. */
                tile_picker_popup_run(ds1_idx, cx, cy,
                                      a5_mouse_x, a5_mouse_y);
-               al_set_mouse_xy(a5_display, old_mouse_x, old_mouse_y);
+               a5_set_mouse_xy(a5_display, old_mouse_x, old_mouse_y);
             }
          }
       }

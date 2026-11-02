@@ -202,7 +202,7 @@ int upscale_mode_picker_choose(const char *title, int remote_enabled)
          }
       }
 
-      al_get_mouse_state(&a5_ms_state);
+      a5_get_mouse_state(&a5_ms_state);
       mx = a5_mouse_x;
       my = a5_mouse_y;
       mb = a5_mouse_b;

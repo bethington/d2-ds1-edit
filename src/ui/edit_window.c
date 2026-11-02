@@ -1654,7 +1654,7 @@ void wedit_test(int ds1_idx, int tx, int ty)
 
    wedit_save_tile(ds1_idx, tx, ty, save_floor, save_wall, save_shadow);
    wedit_tiles_make(ds1_idx);
-   al_set_mouse_xy(a5_display, 200, 70);
+   a5_set_mouse_xy(a5_display, 200, 70);
 
    w->button[BU_WALL1].active = 0 < d->wall_num ? TRUE : FALSE;
    w->button[BU_WALL2].active = 1 < d->wall_num ? TRUE : FALSE;
@@ -1833,14 +1833,15 @@ void wedit_test(int ds1_idx, int tx, int ty)
       // which tile is under the mouse ?
       wedit_mouse_tile(mx, my, xn, yn, current_type, &m_idx, &s_idx);
 
-      // scroll
-      if (key_pressed(KEY_UP) || (glb_config.mouse_edge_scroll && my == 0))
+      // scroll (without a mouse the pointer reads as 0,0: not an edge touch)
+      int edge = glb_config.mouse_edge_scroll && a5_mouse_available();
+      if (key_pressed(KEY_UP) || (edge && my == 0))
          yn -= glb_config.scroll.edit.y;
-      if (key_pressed(KEY_DOWN) || (glb_config.mouse_edge_scroll && my == glb_config.screen.height - 1))
+      if (key_pressed(KEY_DOWN) || (edge && my == glb_config.screen.height - 1))
          yn += glb_config.scroll.edit.y;
-      if (key_pressed(KEY_LEFT) || (glb_config.mouse_edge_scroll && mx == 0))
+      if (key_pressed(KEY_LEFT) || (edge && mx == 0))
          xn -= glb_config.scroll.edit.x;
-      if (key_pressed(KEY_RIGHT) || (glb_config.mouse_edge_scroll && mx == glb_config.screen.width - 1))
+      if (key_pressed(KEY_RIGHT) || (edge && mx == glb_config.screen.width - 1))
          xn += glb_config.scroll.edit.x;
       if (key_pressed(KEY_HOME))
          xn = 0;

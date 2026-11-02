@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.21)  # RUNTIME_DEPENDENCY_SET
 project(d2-ds1-edit VERSION 2.2.1 LANGUAGES C)
+if(APPLE)
+    enable_language(OBJC)  # src/mac_pointer.m
+endif()
 
 # Pass version to source code
 add_compile_definitions(
@@ -22,13 +25,8 @@ include(cmake/instrumentation.cmake)  # DS1EDIT_ENABLE_SANITIZERS / _COVERAGE
 # -DDS1EDIT_ALLEGRO_PREFIX=<dir> (or the env var of the same name) and its
 # pkg-config data is searched first.
 #
-# macOS needs this in one specific case: Allegro's mouse driver
-# (src/macosx/qzmouse.m, osx_init_mouse) refuses to install when no HID
-# pointing device is present, and a Mac driven over Screen Sharing -- or any
-# Mac with nothing plugged in -- has no such device even though its cursor
-# works. Mouse events come from Cocoa, not HID, so the check costs the editor
-# a mouse it could have used. Building Allegro with a fallback button count
-# fixes it.
+# macOS no longer needs this for the mouse: src/mac_pointer.m reads the pointer
+# from Cocoa, so a Mac with no HID pointing device works on stock Allegro.
 set(DS1EDIT_ALLEGRO_PREFIX "$ENV{DS1EDIT_ALLEGRO_PREFIX}"
     CACHE PATH "Prefix of an Allegro 5 install to prefer over the system one")
 
@@ -154,6 +152,18 @@ find_package(OpenGL)
 if(OPENGL_FOUND)
     target_link_libraries(ds1edit_allegro INTERFACE OpenGL::GL)
     target_compile_definitions(ds1edit_allegro INTERFACE DS1EDIT_HAVE_GL)
+endif()
+
+# The macOS pointer. A library rather than a SOURCES entry because compat.h
+# reaches it from code the test targets compile too; hanging it off
+# ds1edit_allegro gives every one of them the symbols.
+if(APPLE)
+    add_library(ds1edit_mac_pointer STATIC src/mac_pointer.m)
+    target_include_directories(ds1edit_mac_pointer PRIVATE
+        src
+        $<TARGET_PROPERTY:ds1edit_allegro,INTERFACE_INCLUDE_DIRECTORIES>)
+    target_link_libraries(ds1edit_mac_pointer PUBLIC "-framework Cocoa")
+    target_link_libraries(ds1edit_allegro INTERFACE ds1edit_mac_pointer)
 endif()
 
 # Source files
@@ -358,7 +368,7 @@ else()
     # mac_platform.c calls IOHIDCheckAccess/IOHIDRequestAccess to ask for
     # Input Monitoring, without which Allegro's mouse driver finds no mouse.
     if(APPLE)
-        target_link_libraries(ds1edit PRIVATE "-framework IOKit")
+        target_link_libraries(ds1edit PRIVATE "-framework IOKit" ds1edit_mac_pointer)
     endif()
 
     target_compile_options(ds1edit PRIVATE
@@ -439,8 +449,7 @@ add_custom_command(TARGET ds1edit POST_BUILD
 # Info.plist. It exists because TCC identifies a bundle by its identifier and
 # shows it by name, so the user can grant ds1edit.app Input Monitoring on its
 # own instead of granting it to whatever terminal happens to launch the CLI
-# binary. Allegro's mouse driver needs that permission to see any mouse
-# (mac_platform.c has the detail).
+# binary (mac_platform.c has the detail).
 #
 # bin/ds1edit stays exactly where it was: the CLI verbs, --headless and the
 # tests all still use it. The bundle chdir's to its own parent at startup, so

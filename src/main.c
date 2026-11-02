@@ -960,10 +960,11 @@ const char *ds1edit_build_identity(void)
  *
  * Automated runs (CTest, the Python launchers) create a real window so the
  * display path is exercised, but they should not flash a window over whatever
- * the developer is doing. With the switch on, the window is frameless, placed
- * beyond the right/bottom edge of the virtual desktop, and shown without
- * taking focus. Rendering, readback and --selftest are unaffected: the
- * window still exists and still presents. Never honoured for fullscreen. */
+ * the developer is doing. With the switch on, the window is frameless (except
+ * on macOS, where that aborts), placed beyond the right/bottom edge of the
+ * virtual desktop, and shown without taking focus. Rendering, readback and
+ * --selftest are unaffected: the window still exists and still presents. Never
+ * honoured for fullscreen. */
 static int ds1edit_offscreen_requested(void)
 {
    const char *v = getenv("DS1EDIT_TEST_OFFSCREEN");
@@ -1169,7 +1170,13 @@ static ALLEGRO_DISPLAY * ds1edit_try_create_display_inner(void)
    int w = glb_config.screen.width;
    int h = glb_config.screen.height;
    int offscreen = ds1edit_offscreen_requested();
+#ifdef __APPLE__
+   /* Allegro's Cocoa driver makes every new window the main window, and AppKit
+      throws on a borderless one ([self canBecomeMainWindow]), aborting. */
+   int extra = 0;
+#else
    int extra = offscreen ? ALLEGRO_FRAMELESS : 0;
+#endif
 
    /* The editor redraws unconditionally every iteration. Without vsync that
       is whatever the GPU will give -- 120 fps of identical frames on an idle
@@ -2147,42 +2154,35 @@ int main(int argc, char *argv[])
    // mouse (skip if already installed by area browser)
    if (!al_is_mouse_installed())
    {
+      int have_pointer = 0;
 #ifdef __APPLE__
-      /* Allegro's macOS mouse driver counts buttons by enumerating HID
-         devices, and TCC hides every input device from a process without
-         Input Monitoring -- so al_install_mouse() fails on a machine whose
-         trackpad plainly works. Ask first, and if the answer is no, say what
-         to do about it rather than reporting a driver failure. */
+      /* The pointer comes from Cocoa, not Allegro's driver, which refuses to
+         install on a Mac with no HID pointing device. See mac_pointer.m. It
+         needs no Input Monitoring. The request stays for now because the
+         release checklist records the keyboard as needing it. Only exclusive
+         fullscreen, which has no window to watch, falls through to the driver. */
       int mac_hid_ok = ds1_mac_request_input_monitoring();
+      have_pointer = ds1_mac_pointer_start(a5_display);
 #endif
-      if (!al_install_mouse())
+      if (!have_pointer && !al_install_mouse())
       {
+         /* No pointer is not a reason to refuse to run: the map still draws
+            and the keyboard still scrolls it. Say so where a user with a dead
+            pointer will look. */
+         fprintf(stderr, "mouse: none found, running keyboard-only\n");
 #ifdef __APPLE__
          if (!mac_hid_ok)
-         {
-            sprintf(
-                tmp,
-                "main(), error.\n"
-                "Can't install the Mouse handler.\n\n"
-                "macOS is withholding Input Monitoring from this process, so\n"
-                "Allegro cannot see any mouse. Grant it in System Settings >\n"
-                "Privacy & Security > Input Monitoring (add ds1edit.app with\n"
-                "the + button if it is not listed), then start the editor\n"
-                "again -- a new grant does not reach a running process.");
-            ds1edit_error(tmp);
-         }
+            fprintf(stderr, "mouse: macOS Input Monitoring is not granted to this process\n");
 #endif
-         sprintf(
-             tmp,
-             "main(), error.\nCan't install the Mouse handler.");
-         ds1edit_error(tmp);
+         strcat(tmp, " - no mouse found, keyboard only");
+         al_set_window_title(a5_display, tmp);
       }
    }
 
    // event queue
    a5_event_queue = al_create_event_queue();
    al_register_event_source(a5_event_queue, al_get_keyboard_event_source());
-   al_register_event_source(a5_event_queue, al_get_mouse_event_source());
+   a5_register_mouse_events(a5_event_queue);
    al_register_event_source(a5_event_queue, al_get_display_event_source(a5_display));
 
    /* Edge-detected input. Everything that reads a key or a button goes
@@ -2253,6 +2253,9 @@ int main(int argc, char *argv[])
    if (a5_event_queue != NULL)
       al_destroy_event_queue(a5_event_queue);
    ds1edit_release_gpu_bitmaps();
+#ifdef __APPLE__
+   ds1_mac_pointer_stop();
+#endif
    al_destroy_display(a5_display);
    if (glb_ds1edit.cmd_line.selftest_frames > 0)
       fprintf(stdout, "selftest: shutdown %.0f ms\n",

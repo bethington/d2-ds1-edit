@@ -16,6 +16,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 /* ---- Boolean constants ---- */
 /* Allegro 5 does not define TRUE/FALSE */
@@ -460,12 +461,67 @@ static inline bool ds1_key_is_down(int k)
 #define key_pressed(k) ds1_key_is_down(k)
 
 /* ---- Mouse compat ---- */
+#ifdef __APPLE__
+#include "mac_pointer.h"
+#endif
+
 extern ALLEGRO_MOUSE_STATE a5_ms_state;
 
 #define a5_mouse_x (a5_ms_state.x)
 #define a5_mouse_y (a5_ms_state.y)
 #define a5_mouse_b (a5_ms_state.buttons)
 #define a5_mouse_z (a5_ms_state.z)
+
+/* Everything goes through these rather than al_get_mouse_state() and friends.
+   On macOS the pointer comes from Cocoa, not Allegro's driver (mac_pointer.m),
+   and elsewhere al_install_mouse() can fail, leaving the editor keyboard-only.
+   Allegro dereferences its driver in these calls without checking it. With no
+   pointer the state reads as all zeroes: at the origin, no buttons down. */
+static inline bool a5_mouse_available(void)
+{
+#ifdef __APPLE__
+   if (ds1_mac_pointer_active())
+      return true;
+#endif
+   return al_is_mouse_installed();
+}
+
+static inline void a5_get_mouse_state(ALLEGRO_MOUSE_STATE *state)
+{
+#ifdef __APPLE__
+   if (ds1_mac_pointer_active())
+   {
+      ds1_mac_pointer_get_state(state);
+      return;
+   }
+#endif
+   if (al_is_mouse_installed())
+      al_get_mouse_state(state);
+   else
+      memset(state, 0, sizeof(*state));
+}
+
+static inline bool a5_set_mouse_xy(ALLEGRO_DISPLAY *display, int x, int y)
+{
+#ifdef __APPLE__
+   if (ds1_mac_pointer_active())
+      return ds1_mac_pointer_warp(x, y);
+#endif
+   return al_is_mouse_installed() && al_set_mouse_xy(display, x, y);
+}
+
+static inline void a5_register_mouse_events(ALLEGRO_EVENT_QUEUE *queue)
+{
+#ifdef __APPLE__
+   if (ds1_mac_pointer_active())
+   {
+      al_register_event_source(queue, ds1_mac_pointer_event_source());
+      return;
+   }
+#endif
+   if (al_is_mouse_installed())
+      al_register_event_source(queue, al_get_mouse_event_source());
+}
 
 /* ---- Misc compat ---- */
 #define rest(ms) al_rest((double)(ms) / 1000.0)

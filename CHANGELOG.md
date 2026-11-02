@@ -33,6 +33,16 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
 
 ### Fixed
 
+- **The pointer works on any Mac, including over a remote desktop.** macOS now
+  reads the pointer from Cocoa events instead of Allegro's mouse driver, which
+  refuses to install on a Mac with no HID pointing device, as with Jump Desktop
+  or Screen Sharing. No custom Allegro build is needed, and a denied Input
+  Monitoring permission no longer stops startup.
+- **The editor starts without a mouse.** If no pointer is available at all, the
+  editor runs keyboard-only and says so in the window title and on stderr
+  instead of exiting.
+- **`DS1EDIT_TEST_OFFSCREEN=1` no longer aborts on macOS.** AppKit threw on the
+  frameless window; on macOS the test window now keeps its title bar.
 - **Reading `.txt` tables no longer returns freed memory.** `txt_read_in_mem` returned its old pointer after `realloc`, so `LvlTypes`, `LvlPrest` and `Objects` were parsed from a freed block whenever `realloc` moved it.
 - **DCC frames too large for the direction box are refused in the frame header.** A width of `0xFFFFFFFF` wrapped a 32-bit `long` to an empty frame box and got past the direction box check on the Windows build; huge widths, heights and offsets at the end of the 32-bit range now fail there.
 - **`--selftest` no longer fails healthy runs on a busy machine.** The frame-time rule that backs up the MEMORY-bitmap draw guard compared the mean *wall* time of a frame with 250 ms. With parallel test lanes, frames waited seconds for a core (act1_town at 1:8: about 50 ms of CPU per frame, 200 ms to several seconds of wall time), and roughly one windowed GPU run in 150 exited 1 with nothing wrong. The rule now uses the main thread's CPU time per frame, which a host under load does not inflate; the direct MEMORY-bitmap guard is unchanged. The selftest summary and `--selftest-report` JSON now include it (`frame cpu ms avg`, `frame_cpu_ms_avg`).
