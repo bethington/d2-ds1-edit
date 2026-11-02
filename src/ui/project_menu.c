@@ -192,13 +192,18 @@ static int action_open_project(void)
    char ini[PROJECT_PATH_MAX];
    const char *initial;
    FILE *fp;
+   int had_project;
 
    // Prefer the most recent project dir as the starting location.
    initial = (glb_prefs.recent_count > 0)
            ? glb_prefs.recent_projects[0]
            : (glb_prefs.last_d2_install[0] ? glb_prefs.last_d2_install : NULL);
 
-   if (!map_save_ui_resolve_unsaved(
+   /* Read before project_load() overwrites glb_project. Only a change from
+    * one project to another can lose maps; the first-save flow has none open. */
+   had_project = glb_project.is_open;
+
+   if (had_project && !map_save_ui_resolve_unsaved(
           "\nSave the open maps before changing project ?"))
       return 0;
 
@@ -228,7 +233,7 @@ static int action_open_project(void)
       return 0;
    }
 
-   if (map_any_dirty())
+   if (had_project && map_any_dirty())
       area_browser_unload_all();
 
    project_apply_to_config();

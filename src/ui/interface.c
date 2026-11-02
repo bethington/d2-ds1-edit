@@ -1522,7 +1522,8 @@ void interfac_user_handler(int start_ds1_idx)
             }
          }
       }
-      if (key_hit(KEY_S) && (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT)) && glb_ds1edit.mode == MOD_T)
+      if (key_hit(KEY_S) && (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT)) &&
+          !key_pressed(KEY_LCONTROL) && !key_pressed(KEY_RCONTROL) && glb_ds1edit.mode == MOD_T)
       {
          // Shift+S : show all previously hidden tiles
          edittile_unhide_all(ds1_idx);
