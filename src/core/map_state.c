@@ -17,15 +17,20 @@ void map_dirty_mark(int ds1_idx)
 
 // FNV-1a over the tile fields ds1_serialize writes, field by field. Flags and
 // block indexes are display state, not saved content.
+static unsigned long long fnv8(unsigned long long h, unsigned long v)
+{
+   h ^= v & 0xFF;
+   h *= 1099511628211ULL;
+   return h;
+}
+
+// counts, sizes and tag words need all four bytes
 static unsigned long long fnv(unsigned long long h, unsigned long v)
 {
    int i;
 
    for (i = 0; i < 4; i++)
-   {
-      h ^= (v >> (8 * i)) & 0xFF;
-      h *= 1099511628211ULL;
-   }
+      h = fnv8(h, v >> (8 * i));
    return h;
 }
 
@@ -50,11 +55,11 @@ static unsigned long long hash_tiles(const DS1_S *d)
                const CELL_W_S *w;
                t = (y * d->wall_line) + (x * d->wall_num);
                w = d->wall_buff + t + i;
-               h = fnv(h, (unsigned long) w->prop1);
-               h = fnv(h, (unsigned long) w->prop2);
-               h = fnv(h, (unsigned long) w->prop3);
-               h = fnv(h, (unsigned long) w->prop4);
-               h = fnv(h, (unsigned long) w->orientation);
+               h = fnv8(h, (unsigned long) w->prop1);
+               h = fnv8(h, (unsigned long) w->prop2);
+               h = fnv8(h, (unsigned long) w->prop3);
+               h = fnv8(h, (unsigned long) w->prop4);
+               h = fnv8(h, (unsigned long) w->orientation);
             }
          if (d->floor_buff != NULL)
             for (i = 0; i < d->floor_num; i++)
@@ -62,10 +67,10 @@ static unsigned long long hash_tiles(const DS1_S *d)
                const CELL_F_S *f;
                t = (y * d->floor_line) + (x * d->floor_num);
                f = d->floor_buff + t + i;
-               h = fnv(h, (unsigned long) f->prop1);
-               h = fnv(h, (unsigned long) f->prop2);
-               h = fnv(h, (unsigned long) f->prop3);
-               h = fnv(h, (unsigned long) f->prop4);
+               h = fnv8(h, (unsigned long) f->prop1);
+               h = fnv8(h, (unsigned long) f->prop2);
+               h = fnv8(h, (unsigned long) f->prop3);
+               h = fnv8(h, (unsigned long) f->prop4);
             }
          if (d->shadow_buff != NULL)
             for (i = 0; i < d->shadow_num; i++)
@@ -73,10 +78,10 @@ static unsigned long long hash_tiles(const DS1_S *d)
                const CELL_S_S *s;
                t = (y * d->shadow_line) + (x * d->shadow_num);
                s = d->shadow_buff + t + i;
-               h = fnv(h, (unsigned long) s->prop1);
-               h = fnv(h, (unsigned long) s->prop2);
-               h = fnv(h, (unsigned long) s->prop3);
-               h = fnv(h, (unsigned long) s->prop4);
+               h = fnv8(h, (unsigned long) s->prop1);
+               h = fnv8(h, (unsigned long) s->prop2);
+               h = fnv8(h, (unsigned long) s->prop3);
+               h = fnv8(h, (unsigned long) s->prop4);
             }
          if (d->tag_type && d->tag_buff != NULL)
             for (i = 0; i < d->tag_num; i++)
@@ -120,14 +125,14 @@ void map_dirty_before_object_edit(int ds1_idx)
 
    if (!slot_has_map(ds1_idx)) return;
    d = &glb_ds1[ds1_idx];
-   d->undo_other_dirty = d->other_dirty;
-   d->other_dirty = 1;
+   d->undo_object_dirty = d->object_dirty;
+   d->object_dirty = 1;
 }
 
 void map_dirty_after_object_undo(int ds1_idx)
 {
    if (slot_has_map(ds1_idx))
-      glb_ds1[ds1_idx].other_dirty = glb_ds1[ds1_idx].undo_other_dirty;
+      glb_ds1[ds1_idx].object_dirty = glb_ds1[ds1_idx].undo_object_dirty;
 }
 
 void map_dirty_mark_saved(int ds1_idx)
@@ -137,7 +142,8 @@ void map_dirty_mark_saved(int ds1_idx)
    if (!slot_has_map(ds1_idx)) return;
    d = &glb_ds1[ds1_idx];
    d->other_dirty = 0;
-   d->undo_other_dirty = 1;   // the object undo backup now differs from disk
+   d->object_dirty = 0;
+   d->undo_object_dirty = 1;   // the object undo backup now differs from disk
    d->saved_tile_hash = d->current_tile_hash = hash_tiles(d);
    d->tile_hash_valid = 1;
 }
@@ -148,7 +154,7 @@ int map_is_dirty(int ds1_idx)
 
    if (!slot_has_map(ds1_idx)) return 0;
    d = &glb_ds1[ds1_idx];
-   return d->other_dirty ||
+   return d->other_dirty || d->object_dirty ||
           (d->tile_hash_valid && d->current_tile_hash != d->saved_tile_hash);
 }
 

@@ -85,6 +85,14 @@ void test_path_matching_ignores_case_and_slash_style_at_a_boundary(void)
    TEST_ASSERT_FALSE(map_state_path_matches("", "a.ds1"));
 }
 
+void test_object_undo_does_not_clear_another_unsaved_edit(void)
+{
+   map_dirty_before_object_edit(0);
+   map_dirty_mark(0);
+   map_dirty_after_object_undo(0);
+   TEST_ASSERT_TRUE(map_is_dirty(0));
+}
+
 int main(int argc, char **argv)
 {
    pkgc_test_filter = argc > 1 ? argv[1] : NULL;
@@ -97,5 +105,6 @@ int main(int argc, char **argv)
    PKGC_RUN(test_classify_covers_every_state);
    PKGC_RUN(test_marks);
    PKGC_RUN(test_path_matching_ignores_case_and_slash_style_at_a_boundary);
+   PKGC_RUN(test_object_undo_does_not_clear_another_unsaved_edit);
    return UNITY_END();
 }

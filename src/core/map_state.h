@@ -3,8 +3,10 @@
 
 /* Unsaved-edit tracking. A map is dirty when its saved tile content (the
  * fields the DS1 writer emits, not selection flags) differs from the content
- * at the last save, or when another kind of edit is unsaved. Undoing back to
- * the saved content makes the map clean again. All fields
+ * at the last save, or when another kind of edit is unsaved (an object edit,
+ * which one object undo can revert, or any other edit, which only a save
+ * clears). Undoing tile edits back to the saved content makes the map clean
+ * again. All fields
  * start at zero, which is the state of a freshly loaded map. */
 void map_dirty_mark(int ds1_idx);               // an edit with no undo step
 void map_dirty_before_tile_edit(int ds1_idx);   // a new tile undo buffer is starting
