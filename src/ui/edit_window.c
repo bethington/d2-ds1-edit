@@ -1834,7 +1834,7 @@ void wedit_test(int ds1_idx, int tx, int ty)
       wedit_mouse_tile(mx, my, xn, yn, current_type, &m_idx, &s_idx);
 
       // scroll (without a mouse the pointer reads as 0,0: not an edge touch)
-      int edge = glb_config.mouse_edge_scroll && al_is_mouse_installed();
+      int edge = glb_config.mouse_edge_scroll && a5_mouse_available();
       if (key_pressed(KEY_UP) || (edge && my == 0))
          yn -= glb_config.scroll.edit.y;
       if (key_pressed(KEY_DOWN) || (edge && my == glb_config.screen.height - 1))

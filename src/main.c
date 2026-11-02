@@ -2154,35 +2154,26 @@ int main(int argc, char *argv[])
    // mouse (skip if already installed by area browser)
    if (!al_is_mouse_installed())
    {
+      int have_pointer = 0;
 #ifdef __APPLE__
-      /* Allegro's macOS mouse driver counts buttons by enumerating HID
-         devices, and TCC hides every input device from a process without
-         Input Monitoring -- so al_install_mouse() fails on a machine whose
-         trackpad plainly works. Ask first, and if the answer is no, say what
-         to do about it rather than reporting a driver failure. */
+      /* The pointer comes from Cocoa, not Allegro's driver, which refuses to
+         install on a Mac with no HID pointing device. See mac_pointer.m. It
+         needs no Input Monitoring. The request stays for now because the
+         release checklist records the keyboard as needing it. Only exclusive
+         fullscreen, which has no window to watch, falls through to the driver. */
       int mac_hid_ok = ds1_mac_request_input_monitoring();
+      have_pointer = ds1_mac_pointer_start(a5_display);
 #endif
-      if (!al_install_mouse())
+      if (!have_pointer && !al_install_mouse())
       {
+         /* No pointer is not a reason to refuse to run: the map still draws
+            and the keyboard still scrolls it. Say so where a user with a dead
+            pointer will look. */
+         fprintf(stderr, "mouse: none found, running keyboard-only\n");
 #ifdef __APPLE__
          if (!mac_hid_ok)
-         {
-            sprintf(
-                tmp,
-                "main(), error.\n"
-                "Can't install the Mouse handler.\n\n"
-                "macOS is withholding Input Monitoring from this process, so\n"
-                "Allegro cannot see any mouse. Grant it in System Settings >\n"
-                "Privacy & Security > Input Monitoring (add ds1edit.app with\n"
-                "the + button if it is not listed), then start the editor\n"
-                "again -- a new grant does not reach a running process.");
-            ds1edit_error(tmp);
-         }
+            fprintf(stderr, "mouse: macOS Input Monitoring is not granted to this process\n");
 #endif
-         /* No pointing device is not a reason to refuse to run: the map still
-            draws and the keyboard still scrolls it. Say so where a user with
-            a dead pointer will look. */
-         fprintf(stderr, "mouse: none found, running keyboard-only\n");
          strcat(tmp, " - no mouse found, keyboard only");
          al_set_window_title(a5_display, tmp);
       }
@@ -2262,6 +2253,9 @@ int main(int argc, char *argv[])
    if (a5_event_queue != NULL)
       al_destroy_event_queue(a5_event_queue);
    ds1edit_release_gpu_bitmaps();
+#ifdef __APPLE__
+   ds1_mac_pointer_stop();
+#endif
    al_destroy_display(a5_display);
    if (glb_ds1edit.cmd_line.selftest_frames > 0)
       fprintf(stdout, "selftest: shutdown %.0f ms\n",

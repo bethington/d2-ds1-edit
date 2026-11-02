@@ -951,7 +951,7 @@ void interfac_user_handler(int start_ds1_idx)
           * (common in tests and after alt-tab) otherwise drifts the view off
           * the map. */
          int ctrl = key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL);
-         int edge = glb_config.mouse_edge_scroll && al_is_mouse_installed();
+         int edge = glb_config.mouse_edge_scroll && a5_mouse_available();
 
          if (key_pressed(KEY_W) || (!ctrl && key_pressed(KEY_UP)))
          {
