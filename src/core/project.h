@@ -59,8 +59,8 @@ int  project_ensure_parent_dirs(const char *path);
 //
 // Returns 1 if the path was actually redirected (i.e., a copy-on-save just
 // happened); 0 if it was passed through unchanged (no project, already
-// inside the project -- at a path-component boundary -- or no recognisable
-// tiles segment to rewrite from); -1 if it must be redirected but the target
+// inside the project -- at a path-component boundary -- or a rooted path with
+// no tiles segment to rewrite from); -1 if it must be redirected but the target
 // does not fit in `dst_cap` (dst then holds `src`; do not save in place).
 int  project_redirect_ds1_save_path(const char *src, char *dst, int dst_cap);
 

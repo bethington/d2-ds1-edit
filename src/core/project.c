@@ -325,6 +325,14 @@ static int path_starts_with(const char *path, const char *dir)
    return path[i] == 0 || path[i] == '/' || path[i] == '\\';
 }
 
+// "/x", "\x" and "C:\x" name a real place on disk. Anything else is a name
+// relative to Tiles, which is how the area browser names maps.
+static int is_rooted_path(const char *path)
+{
+   if (path[0] == '/' || path[0] == '\\') return 1;
+   return isalpha((unsigned char) path[0]) && path[1] == ':';
+}
+
 int project_redirect_ds1_save_path(const char *src, char *dst, int dst_cap)
 {
    const char *suffix;
@@ -344,6 +352,8 @@ int project_redirect_ds1_save_path(const char *src, char *dst, int dst_cap)
 
    // Only redirect if we can pull a meaningful in-game suffix out.
    suffix = find_tiles_suffix(src);
+   if (suffix == NULL && !is_rooted_path(src))
+      suffix = src;
    if (suffix == NULL || suffix[0] == 0)   return 0;
 
    {
@@ -362,5 +372,13 @@ int project_redirect_ds1_save_path(const char *src, char *dst, int dst_cap)
       dst[dst_cap - 1] = 0;
       return -1;
    }
+#ifndef WIN32
+   // A table can spell a relative name with backslashes.
+   {
+      char *c;
+      for (c = dst + strlen(glb_project.path); *c != 0; c++)
+         if (*c == '\\') *c = '/';
+   }
+#endif
    return 1;
 }

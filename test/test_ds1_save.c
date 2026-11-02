@@ -468,6 +468,36 @@ void test_copy_on_save_parent_creation_failure_changes_nothing(void)
    free(orig);
 }
 
+/* The area browser names maps relative to Tiles, as in "Act1/Town/x.ds1". */
+void test_copy_on_save_redirects_a_tiles_relative_name(void)
+{
+   FX_SPEC s;
+   char src[512], target[512];
+
+   make_source_tree();
+   load_fixture(&s, 18, "src" DS1_SEP_STR "tiles" DS1_SEP_STR "act1" DS1_SEP_STR "town.ds1",
+                0, src, sizeof(src));
+   snprintf(glb_ds1[0].name, sizeof(glb_ds1[0].name), "Act1/Town/TownN1.ds1");
+   open_project("proj");
+
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, SAVE(0, FALSE), err);
+   snprintf(target, sizeof(target), "%s%sGlobal%sTiles%sAct1%sTown%sTownN1.ds1",
+            glb_project.path, DS1_SEP_STR, DS1_SEP_STR, DS1_SEP_STR, DS1_SEP_STR, DS1_SEP_STR);
+   TEST_ASSERT_TRUE(tt_file_exists(target));
+   reload_and_expect(target, &s, 1);
+}
+
+void test_redirect_treats_backslashes_in_a_relative_name_as_separators(void)
+{
+   char dst[512], want[512];
+
+   open_project("proj");
+   TEST_ASSERT_EQUAL_INT(1, project_redirect_ds1_save_path("Act1\\Town\\x.ds1", dst, sizeof(dst)));
+   snprintf(want, sizeof(want), "%s%sGlobal%sTiles%sAct1%sTown%sx.ds1",
+            glb_project.path, DS1_SEP_STR, DS1_SEP_STR, DS1_SEP_STR, DS1_SEP_STR, DS1_SEP_STR);
+   TEST_ASSERT_EQUAL_STRING(want, dst);
+}
+
 /* ------------------------------------------------------------------ */
 /* I/O failures: reported, recoverable, no state change                */
 /* ------------------------------------------------------------------ */
@@ -686,6 +716,8 @@ int main(int argc, char **argv)
    PKGC_RUN(test_save_count_is_written_only_by_a_save);
    PKGC_RUN(test_copy_on_save_writes_into_the_project_and_keeps_the_original);
    PKGC_RUN(test_copy_on_save_parent_creation_failure_changes_nothing);
+   PKGC_RUN(test_copy_on_save_redirects_a_tiles_relative_name);
+   PKGC_RUN(test_redirect_treats_backslashes_in_a_relative_name_as_separators);
    PKGC_RUN(test_short_write_is_reported_and_keeps_the_destination);
    PKGC_RUN(test_failed_tile_byte_write_is_reported);
    PKGC_RUN(test_failed_close_is_reported_and_the_handle_released);
