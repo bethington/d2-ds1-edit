@@ -279,6 +279,86 @@ void test_signed_offsets_survive_in_the_frame_header(void)
    free(json);
 }
 
+/* ---- frame geometry ---------------------------------------------------------- */
+
+static void put_bits(UBYTE *data, size_t *pos, unsigned bits, uint32_t value)
+{
+   unsigned b;
+
+   for (b = 0; b < bits; b++, (*pos)++)
+      if ((value >> b) & 1u)
+         data[*pos / 8] |= (UBYTE) (1u << (*pos % 8));
+}
+
+/* One direction of two frames, every geometry field 32 bits wide. The first
+ * frame is sane, so only the second can make the file undecodable. */
+static size_t make_two_frame_dcc(UBYTE *buf, size_t size, uint32_t width, uint32_t height,
+                                 int32_t xoffset, int32_t yoffset)
+{
+   const uint32_t widths[2]  = {8, width};
+   const uint32_t heights[2] = {8, height};
+   const int32_t  xs[2]      = {0, xoffset};
+   const int32_t  ys[2]      = {0, yoffset};
+   size_t pos = 19 * 8;
+   int f;
+
+   memset(buf, 0, size);
+   buf[0] = 0x74; buf[1] = 6; buf[2] = 1;
+   put32(buf + 3, 2);
+   put32(buf + 7, 1);
+   put32(buf + 15, 19);
+
+   put_bits(buf, &pos, 32, 0);  /* outsize_coded */
+   put_bits(buf, &pos, 2, 0);   /* compression_flag */
+   put_bits(buf, &pos, 4, 0);   /* variable0_bits */
+   put_bits(buf, &pos, 4, 15);  /* width_bits: 32 */
+   put_bits(buf, &pos, 4, 15);  /* height_bits */
+   put_bits(buf, &pos, 4, 15);  /* xoffset_bits */
+   put_bits(buf, &pos, 4, 15);  /* yoffset_bits */
+   put_bits(buf, &pos, 4, 0);   /* optional_bytes_bits */
+   put_bits(buf, &pos, 4, 0);   /* coded_bytes_bits */
+   for (f = 0; f < 2; f++)
+   {
+      put_bits(buf, &pos, 32, widths[f]);
+      put_bits(buf, &pos, 32, heights[f]);
+      put_bits(buf, &pos, 32, (uint32_t) xs[f]);
+      put_bits(buf, &pos, 32, (uint32_t) ys[f]);
+      put_bits(buf, &pos, 1, 0); /* bottom_up */
+   }
+   return size;
+}
+
+/* Refused by the frame header check itself, not by a later stage that happens
+ * to trip over the same file. */
+static void assert_bad_geometry(const UBYTE *bytes, size_t len, const char *why)
+{
+   DS1EDIT_INDEX_FRAME *frames = NULL;
+   size_t count = 0;
+   char err[600] = "";
+
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, dcc_decode_indices(bytes, len, 0, &frames, &count,
+                                                       err, sizeof(err)), why);
+   TEST_ASSERT_NOT_NULL_MESSAGE(strstr(err, "geometry is not decodable"), why);
+}
+void test_frames_the_direction_box_cannot_hold_are_rejected(void)
+{
+   UBYTE buf[128];
+   size_t len;
+
+   /* 0xFFFFFFFF wraps a 32-bit `long` to an empty frame box, which used to
+    * pass the direction box check on the Windows build. */
+   len = make_two_frame_dcc(buf, sizeof(buf), 0xFFFFFFFFu, 8, 0, 0);
+   assert_bad_geometry(buf, len, "width 0xFFFFFFFF");
+   len = make_two_frame_dcc(buf, sizeof(buf), 8, 0xFFFFFFFFu, 0, 0);
+   assert_bad_geometry(buf, len, "height 0xFFFFFFFF");
+   len = make_two_frame_dcc(buf, sizeof(buf), 4097, 8, 0, 0);
+   assert_bad_geometry(buf, len, "width 4097");
+   len = make_two_frame_dcc(buf, sizeof(buf), 8, 8, INT32_MAX, 0);
+   assert_bad_geometry(buf, len, "xoffset at the top of the range");
+   len = make_two_frame_dcc(buf, sizeof(buf), 8, 8, 0, INT32_MIN);
+   assert_bad_geometry(buf, len, "yoffset at the bottom of the range");
+}
+
 /* ---- the bitmap entry point uses the same indices ---------------------------- */
 
 void test_bitmap_frames_are_the_index_frames_through_the_palette(void)
@@ -348,6 +428,7 @@ int main(void)
    RUN_TEST(test_fixture_empty_direction);
    RUN_TEST(test_single_direction_of_a_multi_direction_file);
    RUN_TEST(test_signed_offsets_survive_in_the_frame_header);
+   RUN_TEST(test_frames_the_direction_box_cannot_hold_are_rejected);
    RUN_TEST(test_bitmap_frames_are_the_index_frames_through_the_palette);
    return UNITY_END();
 }

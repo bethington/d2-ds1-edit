@@ -1,27 +1,31 @@
 # Release readiness review
 
-Started 2026-10-21; verdict updated 2026-10-23 for DS1Edit **2.2.0** at commit
-`3d0291f` on the `release-readiness` branch (pull request #19). No release has
-been published. It is an assessment of the evidence collected, not a claim that
-every source line has been reviewed. The "What was verified" table below records
-the 2026-10-22 evidence and has not been re-dated.
+Started 2026-10-21; updated 2026-11-02 for the next release, DS1Edit **2.2.1**.
+It is an assessment of the evidence collected, not a claim that every source line
+has been reviewed. The "What was verified" table below records the 2026-10-22
+evidence and has not been re-dated.
 
 ## Current verdict
 
-**Hold release until the open items below are closed or accepted.** The code is
-at version 2.2.0 (`CMakeLists.txt`, `vcpkg.json`; the macOS `Info.plist` and the
-package name follow the project version) and all five CI jobs are green on
-PR #19 at `3d0291f`: the Windows build and test job, Linux, macOS, the
-sanitizer job (Clang AddressSanitizer + UndefinedBehaviorSanitizer) and the
-coverage job (GCC gcov and Clang source-based coverage). Linux and macOS native
-build, test and package runs therefore now exist, but only in CI.
+**2.2.1 is in preparation and has no candidate yet.** Scope: what is on `main`
+(the workable release gate, the `--selftest` fix), any fixes from
+`release/113c-testing` that `main` lacks, and closing the gaps 2.2.0 shipped with.
+The software renderer is not part of it; it is planned as 2.3.0.
 
-What is **not** done:
+2.2.0 was published on 2026-10-23 (tag `v2.2.0` at `3c72c16`). Its packages came
+from `build.yml` run 39999757475 and were uploaded by hand, not through
+`release.yml`, because the qualification gate could not pass at the time. No
+qualification record exists for it.
 
-1. **Intermittent early exit under parallel selftest load (open, under
-   investigation).** A GPU `--selftest` run occasionally exits early when
-   several display tests run at once. Another thread of work is debugging it;
-   until it is understood, treat the display tests as not fully reliable.
+Open for 2.2.1:
+
+1. **`release/113c-testing` is triaged; two decisions remain.** The branch has 20
+   commits that are not on `main` and conflicts with it in 97 files. `main`
+   reimplemented its save, DS1 reader and DT1 and DC6 fixes. The `txt_read_in_mem`
+   use-after-free and the DCC frame geometry check are ported, and saving a map older
+   than version 4 is now refused because the writer would drop its tag layer. Still
+   open: the small hardening items (path editing with no object, the duplicate COF layer
+   check, `misc_load_mpq_file` input guards).
 2. **macOS GUI launch is untested.** CI builds, packages, signs (ad hoc) and
    inspects `ds1edit.app`, but nobody has launched it on a Mac, so Input
    Monitoring, Gatekeeper behaviour and the window itself are unverified.
@@ -37,21 +41,29 @@ What is **not** done:
    now freed before `al_destroy_display` (the reproduced hang was inside that
    call), but the fullscreen `--selftest` exit has not been re-run to confirm.
    The README keeps it as a known issue until it is.
-6. **Qualification record pending.** No reviewed record exists in
-   `release/qualification/`, and `release.yml` refuses to publish without one.
-   The last local qualifier run (2026-10-22) said NOT READY, 11 of 164 required
-   entries; it has not been repeated against a CI-built candidate. See the
-   [behavior ledger](testing/behavior-ledger.md).
+6. **Qualification record pending.** A CI run supplies 106 of the 164 required
+   entries (dry run on run 40032739659, 0 mismatches). The other 58 must be run
+   locally or waived; see [Gate entries CI does not produce](#gate-entries-ci-does-not-produce).
 
-Closed since the 2026-10-22 write-up: the golden reference decision (the five
-references were regenerated from pinned vanilla 1.13c inputs; six of six pass
-at tolerance 4), the Linux/macOS CI runs, the first sanitizer and coverage runs,
-the out-of-bounds objects fix itself, the folder-Act palette fallback (restored
-in `area_browser_open_entry_into_slot`, so the Act 1 palette concern is gone),
-and, in this stretch of work: install and Project Diablo 2 auto-detection, the
-local Project Diablo 2 compatibility lane, zero-layer COF handling, the
-translucent-tint blender fix (with regenerated core goldens), the tiered
-`fast`/`check`/`full` test presets, and focus-free test windows.
+Closed since 2.2.0: the intermittent early exit under parallel selftest load (the
+frame-time rule compared wall time with 250 ms on a loaded host; it now uses the
+main thread's CPU time per frame) and the gate problems that blocked `release.yml`
+(line-ending digests, no CI evidence, no waiver policy).
+
+## Gate entries CI does not produce
+
+Waivers are per release and only cover entries that never ran
+(`release/qualification/README.md`).
+
+| Entries | Count | Where they can run |
+| --- | --- | --- |
+| `corpus.*`, `visual.*` | 10 | Windows host with vanilla 1.13c data |
+| `ds1-113c`, R6 live comparisons, `control.ds1-113c.*` | 6 | Windows host with the live game |
+| `native.windows-x86.*` | 7 | Windows host, except `clean-environment` (clean VM) and the two `gui-*` entries (a person) |
+| `perf.*` on Windows | 5 | Windows host |
+| `native.linux-x86_64.*`, `perf.*` on Linux | 12 | Needs a Linux desktop |
+| `native.macos-arm64.*`, `perf.*` on macOS | 12 | Needs a Mac |
+| `visual-values-113c`, `decoders-113c` (portable) | 6 | No replay adapter or capture exists; waive, or build them |
 
 ## What was verified (2026-10-22)
 
@@ -132,23 +144,21 @@ measurement exists locally. Counts are approximate: about 70 CTest suites (was
 | Packaging | CPack, `package_check.py`, `native_smoke.py` on Windows; CI now builds, packages and uploads candidate artifacts for all three platforms | Linux/macOS runs; Windows clean VM; macOS `.app` |
 | Sanitizers and coverage | CMake options, MSVC ASan run, CI jobs written (Clang ASan+UBSan; GCC gcov JSON) | No Linux run; no coverage numbers |
 | Performance | Baseline recorded locally on Windows | Linux/macOS baselines; reviewed budgets |
-| Qualification | `qualify.py`, release workflow consuming a reviewed record | Evidence for 153 of 164 required entries |
+| Qualification | `qualify.py`, release workflow consuming a reviewed record | 58 of 164 required entries need local lanes or waivers |
 
 ## Next steps
 
-1. ~~Push the work and let `build.yml` run on all three platforms.~~ Done:
-   all five jobs are green on PR #19 at `3d0291f`.
-2. Find and fix the cause of the intermittent GPU early exit under parallel
-   selftest load.
-3. Re-run a fullscreen Direct3D `--selftest` to confirm the exit hang is gone,
+1. Decide on the small hardening items from the `release/113c-testing` triage.
+2. Re-run a fullscreen Direct3D `--selftest` to confirm the exit hang is gone,
    then drop the README's known-issue note (or keep it if it is not).
-4. Run the clean-VM Windows check and the manual
+3. Run the clean-VM Windows check and the manual
    [GUI checklist](testing/native-release-checklist.md) on each platform
    (including out-of-bounds objects), and launch the macOS `.app` on a Mac.
-5. Read the first coverage numbers from the CI coverage job and decide which
+4. Read the coverage numbers from the CI coverage job and decide which
    release-critical behaviour must be covered, rather than a percentage.
-6. Qualify a CI-built candidate (`release/qualification/README.md`), review the
-   record, commit it, then tag.
+5. Build a candidate, run the local lanes, write the waivers for the rest,
+   review and commit the record, then tag and let `release.yml` draft the release
+   (`release/qualification/README.md`).
 
 ## Compatibility target and design
 

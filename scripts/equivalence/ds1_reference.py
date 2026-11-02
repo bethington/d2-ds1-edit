@@ -757,8 +757,9 @@ def _matrix_specs(fx) -> list[tuple[str, str, dict]]:
     """(id, feature, source spec). Edits are authored into the source; the
     editor's checked writer carries them into the saved v18 file."""
     out = []
-    # format upgrade from every version family vanilla ships
-    for v in (3, 8, 12, 13, 15, 16, 17, 18):
+    # format upgrade from every version family vanilla ships that can be saved
+    # (the editor refuses to save v3: the writer has no place for its tag layer)
+    for v in (8, 12, 13, 15, 16, 17, 18):
         out.append(("upgrade_v%02d" % v, "format_upgrade_to_v18", fx.default_spec(v)))
     s = fx.default_spec(18)
     s["wall_num"], s["floor_num"] = 4, 2
@@ -822,10 +823,7 @@ def _matrix_specs(fx) -> list[tuple[str, str, dict]]:
 
 
 def _expected_after_writer(fx, spec) -> dict:
-    exp = fx.expected_snapshot(spec)
-    if spec["version"] < 4:  # declared: the writer emits no tag layer for tagType 0
-        exp = ds1_cases.canonical_map(exp, {"normalizations": ["legacy_tag_layer_dropped"]})
-    return exp
+    return fx.expected_snapshot(spec)
 
 
 def _swap_wall_layers(data: bytes, snap: dict) -> bytes | None:
@@ -881,8 +879,8 @@ def build_matrix(out_dir: Path, probe_exe: Path, corpus_files: list[Path] = ()) 
         rc, snap = ds1_cases.run_probe(Path(probe_exe).resolve(), p.resolve(), tmp)
         if snap is None or snap.get("status") != "ok":
             raise RuntimeError("editor could not read %s" % p)
-        if snap["version"] < 4:
-            snap = ds1_cases.canonical_map(snap, {"normalizations": ["legacy_tag_layer_dropped"]})
+        if snap["version"] < 4:  # refused by the editor, nothing to compare
+            continue
         saved_case("vanilla_%s_v%02d" % (p.stem.lower(), snap["version"]),
                    "format_upgrade_to_v18",
                    p.read_bytes(), snap)

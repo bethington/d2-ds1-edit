@@ -207,7 +207,7 @@ This is not a complete tutorial explaining all you need to know, but at least I 
 
 ## Installing the Editor
 
-> **Current DS1Edit (2.2.0) differs from the 2006 steps below.** The Allegro 5
+> **Current DS1Edit (2.2.1) differs from the 2006 steps below.** The Allegro 5
 > build needs no `alleg403.zip` and no `.bat` launchers: copy `Ds1edit.ini.sample`
 > to `Ds1edit.ini`, set `d2_install` (or leave it blank and the editor finds
 > Diablo II from the registry or a common folder; Project Diablo 2 is found the
