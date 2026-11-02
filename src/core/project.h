@@ -64,6 +64,11 @@ int  project_ensure_parent_dirs(const char *path);
 // does not fit in `dst_cap` (dst then holds `src`; do not save in place).
 int  project_redirect_ds1_save_path(const char *src, char *dst, int dst_cap);
 
+// 1 if `path` is `dir` or lies inside it (compared at path-component
+// boundaries, ignoring case and slash direction); 0 otherwise, and for a
+// NULL or empty `dir`.
+int  project_path_is_inside(const char *path, const char *dir);
+
 /* Everything after the last "/tiles/" in a path, i.e. the form MPQ
  * virtual paths under Data\\Global\\Tiles\\ are keyed on.
  * NULL if the path has no tiles component. */

@@ -402,6 +402,41 @@ void test_redirect_project_root_itself_is_inside(void)
       T_ROOT T_SEP "tiles" T_SEP "x.ds1", dst, sizeof(dst)));
 }
 
+void test_path_is_inside_equal_paths(void)
+{
+   TEST_ASSERT_EQUAL_INT(1, project_path_is_inside("C:\\Diablo2", "C:\\Diablo2"));
+}
+
+void test_path_is_inside_child(void)
+{
+   TEST_ASSERT_EQUAL_INT(1, project_path_is_inside("C:\\Diablo2\\mods\\x", "C:\\Diablo2"));
+}
+
+void test_path_is_inside_sibling_with_same_prefix_is_outside(void)
+{
+   TEST_ASSERT_EQUAL_INT(0, project_path_is_inside("C:\\Diablo2x", "C:\\Diablo2"));
+   TEST_ASSERT_EQUAL_INT(0, project_path_is_inside("C:\\Diablo2x\\a", "C:\\Diablo2"));
+}
+
+void test_path_is_inside_ignores_case_and_slash_direction(void)
+{
+   TEST_ASSERT_EQUAL_INT(1, project_path_is_inside("c:/diablo2/Mods", "C:\\Diablo2"));
+}
+
+void test_path_is_inside_dir_with_trailing_separator(void)
+{
+   TEST_ASSERT_EQUAL_INT(1, project_path_is_inside("C:\\Diablo2\\mods", "C:\\Diablo2\\"));
+   TEST_ASSERT_EQUAL_INT(1, project_path_is_inside("C:\\Diablo2", "C:\\Diablo2\\"));
+   TEST_ASSERT_EQUAL_INT(0, project_path_is_inside("C:\\Diablo2x", "C:\\Diablo2\\"));
+}
+
+void test_path_is_inside_null_and_empty_dir_are_never_inside(void)
+{
+   TEST_ASSERT_EQUAL_INT(0, project_path_is_inside("C:\\Diablo2", NULL));
+   TEST_ASSERT_EQUAL_INT(0, project_path_is_inside("C:\\Diablo2", ""));
+   TEST_ASSERT_EQUAL_INT(0, project_path_is_inside(NULL, "C:\\Diablo2"));
+}
+
 void test_ensure_parent_dirs_creates_the_chain(void)
 {
    char path[256];
@@ -457,6 +492,12 @@ int main(void)
    RUN_TEST(test_redirect_reports_a_target_that_does_not_fit);
    RUN_TEST(test_redirect_project_path_with_trailing_separator);
    RUN_TEST(test_redirect_project_root_itself_is_inside);
+   RUN_TEST(test_path_is_inside_equal_paths);
+   RUN_TEST(test_path_is_inside_child);
+   RUN_TEST(test_path_is_inside_sibling_with_same_prefix_is_outside);
+   RUN_TEST(test_path_is_inside_ignores_case_and_slash_direction);
+   RUN_TEST(test_path_is_inside_dir_with_trailing_separator);
+   RUN_TEST(test_path_is_inside_null_and_empty_dir_are_never_inside);
    RUN_TEST(test_ensure_parent_dirs_creates_the_chain);
    RUN_TEST(test_ensure_parent_dirs_reports_a_file_in_the_way);
 

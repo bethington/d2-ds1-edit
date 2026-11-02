@@ -339,6 +339,23 @@ static int path_starts_with(const char *path, const char *dir)
    return path[i] == 0 || path[i] == '/' || path[i] == '\\';
 }
 
+int project_path_is_inside(const char *path, const char *dir)
+{
+   char   trimmed[PROJECT_PATH_MAX];
+   size_t n;
+
+   if (path == NULL || dir == NULL || dir[0] == 0) return 0;
+   if (path_starts_with(path, dir)) return 1;
+
+   // `dir` spelled with a trailing separator still matches `dir` itself.
+   n = strlen(dir);
+   if (n >= sizeof(trimmed)) return 0;
+   memcpy(trimmed, dir, n + 1);
+   while (n > 1 && (trimmed[n - 1] == '/' || trimmed[n - 1] == '\\'))
+      trimmed[--n] = 0;
+   return path_starts_with(path, trimmed);
+}
+
 // "/x", "\x" and "C:\x" name a real place on disk. Anything else is a name
 // relative to Tiles, which is how the area browser names maps.
 static int is_rooted_path(const char *path)

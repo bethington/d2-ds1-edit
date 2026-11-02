@@ -135,6 +135,21 @@ static int pick_folder(const char *title, const char *initial,
 
 /* ---- actions ---- */
 
+/* Saved maps must never touch the game files, so a project cannot live inside
+ * the game's folder. Returns 1 (after telling the user) if `path` does. */
+static int refuse_game_folder(const char *path)
+{
+   if (!project_path_is_inside(path, glb_config.d2_install) &&
+       !project_path_is_inside(path, glb_prefs.last_d2_install))
+      return 0;
+
+   al_show_native_message_box(a5_display, "Project folder",
+      "That folder is part of the Diablo II install.",
+      "Projects can't live inside the game's folder, because saved maps must never touch the game files. Choose a folder somewhere else.",
+      NULL, ALLEGRO_MESSAGEBOX_WARN);
+   return 1;
+}
+
 static int action_new_project(void)
 {
    char path[PROJECT_PATH_MAX];
@@ -145,8 +160,11 @@ static int action_new_project(void)
 
    if (!pick_folder(
          "New Project — click \"New folder\" to create one, then Select",
-         glb_prefs.last_d2_install[0] ? glb_prefs.last_d2_install : NULL,
+         (glb_prefs.recent_count > 0) ? glb_prefs.recent_projects[0] : NULL,
          path, sizeof(path)))
+      return 0;
+
+   if (refuse_game_folder(path))
       return 0;
 
    // Refuse to overwrite an existing project.
@@ -209,7 +227,7 @@ static int action_open_project(void)
    // Prefer the most recent project dir as the starting location.
    initial = (glb_prefs.recent_count > 0)
            ? glb_prefs.recent_projects[0]
-           : (glb_prefs.last_d2_install[0] ? glb_prefs.last_d2_install : NULL);
+           : NULL;
 
    /* Read before project_load() overwrites glb_project. Only a change from
     * one project to another can lose maps; the first-save flow has none open. */
@@ -221,6 +239,9 @@ static int action_open_project(void)
 
    if (!pick_folder("Open Project — pick the project folder",
                     initial, path, sizeof(path)))
+      return 0;
+
+   if (refuse_game_folder(path))
       return 0;
 
    if (!project_ini_path(path, ini, sizeof(ini)) ||
