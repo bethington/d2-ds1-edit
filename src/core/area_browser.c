@@ -14,6 +14,8 @@
 #include "core/mpq_index.h"
 #include "render/preview.h"
 #include "core/area_browser.h"
+#include "core/map_state.h"
+#include "core/project.h"
 #include "ui/props_panel.h"
 #include "platform.h"
 #include "ui/input.h"
@@ -237,6 +239,7 @@ int area_browser_init(void)
    /* Everything LvlPrest does not name -- maze and room fragments -- would
     * otherwise have no way into the browser at all. */
    area_browser_scan_unlisted();
+   area_browser_refresh_states();
    return 0;
 }
 
@@ -816,8 +819,79 @@ static int area_browser_may_unload(void)
    return FALSE;
 }
 
+static int project_has_map(const char * ds1_path)
+{
+   char rel[512], found[1024];
+
+   snprintf(rel, sizeof(rel), "Global/Tiles/%s", ds1_path);
+   if (ds1_path_resolve_nocase(glb_project.path, rel, found, sizeof(found)))
+      return 1;
+   snprintf(rel, sizeof(rel), "Data/Global/Tiles/%s", ds1_path);
+   return ds1_path_resolve_nocase(glb_project.path, rel, found, sizeof(found));
+}
+
+/* In the game's own archives, ignoring any overlay? Loads the file, so it is
+ * only asked about maps the project also has. */
+static int game_has_map(const char * ds1_path)
+{
+   char  name[512];
+   char *saved[MAX_MOD_DIR];
+   char *buff = NULL;
+   long  len = 0;
+   int   i, entry;
+
+   snprintf(name, sizeof(name), "Data\\Global\\Tiles\\%s", ds1_path);
+   for (i = 0; i < MAX_MOD_DIR; i++)
+   {
+      saved[i] = glb_config.mod_dir[i];
+      glb_config.mod_dir[i] = NULL;
+   }
+   entry = misc_load_mpq_file(name, &buff, &len, FALSE);
+   for (i = 0; i < MAX_MOD_DIR; i++)
+      glb_config.mod_dir[i] = saved[i];
+
+   if (buff != NULL)
+      free(buff);
+   return entry != -1;
+}
+
 void area_browser_refresh_states(void)
 {
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   int i, j;
+
+   for (i = 0; i < ab->group_count; i++)
+   {
+      AREA_GROUP_S * g = &ab->groups[i];
+
+      for (j = 0; j < g->entry_count; j++)
+      {
+         AREA_DS1_ENTRY_S * e = &g->entries[j];
+
+         if (g->is_backup || !glb_project.is_open || !project_has_map(e->ds1_path))
+            e->state = MAP_STATE_GAME;
+         else
+            e->state = map_state_classify(game_has_map(e->ds1_path), 1, 0);
+      }
+   }
+}
+
+int area_browser_reload(void)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   int rc;
+
+   if (glb_ds1edit.lvlprest_buff != NULL)
+      glb_ds1edit.lvlprest_buff = txt_destroy(glb_ds1edit.lvlprest_buff);
+   if (glb_ds1edit.lvltypes_buff != NULL)
+      glb_ds1edit.lvltypes_buff = txt_destroy(glb_ds1edit.lvltypes_buff);
+   if (glb_ds1edit.levels_buff != NULL)
+      glb_ds1edit.levels_buff = txt_destroy(glb_ds1edit.levels_buff);
+
+   rc = area_browser_init();
+   ab->loaded_group = -1;
+   ab->loaded_entry = -1;
+   return rc;
 }
 
 static int area_browser_open_entry_into_slot(int group_idx, int entry_idx, int ds1_idx)
@@ -2019,6 +2093,18 @@ void area_browser_draw_sidebar(int width, int height)
 
                al_draw_textf(a5_font, fc, (float)(SB_MARGIN_X + 22), (float)y, 0,
                               "%s", fname);
+               {
+                  /* State letter, then * if an open copy has unsaved edits. */
+                  int k, entry_dirty = 0;
+
+                  for (k = 0; k < DS1_MAX && !entry_dirty; k++)
+                     entry_dirty = glb_ds1[k].name[0] != 0 && map_is_dirty(k) &&
+                        map_state_path_matches(glb_ds1[k].name, g->entries[j].ds1_path);
+
+                  al_draw_textf(a5_font, fc, (float)(width - 28), (float)y, 0, "%s%s",
+                                map_state_mark((MAP_STATE_E) g->entries[j].state),
+                                entry_dirty ? "*" : "");
+               }
 
                y += SB_LINE_H;
             }

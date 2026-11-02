@@ -1,3 +1,6 @@
+#include <ctype.h>
+#include <string.h>
+
 #include "structs.h"
 #include "core/map_state.h"
 
@@ -69,4 +72,41 @@ int map_any_dirty(void)
       if (map_is_dirty(i))
          return 1;
    return 0;
+}
+
+MAP_STATE_E map_state_classify(int in_game, int in_project, int slot_cleared)
+{
+   if (in_game && slot_cleared) return MAP_STATE_REMOVED;
+   if (!in_project)             return MAP_STATE_GAME;
+   return in_game ? MAP_STATE_MODIFIED : MAP_STATE_NEW;
+}
+
+const char *map_state_mark(MAP_STATE_E state)
+{
+   switch (state)
+   {
+   case MAP_STATE_MODIFIED: return "M";
+   case MAP_STATE_NEW:      return "N";
+   default:                 return "";
+   }
+}
+
+static int same_path_char(char a, char b)
+{
+   if (a == '\\') a = '/';
+   if (b == '\\') b = '/';
+   return tolower((unsigned char) a) == tolower((unsigned char) b);
+}
+
+int map_state_path_matches(const char *map_name, const char *ds1_path)
+{
+   size_t nlen = strlen(map_name), plen = strlen(ds1_path), i;
+   const char *tail;
+
+   if (plen == 0 || nlen < plen) return 0;
+   tail = map_name + (nlen - plen);
+   for (i = 0; i < plen; i++)
+      if (!same_path_char(tail[i], ds1_path[i]))
+         return 0;
+   return tail == map_name || tail[-1] == '/' || tail[-1] == '\\';
 }

@@ -37,6 +37,9 @@ int  area_browser_open_by_file  (const char * ds1_path);
 int  area_browser_audit_lvltypes(FILE * out);
 void area_browser_refresh_states(void);
 
+// Rebuild the browser from the tables now in effect, after a project change.
+int  area_browser_reload(void);
+
 // `guard` runs before anything unloads the open maps, and returns 0 to stop.
 void area_browser_set_unload_guard(int (*guard)(void));
 void area_browser_unload_all(void);

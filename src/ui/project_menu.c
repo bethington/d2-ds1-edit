@@ -180,6 +180,7 @@ static int action_new_project(void)
    }
 
    project_apply_to_config();
+   area_browser_reload();
    record_and_persist(path);
 
    fprintf(stderr, "project_menu: created and opened <%s>\n", path);
@@ -237,6 +238,7 @@ static int action_open_project(void)
       area_browser_unload_all();
 
    project_apply_to_config();
+   area_browser_reload();
    record_and_persist(path);
 
    fprintf(stderr, "project_menu: opened <%s>\n", path);
@@ -262,6 +264,7 @@ static void action_close_project(void)
 
    project_close();
    area_browser_unload_all();
+   area_browser_reload();
 }
 
 static int make_virtual_prefix_from_mod_path(const char *picked_path,

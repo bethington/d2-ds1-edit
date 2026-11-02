@@ -59,6 +59,32 @@ void test_empty_slots_are_never_dirty(void)
    TEST_ASSERT_FALSE(map_is_dirty(2));   /* a zeroed slot, which the fixture left unnamed */
 }
 
+void test_classify_covers_every_state(void)
+{
+   TEST_ASSERT_EQUAL_INT(MAP_STATE_GAME,     map_state_classify(1, 0, 0));
+   TEST_ASSERT_EQUAL_INT(MAP_STATE_MODIFIED, map_state_classify(1, 1, 0));
+   TEST_ASSERT_EQUAL_INT(MAP_STATE_NEW,      map_state_classify(0, 1, 0));
+   TEST_ASSERT_EQUAL_INT(MAP_STATE_REMOVED,  map_state_classify(1, 0, 1));
+   TEST_ASSERT_EQUAL_INT(MAP_STATE_REMOVED,  map_state_classify(1, 1, 1));
+}
+
+void test_marks(void)
+{
+   TEST_ASSERT_EQUAL_STRING("",  map_state_mark(MAP_STATE_GAME));
+   TEST_ASSERT_EQUAL_STRING("M", map_state_mark(MAP_STATE_MODIFIED));
+   TEST_ASSERT_EQUAL_STRING("N", map_state_mark(MAP_STATE_NEW));
+}
+
+void test_path_matching_ignores_case_and_slash_style_at_a_boundary(void)
+{
+   TEST_ASSERT_TRUE(map_state_path_matches("Act1/Town/TownN1.ds1", "act1\\town\\townn1.ds1"));
+   TEST_ASSERT_TRUE(map_state_path_matches("C:\\p\\Global\\Tiles\\Act1\\Town\\TownN1.ds1",
+                                           "Act1/Town/TownN1.ds1"));
+   TEST_ASSERT_FALSE(map_state_path_matches("x/XAct1/Town/TownN1.ds1", "Act1/Town/TownN1.ds1"));
+   TEST_ASSERT_FALSE(map_state_path_matches("Town.ds1", "Act1/Town.ds1"));
+   TEST_ASSERT_FALSE(map_state_path_matches("", "a.ds1"));
+}
+
 int main(int argc, char **argv)
 {
    pkgc_test_filter = argc > 1 ? argv[1] : NULL;
@@ -68,5 +94,8 @@ int main(int argc, char **argv)
    PKGC_RUN(test_object_undo_returns_to_the_state_before_the_edit);
    PKGC_RUN(test_object_undo_after_a_save_is_an_unsaved_change);
    PKGC_RUN(test_empty_slots_are_never_dirty);
+   PKGC_RUN(test_classify_covers_every_state);
+   PKGC_RUN(test_marks);
+   PKGC_RUN(test_path_matching_ignores_case_and_slash_style_at_a_boundary);
    return UNITY_END();
 }
