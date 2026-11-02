@@ -298,6 +298,14 @@ target_include_directories(test_input_edges PRIVATE
 )
 add_test(NAME input_edges COMMAND test_input_edges)
 
+# --selftest frame-timing verdict: the editor's own CPU cost per frame fails it,
+# a loaded host making frames wait for a core does not.
+add_executable(test_selftest_verdict test_selftest_verdict.c ../src/ui/selftest_verdict.c)
+target_link_libraries(test_selftest_verdict PRIVATE unity)
+target_include_directories(test_selftest_verdict PRIVATE ${CMAKE_SOURCE_DIR}/src)
+add_test(NAME selftest_verdict COMMAND test_selftest_verdict)
+set_tests_properties(selftest_verdict PROPERTIES LABELS "portable")
+
 # Release-qualification test packages. Each package keeps its targets in its
 # own file so the packages can evolve independently. A package that links
 # Allegro appends its target names to DS1EDIT_ALLEGRO_TESTS so the DLL copy
