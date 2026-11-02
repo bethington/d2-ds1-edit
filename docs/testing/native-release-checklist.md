@@ -110,7 +110,7 @@ for one package says nothing about another build or platform.
   whether the keyboard worked before and after. A build whose keys never reach
   the editor fails P-items even if the window draws.
 
-## Case `gui-edit-undo-save-reopen` (items E1 to E13)
+## Case `gui-edit-undo-save-reopen` (items E1 to E14)
 
 Use act 1 Town and at least two other maps from different acts.
 
@@ -146,10 +146,12 @@ Use act 1 Town and at least two other maps from different acts.
   version (for example `name-000.ds1`) exists.
 - [ ] **E10 Reopen.** Quit, relaunch the same extracted package, reopen the
   saved map: the edit is present and undo history starts empty.
-- [ ] **E11 Unsaved-change handling.** With an unsaved edit, quit. The WARNING
-  dialog offers (S) Save all and quit, (Q) Quit, (Esc) Cancel. Esc returns to
-  the editor with the edit intact. Q quits and leaves a `.tmp` autosave and
-  does not overwrite the map. S saves and quits.
+- [ ] **E11 Unsaved-change handling.** With no unsaved edits, quitting asks
+  nothing. With an unsaved edit, quit: the WARNING dialog offers (S) Save all and
+  quit, (Q) Quit, (Esc) Cancel. Esc returns to the editor with the edit intact. Q
+  quits and leaves a `.tmp` autosave and does not overwrite the map. S saves and
+  quits. Opening another map from the browser with an unsaved edit asks first, and
+  (Esc) keeps the map open with the edit intact.
 - [ ] **E12 Failed save is non-fatal.** Make the target unwritable (read-only
   file, or a folder you cannot write), edit, press **Ctrl+S**. An error box
   titled "The map was not saved" appears with a reason; the editor stays open,
@@ -165,8 +167,13 @@ Use act 1 Town and at least two other maps from different acts.
   does not scroll. Set `mouse_edge_scroll = YES` in `Ds1edit.ini`, restart, and
   edge scrolling works; set it back to `NO` afterwards. While a text field or
   modal is open, the arrow keys and **W A S D** do not scroll the map behind it.
+- [ ] **E14 Project prompt and browser marks.** With no project open, edit a map
+  from the game's archives and press **Ctrl+S**: the editor asks for a project,
+  and (Esc) writes nothing. Create one: the map saves under
+  `<project>/Global/Tiles/`, nothing changes in the game folder, and the browser
+  row shows `M`. Unsaved edits show `*`.
 
-Total items: 13.
+Total items: 14.
 
 ## Case `gui-modal-input` (items M1 to M4)
 
@@ -246,8 +253,8 @@ python -m scripts.equivalence.native_smoke manual ^
     --smoke-report OWNED\native-run\native-smoke-report.json ^
     --tester "Your Name" ^
     --environment "Windows 11 23H2 clean VM, no VC++ redist, 1.13c on D:\" ^
-    --notes "E1-E13 all done; E8 needed a second resize to redraw" ^
-    --items 13 --total 13 --out RESULTS\native.windows-x86.gui-edit-undo-save-reopen.json
+    --notes "E1-E14 all done; E8 needed a second resize to redraw" ^
+    --items 14 --total 14 --out RESULTS\native.windows-x86.gui-edit-undo-save-reopen.json
 ```
 
 Rules the tool enforces and `qualify.py` then checks:

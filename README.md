@@ -318,7 +318,9 @@ runs, set `use_pd2 = no`. The command-line equivalents are `--pd2-dir=` and `--u
 | **Ctrl+U** | Undo tile edits; acts once per key press |
 | **Alt+I** | Select strictly identical tiles |
 | **Alt**-drag | Box-select objects |
-| **Ctrl+S** | Save the map (see below) |
+| **Ctrl+S** | Save the current map into the project, asking for a project first if none is open |
+| **Ctrl+Shift+S** | Save every map with unsaved edits |
+| **Ctrl+Shift+N / O / W** | New, Open or Close Project |
 
 Scroll speeds are `keyb_scroll_x/y` and `mouse_scroll_x/y` in `Ds1edit.ini`. The
 [manual](docs/getting-started/manual.md) describes the rest of the editing keys.
