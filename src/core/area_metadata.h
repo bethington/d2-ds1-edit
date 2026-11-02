@@ -8,4 +8,14 @@ int area_preset_resolve_act(int level_id, int levels_act, const char * preset_na
 int area_resolve_txt_act(int lvltypes_act, int preset_act, int folder_act);
 const char * area_name_strip_prefix(const char * name);
 
+/* Where a map that the area build did not place belongs in the browser. */
+#define AREA_DEST_UNLISTED 0
+#define AREA_DEST_AREA     1
+#define AREA_DEST_PD2      2
+
+const char * area_preset_area_name(const char * preset_name);
+const char * area_pd2_folder_group(const char * rel_path);
+int area_map_destination(int is_pd2_only, int lvltype);
+int area_section_key(int is_pd2, int act);
+
 #endif

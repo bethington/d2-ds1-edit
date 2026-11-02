@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <string.h>
 
 #include "core/area_metadata.h"
@@ -76,4 +77,108 @@ const char * area_name_strip_prefix(const char * name)
       return name + 8;
 
    return name;
+}
+
+
+/* LvlPrest rows whose name does not start with their area's LvlTypes name, for
+ * rows with LevelId 0, which is nearly all of them. Each tileset was checked
+ * against a row of the same family that has a real level, or against the DT1
+ * files that LvlType loads. */
+static const struct { const char * prefix; const char * area; } AREA_PRESET_RULES[] =
+{
+   { "Act 1 - Andariel",  "Act 1 - Catacombs"  },
+   { "Act 1 - Bivouac",   "Act 1 - Wilderness" },
+   { "Act 1 - Bridge",    "Act 1 - Wilderness" },
+   { "Act 1 - Cairn",     "Act 1 - Wilderness" },
+   { "Act 1 - Camp",      "Act 1 - Wilderness" },
+   { "Act 1 - Corral",    "Act 1 - Wilderness" },
+   { "Act 1 - Cottages",  "Act 1 - Wilderness" },
+   { "Act 1 - DOE",       "Act 1 - Wilderness" },
+   { "Act 1 - Fallen",    "Act 1 - Wilderness" },
+   { "Act 1 - Fence",     "Act 1 - Wilderness" },
+   { "Act 1 - Graveyard", "Act 1 - Wilderness" },
+   { "Act 1 - Inifus",    "Act 1 - Wilderness" },
+   { "Act 1 - Pond",      "Act 1 - Wilderness" },
+   { "Act 1 - River",     "Act 1 - Wilderness" },
+   { "Act 1 - Ruin",      "Act 1 - Wilderness" },
+   { "Act 1 - Stone",     "Act 1 - Wilderness" },
+   { "Act 1 - Swamp",     "Act 1 - Wilderness" },
+   { "Act 1 - Tower",     "Act 1 - Wilderness" },
+   { "Act 1 - Tree",      "Act 1 - Wilderness" },
+   { "Act 2 - Corrupt",   "Act 2 - Harem"      },
+   { "Act 3 - Bridge",    "Act 3 - Kurast"     },
+   { "Act 3 - Burbs",     "Act 3 - Kurast"     },
+   { "Act 3 - Mephisto",  "Act 3 - Kurast"     },
+   { "Act 3 - Metro",     "Act 3 - Kurast"     },
+   { "Act 3 - Slums",     "Act 3 - Kurast"     },
+   { "Act 3 - Travincal", "Act 3 - Kurast"     },
+   { "Act 3 - Clearing",  "Act 3 - Jungle"     },
+   { "Act 4 - Bridge",    "Act 4 - Lava"       },
+   { "Act 4 - Diablo",    "Act 4 - Lava"       },
+   { "Act 4 - Fortress",  "Act 4 - Town"       },
+   { "Act 4 - Pits",      "Act 4 - Mesa"       }
+};
+
+
+const char * area_preset_area_name(const char * preset_name)
+{
+   size_t i;
+
+   if (preset_name == NULL)
+      return NULL;
+
+   for (i = 0; i < sizeof(AREA_PRESET_RULES) / sizeof(AREA_PRESET_RULES[0]); i++)
+   {
+      const char * prefix = AREA_PRESET_RULES[i].prefix;
+      if (strncmp(preset_name, prefix, strlen(prefix)) == 0)
+         return AREA_PRESET_RULES[i].area;
+   }
+   return NULL;
+}
+
+
+/* Does a tiles-relative path start with this lowercase backslashed folder? */
+static int area_path_in_folder(const char * path, const char * folder)
+{
+   for (; *folder != '\0'; path++, folder++)
+   {
+      char c = *path;
+      if (c == '/') c = '\\';
+      if (c >= 'A' && c <= 'Z') c = (char) (c - 'A' + 'a');
+      if (c != *folder)
+         return 0;
+   }
+   return 1;
+}
+
+
+/* Group for a Project Diablo 2 map that no LvlPrest row names. */
+const char * area_pd2_folder_group(const char * rel_path)
+{
+   if (rel_path == NULL)
+      return "Other";
+   if (area_path_in_folder(rel_path, "expansion\\map\\"))
+      return "Unnamed Maps";
+   if (area_path_in_folder(rel_path, "act2\\arcane\\"))
+      return "Arcane Variants";
+   if (area_path_in_folder(rel_path, "guild\\"))
+      return "Guilds";
+   return "Other";
+}
+
+
+int area_map_destination(int is_pd2_only, int lvltype)
+{
+   if (is_pd2_only)
+      return AREA_DEST_PD2;
+   return lvltype > 0 ? AREA_DEST_AREA : AREA_DEST_UNLISTED;
+}
+
+
+/* Panel order: Act 1-5, then Project Diablo 2, then Other. */
+int area_section_key(int is_pd2, int act)
+{
+   if (is_pd2)
+      return 6;
+   return (act >= 1 && act <= 5) ? act : 7;
 }

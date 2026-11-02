@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "unity/unity.h"
 
 #include "core/area_metadata.h"
@@ -100,6 +102,63 @@ void test_area_resolve_txt_act_precedence_and_folder_fallback(void)
 }
 
 
+void test_area_preset_area_name_files_rows_whose_names_differ_from_their_area(void)
+{
+   TEST_ASSERT_EQUAL_STRING("Act 3 - Kurast", area_preset_area_name("Act 3 - Burbs Border E"));
+   TEST_ASSERT_EQUAL_STRING("Act 3 - Kurast", area_preset_area_name("Act 3 - MetroTemple"));
+   TEST_ASSERT_EQUAL_STRING("Act 3 - Kurast", area_preset_area_name("Act 3 - Slums 08x08"));
+   TEST_ASSERT_EQUAL_STRING("Act 3 - Kurast", area_preset_area_name("Act 3 - Mephisto Next W"));
+   TEST_ASSERT_EQUAL_STRING("Act 3 - Jungle", area_preset_area_name("Act 3 - Clearing Boggy E"));
+   TEST_ASSERT_EQUAL_STRING("Act 4 - Town", area_preset_area_name("Act 4 - Fortress Transition"));
+   TEST_ASSERT_EQUAL_STRING("Act 4 - Mesa", area_preset_area_name("Act 4 - Pits 1 08X08"));
+   TEST_ASSERT_EQUAL_STRING("Act 4 - Lava", area_preset_area_name("Act 4 - Diablo Arm W"));
+   TEST_ASSERT_EQUAL_STRING("Act 1 - Wilderness", area_preset_area_name("Act 1 - Cottages 1"));
+   TEST_ASSERT_EQUAL_STRING("Act 1 - Wilderness", area_preset_area_name("Act 1 - DOE Entrance"));
+   TEST_ASSERT_EQUAL_STRING("Act 2 - Harem", area_preset_area_name("Act 2 - Corrupt Harem NE"));
+}
+
+
+void test_area_preset_area_name_leaves_other_rows_alone(void)
+{
+   /* The same word in another act must not match. */
+   TEST_ASSERT_NULL(area_preset_area_name("Act 2 - Bridge"));
+   TEST_ASSERT_NULL(area_preset_area_name("Act 1 - Town 1"));
+   TEST_ASSERT_NULL(area_preset_area_name("Ashen Plains Map"));
+   TEST_ASSERT_NULL(area_preset_area_name(""));
+   TEST_ASSERT_NULL(area_preset_area_name(NULL));
+}
+
+
+void test_area_pd2_folder_group_names_maps_no_table_mentions(void)
+{
+   TEST_ASSERT_EQUAL_STRING("Unnamed Maps", area_pd2_folder_group("expansion\\map\\darktomb.ds1"));
+   TEST_ASSERT_EQUAL_STRING("Unnamed Maps", area_pd2_folder_group("Expansion/Map/lava2.ds1"));
+   TEST_ASSERT_EQUAL_STRING("Arcane Variants", area_pd2_folder_group("ACT2\\Arcane\\sanctE-000.ds1"));
+   TEST_ASSERT_EQUAL_STRING("Guilds", area_pd2_folder_group("Guild\\PD2\\guild4_original.ds1"));
+   TEST_ASSERT_EQUAL_STRING("Other", area_pd2_folder_group("ACT4\\mesa\\fortress2.ds1"));
+}
+
+
+void test_area_map_destination_prefers_pd2_then_a_known_area(void)
+{
+   TEST_ASSERT_EQUAL_INT(AREA_DEST_PD2, area_map_destination(1, 37));
+   TEST_ASSERT_EQUAL_INT(AREA_DEST_PD2, area_map_destination(1, -1));
+   TEST_ASSERT_EQUAL_INT(AREA_DEST_AREA, area_map_destination(0, 22));
+   TEST_ASSERT_EQUAL_INT(AREA_DEST_UNLISTED, area_map_destination(0, -1));
+   TEST_ASSERT_EQUAL_INT(AREA_DEST_UNLISTED, area_map_destination(0, 0));
+}
+
+
+void test_area_section_key_keeps_pd2_after_the_acts_and_before_other(void)
+{
+   TEST_ASSERT_TRUE(area_section_key(0, 1) < area_section_key(0, 5));
+   TEST_ASSERT_TRUE(area_section_key(0, 5) < area_section_key(1, 5));
+   TEST_ASSERT_TRUE(area_section_key(1, 5) < area_section_key(0, 0));
+   /* every PD2 group shares one section whatever act its level belongs to */
+   TEST_ASSERT_EQUAL_INT(area_section_key(1, 1), area_section_key(1, 5));
+}
+
+
 int main(void)
 {
    UNITY_BEGIN();
@@ -113,5 +172,10 @@ int main(void)
    RUN_TEST(test_area_preset_resolve_act_uses_preset_name_for_null_level);
    RUN_TEST(test_area_name_strip_prefix_preserves_nonstandard_names);
    RUN_TEST(test_area_resolve_txt_act_precedence_and_folder_fallback);
+   RUN_TEST(test_area_preset_area_name_files_rows_whose_names_differ_from_their_area);
+   RUN_TEST(test_area_preset_area_name_leaves_other_rows_alone);
+   RUN_TEST(test_area_pd2_folder_group_names_maps_no_table_mentions);
+   RUN_TEST(test_area_map_destination_prefers_pd2_then_a_known_area);
+   RUN_TEST(test_area_section_key_keeps_pd2_after_the_acts_and_before_other);
    return UNITY_END();
 }

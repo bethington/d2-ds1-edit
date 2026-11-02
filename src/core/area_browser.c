@@ -115,9 +115,17 @@ void area_group_add_entry(AREA_GROUP_S * grp, int lvltype_id,
                                   int def, const char * ds1_path)
 {
    AREA_DS1_ENTRY_S * e;
+   int i;
 
    if (ds1_path == NULL || ds1_path[0] == '\0' || ds1_path[0] == '0')
       return;
+
+   /* LvlPrest rows reuse files, but a map is one row in the panel. */
+   for (i = 0; i < grp->entry_count; i++)
+   {
+      if (unlisted_path_equal(grp->entries[i].ds1_path, ds1_path))
+         return;
+   }
 
    if (grp->entry_count >= grp->entry_max)
    {
@@ -178,16 +186,42 @@ static AREA_GROUP_S * area_find_or_create_group(AREA_BROWSER_S * ab,
    return g;
 }
 
-/* qsort comparator: sort groups by act (1-5 first, 0 last), then by name. */
+/* Heading row a group sits under: Act 1-5, Project Diablo 2, then Other. */
+static int area_group_section(const AREA_GROUP_S * g)
+{
+   return area_section_key(g->is_pd2, g->act);
+}
+
+static const char * area_group_section_label(const AREA_GROUP_S * g, char * buf, size_t cap)
+{
+   if (g->is_pd2)
+      return "Project Diablo 2";
+   if (g->act <= 0)
+      return "Other";
+   snprintf(buf, cap, "Act %d", g->act);
+   return buf;
+}
+
+/* "Act X - Name", "Project Diablo 2 - Name", or just "Name". */
+static void area_group_full_name(const AREA_GROUP_S * g, char * out, size_t cap)
+{
+   if (g->is_pd2)
+      snprintf(out, cap, "Project Diablo 2 - %s", g->name);
+   else if (g->act > 0)
+      snprintf(out, cap, "Act %d - %s", g->act, g->name);
+   else
+      snprintf(out, cap, "%s", g->name);
+}
+
+/* qsort comparator: sort groups by section, then by name. */
 static int area_group_cmp(const void * a, const void * b)
 {
    const AREA_GROUP_S * ga = (const AREA_GROUP_S *) a;
    const AREA_GROUP_S * gb = (const AREA_GROUP_S *) b;
    int act_a, act_b;
 
-   /* act 0 ("Other") sorts last, backup groups sort after regular groups */
-   act_a = ga->act > 0 ? ga->act : 100;
-   act_b = gb->act > 0 ? gb->act : 100;
+   act_a = area_group_section(ga);
+   act_b = area_group_section(gb);
 
    if (act_a != act_b)
       return act_a - act_b;
@@ -232,10 +266,16 @@ int area_browser_init(void)
       return -1;
    }
 
+   /* The filing below needs LvlPrest's joins in the CLI too, where nothing
+    * else has built the index. */
+   if (!mpq_index_is_ready() && mpq_index_build() < 0)
+      printf("area_browser_init: failed to build the preset index\n");
+
    area_browser_build();
 
-   /* Everything LvlPrest does not name -- maze and room fragments -- would
-    * otherwise have no way into the browser at all. */
+   /* What the name match above missed, and everything LvlPrest does not name
+    * -- maze and room fragments -- would otherwise have no way into the
+    * browser at all. */
    area_browser_scan_unlisted();
    return 0;
 }
@@ -315,7 +355,10 @@ void area_browser_build(void)
        *   LvlType "Act 1 - Wilderness" → match "Act 1 - Wild"
        *   LvlType "Act 5 - Ice Caves"  → match "Act 5 - Ice"
        *   LvlType "Act 1 - Monestary"  → match "Act 1 - Mon"
-       *   LvlType "Imperial Palace"    → match "Imperial Palace"
+       *
+       * A row or LvlType with no act in its name is a mod's own, like Project
+       * Diablo 2's "Kurast" map. Name matching would file those by accident,
+       * so area_browser_scan_unlisted places them through LevelId instead.
        */
       {
          const char * area_part;
@@ -343,18 +386,13 @@ void area_browser_build(void)
             strncat(match_prefix, area_part, k);
          }
          else
-         {
-            /* Non-standard name — use full name as prefix */
-            strncpy(match_prefix, lt_name, sizeof(match_prefix) - 1);
-            match_prefix[sizeof(match_prefix) - 1] = '\0';
-         }
+            continue;
          match_len = strlen(match_prefix);
 
          /* Also try a shorter 3-char prefix if the 4-char prefix might
           * miss abbreviated LvlPrest names (e.g., "Mone" misses "Mon Front").
           * We do a first pass with the 4-char prefix, and if we get 0 matches,
-          * retry with 3 chars. For non-act names (like "Kurast"), also try
-          * matching LvlPrest rows that contain the area name without act prefix. */
+          * retry with 3 chars. */
          for (lp_row = 0; lp_row < lvlprest->line_num; lp_row++)
          {
             char * lp_name;
@@ -439,47 +477,10 @@ void area_browser_build(void)
                }
             }
          }
-
-         /* If still 0, try matching LvlPrest rows by area name without act prefix.
-          * Handles "Kurast" in LvlPrest matching LvlType "Act 3 - Kurast". */
-         if (grp->entry_count == 0)
-         {
-            const char * ap = grp->name; /* already stripped */
-            int alen = (int)strlen(ap);
-
-
-            if (alen >= 3)
-            {
-               for (lp_row = 0; lp_row < lvlprest->line_num; lp_row++)
-               {
-                  char * lp_name;
-                  long * lp_def_ptr;
-                  long lp_def;
-
-                  lp_name = lvlprest->data + (lp_row * lvlprest->line_size)
-                            + lvlprest->col[lp_name_col].offset;
-                  if (strnicmp(lp_name, ap, alen) != 0)
-                     continue;
-
-                  lp_def_ptr = (long *)(lvlprest->data + (lp_row * lvlprest->line_size)
-                               + lvlprest->col[lp_def_col].offset);
-                  lp_def = *lp_def_ptr;
-                  if (lp_def <= 0)
-                     continue;
-
-                  for (f = 0; f < 6; f++)
-                  {
-                     char * ds1_path = lvlprest->data + (lp_row * lvlprest->line_size)
-                                       + lvlprest->col[lp_file_col[f]].offset;
-                     area_group_add_entry(grp, grp->lvltype_id, (int)lp_def, ds1_path);
-                  }
-               }
-            }
-         }
       }
    }
 
-   /* sort groups: by act then alphabetically */
+   /* sort groups: by section then alphabetically */
    if (ab->group_count > 1)
       qsort(ab->groups, ab->group_count, sizeof(AREA_GROUP_S), area_group_cmp);
 
@@ -524,25 +525,20 @@ void area_browser_list(void)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
    int i, last_act = -1;
+   char label[32], full_name[128];
 
    printf("\nAvailable areas (%d groups):\n\n", ab->group_count);
    for (i = 0; i < ab->group_count; i++)
    {
       AREA_GROUP_S * g = &ab->groups[i];
-      if (g->act != last_act)
+      if (area_group_section(g) != last_act)
       {
-         if (g->act > 0)
-            printf("  Act %d:\n", g->act);
-         else
-            printf("  Other:\n");
-         last_act = g->act;
+         printf("  %s:\n", area_group_section_label(g, label, sizeof(label)));
+         last_act = area_group_section(g);
       }
-      if (g->act > 0)
-         printf("    %-30s %3d maps  (--area \"Act %d - %s\")\n",
-                g->name, g->entry_count, g->act, g->name);
-      else
-         printf("    %-30s %3d maps  (--area \"%s\")\n",
-                g->name, g->entry_count, g->name);
+      area_group_full_name(g, full_name, sizeof(full_name));
+      printf("    %-30s %3d maps  (--area \"%s\")\n",
+             g->name, g->entry_count, full_name);
    }
    printf("\n");
    fflush(stdout);
@@ -633,11 +629,7 @@ void area_browser_list_files(const char * filter)
    {
       AREA_GROUP_S * g = &ab->groups[i];
 
-      if (g->act > 0)
-         sprintf(group_label, "Act %d - %s", g->act, g->name);
-      else
-         strncpy(group_label, g->name, sizeof(group_label) - 1);
-      group_label[sizeof(group_label) - 1] = '\0';
+      area_group_full_name(g, group_label, sizeof(group_label));
 
       for (j = 0; j < g->entry_count; j++)
       {
@@ -1371,6 +1363,7 @@ static int unlisted_lvltype_by_name(AREA_BROWSER_S * ab, const char * rel,
 {
    char leaf[80];
    int g;
+   const int folder_act = unlisted_act_from_path(rel);
 
    unlisted_leaf_dir(rel, leaf, sizeof(leaf));
    if (leaf[0] == 0) return -1;
@@ -1382,6 +1375,8 @@ static int unlisted_lvltype_by_name(AREA_BROWSER_S * ab, const char * rel,
       if (grp->is_backup) continue;
       if (grp->lvltype_id < 0) continue;
       if (stricmp(grp->name, leaf) != 0) continue;
+      /* "act3\\temple" is not Act 5's Temple: same word, other tileset. */
+      if (folder_act > 0 && grp->act != folder_act) continue;
 
       if (act_out != NULL) *act_out = grp->act;
       return grp->lvltype_id;
@@ -1413,8 +1408,65 @@ static AREA_GROUP_S * unlisted_group_for_act(AREA_BROWSER_S * ab, int act)
    return g;
 }
 
-/* Walk one archive's (listfile) and add whatever is not already grouped. */
-static int unlisted_scan_slot(AREA_BROWSER_S * ab, int slot)
+/* The real area with this LvlTypes Id, or NULL. */
+static AREA_GROUP_S * unlisted_area_for_lvltype(AREA_BROWSER_S * ab, int lvltype)
+{
+   int i;
+
+   for (i = 0; i < ab->group_count; i++)
+   {
+      if (ab->groups[i].lvltype_id == lvltype && !ab->groups[i].is_backup)
+         return &ab->groups[i];
+   }
+   return NULL;
+}
+
+/* LvlTypes Id of the area called "Act X - Name", or -1. */
+static int unlisted_lvltype_of_area(AREA_BROWSER_S * ab, const char * full_name)
+{
+   const int act = area_name_parse_act(full_name);
+   const char * name = area_name_strip_prefix(full_name);
+   int i;
+
+   for (i = 0; i < ab->group_count; i++)
+   {
+      AREA_GROUP_S * g = &ab->groups[i];
+      if (!g->is_backup && g->lvltype_id > 0 && g->act == act && stricmp(g->name, name) == 0)
+         return g->lvltype_id;
+   }
+   return -1;
+}
+
+/* Find or create a group in the Project Diablo 2 section. Group ids stay
+ * negative: the tileset belongs to each entry, and these groups must never
+ * look like a LvlTypes row. */
+static AREA_GROUP_S * pd2_group_named(AREA_BROWSER_S * ab, const char * name, int act)
+{
+   int i, pd2_count = 0;
+   AREA_GROUP_S * g;
+
+   for (i = 0; i < ab->group_count; i++)
+   {
+      if (!ab->groups[i].is_pd2) continue;
+      if (stricmp(ab->groups[i].name, area_name_strip_prefix(name)) == 0)
+         return &ab->groups[i];
+      pd2_count++;
+   }
+
+   g = area_find_or_create_group(ab, -1000 - pd2_count, name, act);
+   if (g != NULL)
+   {
+      g->is_pd2 = TRUE;
+      g->act = act;
+   }
+   return g;
+}
+
+/* Walk one archive's (listfile) and file whatever is not already grouped.
+ * Pass 0 takes the maps LvlPrest names and pass 1 the rest, so the folder
+ * guess in pass 1 sees where the named maps went. Returns how many maps ended
+ * up in an Unlisted group. */
+static int unlisted_scan_slot(AREA_BROWSER_S * ab, int slot, int pass)
 {
    extern GLB_MPQ_S *glb_mpq;
    extern int mpq_batch_load_in_mem(char *filename, void **buffer,
@@ -1427,6 +1479,9 @@ static int unlisted_scan_slot(AREA_BROWSER_S * ab, int slot)
    char * end;
    const char * prefix = "data\\global\\tiles\\";
    const size_t prefix_len = 18;   /* strlen("data\\global\\tiles\\") */
+   /* Vanilla archives are scanned first, so a map still unknown here is one
+    * only Project Diablo 2 ships. */
+   const int is_pd2_only = slot < MPQ_SLOT_PATCH_D2;
 
    if (!glb_mpq_struct[slot].is_open) return 0;
 
@@ -1461,59 +1516,69 @@ static int unlisted_scan_slot(AREA_BROWSER_S * ab, int slot)
 
       {
          const char * rel = line + prefix_len;
-         int act;
+         const PRESET_ENTRY_S * preset;
+         int act, lvltype = -1, def = -1, nbr_act = 0;
+         AREA_GROUP_S * g = NULL;
 
          if (rel[0] == '\0') continue;
          if (unlisted_already_known(ab, rel)) continue;
 
+         preset = mpq_index_find_by_ds1_path(rel, NULL);
+         if ((preset != NULL) != (pass == 0)) continue;
+
+         if (preset != NULL)
          {
-            int nbr_act = 0;
-            int lvltype = -1, def = -1;
-            const PRESET_ENTRY_S *preset = mpq_index_find_by_ds1_path(rel, NULL);
-            AREA_GROUP_S * g;
-
-            /* Exact LvlPrest.File match wins over any folder inference. A
-             * LevelType of 0 is the "None" row, not a usable tileset. */
-            if (preset != NULL)
-            {
-               def = preset->def;
-               if (preset->level_type > 0 && preset->type_name[0] != '\0')
-                  lvltype = preset->level_type;
-            }
-            if (preset == NULL)
-            {
-               lvltype = unlisted_lvltype_for_dir(ab, rel, &nbr_act);
-               if (lvltype == -1)
-                  lvltype = unlisted_lvltype_by_name(ab, rel, &nbr_act);
-               if (lvltype == -2)
-                  lvltype = -1;
-            }
-
-            if (lvltype > 0)
-            {
-               int gi;
-               for (gi = 0; gi < ab->group_count; gi++)
-                  if (ab->groups[gi].lvltype_id == lvltype)
-                  {
-                     nbr_act = ab->groups[gi].act;
-                     break;
-                  }
-            }
-
-            /* TXT preset metadata determines the Act when available. The
-             * folder is only a browser grouping hint for unmatched maps. */
-            act = (preset != NULL && preset->act >= 1 && preset->act <= 5)
-                  ? preset->act
-                  : (nbr_act >= 1 && nbr_act <= 5)
-                  ? nbr_act
-                  : unlisted_act_from_path(rel);
-
-            g = unlisted_group_for_act(ab, act);
-            if (g == NULL) continue;
-
-            area_group_add_entry(g, lvltype, def, rel);
-            added++;
+            def = preset->def;
+            /* LevelId's own tileset wins. A LevelType of 0 is the "None" row,
+             * not a usable tileset; nearly all rows have no level at all and
+             * are placed by name. */
+            if (preset->level_type > 0)
+               lvltype = preset->level_type;
+            else if (area_preset_area_name(preset->name) != NULL)
+               lvltype = unlisted_lvltype_of_area(ab, area_preset_area_name(preset->name));
          }
+         if (lvltype <= 0)
+         {
+            lvltype = unlisted_lvltype_for_dir(ab, rel, &nbr_act);
+            if (lvltype == -1)
+               lvltype = unlisted_lvltype_by_name(ab, rel, &nbr_act);
+            if (lvltype == -2)
+               lvltype = -1;
+         }
+
+         if (lvltype > 0 && (g = unlisted_area_for_lvltype(ab, lvltype)) != NULL)
+            nbr_act = g->act;
+
+         /* TXT preset metadata determines the Act when available. The
+          * folder is only a browser grouping hint for unmatched maps. */
+         act = (preset != NULL && preset->act >= 1 && preset->act <= 5)
+               ? preset->act
+               : (nbr_act >= 1 && nbr_act <= 5)
+               ? nbr_act
+               : unlisted_act_from_path(rel);
+
+         switch (area_map_destination(is_pd2_only, lvltype))
+         {
+            case AREA_DEST_PD2:
+               /* A row with no level ("Unused") names nothing a user would
+                * look for; the folder says more. */
+               g = pd2_group_named(ab,
+                                   (preset != NULL && preset->level_id > 0)
+                                      ? preset->name : area_pd2_folder_group(rel),
+                                   act);
+               break;
+            case AREA_DEST_AREA:
+               if (g != NULL)
+                  break;
+               /* fall through: a level type with no group of its own */
+            default:
+               g = unlisted_group_for_act(ab, act);
+               added++;
+               break;
+         }
+         if (g == NULL) continue;
+
+         area_group_add_entry(g, lvltype, def, rel);
       }
    }
 
@@ -1525,10 +1590,31 @@ static int unlisted_scan_slot(AREA_BROWSER_S * ab, int slot)
 void area_browser_scan_unlisted(void)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
-   int slot, added = 0;
+   int pass, i, kept = 0, added = 0;
 
-   for (slot = 0; slot < MAX_MPQ_FILE; slot++)
-      added += unlisted_scan_slot(ab, slot);
+   for (pass = 0; pass < 2; pass++)
+   {
+      int slot;
+      for (slot = MPQ_SLOT_PATCH_D2; slot < MAX_MPQ_FILE; slot++)
+         added += unlisted_scan_slot(ab, slot, pass);
+      for (slot = MPQ_SLOT_PD2_FIRST; slot < MPQ_SLOT_PATCH_D2; slot++)
+         added += unlisted_scan_slot(ab, slot, pass);
+   }
+
+   /* Rows a table lists but no archive backs would only be dead ends. */
+   for (i = 0; i < ab->group_count; i++)
+   {
+      if (ab->groups[i].entry_count == 0 && !ab->groups[i].is_backup)
+         continue;
+      if (kept != i)
+         ab->groups[kept] = ab->groups[i];
+      kept++;
+   }
+   ab->group_count = kept;
+
+   /* The groups created above arrived after the build's sort. */
+   if (ab->group_count > 1)
+      qsort(ab->groups, ab->group_count, sizeof(AREA_GROUP_S), area_group_cmp);
 
    if (added > 0)
    {
@@ -1709,12 +1795,8 @@ int area_browser_open_by_name(const char * area_name)
       char full_name[128];
       AREA_GROUP_S * g = &ab->groups[i];
 
-      /* build full name for comparison: "Act X - Name" or just "Name" */
-      if (g->act > 0)
-         sprintf(full_name, "Act %d - %s", g->act, g->name);
-      else
-         strncpy(full_name, g->name, sizeof(full_name) - 1);
-      full_name[sizeof(full_name) - 1] = '\0';
+      /* build full name for comparison */
+      area_group_full_name(g, full_name, sizeof(full_name));
 
       if (stricmp(full_name, area_name) == 0)
       {
@@ -1895,20 +1977,17 @@ void area_browser_draw_sidebar(int width, int height)
       int is_selected = (i == ab->selected_group);
 
       /* Act header */
-      if (g->act != last_act)
+      if (area_group_section(g) != last_act)
       {
          if (draw_row >= ab->scroll_offset && y + SB_LINE_H < panel_bottom)
          {
-            if (g->act > 0)
-               al_draw_textf(a5_font, col_act, (float)SB_MARGIN_X, (float)y, 0,
-                              "Act %d", g->act);
-            else
-               al_draw_textf(a5_font, col_act, (float)SB_MARGIN_X, (float)y, 0,
-                              "Other");
+            char section[32];
+            al_draw_textf(a5_font, col_act, (float)SB_MARGIN_X, (float)y, 0, "%s",
+                          area_group_section_label(g, section, sizeof(section)));
             y += SB_LINE_H;
          }
          draw_row++;
-         last_act = g->act;
+         last_act = area_group_section(g);
       }
 
       /* Group row — with expand/collapse arrow */
@@ -2027,12 +2106,12 @@ int area_browser_sidebar_click(int mx, int my, int sidebar_w, int disp_h)
       AREA_GROUP_S * g = &ab->groups[i];
 
       /* Act header row */
-      if (g->act != last_act)
+      if (area_group_section(g) != last_act)
       {
          if (draw_row >= ab->scroll_offset)
             y += SB_LINE_H;
          draw_row++;
-         last_act = g->act;
+         last_act = area_group_section(g);
       }
 
       /* Group row */
@@ -2131,20 +2210,17 @@ static void area_browser_draw(void)
       int is_selected = (i == ab->selected_group);
 
       /* Act header */
-      if (g->act != last_act)
+      if (area_group_section(g) != last_act)
       {
          if (draw_row >= ab->scroll_offset && y + AB_LINE_H < h - AB_FOOTER_H)
          {
-            if (g->act > 0)
-               al_draw_textf(a5_font, col_act, (float)AB_MARGIN_X, (float)y, 0,
-                              "Act %d", g->act);
-            else
-               al_draw_textf(a5_font, col_act, (float)AB_MARGIN_X, (float)y, 0,
-                              "Other");
+            char section[32];
+            al_draw_textf(a5_font, col_act, (float)AB_MARGIN_X, (float)y, 0, "%s",
+                          area_group_section_label(g, section, sizeof(section)));
             y += AB_LINE_H;
          }
          draw_row++;
-         last_act = g->act;
+         last_act = area_group_section(g);
       }
 
       /* Group row */
@@ -2311,12 +2387,12 @@ int area_browser_run(void)
             for (gi = 0; gi < ab->group_count; gi++)
             {
                /* Account for act header rows */
-               if (ab->groups[gi].act != last_a)
+               if (area_group_section(&ab->groups[gi]) != last_a)
                {
                   if (draw_idx >= ab->scroll_offset)
                      row_y += AB_LINE_H;
                   draw_idx++;
-                  last_a = ab->groups[gi].act;
+                  last_a = area_group_section(&ab->groups[gi]);
                }
 
                if (draw_idx >= ab->scroll_offset)

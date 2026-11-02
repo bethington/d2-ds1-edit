@@ -33,6 +33,16 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
 
 ### Fixed
 
+- **The map browser files maps where they belong.** Maps that `LvlPrest` names
+  under a different word than their area, such as Burbs, Slums and Fortress, no
+  longer land in "Unlisted", so Act 3 Kurast and Act 4 Town are no longer empty.
+  Maps in a folder with a single known tileset join that area, leaving about 140
+  of the 952 that were unlisted. Empty areas and repeated maps are gone.
+- **Project Diablo 2 maps have their own section.** Maps only PD2 ships appear
+  under "Project Diablo 2", named by their `LvlPrest` row, and open with the
+  tileset `Levels.txt` gives them, so they draw in full. This needs PD2's current
+  tables: an older `mod_dir` copy of them overrides these names and tilesets.
+
 - **The pointer works on any Mac, including over a remote desktop.** macOS now
   reads the pointer from Cocoa events instead of Allegro's mouse driver, which
   refuses to install on a Mac with no HID pointing device, as with Jump Desktop
