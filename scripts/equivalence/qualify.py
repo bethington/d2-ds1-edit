@@ -21,9 +21,21 @@ baseline/adapter, short of its coverage dimensions, or awaiting review blocks
 release. Optional results are reported but never stand in for required ones.
 Structurally invalid evidence raises :class:`contracts.ValidationError`.
 
+Waivers (``ds1edit.review/1`` dispositions of kind ``waiver``) are the one way
+a maintainer can release without a required result, and only for a result that
+never happened: status ``missing``, ``not_run`` or ``unavailable``. A waiver
+names one exact case ID and platform, a reason, a reviewer and the release
+version it expires with. It never excuses a mismatch, a partial result, a
+violated expected rejection, duplicate or stale evidence, anything the profile
+marks ``"waivable": false``, any ``package.*`` check, ``portable.ctest``,
+``portable.python-unittest`` or a sanitizer result. Waived entries are listed
+apart from qualifying ones; ``ready`` still needs every other required entry
+to qualify.
+
 ``source_state_digest(root)`` hashes the declared build inputs of a checkout
-(names plus content, line endings normalised by git where available) so that
-the qualification record can be found again from a tagged checkout.
+(names plus *committed* Git blob ids, so ``core.autocrlf`` and other checkout
+settings cannot change it) so that the qualification record can be found
+again from a tagged checkout.
 
 CLI::
 
@@ -89,7 +101,19 @@ GLOBAL_CHECKS = ("profile_identity", "candidate_identity", "package_hashes",
                  "defects")
 #: Performance comparisons that need no maintainer disposition.
 REVIEWED_PERFORMANCE = ("baseline", "within_budget")
-DISPOSITION_KINDS = ("performance", "defect")
+DISPOSITION_KINDS = ("performance", "defect", "waiver")
+#: A waiver may excuse only a required result that never happened.
+WAIVABLE_STATUSES = ("missing", "not_run", "unavailable")
+#: Reasons that merely follow from a result that did not run (no inputs
+#: compared, no features covered...). Any other reason (stale binding, a
+#: wrong declaration) keeps the entry blocked even under a waiver.
+WAIVER_CONSEQUENCE_CODES = ("zero_inputs", "missing_features", "incomplete_accounting",
+                            "control_not_detected")
+#: Never waivable whatever the profile says (case-ID patterns): the package
+#: checks, the two suites that make up "the tests pass", and the sanitizer
+#: lane. coverage.production is a report, not a sanitizer result.
+NON_WAIVABLE_IDS = ("package.*", "portable.ctest", "portable.python-unittest",
+                    "sanitizer.*", "control.sanitizer.*")
 
 #: Reason code -> report category.
 CATEGORIES = {
@@ -114,6 +138,7 @@ CATEGORY_NAMES = ("missing", "mismatching", "stale", "partial", "unexecuted",
 
 _HEX64 = re.compile(r"^[0-9a-f]{64}$")
 _WILDCARD = re.compile(r"[*?\[\]]")
+_CONTROL = re.compile(r"[\x00-\x1f\x7f\u2028\u2029]")
 
 
 def key(case_id: str, lane: str, platform: str) -> str:
@@ -200,6 +225,8 @@ def validate_profile(profile: dict) -> dict:
             if c.get("success_outcome", "pass") not in C.SUCCESS_OUTCOMES:
                 raise C.ValidationError("%s.success_outcome must be one of %s"
                                         % (cw, ", ".join(C.SUCCESS_OUTCOMES)))
+            if "waivable" in c and not isinstance(c["waivable"], bool):
+                raise C.ValidationError("%s.waivable must be true or false" % cw)
             if "binding" in c:
                 _str_list(c, "binding", cw, BINDINGS, nonempty=True)
             if "reference" in c:
@@ -236,6 +263,7 @@ def expand_profile(profile: dict) -> list:
                     "binding": list(c.get("binding", _default_binding(c["lane"]))),
                     "reference": list(c.get("reference", [])),
                     "coverage": copy.deepcopy(c.get("coverage", {})),
+                    "waivable": c.get("waivable", True),
                 }
                 prev = by_key.get(e["key"])
                 if prev is None:
@@ -249,6 +277,36 @@ def expand_profile(profile: dict) -> list:
                 if r["id"] not in prev["requirements"]:
                     prev["requirements"].append(r["id"])
     return out
+
+
+_CI_EMITTED = None
+
+
+def ci_emitted_keys() -> frozenset:
+    """``(id, lane, platform)`` of every entry ci_evidence produces in CI."""
+    global _CI_EMITTED
+    if _CI_EMITTED is None:
+        try:
+            from . import ci_evidence as _ci
+        except ImportError:  # run as a plain script
+            from scripts.equivalence import ci_evidence as _ci
+        _CI_EMITTED = frozenset((r["id"], r["lane"], p)
+                                for r in _ci.RULES for p in r["platforms"])
+    return _CI_EMITTED
+
+
+def is_waivable(entry: dict) -> bool:
+    """May a maintainer waive this expanded required entry at all?
+
+    Never an entry CI itself produces evidence for (a missing result there is
+    a broken job, not a lane the maintainer cannot run), nor the fixed
+    non-waivable ids, nor one the profile marks ``"waivable": false``.
+    """
+    if entry.get("waivable", True) is False:
+        return False
+    if (entry["id"], entry["lane"], entry["platform"]) in ci_emitted_keys():
+        return False
+    return not any(fnmatch.fnmatchcase(entry["id"], g) for g in NON_WAIVABLE_IDS)
 
 
 # ---------------------------------------------------------------------------
@@ -331,6 +389,19 @@ def _validate_disposition(d: dict, where: str) -> dict:
         raise C.ValidationError("%s.kind %r cannot be dispositioned (only %s); required "
                                 "mismatches are never excused"
                                 % (where, kind, ", ".join(DISPOSITION_KINDS)))
+    if kind == "waiver":
+        for field in ("platform", "reason", "reviewer", "expires_version"):
+            v = d.get(field)
+            if not isinstance(v, str) or not v.strip():
+                raise C.ValidationError("%s.%s is required on a waiver" % (where, field))
+            if _CONTROL.search(v):
+                raise C.ValidationError("%s.%s contains control characters or a line break"
+                                        % (where, field))
+        if d.get("lane") is not None:
+            C._nonempty_str(d, "lane", where)
+        if "evidence" in d:
+            _str_list(d, "evidence", where)
+        return d
     if kind == "performance":
         C._nonempty_str(d, "platform", where)
     elif d.get("platform") is not None:
@@ -533,13 +604,65 @@ def _evaluate(entry, case, candidate, disps, used):
 # qualify()
 # ---------------------------------------------------------------------------
 
-def qualify(profile: dict, candidate: dict, results: list) -> dict:
-    """Aggregate *results* against *profile* for *candidate*; never trusts totals."""
+def _prepare_waivers(disps: list, entries: list, version) -> dict:
+    """Validate every waiver; ``{entry key: waiver}``. Structural problems raise."""
+    waivers = [d for d in disps if d["kind"] == "waiver"]
+    if not waivers:
+        return {}
+    if not isinstance(version, str) or not version.strip():
+        raise C.ValidationError("waivers need the release version being qualified "
+                                "(pass version=...); none was given")
+    by_id = {}
+    for e in entries:
+        by_id.setdefault((e["id"], e["platform"]), []).append(e)
+    out = {}
+    for w in waivers:
+        if w["expires_version"] != version:
+            raise C.ValidationError(
+                "waiver for %s/%s expires with version %r, not the release being "
+                "qualified (%s): expired or issued for another release"
+                % (w["id"], w["platform"], w["expires_version"], version))
+        found = by_id.get((w["id"], w["platform"]), [])
+        if w.get("lane") is not None:
+            found = [e for e in found if e["lane"] == w["lane"]]
+        if not found:
+            raise C.ValidationError("waiver names %s on %s (lane %s), which the profile "
+                                    "does not require" % (w["id"], w["platform"],
+                                                          w.get("lane", "any")))
+        for e in found:
+            if not is_waivable(e):
+                raise C.ValidationError("%s cannot be waived: it is a non-waivable "
+                                        "required entry" % e["key"])
+            if e["key"] in out:
+                raise C.ValidationError("two waivers for %s" % e["key"])
+            out[e["key"]] = w
+    return out
+
+
+def _waiver_verdict(status: str, reasons: list):
+    """None when a waiver applies, else why it does not."""
+    if status not in WAIVABLE_STATUSES:
+        return "status %r is not one of %s" % (status, ", ".join(WAIVABLE_STATUSES))
+    allowed = {status} | (set(WAIVER_CONSEQUENCE_CODES) if status != "missing" else set())
+    other = sorted({r["code"] for r in reasons} - allowed)
+    if other:
+        return "other blocking reasons remain: %s" % ", ".join(other)
+    return None
+
+
+def qualify(profile: dict, candidate: dict, results: list, *, version=None) -> dict:
+    """Aggregate *results* against *profile* for *candidate*; never trusts totals.
+
+    *version* is the release version being qualified (``"2.2.1"``); it is
+    required when the results carry waivers, which must expire with it.
+    """
     validate_profile(profile)
     validate_candidate(candidate)
     cases, disps, defects, artifacts = _collect(results)
     entries = expand_profile(profile)
     req_keys = {e["key"] for e in entries}
+    waiver_for = _prepare_waivers(disps, entries, version)
+    waived, used_waivers, rejected_waivers = [], [], []
 
     by_key = {}
     for c in cases:
@@ -568,21 +691,36 @@ def qualify(profile: dict, candidate: dict, results: list) -> dict:
                 if isinstance(lim, str) and lim not in limits:
                     limits.append(lim)
         ok = not reasons
+        w = waiver_for.get(e["key"]) if not ok else None
+        is_waived = False
+        if w is not None:
+            why = _waiver_verdict(status, reasons)
+            if why is None:
+                is_waived = True
+                used_waivers.append(w)
+                waived.append({"key": e["key"], "id": e["id"], "lane": e["lane"],
+                               "platform": e["platform"], "status": status,
+                               "requirements": e["requirements"],
+                               "reasons": reasons, "waiver": copy.deepcopy(w)})
+            else:
+                rejected_waivers.append({"key": e["key"], "waiver": copy.deepcopy(w),
+                                         "why": why})
         required.append({
             "key": e["key"], "id": e["id"], "lane": e["lane"],
             "platform": e["platform"], "kind": e["kind"],
             "requirements": e["requirements"], "status": status,
             "success_outcome": e["success_outcome"], "qualifies": ok,
+            "waived": is_waived,
             "reasons": reasons,
             "case_sha256": C.payload_sha256(case) if case is not None else None,
         })
         t = totals.setdefault("%s/%s" % (e["lane"], e["platform"]),
                               {"required": 0, "qualifying": 0, "blocking": 0,
-                               "statuses": {}})
+                               "waived": 0, "statuses": {}})
         t["required"] += 1
-        t["qualifying" if ok else "blocking"] += 1
+        t["qualifying" if ok else ("waived" if is_waived else "blocking")] += 1
         t["statuses"][status] = t["statuses"].get(status, 0) + 1
-        if not ok:
+        if not ok and not is_waived:
             blocking.append({"key": e["key"], "requirements": e["requirements"],
                              "reasons": reasons})
             for r in reasons:
@@ -638,12 +776,15 @@ def qualify(profile: dict, candidate: dict, results: list) -> dict:
         r_ready = ready if r.get("checks") else not bad
         reqs.append({"id": r["id"], "title": r["title"], "spec": r.get("spec"),
                      "ready": r_ready, "required": len(mine), "blocking": bad,
+                     "waived": [x["key"] for x in waived if r["id"] in x["requirements"]],
                      "checks": list(r.get("checks", []))})
 
-    used_ids = {id(d) for d in used}
+    used_ids = {id(d) for d in used} | {id(d) for d in used_waivers}
+    review_used = {id(d) for d in used}
     report = {
         "schema": QUALIFICATION_SCHEMA,
         "ready": ready,
+        "release_version": version,
         "profile": {"id": profile["id"], "digest": profile["digest"]},
         "candidate_run_id": candidate["candidate_run_id"],
         "commit": src["commit"],
@@ -662,7 +803,10 @@ def qualify(profile: dict, candidate: dict, results: list) -> dict:
         "optional": optional,
         "coverage": coverage,
         "limits": limits,
-        "review_dispositions": [d for d in disps if id(d) in used_ids],
+        "review_dispositions": [d for d in disps if id(d) in review_used],
+        "waived": waived,
+        "waivers": [d for d in disps if id(d) in {id(x) for x in used_waivers}],
+        "rejected_waivers": rejected_waivers,
         "unused_dispositions": [d for d in disps if id(d) not in used_ids],
         "open_defects": open_defects,
         "input_artifacts": artifacts,
@@ -760,6 +904,70 @@ def _blob_id(data: bytes) -> str:
     return hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest()
 
 
+def _hash_paths(root: Path, names: list, filters: bool) -> list:
+    """Git blob ids of working-tree files; *filters* applies the checkout's
+    eol/clean conversion (what ``git add`` would store), otherwise raw bytes."""
+    if not names:
+        return []
+    args = ["hash-object", "--stdin-paths"] + ([] if filters else ["--no-filters"])
+    out = _git(root, *args, data=("\n".join(names) + "\n").encode("utf-8"))
+    if out is None:
+        raise C.ValidationError("git hash-object failed in %s" % root)
+    ids = out.decode("ascii").split()
+    if len(ids) != len(names):
+        raise C.ValidationError("git hash-object returned %d ids for %d files"
+                                % (len(ids), len(names)))
+    return ids
+
+
+def _git_inputs(root: Path) -> list:
+    """Declared inputs of a Git checkout, independent of its eol settings.
+
+    A tracked file contributes its *committed* blob id (``ls-files -s``) as
+    long as the working copy still represents it, i.e. its raw bytes or its
+    filtered (``git add``) form hash to that id. That holds on a Windows
+    ``core.autocrlf`` checkout, where a CRLF working file of an LF blob, or a
+    CRLF blob that autocrlf would normalise, must not change the digest. A
+    tracked file that was really edited, and an untracked-but-declared input,
+    contribute the id of their raw bytes (``--no-filters``). Tracked files
+    missing from the working tree are not inputs.
+    """
+    staged = _git(root, "ls-files", "-z", "-s")
+    other = _git(root, "ls-files", "-z", "-o", "--exclude-standard")
+    if staged is None or other is None:
+        raise C.ValidationError("git ls-files failed in %s" % root)
+    committed = {}
+    for rec in staged.decode("utf-8").split("\0"):
+        if not rec:
+            continue
+        meta, _, name = rec.partition("\t")
+        mode, blob, stage = meta.split()
+        if stage != "0":
+            raise C.ValidationError("%s has unresolved merge state" % name)
+        if mode != "160000" and is_source_input(name):
+            committed[name] = (mode, blob)
+    chosen = {}
+    tracked = sorted(n for n in committed if (root / n).is_file())
+    raw = _hash_paths(root, tracked, filters=False)
+    stale = [n for n, r in zip(tracked, raw) if r != committed[n][1]]
+    filtered = dict(zip(stale, _hash_paths(root, stale, filters=True)))
+    for n, r in zip(tracked, raw):
+        mode, blob = committed[n]
+        if mode == "120000" or r == blob or filtered.get(n) == blob:
+            chosen[n] = blob
+        else:
+            chosen[n] = r
+    untracked = sorted({n for n in other.decode("utf-8").split("\0")
+                        if n and n not in committed and is_source_input(n)
+                        and (root / n).is_file()})
+    for n, i in zip(untracked, _hash_paths(root, untracked, filters=False)):
+        chosen[n] = i
+    names = sorted(chosen)
+    if any("\n" in n for n in names):
+        raise C.ValidationError("an input path contains a newline")
+    return [[n, chosen[n]] for n in names]
+
+
 def source_inputs(root: Path) -> list:
     """Sorted ``[relative path, git blob id]`` for every declared input."""
     root = Path(root)
@@ -767,24 +975,7 @@ def source_inputs(root: Path) -> list:
         raise C.ValidationError("%s is not a DS1Edit source tree" % root)
     _check_cmake_references(root)
     if _git_top(root):
-        listed = _git(root, "ls-files", "-z", "-c", "-o", "--exclude-standard")
-        if listed is None:
-            raise C.ValidationError("git ls-files failed in %s" % root)
-        names = sorted({n for n in listed.decode("utf-8").split("\0")
-                        if n and is_source_input(n) and (root / n).is_file()})
-        if any("\n" in n for n in names):
-            raise C.ValidationError("an input path contains a newline")
-        # hash-object applies the checkout's eol conversion, so a Windows
-        # autocrlf checkout and a Linux checkout of one commit agree.
-        out = _git(root, "hash-object", "--stdin-paths",
-                   data=("\n".join(names) + "\n").encode("utf-8")) if names else b""
-        if out is None:
-            raise C.ValidationError("git hash-object failed in %s" % root)
-        ids = out.decode("ascii").split()
-        if len(ids) != len(names):
-            raise C.ValidationError("git hash-object returned %d ids for %d files"
-                                    % (len(ids), len(names)))
-        return [[n, i] for n, i in zip(names, ids)]
+        return _git_inputs(root)
     names = []
     for top in (root,):
         for dirpath, dirnames, filenames in os.walk(top):
@@ -877,8 +1068,12 @@ def verify_artifacts(candidate: dict, artifacts: dict) -> list:
 
 
 def verify_release_record(record: dict, profile: dict, root: Path,
-                          artifacts: dict) -> list:
-    """Everything that stops a reviewed record from releasing these artifacts."""
+                          artifacts: dict, version=None) -> list:
+    """Everything that stops a reviewed record from releasing these artifacts.
+
+    *version* is the version being released (the tag without its ``v``); the
+    record must have been qualified for it, and its waivers expire with it.
+    """
     problems = []
     if not isinstance(record, dict) or record.get("schema") != QUALIFICATION_SCHEMA:
         return ["record is not a %s report" % QUALIFICATION_SCHEMA]
@@ -886,8 +1081,12 @@ def verify_release_record(record: dict, profile: dict, root: Path,
         problems.append("record digest does not match its content")
     if record.get("ready") is not True:
         problems.append("record is not ready")
+    if version is not None and record.get("release_version") != version:
+        problems.append("record was qualified for version %r, not the release %r"
+                        % (record.get("release_version"), version))
     try:
-        again = qualify(profile, record["candidate"], record["results"])
+        again = qualify(profile, record["candidate"], record["results"],
+                        version=record.get("release_version"))
     except (C.ValidationError, KeyError, TypeError) as exc:
         return problems + ["record evidence is invalid: %s" % exc]
     if not again["ready"]:
@@ -895,6 +1094,16 @@ def verify_release_record(record: dict, profile: dict, root: Path,
         problems.append("recomputed qualification is not ready: %s" % ", ".join(why))
     if again["required"] != record.get("required"):
         problems.append("record's per-case results differ from their recomputation")
+    if again["waived"] != record.get("waived"):
+        problems.append("record's waived checks differ from their recomputation")
+    # input_artifacts must describe results one-to-one: the evidence a reviewer
+    # was shown is the evidence the verdict was computed from.
+    listed = sorted(str(a.get("payload_sha256")) for a in record.get("input_artifacts", [])
+                    if isinstance(a, dict))
+    held = sorted(C.payload_sha256(r) for r in record.get("results", []))
+    if listed != held:
+        problems.append("record's input_artifacts do not match its results one-to-one "
+                        "(%d listed, %d held)" % (len(listed), len(held)))
     if record.get("profile", {}).get("digest") != profile.get("digest"):
         problems.append("record was qualified against another profile")
     try:
@@ -976,6 +1185,8 @@ def main(argv=None) -> int:
     ap.add_argument("--candidate", required=True, type=Path)
     ap.add_argument("--results-dir", required=True, type=Path)
     ap.add_argument("--out", required=True, type=Path)
+    ap.add_argument("--version", default=None,
+                    help="release version being qualified (required with waivers)")
     try:
         a = ap.parse_args(argv)
     except SystemExit as exc:
@@ -984,7 +1195,7 @@ def main(argv=None) -> int:
         profile = load_profile(a.profile)
         candidate = validate_candidate(C.load_json_object(a.candidate))
         results, files = load_results_dir(a.results_dir)
-        report = dict(qualify(profile, candidate, results))
+        report = dict(qualify(profile, candidate, results, version=a.version))
         report["input_artifacts"] = files
         report["input_files"] = {"profile": sha256_file(a.profile),
                                  "candidate": sha256_file(a.candidate)}
@@ -999,10 +1210,15 @@ def main(argv=None) -> int:
     _write(report, a.out)
     n = len(report["required"])
     ok = sum(1 for r in report["required"] if r["qualifies"])
-    print("ready: %s  required %d, qualifying %d, blocking %d -> %s"
-          % (str(report["ready"]).lower(), n, ok, n - ok, a.out))
+    waived = len(report["waived"])
+    print("ready: %s  required %d, qualifying %d, waived %d, blocking %d -> %s"
+          % (str(report["ready"]).lower(), n, ok, waived, n - ok - waived, a.out))
     for g in report["global_reasons"]:
         print("  candidate: %s: %s" % (g["code"], g["detail"]))
+    for w in report["waived"]:
+        print("  waived: %s (%s): %s" % (w["key"], w["status"], w["waiver"]["reason"]))
+    for r in report["rejected_waivers"]:
+        print("  waiver not applied: %s: %s" % (r["key"], r["why"]))
     for cat in CATEGORY_NAMES:
         if report[cat]:
             print("  %-20s %d" % (cat, len(report[cat])))
