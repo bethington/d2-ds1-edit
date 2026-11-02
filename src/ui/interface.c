@@ -25,6 +25,7 @@
 #include "core/export_common.h"
 #include "core/palette.h"
 #include "ui/input.h"
+#include "ui/selftest_verdict.h"
 #include "core/ds1_save_io.h"
 #include <allegro5/allegro_native_dialog.h>
 
@@ -128,6 +129,7 @@ static void perf_print_summary(void)
 static double *st_render = NULL, *st_present = NULL;
 static int st_n = 0, st_cap = 0;
 static double st_t0 = 0.0;
+static double st_cpu_ms_total = 0.0, st_cpu_t0 = 0.0;
 static int st_win_w = 0, st_win_h = 0;
 static double st_sec_total[9];
 static double st_sec_max[9];
@@ -254,6 +256,8 @@ static void st_report(int win_w, int win_h, double wall_s, int font_bad,
            "selftest: render ms avg %.2f p50 %.2f p95 %.2f p99 %.2f max %.2f\n",
            r.avg, r.p50, r.p95, r.p99, r.max);
    fprintf(stdout, "selftest: present ms avg %.2f max %.2f\n", pr.avg, pr.max);
+   fprintf(stdout, "selftest: frame cpu ms avg %.2f (main thread)\n",
+           st_n > 0 ? st_cpu_ms_total / st_n : 0.0);
    if (slow >= 0)
       fprintf(stdout, "selftest: slowest section %s avg %.2f ms\n",
               st_sec_name[slow], slow_avg);
@@ -281,6 +285,8 @@ static void st_report(int win_w, int win_h, double wall_s, int font_bad,
               r.avg, r.p50, r.p95, r.p99, r.max);
       fprintf(f, "  \"present_ms\": {\"avg\": %.4f, \"max\": %.4f},\n",
               pr.avg, pr.max);
+      fprintf(f, "  \"frame_cpu_ms_avg\": %.4f,\n",
+              st_n > 0 ? st_cpu_ms_total / st_n : 0.0);
       if (slow >= 0)
          fprintf(f, "  \"slowest_section\": {\"name\": \"%s\", "
                     "\"avg_ms\": %.4f},\n", st_sec_name[slow], slow_avg);
@@ -322,7 +328,6 @@ void interfac_user_handler(int start_ds1_idx)
    ALLEGRO_BITMAP *old_screen_buff = NULL;
    double frame_start_ms, section_start_ms;
    int selftest_rendered = 0;
-   double selftest_render_ms = 0.0;
    int switchbench_done = 0;
    int switchbench_exit_in = 0;
 
@@ -862,13 +867,13 @@ void interfac_user_handler(int start_ds1_idx)
       // the compositing. Lumped together they cannot tell a slow tile blit
       // apart from a stalled al_flip_display, which are different bugs.
       section_start_ms = perf_now_ms();
+      st_cpu_t0 = selftest_thread_cpu_ms();
       glb_present_ms = 0.0;
       if (glb_ds1edit.has_loaded_ds1)
          wpreview_draw_tiles(ds1_idx);
       else
          misc_draw_screen(a5_mouse_x, a5_mouse_y);
       glb_ds1edit.fps++;
-      selftest_render_ms += perf_now_ms() - section_start_ms - glb_present_ms;
       if (glb_ds1edit.cmd_line.selftest_frames > 0)
       {
          if (st_n == 0)
@@ -877,6 +882,7 @@ void interfac_user_handler(int start_ds1_idx)
             st_win_w = al_get_display_width(a5_display);
             st_win_h = al_get_display_height(a5_display);
          }
+         st_cpu_ms_total += selftest_thread_cpu_ms() - st_cpu_t0;
          st_record(perf_now_ms() - section_start_ms - glb_present_ms,
                    glb_present_ms);
       }
@@ -2274,13 +2280,13 @@ void interfac_user_handler(int start_ds1_idx)
                const char *failure = NULL;
                double wall_s = al_get_time() - st_t0;
 
-               /* Verdict first, so the JSON report carries it. */
-               if (selftest_render_ms / selftest_rendered > 250.0)
-                  failure = "composing a frame averaged over 250 ms; something "
-                            "drawn every frame is probably a MEMORY bitmap";
-               if (a5_gpu_guard_hits > 0)
-                  failure = "a MEMORY bitmap was drawn onto a VIDEO target "
-                            "(see the render: WARNING line in stderr.txt)";
+               /* Verdict first, so the JSON report carries it. The time
+                  rule is on the main thread's CPU time, not wall time: on a
+                  loaded host (parallel test lanes) frames wait seconds for a
+                  core, and a wall-time mean over 250 ms failed about one
+                  healthy run in 150 with exit 1. See selftest_verdict.h. */
+               failure = selftest_render_verdict(st_n, st_cpu_ms_total,
+                                                 a5_gpu_guard_hits);
 
                st_report(st_win_w, st_win_h, wall_s, font_bad, failure);
                if (failure != NULL)

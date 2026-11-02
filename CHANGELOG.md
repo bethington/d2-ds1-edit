@@ -3,6 +3,12 @@
 Notable changes to DS1Edit. Releases before 2.1.1 are described on the
 [GitHub releases page](https://github.com/bethington/d2-ds1-edit/releases).
 
+## 2.2.1 (unreleased)
+
+### Fixed
+
+- **`--selftest` no longer fails healthy runs on a busy machine.** The frame-time rule that backs up the MEMORY-bitmap draw guard compared the mean *wall* time of a frame with 250 ms. With parallel test lanes, frames waited seconds for a core (act1_town at 1:8: about 50 ms of CPU per frame, 200 ms to several seconds of wall time), and roughly one windowed GPU run in 150 exited 1 with nothing wrong. The rule now uses the main thread's CPU time per frame, which a host under load does not inflate; the direct MEMORY-bitmap guard is unchanged. The selftest summary and `--selftest-report` JSON now include it (`frame cpu ms avg`, `frame_cpu_ms_avg`).
+
 ## 2.2.0
 
 ### Added
