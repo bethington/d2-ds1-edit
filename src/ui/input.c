@@ -48,6 +48,11 @@ int input_delete_hits_tiles(int tile_mode, int paste_preview_active)
    if (al_key_down(&a5_kb_state, ALLEGRO_KEY_LCTRL) ||
        al_key_down(&a5_kb_state, ALLEGRO_KEY_RCTRL))
       return FALSE;
+#ifdef __APPLE__
+   /* Cmd works wherever Ctrl does. */
+   if (al_key_down(&a5_kb_state, ALLEGRO_KEY_COMMAND))
+      return FALSE;
+#endif
    return tile_mode && !paste_preview_active &&
           (key_hit(KEY_DEL) || key_hit(KEY_DEL_PAD));
 }

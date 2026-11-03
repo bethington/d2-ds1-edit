@@ -736,10 +736,6 @@ void interfac_user_handler(int start_ds1_idx)
          if (cmd != CMD_NONE)
             interface_run_command(cmd, ds1_idx, cx, cy, &paste_pos, &done);
 
-         /* A menu that ran its own loop pumped input. Wheel turns it took
-            belong to the menu, so they must not zoom the map on return. */
-         old_mouse_z += a5_mouse_z - z_before;
-
          /* A dialog ran its own loop too: take in what happened meanwhile, and
             keep keys still held from the dialog from acting on the map. */
          switch (cmd)
@@ -753,6 +749,11 @@ void interfac_user_handler(int start_ds1_idx)
          default:
             break;
          }
+
+         /* A menu that ran its own loop pumped input. Wheel turns it took
+            belong to the menu, so they must not scroll or zoom on return. */
+         old_mouse_z += a5_mouse_z - z_before;
+         cur_mouse_z += a5_mouse_z - z_before;
       }
       if (!glb_ds1edit.has_loaded_ds1)
          ds1_idx = 0;  /* closing a project can discard the open maps */
