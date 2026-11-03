@@ -317,12 +317,17 @@ runs, set `use_pd2 = no`. The command-line equivalents are `--pd2-dir=` and `--u
 | **Ctrl+Z** | Undo the last map edit. While a properties-panel field is being edited, the panel owns Ctrl+Z |
 | **Ctrl+U** | Undo tile edits; acts once per key press |
 | **Delete** | Delete the selected tiles or objects. It never deletes a map |
-| Right-click a map in the area browser | **Delete map...**: asks first, then backs the map up and removes it from the mod folder |
+| Right-click a map in the area browser, or **Ctrl+Del** | **Delete map...** (**Ctrl+Del** acts on the open map): asks first, then backs the map up and removes it from the project or mod folder |
 | **Alt+I** | Select strictly identical tiles |
 | **Alt**-drag | Box-select objects |
 | **Ctrl+S** | Save the current map into the project, asking for a project first if none is open |
 | **Ctrl+Shift+S** | Save every map with unsaved edits |
 | **Ctrl+Shift+N / O / W** | New, Open or Close Project |
+| **Ctrl+N** / **Ctrl+D** | New map / clone the open map |
+| **Ctrl+Shift+P** / **Ctrl+Shift+A** | Open a preset / export assets |
+| **Alt+F, E, M, V, B** | Open the File, Edit, Map, View or Build menu. Arrow keys move, **Enter** runs and **Esc** closes |
+
+On macOS, **Cmd** works wherever **Ctrl** does. Dimmed menu commands arrive in later releases.
 
 Scroll speeds are `keyb_scroll_x/y` and `mouse_scroll_x/y` in `Ds1edit.ini`. The
 [manual](docs/getting-started/manual.md) describes the rest of the editing keys.

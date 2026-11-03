@@ -278,6 +278,12 @@ This editor is using essentially the keyboard and the mouse together. There's no
 
 * * *
 
+### Menus
+
+The bar across the top holds **File**, **Edit**, **Map**, **View** and **Build**. Click a title, or press **Alt** with its first letter. Arrow keys move, **Enter** runs the highlighted command, and **Esc** closes the menu. Every command shows its hotkey, and commands that don't apply right now are dimmed.
+
+* * *
+
 ### ESC
 
 Quit the Editor. If you have unsaved edits, a window appears to ask whether to save them first. With nothing unsaved, the editor just closes.

@@ -5,6 +5,12 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
 
 ## 2.2.1 (unreleased)
 
+### Added
+
+- **Menu bar.** File, Edit, Map, View and Build menus, opened with a click or **Alt** plus the first letter. Every command shows its hotkey. Build commands and some Map commands are dimmed until they arrive.
+
+- **Hotkeys for maps.** **Ctrl+N** creates a map, **Ctrl+D** clones the open one, and **Ctrl+Del** deletes the open one after asking. These replace **Insert** and **Shift+Insert**, and **Insert** keeps its object-mode role.
+
 ### Changed
 
 - **The release gate is workable.** It still fails closed, but it can now be
@@ -59,6 +65,10 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
 - **Reading `.txt` tables no longer returns freed memory.** `txt_read_in_mem` returned its old pointer after `realloc`, so `LvlTypes`, `LvlPrest` and `Objects` were parsed from a freed block whenever `realloc` moved it.
 - **DCC frames too large for the direction box are refused in the frame header.** A width of `0xFFFFFFFF` wrapped a 32-bit `long` to an empty frame box and got past the direction box check on the Windows build; huge widths, heights and offsets at the end of the 32-bit range now fail there.
 - **`--selftest` no longer fails healthy runs on a busy machine.** The frame-time rule that backs up the MEMORY-bitmap draw guard compared the mean *wall* time of a frame with 250 ms. With parallel test lanes, frames waited seconds for a core (act1_town at 1:8: about 50 ms of CPU per frame, 200 ms to several seconds of wall time), and roughly one windowed GPU run in 150 exited 1 with nothing wrong. The rule now uses the main thread's CPU time per frame, which a host under load does not inflate; the direct MEMORY-bitmap guard is unchanged. The selftest summary and `--selftest-report` JSON now include it (`frame cpu ms avg`, `frame_cpu_ms_avg`).
+
+- **Hotkeys match their exact modifiers.** **Ctrl+N** no longer also toggles night mode, **Ctrl+Shift+N** no longer does either, and **Ctrl+S** no longer scrolls the map.
+
+- **Closing the window during the "saved" message no longer quits without asking.**
 
 ## 2.2.0
 

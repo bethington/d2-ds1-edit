@@ -110,7 +110,7 @@ for one package says nothing about another build or platform.
   whether the keyboard worked before and after. A build whose keys never reach
   the editor fails P-items even if the window draws.
 
-## Case `gui-edit-undo-save-reopen` (items E1 to E14)
+## Case `gui-edit-undo-save-reopen` (items E1 to E15)
 
 Use act 1 Town and at least two other maps from different acts.
 
@@ -174,8 +174,15 @@ Use act 1 Town and at least two other maps from different acts.
   and (Esc) writes nothing. Create one: the map saves under
   `<project>/Global/Tiles/`, nothing changes in the game folder, and the browser
   row shows `M`. Unsaved edits show `*`.
+- [ ] **E15 Menus and hotkeys.** Click each menu title, and open each with **Alt**
+  plus its letter. Arrow keys move and wrap, **Enter** runs, and **Esc** closes the
+  menu without reaching the quit dialog. While a menu is open, the map behind it
+  ignores keys and clicks, and a click that closes the menu doesn't touch the map.
+  Dimmed rows do nothing. **Ctrl+N** doesn't toggle night mode, **Ctrl+S** doesn't
+  scroll, and **Insert** in tile mode creates no map. Side panels and the HUD sit
+  below the bar with no overlap. On macOS, repeat with **Cmd**.
 
-Total items: 14.
+Total items: 15.
 
 ## Case `gui-modal-input` (items M1 to M4)
 
@@ -255,8 +262,8 @@ python -m scripts.equivalence.native_smoke manual ^
     --smoke-report OWNED\native-run\native-smoke-report.json ^
     --tester "Your Name" ^
     --environment "Windows 11 23H2 clean VM, no VC++ redist, 1.13c on D:\" ^
-    --notes "E1-E14 all done; E8 needed a second resize to redraw" ^
-    --items 14 --total 14 --out RESULTS\native.windows-x86.gui-edit-undo-save-reopen.json
+    --notes "E1-E15 all done; E8 needed a second resize to redraw" ^
+    --items 15 --total 15 --out RESULTS\native.windows-x86.gui-edit-undo-save-reopen.json
 ```
 
 Rules the tool enforces and `qualify.py` then checks:
