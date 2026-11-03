@@ -20,4 +20,23 @@ char * lvlprest_find_row(char * buf, int def_col, int target_def, char ** row_en
    LVLPREST_TABLE_UNUSABLE if the Def or File columns are missing. */
 int lvlprest_find_file_slot(char * buf, int def, const char * ds1_path);
 
+/* The first File column (1-6) of this Def's row that is blank or "0". 0 if all
+   six are used or the Def isn't there. LVLPREST_TABLE_UNUSABLE as above. */
+int lvlprest_empty_slot(char * buf, int def);
+
+/* Copy File column `slot` of this Def's row. 1 if copied, 0 if there's no such
+   cell or it doesn't fit. */
+int lvlprest_get_cell(char * buf, int def, int slot, char * out, int cap);
+
+/* The table with one File cell replaced, every other byte as it was. New
+   malloc'd text with a NUL after *out_len bytes; NULL if there's no such cell. */
+char * lvlprest_with_cell(char * buf, int def, int slot, const char * value,
+                          long * out_len);
+
+/* Calls cb for each file a row of `game` lists that the same Def's row in
+   `project` doesn't. A Def with no row in `project` is skipped. */
+typedef void (* LVLPREST_ROW_CB)(int def, const char * ds1_path, void * ctx);
+void lvlprest_each_cleared(char * game, char * project, LVLPREST_ROW_CB cb,
+                           void * ctx);
+
 #endif
