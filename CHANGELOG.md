@@ -52,6 +52,12 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
   be written still counted as a success, so the delete went on to remove the
   original. Every write is now checked, a failure stops the delete, and the
   editor reports it.
+- **A map is no longer deleted when its `LvlPrest.txt` slot can't be cleared.**
+  With no table in the mod folder, or a second delete in the same session, the
+  file was removed and the slot left naming it. The slot is now found in the
+  table on disk before anything changes, and a table that can't be read or
+  written stops the delete with a message. Maps the table doesn't list can still
+  be deleted.
 - **One Delete press makes one undo step in tile mode.** It ran once per frame
   while the key was down, stacking empty undo steps, so the first Ctrl+Z could
   appear to do nothing.

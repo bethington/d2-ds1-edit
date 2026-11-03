@@ -11,6 +11,7 @@
 #include "core/area_browser.h"
 #include "core/ds1_manager.h"
 #include "core/file_copy.h"
+#include "core/lvlprest_text.h"
 
 #ifdef WIN32
 #include <direct.h>
@@ -110,88 +111,19 @@ static int lvlprest_write_raw(const char * buf, long len)
       printf("ds1_manager: can't write %s\n", path);
       return -1;
    }
-   fwrite(buf, 1, len, out);
-   fclose(out);
+   if (fwrite(buf, 1, len, out) != (size_t)len)
+   {
+      printf("ds1_manager: can't write %s\n", path);
+      fclose(out);
+      return -1;
+   }
+   if (fclose(out) != 0)
+   {
+      printf("ds1_manager: can't write %s\n", path);
+      return -1;
+   }
    printf("ds1_manager: wrote %s (%ld bytes)\n", path, len);
    return 0;
-}
-
-/* Find the column index of a named column in a tab-separated header line.
- * Returns 0-based index, or -1 if not found. */
-static int lvlprest_find_col(const char * header_line, const char * col_name)
-{
-   int col = 0;
-   const char * p = header_line;
-   int name_len = (int)strlen(col_name);
-
-   while (*p != '\0' && *p != '\n' && *p != '\r')
-   {
-      /* Check if current position matches col_name */
-      if (strnicmp(p, col_name, name_len) == 0)
-      {
-         char next = p[name_len];
-         if (next == '\t' || next == '\n' || next == '\r' || next == '\0')
-            return col;
-      }
-
-      /* Skip to next tab */
-      while (*p != '\0' && *p != '\t' && *p != '\n' && *p != '\r')
-         p++;
-      if (*p == '\t')
-      {
-         p++;
-         col++;
-      }
-   }
-   return -1;
-}
-
-/* Find the start of a specific row by Def value. Returns pointer into buf, or NULL.
- * Also sets *row_end to point past the row's newline. */
-static char * lvlprest_find_row(char * buf, int def_col, int target_def,
-                                 char ** row_end)
-{
-   char * line = buf;
-   char * next;
-   int is_header = 1;
-
-   while (*line != '\0')
-   {
-      /* Find end of line */
-      next = line;
-      while (*next != '\0' && *next != '\n' && *next != '\r')
-         next++;
-
-      if (!is_header)
-      {
-         /* Get the Def column value */
-         char * p = line;
-         int col = 0;
-         while (col < def_col && *p != '\0' && *p != '\n' && *p != '\r')
-         {
-            if (*p == '\t') col++;
-            p++;
-         }
-         if (col == def_col)
-         {
-            int val = atoi(p);
-            if (val == target_def)
-            {
-               /* Skip past newline(s) */
-               char * end = next;
-               while (*end == '\n' || *end == '\r') end++;
-               if (row_end) *row_end = end;
-               return line;
-            }
-         }
-      }
-
-      /* Skip past newline(s) */
-      while (*next == '\n' || *next == '\r') next++;
-      line = next;
-      is_header = 0;
-   }
-   return NULL;
 }
 
 /* Set a File column value in LvlPrest.txt for a given Def.
@@ -331,63 +263,14 @@ int ds1_manager_lvlprest_find_empty_slot(int def)
    return -1; /* Def not found */
 }
 
-/* Find which File slot (1-6) contains a specific DS1 path for a given Def.
- * Matches by filename (case-insensitive). Returns slot 1-6, or -1 if not found. */
-int ds1_manager_lvlprest_find_file_slot(int def, const char * ds1_path)
-{
-   TXT_S * txt = glb_ds1edit.lvlprest_buff;
-   int i, f;
-   int def_col, file_cols[6];
-   char col_name[16];
-   const char * search_name;
-
-   if (txt == NULL || ds1_path == NULL) return -1;
-
-   /* Extract just the filename for matching */
-   search_name = strrchr(ds1_path, '/');
-   if (search_name == NULL) search_name = strrchr(ds1_path, '\\');
-   if (search_name != NULL) search_name++; else search_name = ds1_path;
-
-   def_col = misc_get_txt_column_num(RQ_LVLPREST, "Def");
-   for (f = 0; f < 6; f++)
-   {
-      sprintf(col_name, "File%d", f + 1);
-      file_cols[f] = misc_get_txt_column_num(RQ_LVLPREST, col_name);
-   }
-
-   for (i = 0; i < txt->line_num; i++)
-   {
-      long * def_ptr = (long *)(txt->data + (i * txt->line_size) + txt->col[def_col].offset);
-      if (*def_ptr == def)
-      {
-         for (f = 0; f < 6; f++)
-         {
-            char * path = txt->data + (i * txt->line_size) + txt->col[file_cols[f]].offset;
-            const char * entry_name;
-
-            if (path[0] == '\0' || path[0] == '0')
-               continue;
-
-            /* Match by filename */
-            entry_name = strrchr(path, '/');
-            if (entry_name == NULL) entry_name = strrchr(path, '\\');
-            if (entry_name != NULL) entry_name++; else entry_name = path;
-
-            if (stricmp(entry_name, search_name) == 0)
-               return f + 1;
-         }
-         return -1; /* Def found but file not in any slot */
-      }
-   }
-   return -1;
-}
-
 /* Full delete operation: backup, update LvlPrest.txt, remove file. */
 int ds1_manager_delete(int group_idx, int entry_idx)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
    AREA_GROUP_S * g;
    AREA_DS1_ENTRY_S * e;
+   char * table;
+   long table_len;
    int file_slot;
    char src_path[512];
 
@@ -396,27 +279,39 @@ int ds1_manager_delete(int group_idx, int entry_idx)
    if (entry_idx < 0 || entry_idx >= g->entry_count) return -1;
    e = &g->entries[entry_idx];
 
-   /* 1. Create backup */
+   /* 1. Find the file slot in LvlPrest.txt, before anything changes */
+   table = lvlprest_read_raw(&table_len);
+   if (table == NULL)
+   {
+      printf("ds1_manager_delete: can't read LvlPrest.txt, aborting delete\n");
+      return DS1_DELETE_ERR_TABLE;
+   }
+   file_slot = lvlprest_find_file_slot(table, e->lvlprest_def, e->ds1_path);
+   free(table);
+   if (file_slot == LVLPREST_TABLE_UNUSABLE)
+   {
+      printf("ds1_manager_delete: LvlPrest.txt has no Def or File columns, aborting delete\n");
+      return DS1_DELETE_ERR_TABLE;
+   }
+
+   /* 2. Create backup */
    if (ds1_manager_backup(group_idx, entry_idx) != 0)
    {
       printf("ds1_manager_delete: backup failed, aborting delete\n");
-      return -1;
+      return DS1_DELETE_ERR_BACKUP;
    }
 
-   /* 2. Find the file slot in LvlPrest.txt */
-   file_slot = ds1_manager_lvlprest_find_file_slot(e->lvlprest_def, e->ds1_path);
+   /* 3. Clear the File slot in LvlPrest.txt. A map the table doesn't list has
+         none to clear. */
    if (file_slot > 0)
    {
-      /* 3. Clear the File slot in LvlPrest.txt */
-      if (ds1_manager_lvlprest_clear_file(e->lvlprest_def, file_slot) == 0)
-         printf("ds1_manager_delete: cleared File%d for Def %d in LvlPrest.txt\n",
-                file_slot, e->lvlprest_def);
-      else
-         printf("ds1_manager_delete: warning, failed to update LvlPrest.txt\n");
-   }
-   else
-   {
-      printf("ds1_manager_delete: warning, couldn't find file slot in LvlPrest.txt\n");
+      if (ds1_manager_lvlprest_clear_file(e->lvlprest_def, file_slot) != 0)
+      {
+         printf("ds1_manager_delete: can't update LvlPrest.txt, aborting delete\n");
+         return DS1_DELETE_ERR_TABLE;
+      }
+      printf("ds1_manager_delete: cleared File%d for Def %d in LvlPrest.txt\n",
+             file_slot, e->lvlprest_def);
    }
 
    /* 4. Delete the DS1 file from disk */

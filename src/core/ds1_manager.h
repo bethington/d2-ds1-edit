@@ -5,7 +5,9 @@
 int  ds1_manager_lvlprest_set_file(int def, int file_slot, const char * ds1_path);
 int  ds1_manager_lvlprest_clear_file(int def, int file_slot);
 int  ds1_manager_lvlprest_find_empty_slot(int def);
-int  ds1_manager_lvlprest_find_file_slot(int def, const char * ds1_path);
+/* Returns 0, or one of these with the map's file still in place. */
+#define DS1_DELETE_ERR_BACKUP  -1
+#define DS1_DELETE_ERR_TABLE   -2  /* LvlPrest.txt can't be read or updated */
 int  ds1_manager_delete(int group_idx, int entry_idx);
 
 /* Backup system */
