@@ -994,21 +994,15 @@ int read_lvlprest_txt(int ds1_idx, int def)
       }
       else
       {
-         if (found_nb >= 2)
+         if (def == -1)
          {
-            sprintf(tmp, "couldn't found ds1 filename \"%s\" in LvlPrest.txt for sure : present %i times\n",
-                    glb_ds1[ds1_idx].filename,
-                    found_nb);
-            ds1edit_error(tmp);
-         }
-         else if (def == -1)
-         {
-            /* No LvlPrest row means no authoritative mask. Enable all slots
-             * of any valid LvlTypes row; if there is none, misc_open_1_ds1()
-             * loads the DS1's embedded tile references as a fallback. */
+            /* No LvlPrest row, or several naming this file, means no authoritative
+             * mask. Enable all slots of any valid LvlTypes row; if there is none,
+             * misc_open_1_ds1() loads the DS1's embedded tile references as a
+             * fallback. Stopping here would lose unsaved edits to a click. */
             int b;
-            printf("no LvlPrest row for \"%s\"; enabling all LvlTypes DT1 slots\n",
-                   glb_ds1[ds1_idx].filename);
+            printf("%i LvlPrest rows for \"%s\"; enabling all LvlTypes DT1 slots\n",
+                   found_nb, glb_ds1[ds1_idx].filename);
             fflush(stdout);
             for (b = 0; b < 33; b++)
                glb_ds1[ds1_idx].dt1_mask[b] = TRUE;

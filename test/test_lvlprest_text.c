@@ -135,6 +135,46 @@ void test_each_cleared_lists_game_files_the_project_row_lacks(void)
    TEST_ASSERT_EQUAL_STRING("1:y.ds1;", log);
 }
 
+void test_lists_path_wants_the_whole_path_in_this_row(void)
+{
+   TEST_ASSERT_TRUE(lvlprest_lists_path(table, 1, "act1/town/townn1.DS1"));
+   TEST_ASSERT_TRUE(lvlprest_lists_path(table, 167, "Act1\\Barracks\\CourtWb.ds1"));
+   TEST_ASSERT_TRUE(lvlprest_lists_path(table, 200, "Act2/Last.ds1"));
+   /* The same name in another folder, another row, or no row at all. */
+   TEST_ASSERT_FALSE(lvlprest_lists_path(table, 1, "Act2/Town/TownN1.ds1"));
+   TEST_ASSERT_FALSE(lvlprest_lists_path(table, 167, "Act1/Town/TownN1.ds1"));
+   TEST_ASSERT_FALSE(lvlprest_lists_path(table, 999, "Act1/Town/TownN1.ds1"));
+}
+
+void test_slot_names_file_looks_at_one_cell(void)
+{
+   TEST_ASSERT_TRUE(lvlprest_slot_names_file(table, 1, 2, "x/TOWNE1.ds1"));
+   TEST_ASSERT_FALSE(lvlprest_slot_names_file(table, 1, 1, "x/TOWNE1.ds1"));
+   TEST_ASSERT_FALSE(lvlprest_slot_names_file(table, 999, 1, "TownN1.ds1"));
+}
+
+typedef struct { int count; int last_def; char last[64]; } EACH_SEEN;
+
+static void note_each(int def, const char * path, void * ctx)
+{
+   EACH_SEEN * seen = (EACH_SEEN *) ctx;
+
+   seen->count++;
+   seen->last_def = def;
+   snprintf(seen->last, sizeof(seen->last), "%s", path);
+}
+
+void test_each_file_visits_every_listed_cell(void)
+{
+   EACH_SEEN seen;
+
+   memset(&seen, 0, sizeof(seen));
+   lvlprest_each_file(table, note_each, &seen);
+   TEST_ASSERT_EQUAL_INT(4, seen.count);
+   TEST_ASSERT_EQUAL_INT(200, seen.last_def);
+   TEST_ASSERT_EQUAL_STRING("Act2\\Last.ds1", seen.last);
+}
+
 int main(void)
 {
    UNITY_BEGIN();
@@ -148,5 +188,8 @@ int main(void)
    RUN_TEST(test_finds_the_last_slot_on_a_last_line_with_no_newline);
    RUN_TEST(test_a_map_the_table_does_not_list_has_no_slot_to_clear);
    RUN_TEST(test_a_table_without_the_expected_columns_is_an_error_not_a_miss);
+   RUN_TEST(test_lists_path_wants_the_whole_path_in_this_row);
+   RUN_TEST(test_slot_names_file_looks_at_one_cell);
+   RUN_TEST(test_each_file_visits_every_listed_cell);
    return UNITY_END();
 }

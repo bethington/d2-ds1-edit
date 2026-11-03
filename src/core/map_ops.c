@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,6 +12,9 @@
 #include "core/project.h"
 
 #define PATH_CAP 768
+#define TABLE_REL "Global/Excel/LvlPrest.txt"
+#define BAD_TILE_PATH "The path for %s is too long or leads outside the project."
+#define TABLE_OLD_SUFFIX ".old"
 
 static int fail(char * error, int cap, const char * fmt, ...)
 {
@@ -92,48 +96,112 @@ int map_ops_check_size(int width, int height, char * error, int cap)
    return 0;
 }
 
+/* An existing project file, in any case, where the editor would read it from:
+ * mod_load_in_mem tries <project>/Data/... first, then <project>/... . 1 if found,
+ * 0 if not, -1 if it's there but its path doesn't fit. */
+static int find_project_file(const char * project_dir, const char * rel, char * out, int cap)
+{
+   static const char * const roots[] = { "Data/", "" };
+   char with_root[PATH_CAP], found[PATH_CAP * 2];
+   size_t i;
+
+   for (i = 0; i < sizeof(roots) / sizeof(roots[0]); i++)
+   {
+      int n = snprintf(with_root, sizeof(with_root), "%s%s", roots[i], rel);
+
+      if (n <= 0 || n >= (int) sizeof(with_root) ||
+          !ds1_path_resolve_nocase(project_dir, with_root, found, sizeof(found)))
+         continue;
+      if ((int) strlen(found) >= cap)
+         return -1;
+      strcpy(out, found);
+      return 1;
+   }
+   return 0;
+}
+
 int map_ops_table_path(const char * project_dir, char * out, int cap)
 {
-   int n = snprintf(out, (size_t) cap, "%s/Global/Excel/LvlPrest.txt", project_dir);
+   int n, rc = find_project_file(project_dir, TABLE_REL, out, cap);
+
+   if (rc != 0)
+      return rc > 0 ? 0 : -1;
+
+   /* Only the old copy left: the table goes back beside it. */
+   rc = find_project_file(project_dir, TABLE_REL TABLE_OLD_SUFFIX, out, cap);
+   if (rc > 0)
+   {
+      out[strlen(out) - strlen(TABLE_OLD_SUFFIX)] = '\0';
+      return 0;
+   }
+   if (rc < 0)
+      return -1;
+
+   n = snprintf(out, (size_t) cap, "%s/" TABLE_REL, project_dir);
    return n > 0 && n < cap ? 0 : -1;
 }
 
 int map_ops_tile_path(const char * project_dir, const char * ds1_path, char * out, int cap)
 {
-   int n = snprintf(out, (size_t) cap, "%s/Global/Tiles/%s", project_dir, ds1_path);
+   int n;
    char * p;
 
+   if (project_path_has_parent_ref(ds1_path) || project_path_is_rooted(ds1_path))
+      return -1;
+   n = snprintf(out, (size_t) cap, "%s/Global/Tiles/%s", project_dir, ds1_path);
    if (n <= 0 || n >= cap)
       return -1;
    for (p = out; *p != '\0'; p++)
       if (*p == '\\')
          *p = '/';
-   return 0;
+   return project_path_in_game_install(out) ? -1 : 0;
+}
+
+int map_ops_find_tile(const char * project_dir, const char * ds1_path, char * out, int cap)
+{
+   char rel[PATH_CAP];
+   int n;
+
+   if (project_path_has_parent_ref(ds1_path) || project_path_is_rooted(ds1_path))
+      return 0;
+   n = snprintf(rel, sizeof(rel), "Global/Tiles/%s", ds1_path);
+   if (n <= 0 || n >= (int) sizeof(rel))
+      return 0;
+   return find_project_file(project_dir, rel, out, cap) > 0;
 }
 
 char * map_ops_read_file(const char * path, long * out_len)
 {
-   FILE * f = fopen(path, "rb");
-   char * buf;
-   long len;
+   FILE * f;
+   char * buf = NULL;
+   long len = -1;
 
+   *out_len = 0;
+   f = fopen(path, "rb");
    if (f == NULL)
-      return NULL;
-   fseek(f, 0, SEEK_END);
-   len = ftell(f);
-   fseek(f, 0, SEEK_SET);
-   buf = (char *) malloc(len + 1);
-   if (buf != NULL && fread(buf, 1, (size_t) len, f) != (size_t) len)
-   {
-      free(buf);
-      buf = NULL;
-   }
-   fclose(f);
+      return NULL;   /* errno says why */
+   if (fseek(f, 0, SEEK_END) == 0)
+      len = ftell(f);
+   if (len >= 0 && fseek(f, 0, SEEK_SET) == 0)
+      buf = (char *) malloc((size_t) len + 1);
    if (buf != NULL)
    {
-      buf[len] = '\0';
-      *out_len = len;
+      /* The extra read catches a folder, which can report a size of 0 and open. */
+      if (fread(buf, 1, (size_t) len, f) != (size_t) len ||
+          (fgetc(f) == EOF && ferror(f)))
+      {
+         free(buf);
+         buf = NULL;
+      }
    }
+   fclose(f);
+   if (buf == NULL)
+   {
+      errno = EIO;
+      return NULL;
+   }
+   buf[len] = '\0';
+   *out_len = len;
    return buf;
 }
 
@@ -195,22 +263,57 @@ static int check_not_in_game(const char * project_dir, char * error, int cap)
    return 0;
 }
 
-/* The project's table, or a copy of the seed in memory if there isn't one.
- * Nothing is written until save_table. */
+int map_ops_recover_table(const char * project_dir)
+{
+   char path[PATH_CAP], old[PATH_CAP];
+   FILE * f;
+
+   if (map_ops_table_path(project_dir, path, sizeof(path)) != 0 ||
+       snprintf(old, sizeof(old), "%s" TABLE_OLD_SUFFIX, path) >= (int) sizeof(old))
+      return -1;
+   f = fopen(path, "rb");
+   if (f != NULL)
+   {
+      fclose(f);
+      return 0;
+   }
+   if (errno != ENOENT || !file_exists(old))
+      return 0;
+   if (project_path_in_game_install(path) || rename(old, path) != 0)
+      return -1;
+   return 0;
+}
+
+char * map_ops_read_table(const char * project_dir, long * out_len)
+{
+   char path[PATH_CAP];
+
+   *out_len = 0;
+   if (map_ops_recover_table(project_dir) != 0 ||
+       map_ops_table_path(project_dir, path, sizeof(path)) != 0)
+   {
+      errno = EIO;
+      return NULL;
+   }
+   return map_ops_read_file(path, out_len);
+}
+
+/* The project's table, or a copy of the seed in memory only if the project has
+ * none. A table that's there but can't be read stops this: the seed would replace
+ * it. Nothing is written until save_table. */
 static char * table_for_edit(const char * project_dir, const char * seed,
                              long * out_len, char * error, int cap)
 {
-   char path[PATH_CAP];
    char * text;
 
-   if (map_ops_table_path(project_dir, path, sizeof(path)) != 0)
-   {
-      fail(error, cap, "The project's path is too long for LvlPrest.txt.");
-      return NULL;
-   }
-   text = map_ops_read_file(path, out_len);
+   text = map_ops_read_table(project_dir, out_len);
    if (text != NULL)
       return text;
+   if (errno != ENOENT)
+   {
+      fail(error, cap, "The project's LvlPrest.txt can't be read.");
+      return NULL;
+   }
    if (seed == NULL)
    {
       fail(error, cap, "The project has no LvlPrest.txt, and the game's couldn't be read.");
@@ -250,6 +353,19 @@ static int set_cell_and_save(const char * project_dir, char * table, int def, in
    rc = save_table(project_dir, edited, len, error, cap);
    free(edited);
    return rc;
+}
+
+/* Replace *table with a copy that has this cell changed. */
+static int table_with_cell(char ** table, long * len, int def, int slot, const char * value,
+                           char * error, int cap)
+{
+   char * edited = lvlprest_with_cell(*table, def, slot, value, len);
+
+   if (edited == NULL)
+      return fail(error, cap, "Couldn't edit Def %d's row in LvlPrest.txt.", def);
+   free(*table);
+   *table = edited;
+   return 0;
 }
 
 int map_ops_register(const char * project_dir, const char * seed, int def,
@@ -292,7 +408,7 @@ int map_ops_unregister(const char * project_dir, const char * seed, int def,
 {
    long len;
    char * table;
-   int slot, rc = 0;
+   int slot, rc = 0, changed = 0;
 
    if (check_not_in_game(project_dir, error, cap) != 0)
       return -1;
@@ -302,8 +418,15 @@ int map_ops_unregister(const char * project_dir, const char * seed, int def,
    slot = lvlprest_find_file_slot(table, def, ds1_path);
    if (slot == LVLPREST_TABLE_UNUSABLE)
       rc = fail(error, cap, "The project's LvlPrest.txt has no Def or File columns.");
-   else if (slot > 0)
-      rc = set_cell_and_save(project_dir, table, def, slot, "0", error, cap);
+   while (rc == 0 && slot > 0)
+   {
+      rc = table_with_cell(&table, &len, def, slot, "0", error, cap);
+      changed = 1;
+      if (rc == 0)
+         slot = lvlprest_find_file_slot(table, def, ds1_path);
+   }
+   if (rc == 0 && changed)
+      rc = save_table(project_dir, table, len, error, cap);
    free(table);
    return rc;
 }
@@ -314,12 +437,15 @@ int map_ops_restore_slot(const char * project_dir, const char * seed, char * gam
    long len;
    char * table;
    char cell[256], current[256];
-   int game_slot, slot, rc;
+   int game_slots[6];
+   int game_count = 0, have = 0, f, i, rc = 0;
 
    if (check_not_in_game(project_dir, error, cap) != 0)
       return -1;
-   game_slot = lvlprest_find_file_slot(game_table, def, ds1_path);
-   if (game_slot <= 0 || !lvlprest_get_cell(game_table, def, game_slot, cell, sizeof(cell)))
+   for (f = 1; f <= 6; f++)
+      if (lvlprest_slot_names_file(game_table, def, f, ds1_path))
+         game_slots[game_count++] = f;
+   if (game_count == 0)
       return fail(error, cap, "The game's LvlPrest.txt doesn't list %s under Def %d.",
                   ds1_path, def);
 
@@ -327,23 +453,40 @@ int map_ops_restore_slot(const char * project_dir, const char * seed, char * gam
    if (table == NULL)
       return -1;
 
-   /* Already listed: nothing to put back, and a second copy would be ambiguous. */
-   if (lvlprest_find_file_slot(table, def, ds1_path) > 0)
+   /* Listed as often as the game lists it: there's nothing to put back, and
+      another copy would be ambiguous. */
+   for (f = 1; f <= 6; f++)
+      if (lvlprest_slot_names_file(table, def, f, ds1_path))
+         have++;
+   if (have >= game_count)
    {
       free(table);
       return 0;
    }
 
-   slot = game_slot;
-   if (!lvlprest_get_cell(table, def, slot, current, sizeof(current)) ||
-       (current[0] != '\0' && strcmp(current, "0") != 0))
-      slot = lvlprest_empty_slot(table, def);
-   if (slot <= 0)
+   for (i = 0; i < game_count && have < game_count && rc == 0; i++)
    {
-      free(table);
-      return fail(error, cap, "Def %d has no free File slot in LvlPrest.txt.", def);
+      int slot = game_slots[i];
+
+      if (lvlprest_slot_names_file(table, def, slot, ds1_path))
+         continue;
+      if (!lvlprest_get_cell(game_table, def, slot, cell, sizeof(cell)))
+      {
+         rc = fail(error, cap, "The game's LvlPrest.txt doesn't list %s under Def %d.",
+                   ds1_path, def);
+         break;
+      }
+      if (!lvlprest_get_cell(table, def, slot, current, sizeof(current)) ||
+          (current[0] != '\0' && strcmp(current, "0") != 0))
+         slot = lvlprest_empty_slot(table, def);
+      if (slot <= 0)
+         rc = fail(error, cap, "Def %d has no free File slot in LvlPrest.txt.", def);
+      else
+         rc = table_with_cell(&table, &len, def, slot, cell, error, cap);
+      have++;
    }
-   rc = set_cell_and_save(project_dir, table, def, slot, cell, error, cap);
+   if (rc == 0)
+      rc = save_table(project_dir, table, len, error, cap);
    free(table);
    return rc;
 }
@@ -400,15 +543,15 @@ int map_ops_create_empty(const char * project_dir, const char * seed, int def,
                          const char * ds1_path, int width, int height, int act,
                          char * error, int cap)
 {
-   char path[PATH_CAP];
+   char path[PATH_CAP], found[PATH_CAP];
 
    if (check_not_in_game(project_dir, error, cap) != 0)
       return -1;
    if (map_ops_check_size(width, height, error, cap) != 0)
       return -1;
    if (map_ops_tile_path(project_dir, ds1_path, path, sizeof(path)) != 0)
-      return fail(error, cap, "The path for %s is too long.", ds1_path);
-   if (file_exists(path))
+      return fail(error, cap, BAD_TILE_PATH, ds1_path);
+   if (map_ops_find_tile(project_dir, ds1_path, found, sizeof(found)))
       return fail(error, cap, "%s already exists in the project.", ds1_path);
    if (map_ops_write_empty_ds1(path, width, height, act) != 0)
       return fail(error, cap, "Couldn't write %s.", path);
@@ -462,8 +605,8 @@ int map_ops_backup_file(const char * project_dir, const char * ds1_path,
    stem[stem_len] = '\0';
 
    if (map_ops_tile_path(project_dir, ds1_path, src, sizeof(src)) != 0)
-      return fail(error, cap, "The path for %s is too long.", ds1_path);
-   if (!file_exists(src))
+      return fail(error, cap, BAD_TILE_PATH, ds1_path);
+   if (!map_ops_find_tile(project_dir, ds1_path, src, sizeof(src)))
       return fail(error, cap, "The project has no file for %s, so there's nothing to back up.",
                   ds1_path);
 
@@ -496,17 +639,18 @@ int map_ops_backup_file(const char * project_dir, const char * ds1_path,
 int map_ops_restore_file(const char * project_dir, const char * backup_ds1,
                          const char * ds1_path, char * error, int cap)
 {
-   char dst[PATH_CAP];
+   char dst[PATH_CAP], found[PATH_CAP];
 
    if (check_not_in_game(project_dir, error, cap) != 0)
       return -1;
    if (map_ops_tile_path(project_dir, ds1_path, dst, sizeof(dst)) != 0)
-      return fail(error, cap, "The path for %s is too long.", ds1_path);
-   if (file_exists(dst))
+      return fail(error, cap, BAD_TILE_PATH, ds1_path);
+   if (map_ops_find_tile(project_dir, ds1_path, found, sizeof(found)))
       return fail(error, cap, "The project already has a file for %s.", ds1_path);
    if (!project_ensure_parent_dirs(dst) || file_copy_checked(backup_ds1, dst) != FILE_COPY_OK)
       return fail(error, cap, "Couldn't copy %s to %s.", backup_ds1, dst);
    if (remove(backup_ds1) != 0)
-      return fail(error, cap, "%s was restored, but its backup couldn't be removed.", ds1_path);
+      fail(error, cap, "%s was restored, but its backup %s couldn't be removed.",
+           ds1_path, backup_ds1);
    return 0;
 }

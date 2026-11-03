@@ -20,6 +20,14 @@ char * lvlprest_find_row(char * buf, int def_col, int target_def, char ** row_en
    LVLPREST_TABLE_UNUSABLE if the Def or File columns are missing. */
 int lvlprest_find_file_slot(char * buf, int def, const char * ds1_path);
 
+/* 1 if File column `slot` of this Def's row names this map, matched as above. */
+int lvlprest_slot_names_file(char * buf, int def, int slot, const char * ds1_path);
+
+/* 1 if a File column of this Def's row holds this whole path, without regard to
+   case or slash style. Unlike the two above, another folder's map of the same
+   name doesn't count. */
+int lvlprest_lists_path(char * buf, int def, const char * ds1_path);
+
 /* The first File column (1-6) of this Def's row that is blank or "0". 0 if all
    six are used or the Def isn't there. LVLPREST_TABLE_UNUSABLE as above. */
 int lvlprest_empty_slot(char * buf, int def);
@@ -33,9 +41,13 @@ int lvlprest_get_cell(char * buf, int def, int slot, char * out, int cap);
 char * lvlprest_with_cell(char * buf, int def, int slot, const char * value,
                           long * out_len);
 
+typedef void (* LVLPREST_ROW_CB)(int def, const char * ds1_path, void * ctx);
+
+/* Calls cb for each file a row lists. */
+void lvlprest_each_file(char * table, LVLPREST_ROW_CB cb, void * ctx);
+
 /* Calls cb for each file a row of `game` lists that the same Def's row in
    `project` doesn't. A Def with no row in `project` is skipped. */
-typedef void (* LVLPREST_ROW_CB)(int def, const char * ds1_path, void * ctx);
 void lvlprest_each_cleared(char * game, char * project, LVLPREST_ROW_CB cb,
                            void * ctx);
 

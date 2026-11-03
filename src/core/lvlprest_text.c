@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -136,8 +137,6 @@ static int cell_is_empty(const char * start, const char * end)
 
 int lvlprest_find_file_slot(char * buf, int def, const char * ds1_path)
 {
-   const char * name = lvlprest_base_name(ds1_path);
-   int name_len = (int)strlen(name);
    int def_col = lvlprest_find_col(buf, "Def");
    char col_name[16];
    char * row, * row_end;
@@ -158,19 +157,49 @@ int lvlprest_find_file_slot(char * buf, int def, const char * ds1_path)
 
    for (f = 0; f < 6; f++)
    {
-      char * cell;
-      char * cell_end;
-      const char * base;
-
-      if (!find_cell(buf, def, f + 1, &cell, &cell_end))
-         continue;
-
-      base = cell_end;
-      while (base > cell && base[-1] != '/' && base[-1] != '\\')
-         base--;
-
-      if ((int)(cell_end - base) == name_len && strncasecmp(base, name, name_len) == 0)
+      if (lvlprest_slot_names_file(buf, def, f + 1, ds1_path))
          return f + 1;
+   }
+   return 0;
+}
+
+int lvlprest_slot_names_file(char * buf, int def, int slot, const char * ds1_path)
+{
+   const char * name = lvlprest_base_name(ds1_path);
+   int name_len = (int)strlen(name);
+   char * cell, * cell_end;
+   const char * base;
+
+   if (!find_cell(buf, def, slot, &cell, &cell_end))
+      return 0;
+   base = cell_end;
+   while (base > cell && base[-1] != '/' && base[-1] != '\\')
+      base--;
+   return (int)(cell_end - base) == name_len && strncasecmp(base, name, name_len) == 0;
+}
+
+int lvlprest_lists_path(char * buf, int def, const char * ds1_path)
+{
+   size_t len = strlen(ds1_path);
+   int f;
+
+   for (f = 1; f <= 6; f++)
+   {
+      char * cell, * cell_end;
+      size_t i;
+
+      if (!find_cell(buf, def, f, &cell, &cell_end) || (size_t)(cell_end - cell) != len)
+         continue;
+      for (i = 0; i < len; i++)
+      {
+         char a = cell[i] == '\\' ? '/' : cell[i];
+         char b = ds1_path[i] == '\\' ? '/' : ds1_path[i];
+
+         if (a != b && tolower((unsigned char) a) != tolower((unsigned char) b))
+            break;
+      }
+      if (i == len)
+         return 1;
    }
    return 0;
 }
@@ -221,6 +250,52 @@ char * lvlprest_with_cell(char * buf, int def, int slot, const char * value,
    memcpy(out + before + val, end, after + 1);
    *out_len = before + val + after;
    return out;
+}
+
+void lvlprest_each_file(char * table, LVLPREST_ROW_CB cb, void * ctx)
+{
+   int def_col = lvlprest_find_col(table, "Def");
+   char * line = table;
+   int is_header = 1;
+
+   if (def_col < 0)
+      return;
+
+   while (*line != '\0')
+   {
+      char * next = line;
+      while (*next != '\0' && *next != '\n' && *next != '\r')
+         next++;
+
+      if (!is_header)
+      {
+         char * p = line;
+         int col = 0;
+
+         while (col < def_col && p < next)
+         {
+            if (*p == '\t') col++;
+            p++;
+         }
+         if (col == def_col && atoi(p) > 0)
+         {
+            int def = atoi(p), f;
+
+            for (f = 1; f <= 6; f++)
+            {
+               char path[256];
+
+               if (lvlprest_get_cell(table, def, f, path, sizeof(path)) &&
+                   path[0] != '\0' && strcmp(path, "0") != 0)
+                  cb(def, path, ctx);
+            }
+         }
+      }
+
+      while (*next == '\n' || *next == '\r') next++;
+      line = next;
+      is_header = 0;
+   }
 }
 
 void lvlprest_each_cleared(char * game, char * project, LVLPREST_ROW_CB cb,

@@ -147,7 +147,7 @@ set_tests_properties(lvlprest_text PROPERTIES LABELS "portable")
 add_executable(test_map_ops test_map_ops.c
     support/test_tmp.c
     ../src/core/map_ops.c ../src/core/lvlprest_text.c ../src/core/file_copy.c
-    ../src/core/project.c ../src/core/preferences.c)
+    ../src/core/project.c ../src/core/preferences.c ../src/platform.c)
 target_link_libraries(test_map_ops PRIVATE unity ds1edit_allegro)
 target_include_directories(test_map_ops PRIVATE
     ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/test)

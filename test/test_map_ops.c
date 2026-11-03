@@ -4,6 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#ifdef WIN32
+#include <io.h>
+#endif
 
 #include "unity/unity.h"
 #include "structs.h"
@@ -321,6 +324,238 @@ void test_restore_refuses_to_replace_a_file(void)
    TEST_ASSERT_TRUE(exists("backup/2026-11-02_A_New/New.ds1"));
 }
 
+/* ---- Where a project keeps its files ---- */
+
+static void write_rel(const char *rel, const char *text)
+{
+   char path[768];
+
+   snprintf(path, sizeof(path), "%s/%s", dir, rel);
+   TEST_ASSERT_TRUE(project_ensure_parent_dirs(path));
+   TEST_ASSERT_TRUE(tt_write_file(path, text, strlen(text)));
+}
+
+static char *read_rel(const char *rel)
+{
+   char path[768];
+   long len;
+
+   snprintf(path, sizeof(path), "%s/%s", dir, rel);
+   return map_ops_read_file(path, &len);
+}
+
+void test_read_file_reports_no_length_for_a_missing_file(void)
+{
+   char path[768];
+   long len = 99;
+
+   snprintf(path, sizeof(path), "%s/none.txt", dir);
+   TEST_ASSERT_NULL(map_ops_read_file(path, &len));
+   TEST_ASSERT_EQUAL_INT(0, (int) len);
+}
+
+void test_a_table_left_as_old_is_recovered_not_reseeded(void)
+{
+   char *t;
+
+   /* A crash between moving the table aside and moving the new one in. */
+   write_rel("Global/Excel/LvlPrest.txt.old", GAME);
+   TEST_ASSERT_EQUAL_INT(0, map_ops_register(dir, "Name\tDef\tFile1\r\nOther\t9\t0\r\n", 1,
+                                             "Act1/Town/New.ds1", err, sizeof(err)));
+   t = table();
+   TEST_ASSERT_NOT_NULL(t);
+   TEST_ASSERT_EQUAL_INT(1, lvlprest_find_file_slot(t, 1, "TownN1.ds1"));
+   TEST_ASSERT_EQUAL_INT(2, lvlprest_find_file_slot(t, 1, "New.ds1"));
+   free(t);
+   TEST_ASSERT_FALSE(exists("Global/Excel/LvlPrest.txt.old"));
+}
+
+void test_read_table_recovers_an_old_table(void)
+{
+   long len;
+   char *t;
+
+   write_rel("Data/Global/Excel/LvlPrest.txt.old", GAME);
+   t = map_ops_read_table(dir, &len);
+   TEST_ASSERT_NOT_NULL(t);
+   TEST_ASSERT_EQUAL_STRING(GAME, t);
+   free(t);
+   TEST_ASSERT_TRUE(exists("Data/Global/Excel/LvlPrest.txt"));
+   TEST_ASSERT_FALSE(exists("Data/Global/Excel/LvlPrest.txt.old"));
+}
+
+void test_a_table_that_cant_be_read_is_not_replaced_by_the_seed(void)
+{
+   char path[768];
+
+   /* A folder at the table's path: there, but no text can be read from it. */
+   snprintf(path, sizeof(path), "%s/Global", dir);
+   TEST_ASSERT_TRUE(tt_mkdir(path));
+   snprintf(path, sizeof(path), "%s/Global/Excel", dir);
+   TEST_ASSERT_TRUE(tt_mkdir(path));
+   snprintf(path, sizeof(path), "%s/Global/Excel/LvlPrest.txt", dir);
+   TEST_ASSERT_TRUE(tt_mkdir(path));
+
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_register(dir, GAME, 1, "New.ds1", err, sizeof(err)));
+   TEST_ASSERT_NOT_NULL(strstr(err, "LvlPrest.txt"));
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_unregister(dir, GAME, 1, "Act1/Town/TownN1.ds1", err, sizeof(err)));
+   TEST_ASSERT_FALSE(exists("Global/Excel/LvlPrest.txt.staging"));
+   TEST_ASSERT_FALSE(exists("Global/Excel/LvlPrest.txt.old"));
+}
+
+void test_a_data_layout_is_used_where_it_is(void)
+{
+   char out[512], *t;
+
+   write_rel("Data/Global/Excel/LvlPrest.txt", GAME);
+   write_rel("Data/Global/Tiles/Act1/Town/Old.ds1", "x");
+
+   /* The table stays where it is. */
+   TEST_ASSERT_EQUAL_INT(0, map_ops_register(dir, NULL, 1, "Act1/Town/Old.ds1", err, sizeof(err)));
+   TEST_ASSERT_FALSE(exists("Global/Excel/LvlPrest.txt"));
+   t = read_rel("Data/Global/Excel/LvlPrest.txt");
+   TEST_ASSERT_NOT_NULL(t);
+   TEST_ASSERT_EQUAL_INT(2, lvlprest_find_file_slot(t, 1, "Old.ds1"));
+   free(t);
+
+   /* A file there counts as the project's, for exists checks and backups. */
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_create_empty(dir, NULL, 1, "Act1/Town/Old.ds1", 5, 5, 1, err, sizeof(err)));
+   TEST_ASSERT_NOT_NULL(strstr(err, "already"));
+   TEST_ASSERT_EQUAL_INT(0, map_ops_backup_file(dir, "Act1/Town/Old.ds1", "A", "2026-11-02", "{}\n",
+                                                out, sizeof(out), err, sizeof(err)));
+   TEST_ASSERT_FALSE(exists("Data/Global/Tiles/Act1/Town/Old.ds1"));
+
+   /* New tiles stay under Global/Tiles. */
+   TEST_ASSERT_EQUAL_INT(0, map_ops_create_empty(dir, NULL, 1, "Act1/Town/New.ds1", 5, 5, 1, err, sizeof(err)));
+   TEST_ASSERT_TRUE(exists("Global/Tiles/Act1/Town/New.ds1"));
+}
+
+void test_the_reader_s_order_decides_between_layouts(void)
+{
+   char *t;
+
+   /* mod_load_in_mem tries <project>/Data/... before <project>/... */
+   write_rel("Data/Global/Excel/LvlPrest.txt", GAME);
+   write_rel("Global/Excel/LvlPrest.txt", "Name\tDef\tFile1\r\n");
+   TEST_ASSERT_EQUAL_INT(0, map_ops_register(dir, NULL, 1, "New.ds1", err, sizeof(err)));
+   t = read_rel("Data/Global/Excel/LvlPrest.txt");
+   TEST_ASSERT_EQUAL_INT(2, lvlprest_find_file_slot(t, 1, "New.ds1"));
+   free(t);
+   t = read_rel("Global/Excel/LvlPrest.txt");
+   TEST_ASSERT_EQUAL_STRING("Name\tDef\tFile1\r\n", t);
+   free(t);
+}
+
+void test_a_different_case_file_is_the_same_file(void)
+{
+   char found[768], out[512];
+
+   write_rel("global/tiles/ACT1/town/OLD.DS1", "x");
+   TEST_ASSERT_EQUAL_INT(1, map_ops_find_tile(dir, "Act1/Town/Old.ds1", found, sizeof(found)));
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_create_empty(dir, GAME, 1, "Act1/Town/Old.ds1", 5, 5, 1, err, sizeof(err)));
+   TEST_ASSERT_EQUAL_INT(0, map_ops_backup_file(dir, "Act1/Town/Old.ds1", "A", "2026-11-02", "{}\n",
+                                                out, sizeof(out), err, sizeof(err)));
+   TEST_ASSERT_FALSE(exists("global/tiles/ACT1/town/OLD.DS1"));
+}
+
+void test_a_path_cant_reach_outside_the_project(void)
+{
+   char out[768], backup[768];
+
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_tile_path(dir, "../evil.ds1", out, sizeof(out)));
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_tile_path(dir, "Act1\\..\\..\\evil.ds1", out, sizeof(out)));
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_tile_path(dir, "/evil.ds1", out, sizeof(out)));
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_tile_path(dir, "\\evil.ds1", out, sizeof(out)));
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_tile_path(dir, "C:\\evil.ds1", out, sizeof(out)));
+   TEST_ASSERT_EQUAL_INT(0, map_ops_tile_path(dir, "Act1/a..b.ds1", out, sizeof(out)));
+   TEST_ASSERT_EQUAL_INT(0, map_ops_find_tile(dir, "../evil.ds1", out, sizeof(out)));
+
+   /* original_path comes from a backup's JSON. */
+   write_rel("backup/b.ds1", "x");
+   snprintf(backup, sizeof(backup), "%s/backup/b.ds1", dir);
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_restore_file(dir, backup, "../../evil.ds1", err, sizeof(err)));
+   TEST_ASSERT_TRUE(exists("backup/b.ds1"));
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_backup_file(dir, "../backup/b.ds1", "A", "2026-11-02", "{}\n",
+                                                 out, sizeof(out), err, sizeof(err)));
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_create_empty(dir, GAME, 1, "../New.ds1", 5, 5, 1, err, sizeof(err)));
+
+   /* And the final path can't be in the game's folder. */
+   glb_config.d2_install = dir;
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_tile_path(dir, "Act1/New.ds1", out, sizeof(out)));
+   glb_config.d2_install = NULL;
+}
+
+static const char DUPES[] =
+   "Name\tDef\tFile1\tFile2\tFile3\tFile4\tFile5\tFile6\r\n"
+   "Dup\t3\tAct1\\Dup.ds1\t0\tAct1\\Dup.ds1\tAct1\\Other.ds1\t0\t0\r\n";
+
+void test_the_same_file_twice_in_a_row_round_trips(void)
+{
+   char game[sizeof(DUPES)];
+   char *t;
+
+   memcpy(game, DUPES, sizeof(DUPES));
+   TEST_ASSERT_EQUAL_INT(0, map_ops_unregister(dir, DUPES, 3, "Act1/Dup.ds1", err, sizeof(err)));
+   t = table();
+   TEST_ASSERT_EQUAL_INT(0, lvlprest_find_file_slot(t, 3, "Act1/Dup.ds1"));
+   TEST_ASSERT_EQUAL_INT(4, lvlprest_find_file_slot(t, 3, "Act1/Other.ds1"));
+   free(t);
+
+   TEST_ASSERT_EQUAL_INT(0, map_ops_restore_slot(dir, DUPES, game, 3, "Act1/Dup.ds1", err, sizeof(err)));
+   t = table();
+   TEST_ASSERT_EQUAL_STRING(DUPES, t);
+   free(t);
+}
+
+void test_restore_puts_back_only_the_copies_that_are_missing(void)
+{
+   char game[sizeof(DUPES)];
+   char *t;
+
+   memcpy(game, DUPES, sizeof(DUPES));
+   write_rel("Global/Excel/LvlPrest.txt",
+             "Name\tDef\tFile1\tFile2\tFile3\tFile4\tFile5\tFile6\r\n"
+             "Dup\t3\tAct1\\Dup.ds1\t0\t0\tAct1\\Other.ds1\t0\t0\r\n");
+   TEST_ASSERT_EQUAL_INT(0, map_ops_restore_slot(dir, DUPES, game, 3, "Act1/Dup.ds1", err, sizeof(err)));
+   t = table();
+   TEST_ASSERT_EQUAL_STRING(DUPES, t);
+   free(t);
+}
+
+void test_a_backup_that_cant_be_removed_is_only_a_warning(void)
+{
+   char out[512], lock[768];
+   int kept;
+
+   TEST_ASSERT_EQUAL_INT(0, map_ops_create_empty(dir, GAME, 1, "New.ds1", 5, 5, 1, err, sizeof(err)));
+   TEST_ASSERT_EQUAL_INT(0, map_ops_backup_file(dir, "New.ds1", "A", "2026-11-02", "{}\n",
+                                                out, sizeof(out), err, sizeof(err)));
+   /* Read-only stops a remove on Windows; a read-only folder does elsewhere. */
+#ifdef WIN32
+   snprintf(lock, sizeof(lock), "%s", out);
+   TEST_ASSERT_EQUAL_INT(0, _chmod(lock, _S_IREAD));
+#else
+   snprintf(lock, sizeof(lock), "%s/backup/2026-11-02_A_New", dir);
+   TEST_ASSERT_EQUAL_INT(0, chmod(lock, 0555));
+#endif
+
+   err[0] = 0;
+   TEST_ASSERT_EQUAL_INT(0, map_ops_restore_file(dir, out, "New.ds1", err, sizeof(err)));
+   TEST_ASSERT_TRUE(exists("Global/Tiles/New.ds1"));
+   kept = exists("backup/2026-11-02_A_New/New.ds1");
+
+#ifdef WIN32
+   _chmod(lock, _S_IREAD | _S_IWRITE);
+#else
+   chmod(lock, 0755);
+#endif
+   /* Running as root on POSIX, the remove still succeeds. */
+   if (kept)
+      TEST_ASSERT_NOT_NULL(strstr(err, "backup"));
+   else
+      TEST_ASSERT_EQUAL_STRING("", err);
+}
+
 int main(void)
 {
    UNITY_BEGIN();
@@ -342,5 +577,16 @@ int main(void)
    RUN_TEST(test_backup_moves_the_file_and_restore_brings_it_back);
    RUN_TEST(test_backup_with_nothing_to_back_up_stops_with_a_message);
    RUN_TEST(test_restore_refuses_to_replace_a_file);
+   RUN_TEST(test_read_file_reports_no_length_for_a_missing_file);
+   RUN_TEST(test_a_table_left_as_old_is_recovered_not_reseeded);
+   RUN_TEST(test_read_table_recovers_an_old_table);
+   RUN_TEST(test_a_table_that_cant_be_read_is_not_replaced_by_the_seed);
+   RUN_TEST(test_a_data_layout_is_used_where_it_is);
+   RUN_TEST(test_the_reader_s_order_decides_between_layouts);
+   RUN_TEST(test_a_different_case_file_is_the_same_file);
+   RUN_TEST(test_a_path_cant_reach_outside_the_project);
+   RUN_TEST(test_the_same_file_twice_in_a_row_round_trips);
+   RUN_TEST(test_restore_puts_back_only_the_copies_that_are_missing);
+   RUN_TEST(test_a_backup_that_cant_be_removed_is_only_a_warning);
    return UNITY_END();
 }
