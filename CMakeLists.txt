@@ -198,6 +198,7 @@ set(SOURCES
     src/core/lvlprest_text.c
     src/core/game_launch.c
     src/core/map_ops.c
+    src/core/mpq_build.c
     src/core/mpq_crypt.c
     src/core/mpq_write.c
     src/core/asset_export.c

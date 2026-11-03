@@ -155,6 +155,19 @@ target_compile_definitions(test_map_ops PRIVATE DS1EDIT_VERSION_STR="${PROJECT_V
 add_test(NAME map_ops COMMAND test_map_ops)
 set_tests_properties(map_ops PROPERTIES LABELS "portable")
 
+# What Build MPQ takes, what it refuses, and the archive it writes over a base
+add_executable(test_mpq_build test_mpq_build.c support/test_tmp.c
+    ../src/core/mpq_build.c ../src/core/mpq_crypt.c ../src/core/mpq_write.c
+    ../src/core/map_ops.c ../src/core/lvlprest_text.c ../src/core/file_copy.c
+    ../src/core/project.c ../src/core/preferences.c ../src/platform.c
+    ../src/mpq/MpqView.c ../src/mpq/Explode.c ../src/mpq/Dcl_tbl.c ../src/mpq/Wav_unp.c)
+target_link_libraries(test_mpq_build PRIVATE unity ds1edit_allegro ZLIB::ZLIB)
+target_include_directories(test_mpq_build PRIVATE
+    ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/mpq ${CMAKE_SOURCE_DIR}/test)
+target_compile_definitions(test_mpq_build PRIVATE DS1EDIT_VERSION_STR="${PROJECT_VERSION}")
+add_test(NAME mpq_build COMMAND test_mpq_build)
+set_tests_properties(mpq_build PROPERTIES LABELS "portable")
+
 # The launch profile and the check of whether it is usable
 add_executable(test_game_launch test_game_launch.c
     support/test_tmp.c
@@ -378,7 +391,7 @@ set_tests_properties(selftest_verdict PROPERTIES LABELS "portable")
 # below covers it.
 set(DS1EDIT_ALLEGRO_TESTS test_rgba_cache test_asset_export_smoke test_project
     test_input_edges test_editor_selection test_blend_convention test_commands
-    test_map_ops test_game_launch)
+    test_map_ops test_game_launch test_mpq_build)
 find_package(Python3 COMPONENTS Interpreter)
 # CTest cuts the output it keeps for a passed test at 1 KiB. The CI evidence
 # (scripts/equivalence/ci_evidence.py) reads per-test lines (Unity PASS lines,

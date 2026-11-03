@@ -185,6 +185,31 @@ void test_each_file_visits_every_listed_cell(void)
    TEST_ASSERT_EQUAL_STRING("Act2\\Last.ds1", seen.last);
 }
 
+static void note_def(int def, void * ctx)
+{
+   char * log = (char *) ctx;
+
+   sprintf(log + strlen(log), "%d;", def);
+}
+
+void test_each_def_visits_every_row_even_one_with_no_files(void)
+{
+   char t[] = "Name\tDef\tFile1\tFile2\r\n"
+              "A\t1\tx.ds1\t0\r\n"
+              "Empty\t2\t0\t\r\n"
+              "Bare\t3\t\t\r\n"
+              "C\t40\ty.ds1\t0";
+   char none[] = "Name\tFile1\r\nA\tx.ds1\r\n";
+   char log[100] = "";
+
+   /* each_file reports no cell of the all-empty rows 2 and 3 */
+   lvlprest_each_def(t, note_def, log);
+   TEST_ASSERT_EQUAL_STRING("1;2;3;40;", log);
+   log[0] = '\0';
+   lvlprest_each_def(none, note_def, log);
+   TEST_ASSERT_EQUAL_STRING("", log);
+}
+
 static char rows[] =
    "Name\tDef\tFiles\tFile1\tFile2\tFile3\tFile4\tFile5\tFile6\tDt1Mask\r\n"
    "Two\t1\t2\ta.ds1\tb.ds1\t0\t0\t0\t0\t5\r\n"
@@ -378,6 +403,7 @@ int main(void)
    RUN_TEST(test_slot_holds_path_looks_at_one_cell);
    RUN_TEST(test_find_path_slot_says_when_the_table_is_unusable);
    RUN_TEST(test_each_file_visits_every_listed_cell);
+   RUN_TEST(test_each_def_visits_every_row_even_one_with_no_files);
    RUN_TEST(test_each_cleared_tells_namesakes_apart);
    RUN_TEST(test_files_value_reads_the_row);
    RUN_TEST(test_a_simple_row_counts_exactly_its_filled_cells);
