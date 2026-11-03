@@ -98,6 +98,7 @@ static CMD_ID run_menu(int start_menu, const CMD_CTX *ctx)
    };
    int bar_h = ui_menu_bar_height();
    CMD_ID chosen = CMD_NONE;
+   int last_x = a5_mouse_x, last_y = a5_mouse_y;
    size_t k;
 
    s_ctx = *ctx;
@@ -118,13 +119,28 @@ static CMD_ID run_menu(int start_menu, const CMD_CTX *ctx)
 
       if (s_state.menu >= 0)
       {
-         title = menu_title_at(a5_mouse_x, a5_mouse_y, bar_h);
-         item = menu_item_at(s_state.menu, a5_mouse_x, a5_mouse_y, bar_h);
+         int moved = (a5_mouse_x != last_x || a5_mouse_y != last_y);
 
-         if (title >= 0 && title != s_state.menu)
-            menu_state_open(&s_state, title);
-         else if (item >= 0)
-            s_state.item = item;
+         last_x = a5_mouse_x;
+         last_y = a5_mouse_y;
+
+         /* Hover only acts when the pointer moves, so a resting pointer
+            doesn't override the arrow keys. */
+         if (moved)
+         {
+            title = menu_title_at(a5_mouse_x, a5_mouse_y, bar_h);
+            if (title >= 0 && title != s_state.menu)
+               menu_state_open(&s_state, title);
+            else
+            {
+               item = menu_item_at(s_state.menu, a5_mouse_x, a5_mouse_y, bar_h);
+               if (item >= 0)
+                  s_state.item = item;
+            }
+         }
+
+         /* Judged against the menu that's open now, wherever the click lands. */
+         item = menu_item_at(s_state.menu, a5_mouse_x, a5_mouse_y, bar_h);
 
          if (mouse_hit(1))
          {
