@@ -624,6 +624,52 @@ int ds1_save_with_io(int ds1_idx, int is_tmp_file, const DS1_SAVE_IO * io,
    return 0;
 }
 
+int ds1_save_copy_checked(int ds1_idx, const char * dest, char * error, size_t error_cap)
+{
+   DS1_WRITER w;
+   char       staging[1024];
+   int        close_rc;
+
+   if (error != NULL && error_cap > 0)
+      error[0] = 0;
+   if ((ds1_idx < 0) || (ds1_idx >= DS1_MAX) || (strlen(glb_ds1[ds1_idx].name) == 0))
+      return fail(error, error_cap, "no map to copy%s%s", "", NULL);
+   if (glb_ds1[ds1_idx].version < 4)
+      return fail(error, error_cap, "%s uses an old DS1 format (before version 4) that "
+                  "this editor cannot save without losing its tag layer%s",
+                  glb_ds1[ds1_idx].name, NULL);
+   if (project_path_in_game_install(dest))
+      return fail(error, error_cap, "%s is inside the Diablo II install, and saved maps "
+                  "must never touch the game files%s", dest, NULL);
+   if (path_exists(dest))
+      return fail(error, error_cap, "%s already exists%s", dest, NULL);
+   if (snprintf(staging, sizeof(staging), "%s%s", dest, DS1_SAVE_STAGING_SUFFIX) >=
+       (int) sizeof(staging))
+      return fail(error, error_cap, "the path %s is too long%s", dest, NULL);
+   if (! project_ensure_parent_dirs(dest))
+      return fail(error, error_cap, "can't create the folder for %s%s", dest, NULL);
+
+   w.io = & default_io;
+   w.ok = 1;
+   w.f  = w.io->open(staging, "wb");
+   if (w.f == NULL)
+      return fail(error, error_cap, "can't write %s%s", staging, NULL);
+   ds1_serialize(& w, ds1_idx, glb_ds1[ds1_idx].save_count);
+   close_rc = w.io->close(w.f);
+   if (! w.ok || close_rc != 0)
+   {
+      w.io->remove(staging);
+      return fail(error, error_cap, "writing %s failed (disk full or I/O error)%s",
+                  staging, NULL);
+   }
+   if (w.io->rename(staging, dest) != 0)
+   {
+      w.io->remove(staging);
+      return fail(error, error_cap, "couldn't create %s%s", dest, NULL);
+   }
+   return 0;
+}
+
 int ds1_save_checked(int ds1_idx, int is_tmp_file, char * error, size_t error_cap)
 {
    return ds1_save_with_io(ds1_idx, is_tmp_file, & default_io, error, error_cap);

@@ -48,6 +48,11 @@ int ds1_save_checked(int ds1_idx, int is_tmp_file, char * error, size_t error_ca
 int ds1_save_with_io(int ds1_idx, int is_tmp_file, const DS1_SAVE_IO * io,
                      char * error, size_t error_cap);
 
+/* Write the map as it is in memory to a new file at `dest`. Its name, save
+ * counter and unsaved state don't change. Refuses a file that exists, a dest in
+ * the Diablo II install, and pre-version-4 maps, as a real save does. */
+int ds1_save_copy_checked(int ds1_idx, const char * dest, char * error, size_t error_cap);
+
 /* Suffix of the staging file written next to the destination. */
 #define DS1_SAVE_STAGING_SUFFIX ".saving"
 

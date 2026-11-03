@@ -1087,6 +1087,37 @@ void test_undo_cleanup_leaves_the_tmp_autosave_alone(void)
    TEST_ASSERT_TRUE(tt_file_exists(want));
 }
 
+void test_save_copy_writes_memory_and_leaves_the_map_alone(void)
+{
+   FX_SPEC s;
+   char src[512], dest[512], name_before[sizeof(glb_ds1[0].name)];
+   UDWORD count_before;
+
+   load_fixture(&s, 18, "copysrc.ds1", 0, src, sizeof(src));
+   root_path(dest, sizeof(dest), "copy.ds1");
+   map_dirty_mark(0);
+   snprintf(name_before, sizeof(name_before), "%s", glb_ds1[0].name);
+   count_before = glb_ds1[0].save_count;
+
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, ds1_save_copy_checked(0, dest, err, sizeof(err)), err);
+
+   TEST_ASSERT_EQUAL_STRING(name_before, glb_ds1[0].name);
+   TEST_ASSERT_EQUAL_UINT32(count_before, glb_ds1[0].save_count);
+   TEST_ASSERT_TRUE(map_is_dirty(0));
+   TEST_ASSERT_TRUE(tt_file_exists(dest));
+}
+
+void test_save_copy_refuses_to_replace_a_file(void)
+{
+   FX_SPEC s;
+   char src[512], dest[512];
+
+   load_fixture(&s, 18, "copysrc.ds1", 0, src, sizeof(src));
+   root_path(dest, sizeof(dest), "copy.ds1");
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, ds1_save_copy_checked(0, dest, err, sizeof(err)), err);
+   TEST_ASSERT_EQUAL_INT(-1, ds1_save_copy_checked(0, dest, err, sizeof(err)));
+}
+
 int main(int argc, char **argv)
 {
    pkgc_test_filter = argc > 1 ? argv[1] : NULL;
@@ -1144,5 +1175,7 @@ int main(int argc, char **argv)
    PKGC_RUN(test_tmp_of_a_map_inside_the_install_goes_to_the_tmp_dir);
    PKGC_RUN(test_tmp_of_a_rooted_map_elsewhere_stays_next_to_the_map);
    PKGC_RUN(test_undo_cleanup_leaves_the_tmp_autosave_alone);
+   PKGC_RUN(test_save_copy_writes_memory_and_leaves_the_map_alone);
+   PKGC_RUN(test_save_copy_refuses_to_replace_a_file);
    return UNITY_END();
 }
