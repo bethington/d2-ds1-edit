@@ -155,6 +155,17 @@ target_compile_definitions(test_map_ops PRIVATE DS1EDIT_VERSION_STR="${PROJECT_V
 add_test(NAME map_ops COMMAND test_map_ops)
 set_tests_properties(map_ops PROPERTIES LABELS "portable")
 
+# The editor's own MPQ writer, read back through the editor's own reader
+add_executable(test_mpq_write test_mpq_write.c support/test_tmp.c
+    ../src/core/mpq_crypt.c ../src/core/mpq_write.c ../src/core/file_copy.c
+    ../src/mpq/MpqView.c ../src/mpq/Explode.c ../src/mpq/Dcl_tbl.c ../src/mpq/Wav_unp.c
+    ../src/platform.c)
+target_link_libraries(test_mpq_write PRIVATE unity ds1edit_allegro ZLIB::ZLIB)
+target_include_directories(test_mpq_write PRIVATE
+    ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/mpq ${CMAKE_SOURCE_DIR}/test)
+add_test(NAME mpq_write COMMAND test_mpq_write)
+set_tests_properties(mpq_write PROPERTIES LABELS "portable")
+
 # GTK backend choice for Allegro's native dialogs
 add_executable(test_platform_dialogs test_platform_dialogs.c)
 target_link_libraries(test_platform_dialogs PRIVATE unity)
