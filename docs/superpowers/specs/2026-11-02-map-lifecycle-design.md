@@ -36,7 +36,7 @@ separate list of states.
 | Game | In the game's tables, with no project copy | none |
 | Modified | In the game's MPQs, with a project copy at the same path | `M` |
 | New | A project file not in the game's MPQs | `N` |
-| Removed | In the game's `LvlPrest` slot, but that slot is cleared in the project's copy | dimmed and struck through |
+| Removed | In the game's `LvlPrest` row, but taken out of that row in the project's copy | dimmed and struck through |
 
 Unsaved edits add `*` to any state.
 
@@ -63,9 +63,15 @@ defaults to the open map's area, size and tileset.
 - The name must be unique in the area and valid on all three platforms.
 - If the project has no copy of `LvlPrest.txt`, the editor copies it from the
   MPQ chain before registering the map.
-- If no File slot is free, or the Def is not found, the dialog says so and writes
-  nothing. Create is all-or-nothing: on a failed table write, the new `.ds1` is
+- A map can only join a row whose `Files` column equals its filled cells. Create adds it
+  at the end and raises `Files`. If the row is full, chooses its maps by its own rules, or
+  the Def is not found, the dialog says so and writes nothing. Create is all-or-nothing: on a failed table write, the new `.ds1` is
   removed.
+- A row with `SizeX` and `SizeY` both 0 is a whole level, and its maps join the game's random
+  pick for that level. New is refused there, since an empty map would be chosen. Clone is
+  allowed.
+- Width and height default to the row's `SizeX` and `SizeY` plus one, where it has them.
+  They stay editable.
 
 **Map > Clone** works the same way and copies the map as it is in memory, so it
 includes unsaved edits and works on maps from an MPQ.
@@ -97,12 +103,16 @@ The action depends on storage state, because the game's MPQs are never changed.
 
 | State | Menu command | Effect | Undo by |
 |---|---|---|---|
-| New | Delete Map | Moves the file to `<project>/backup/`, clears its slot | Restore from Backup |
+| New | Delete Map | Moves the file to `<project>/backup/`, takes it out of its row and lowers `Files` | Restore from Backup |
 | Modified | Revert to Game Version | Moves the project copy to `<project>/backup/` | Restore from Backup |
-| Game | Remove from Project | Clears the slot in the project's `LvlPrest.txt` | Restore Slot |
-| Removed | Restore Slot | Puts the game's value back in the slot | Remove from Project |
+| Game | Remove from Project | Takes it out of its row in the project's `LvlPrest.txt` and lowers `Files` | Restore Slot |
+| Removed | Restore Slot | Puts the game's value back in the row and raises `Files` | Remove from Project |
 
 Every one of these confirms first, naming the map and what will happen.
+
+Taking a map out of a row moves later cells back and lowers `Files`, because the game
+crashes on a blank cell below `Files`. A row's only map can't be removed, and neither can a
+map in a row that chooses its maps by its own rules: the command says so and changes nothing.
 
 The backup folder moves from the working directory into the project. A backup is
 only recorded after the map data is copied, and an operation with nothing to back

@@ -20,10 +20,23 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
   modified one is reverted to the game's version, and a game map is removed from
   the project's table, where it stays listed, struck through, until its slot is
   restored. Each one asks first and can be undone. An open map whose file has gone
-  this way can't be saved until it's reopened or restored. A game map the game's own
-  table doesn't list has no slot to clear, so Remove stops with a message. In a
+  this way can't be saved until it's reopened or restored. Remove and Delete move
+  the row's later maps back and lower its `Files` column, so the game never meets a
+  blank map below `Files`, and Restore Slot raises it again. A row's only map, and a
+  map in a row that picks its maps by its own rules, can't be removed: Remove and Delete
+  say so before they ask to confirm and change nothing. Delete does clear a new map from a
+  cell past `Files`, as 2.2.0 could write, and leaves `Files` alone. Any of them refuses a row
+  with an empty cell below `Files`, which needs fixing by hand. New adds a map to the end of a
+  row and raises `Files`, and it joins the game's random pick at once. A row with `Files` of 0,
+  with cells past `Files`, or that's full takes no new map. A row that is a whole level with no
+  fixed size, like Tristram or the towns of Acts 3 and 5, takes a clone but not an empty new map.
+  New's size starts at the row's size. Restore from Backup can be refused when the row can't
+  take the map back, or its path is over the limit, in which case the file must be renamed by
+  hand. A map's whole path can be at most 41 characters. A game map the game's own
+  table doesn't list has nothing to take out of the row, so Remove stops with a message. In a
   project over a mod overlay, game files the overlay replaced show struck through
-  after the project's first table write.
+  after the project's first table write. A row's File cells can't be edited in the
+  properties panel any more, since an edit there could leave a blank that crashes the game.
 
 - **Backups now live in the project's `backup` folder**, and a second backup of a
   map on the same day no longer replaces the first.

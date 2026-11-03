@@ -42,6 +42,11 @@ class MapDeleteRouteTests(unittest.TestCase):
         self.assertLess(asked, deleted)
         self.assertIn("return;", body[asked:deleted])
 
+    def test_map_delete_says_why_it_cant_go_ahead_before_it_asks(self):
+        body = function_body(INTERFACE, "interface_delete_map")
+        self.assertLess(body.index("ds1_manager_delete_check("),
+                        body.index("interface_confirm_map_op("))
+
     def test_permanent_backup_delete_asks_first_too(self):
         body = function_body(INTERFACE, "interface_delete_backup")
         self.assertLess(body.index("ALLEGRO_MESSAGEBOX_YES_NO"),
@@ -57,7 +62,7 @@ class MapDeleteRouteTests(unittest.TestCase):
 
 
 class MapDeleteOrderTests(unittest.TestCase):
-    """Deleting a New map backs it up, and then clears its slot."""
+    """Deleting a New map backs it up, and then takes it out of its row."""
 
     def setUp(self):
         manager = (ROOT / "src" / "core" / "ds1_manager.c").read_text(encoding="utf-8")
@@ -67,11 +72,11 @@ class MapDeleteOrderTests(unittest.TestCase):
 
     def test_the_backup_comes_before_the_table_changes(self):
         steps = [self.body.index(step) for step in (
-            "lvlprest_find_file_slot(", "map_ops_backup_file(", "map_ops_unregister(")]
+            "lvlprest_find_file_slot(", "map_ops_backup_file(", "map_ops_unregister_new(")]
         self.assertEqual(steps, sorted(steps))
 
     def test_a_failed_table_update_puts_the_file_back(self):
-        after = self.body[self.body.index("map_ops_unregister("):]
+        after = self.body[self.body.index("map_ops_unregister_new("):]
         self.assertIn("map_ops_restore_file(", after)
 
 

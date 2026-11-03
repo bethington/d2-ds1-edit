@@ -21,9 +21,12 @@ static char dir[512];
 static char err[512];
 
 static const char GAME[] =
-   "Name\tDef\tFile1\tFile2\tFile3\tFile4\tFile5\tFile6\r\n"
-   "Town\t1\tAct1\\Town\\TownN1.ds1\t0\t0\t0\t0\t0\r\n"
-   "Full\t2\ta.ds1\tb.ds1\tc.ds1\td.ds1\te.ds1\tf.ds1\r\n";
+   "Name\tDef\tFiles\tFile1\tFile2\tFile3\tFile4\tFile5\tFile6\r\n"
+   "Town\t1\t2\tAct1\\Town\\TownN1.ds1\tAct1\\Town\\TownE1.ds1\t0\t0\t0\t0\r\n"
+   "Full\t2\t6\ta.ds1\tb.ds1\tc.ds1\td.ds1\te.ds1\tf.ds1\r\n"
+   "Only\t3\t1\tAct1\\Only.ds1\t0\t0\t0\t0\t0\r\n"
+   "Own\t4\t0\tAct1\\Own.ds1\t0\t0\t0\t0\t0\r\n"
+   "Tail\t5\t1\tAct1\\Tail1.ds1\tAct1\\Tail2.ds1\t0\t0\t0\t0\r\n";
 
 static int exists(const char *rel)
 {
@@ -116,7 +119,7 @@ void test_register_seeds_the_table_then_fills_a_slot(void)
    TEST_ASSERT_EQUAL_INT(0, map_ops_register(dir, GAME, 1, "Act1/Town/New.ds1", err, sizeof(err)));
    t = table();
    TEST_ASSERT_NOT_NULL(t);
-   TEST_ASSERT_EQUAL_INT(2, lvlprest_find_file_slot(t, 1, "Act1/Town/New.ds1"));
+   TEST_ASSERT_EQUAL_INT(3, lvlprest_find_file_slot(t, 1, "Act1/Town/New.ds1"));
    free(t);
 }
 
@@ -150,8 +153,8 @@ void test_overwriting_the_table_leaves_no_side_files(void)
    {
       char *t = table();
       TEST_ASSERT_NOT_NULL(t);
-      TEST_ASSERT_EQUAL_INT(2, lvlprest_find_file_slot(t, 1, "A.ds1"));
-      TEST_ASSERT_EQUAL_INT(3, lvlprest_find_file_slot(t, 1, "B.ds1"));
+      TEST_ASSERT_EQUAL_INT(3, lvlprest_find_file_slot(t, 1, "A.ds1"));
+      TEST_ASSERT_EQUAL_INT(4, lvlprest_find_file_slot(t, 1, "B.ds1"));
       free(t);
    }
 }
@@ -193,7 +196,7 @@ void test_unregister_then_restore_returns_the_table_to_the_original(void)
    free(t);
 }
 
-void test_restore_uses_another_slot_when_its_own_was_taken(void)
+void test_restore_goes_back_to_its_own_place_among_new_maps(void)
 {
    char game[sizeof(GAME)];
    char *t;
@@ -203,8 +206,11 @@ void test_restore_uses_another_slot_when_its_own_was_taken(void)
    TEST_ASSERT_EQUAL_INT(0, map_ops_register(dir, GAME, 1, "Act1/Town/New.ds1", err, sizeof(err)));
    TEST_ASSERT_EQUAL_INT(0, map_ops_restore_slot(dir, GAME, game, 1, "Act1/Town/TownN1.ds1", err, sizeof(err)));
    t = table();
-   TEST_ASSERT_EQUAL_INT(1, lvlprest_find_file_slot(t, 1, "New.ds1"));
-   TEST_ASSERT_EQUAL_INT(2, lvlprest_find_file_slot(t, 1, "TownN1.ds1"));
+   TEST_ASSERT_EQUAL_INT(1, lvlprest_find_file_slot(t, 1, "TownN1.ds1"));
+   TEST_ASSERT_EQUAL_INT(2, lvlprest_find_file_slot(t, 1, "TownE1.ds1"));
+   TEST_ASSERT_EQUAL_INT(3, lvlprest_find_file_slot(t, 1, "New.ds1"));
+   TEST_ASSERT_EQUAL_INT(3, lvlprest_files_value(t, 1));
+   TEST_ASSERT_TRUE(lvlprest_row_is_simple(t, 1));
    free(t);
 }
 
@@ -360,12 +366,12 @@ void test_a_table_left_as_old_is_recovered_not_reseeded(void)
 
    /* A crash between moving the table aside and moving the new one in. */
    write_rel("Global/Excel/LvlPrest.txt.old", GAME);
-   TEST_ASSERT_EQUAL_INT(0, map_ops_register(dir, "Name\tDef\tFile1\r\nOther\t9\t0\r\n", 1,
+   TEST_ASSERT_EQUAL_INT(0, map_ops_register(dir, "Name\tDef\tFiles\tFile1\r\nOther\t9\t1\tx\r\n", 1,
                                              "Act1/Town/New.ds1", err, sizeof(err)));
    t = table();
    TEST_ASSERT_NOT_NULL(t);
    TEST_ASSERT_EQUAL_INT(1, lvlprest_find_file_slot(t, 1, "TownN1.ds1"));
-   TEST_ASSERT_EQUAL_INT(2, lvlprest_find_file_slot(t, 1, "New.ds1"));
+   TEST_ASSERT_EQUAL_INT(3, lvlprest_find_file_slot(t, 1, "New.ds1"));
    free(t);
    TEST_ASSERT_FALSE(exists("Global/Excel/LvlPrest.txt.old"));
 }
@@ -415,7 +421,7 @@ void test_a_data_layout_is_used_where_it_is(void)
    TEST_ASSERT_FALSE(exists("Global/Excel/LvlPrest.txt"));
    t = read_rel("Data/Global/Excel/LvlPrest.txt");
    TEST_ASSERT_NOT_NULL(t);
-   TEST_ASSERT_EQUAL_INT(2, lvlprest_find_file_slot(t, 1, "Old.ds1"));
+   TEST_ASSERT_EQUAL_INT(3, lvlprest_find_file_slot(t, 1, "Old.ds1"));
    free(t);
 
    /* A file there counts as the project's, for exists checks and backups. */
@@ -436,13 +442,13 @@ void test_the_reader_s_order_decides_between_layouts(void)
 
    /* mod_load_in_mem tries <project>/Data/... before <project>/... */
    write_rel("Data/Global/Excel/LvlPrest.txt", GAME);
-   write_rel("Global/Excel/LvlPrest.txt", "Name\tDef\tFile1\r\n");
+   write_rel("Global/Excel/LvlPrest.txt", "Name\tDef\tFiles\tFile1\r\n");
    TEST_ASSERT_EQUAL_INT(0, map_ops_register(dir, NULL, 1, "New.ds1", err, sizeof(err)));
    t = read_rel("Data/Global/Excel/LvlPrest.txt");
-   TEST_ASSERT_EQUAL_INT(2, lvlprest_find_file_slot(t, 1, "New.ds1"));
+   TEST_ASSERT_EQUAL_INT(3, lvlprest_find_file_slot(t, 1, "New.ds1"));
    free(t);
    t = read_rel("Global/Excel/LvlPrest.txt");
-   TEST_ASSERT_EQUAL_STRING("Name\tDef\tFile1\r\n", t);
+   TEST_ASSERT_EQUAL_STRING("Name\tDef\tFiles\tFile1\r\n", t);
    free(t);
 }
 
@@ -486,8 +492,8 @@ void test_a_path_cant_reach_outside_the_project(void)
 }
 
 static const char DUPES[] =
-   "Name\tDef\tFile1\tFile2\tFile3\tFile4\tFile5\tFile6\r\n"
-   "Dup\t3\tAct1\\Dup.ds1\t0\tAct1\\Dup.ds1\tAct1\\Other.ds1\t0\t0\r\n";
+   "Name\tDef\tFiles\tFile1\tFile2\tFile3\tFile4\tFile5\tFile6\r\n"
+   "Dup\t3\t3\tAct1\\Dup.ds1\tAct1\\Dup.ds1\tAct1\\Other.ds1\t0\t0\t0\r\n";
 
 void test_the_same_file_twice_in_a_row_round_trips(void)
 {
@@ -498,7 +504,7 @@ void test_the_same_file_twice_in_a_row_round_trips(void)
    TEST_ASSERT_EQUAL_INT(0, map_ops_unregister(dir, DUPES, 3, "Act1/Dup.ds1", err, sizeof(err)));
    t = table();
    TEST_ASSERT_EQUAL_INT(0, lvlprest_find_file_slot(t, 3, "Act1/Dup.ds1"));
-   TEST_ASSERT_EQUAL_INT(4, lvlprest_find_file_slot(t, 3, "Act1/Other.ds1"));
+   TEST_ASSERT_EQUAL_INT(1, lvlprest_find_file_slot(t, 3, "Act1/Other.ds1"));
    free(t);
 
    TEST_ASSERT_EQUAL_INT(0, map_ops_restore_slot(dir, DUPES, game, 3, "Act1/Dup.ds1", err, sizeof(err)));
@@ -514,8 +520,8 @@ void test_restore_puts_back_only_the_copies_that_are_missing(void)
 
    memcpy(game, DUPES, sizeof(DUPES));
    write_rel("Global/Excel/LvlPrest.txt",
-             "Name\tDef\tFile1\tFile2\tFile3\tFile4\tFile5\tFile6\r\n"
-             "Dup\t3\tAct1\\Dup.ds1\t0\t0\tAct1\\Other.ds1\t0\t0\r\n");
+             "Name\tDef\tFiles\tFile1\tFile2\tFile3\tFile4\tFile5\tFile6\r\n"
+             "Dup\t3\t2\tAct1\\Dup.ds1\tAct1\\Other.ds1\t0\t0\t0\t0\r\n");
    TEST_ASSERT_EQUAL_INT(0, map_ops_restore_slot(dir, DUPES, game, 3, "Act1/Dup.ds1", err, sizeof(err)));
    t = table();
    TEST_ASSERT_EQUAL_STRING(DUPES, t);
@@ -523,8 +529,8 @@ void test_restore_puts_back_only_the_copies_that_are_missing(void)
 }
 
 static const char NAMESAKES[] =
-   "Name\tDef\tFile1\tFile2\tFile3\tFile4\tFile5\tFile6\r\n"
-   "Bar\t50\tA\\Bar.ds1\tB\\Bar.ds1\t0\t0\t0\t0\r\n";
+   "Name\tDef\tFiles\tFile1\tFile2\tFile3\tFile4\tFile5\tFile6\r\n"
+   "Bar\t50\t3\tZ\\Other.ds1\tA\\Bar.ds1\tB\\Bar.ds1\t0\t0\t0\r\n";
 
 void test_unregister_leaves_a_namesake_in_another_folder(void)
 {
@@ -604,6 +610,415 @@ void test_a_backup_that_cant_be_removed_is_only_a_warning(void)
       TEST_ASSERT_EQUAL_STRING("", err);
 }
 
+void test_register_raises_files(void)
+{
+   char *t;
+
+   TEST_ASSERT_EQUAL_INT(0, map_ops_register(dir, GAME, 1, "Act1/Town/New.ds1", err, sizeof(err)));
+   t = table();
+   TEST_ASSERT_EQUAL_INT(3, lvlprest_files_value(t, 1));
+   TEST_ASSERT_EQUAL_INT(3, lvlprest_find_path_slot(t, 1, "Act1/Town/New.ds1"));
+   TEST_ASSERT_TRUE(lvlprest_row_is_simple(t, 1));
+   free(t);
+}
+
+void test_register_refuses_rows_that_choose_their_own_maps(void)
+{
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_register(dir, GAME, 4, "x.ds1", err, sizeof(err)));
+   TEST_ASSERT_NOT_NULL(strstr(err, "own"));
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_register(dir, GAME, 5, "x.ds1", err, sizeof(err)));
+   TEST_ASSERT_FALSE(exists("Global/Excel/LvlPrest.txt"));
+}
+
+void test_register_refuses_a_path_past_the_games_limit(void)
+{
+   char path[64];
+
+   memset(path, 'a', sizeof(path));
+   memcpy(path + 42 - 4, ".ds1", 5);   /* 42 characters */
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_register(dir, GAME, 1, path, err, sizeof(err)));
+   path[41 - 4] = 0;
+   strcat(path, ".ds1");               /* 41 characters */
+   TEST_ASSERT_EQUAL_INT(0, map_ops_register(dir, GAME, 1, path, err, sizeof(err)));
+}
+
+void test_create_that_cant_register_removes_the_map(void)
+{
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_create_empty(dir, GAME, 4, "New.ds1", 5, 5, 1, err, sizeof(err)));
+   TEST_ASSERT_FALSE(exists("Global/Tiles/New.ds1"));
+}
+
+void test_unregister_leaves_no_hole_and_lowers_files(void)
+{
+   char *t;
+
+   TEST_ASSERT_EQUAL_INT(0, map_ops_unregister(dir, GAME, 1, "Act1/Town/TownN1.ds1", err, sizeof(err)));
+   t = table();
+   TEST_ASSERT_EQUAL_INT(1, lvlprest_files_value(t, 1));
+   TEST_ASSERT_EQUAL_INT(1, lvlprest_find_path_slot(t, 1, "Act1/Town/TownE1.ds1"));
+   TEST_ASSERT_TRUE(lvlprest_row_is_simple(t, 1));
+   free(t);
+}
+
+void test_unregister_refuses_a_rows_only_map(void)
+{
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_unregister(dir, GAME, 3, "Act1/Only.ds1", err, sizeof(err)));
+   TEST_ASSERT_NOT_NULL(strstr(err, "only map"));
+   TEST_ASSERT_FALSE(exists("Global/Excel/LvlPrest.txt"));
+}
+
+void test_unregister_refuses_rows_that_choose_their_own_maps(void)
+{
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_unregister(dir, GAME, 4, "Act1/Own.ds1", err, sizeof(err)));
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_unregister(dir, GAME, 5, "Act1/Tail2.ds1", err, sizeof(err)));
+   TEST_ASSERT_FALSE(exists("Global/Excel/LvlPrest.txt"));
+}
+
+void test_a_row_listing_only_one_file_twice_counts_as_an_only_map(void)
+{
+   static const char TWICE[] =
+      "Name\tDef\tFiles\tFile1\tFile2\tFile3\tFile4\tFile5\tFile6\r\n"
+      "Dup\t1\t2\td.ds1\td.ds1\t0\t0\t0\t0\r\n";
+
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_unregister(dir, TWICE, 1, "d.ds1", err, sizeof(err)));
+}
+
+void test_restore_slot_raises_files_again(void)
+{
+   char game[sizeof(GAME)];
+   char *t;
+
+   memcpy(game, GAME, sizeof(GAME));
+   TEST_ASSERT_EQUAL_INT(0, map_ops_unregister(dir, GAME, 1, "Act1/Town/TownN1.ds1", err, sizeof(err)));
+   TEST_ASSERT_EQUAL_INT(0, map_ops_restore_slot(dir, GAME, game, 1, "Act1/Town/TownN1.ds1", err, sizeof(err)));
+   t = table();
+   TEST_ASSERT_EQUAL_STRING(GAME, t);
+   free(t);
+}
+
+/* ---- The Files column: what may join and leave a row ---- */
+
+static const char ROWS[] =
+   "Name\tDef\tSizeX\tSizeY\tFiles\tFile1\tFile2\tFile3\tFile4\tFile5\tFile6\r\n"
+   "Room\t168\t10\t14\t2\tr1.ds1\tr2.ds1\t0\t0\t0\t0\r\n"
+   "Tri\t300\t0\t0\t1\tTri.ds1\t0\t0\t0\t0\t0\r\n"
+   "Tail\t5\t8\t8\t1\tt1.ds1\tnew.ds1\tt3.ds1\t0\t0\t0\r\n"
+   "Hole\t6\t8\t8\t3\th1.ds1\t0\th3.ds1\tnew.ds1\t0\t0\r\n"
+   "Blank\t7\t8\t8\t2\t\tb2.ds1\t0\t0\t0\t0\r\n"
+   "Own\t8\t8\t8\t0\to1.ds1\tnew.ds1\t0\t0\t0\t0\r\n"
+   "Only\t9\t8\t8\t1\tnew.ds1\t0\t0\t0\t0\t0\r\n"
+   "Wide\t10\t8\t0\t1\tw.ds1\t0\t0\t0\t0\t0\r\n"
+   "Huge\t11\t999\t1000\t1\tu.ds1\t0\t0\t0\t0\t0\r\n"
+   "Full\t12\t8\t8\t6\ta.ds1\tb.ds1\tc.ds1\td.ds1\te.ds1\tf.ds1\r\n";
+
+/* The fixture as writable text, since the table functions take a char *. */
+static char rows[sizeof(ROWS)];
+
+static void fresh_rows(void)
+{
+   memcpy(rows, ROWS, sizeof(ROWS));
+}
+
+void test_a_map_the_table_lists_needs_no_register(void)
+{
+   /* No project table: the seed decides, so a Modified map isn't listed twice,
+      and a town row isn't asked to take a map it already has. */
+   TEST_ASSERT_TRUE(map_ops_lists_map(dir, ROWS, 300, "Tri.ds1"));
+   TEST_ASSERT_FALSE(map_ops_lists_map(dir, ROWS, 300, "Other.ds1"));
+   TEST_ASSERT_FALSE(exists("Global/Excel/LvlPrest.txt"));
+
+   /* A project table wins over the seed. */
+   write_rel("Global/Excel/LvlPrest.txt", GAME);
+   TEST_ASSERT_FALSE(map_ops_lists_map(dir, ROWS, 300, "Tri.ds1"));
+   TEST_ASSERT_TRUE(map_ops_lists_map(dir, ROWS, 3, "Act1/Only.ds1"));
+}
+
+void test_no_table_and_no_seed_lists_nothing(void)
+{
+   TEST_ASSERT_FALSE(map_ops_lists_map(dir, NULL, 300, "Tri.ds1"));
+}
+
+void test_delete_clears_a_new_map_past_files_and_leaves_files_alone(void)
+{
+   char *t;
+
+   fresh_rows();
+   TEST_ASSERT_EQUAL_INT(0, map_ops_check_unregister_new(rows, 5, "new.ds1", err, sizeof(err)));
+   TEST_ASSERT_EQUAL_INT(0, map_ops_unregister_new(dir, ROWS, 5, "new.ds1", err, sizeof(err)));
+   t = table();
+   TEST_ASSERT_NOT_NULL(t);
+   TEST_ASSERT_EQUAL_INT(1, lvlprest_files_value(t, 5));
+   TEST_ASSERT_FALSE(lvlprest_lists_path(t, 5, "new.ds1"));
+   /* The row's other extra cell stays where its own rules look for it. */
+   TEST_ASSERT_EQUAL_INT(3, lvlprest_find_path_slot(t, 5, "t3.ds1"));
+   free(t);
+}
+
+void test_remove_refuses_that_same_cell(void)
+{
+   fresh_rows();
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_check_unregister(rows, 5, "new.ds1", err, sizeof(err)));
+   TEST_ASSERT_NOT_NULL(strstr(err, "own rules"));
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_unregister(dir, ROWS, 5, "new.ds1", err, sizeof(err)));
+   TEST_ASSERT_FALSE(exists("Global/Excel/LvlPrest.txt"));
+}
+
+void test_delete_moves_a_counted_map_out_like_remove(void)
+{
+   char *t;
+
+   TEST_ASSERT_EQUAL_INT(0, map_ops_unregister_new(dir, ROWS, 168, "r1.ds1", err, sizeof(err)));
+   t = table();
+   TEST_ASSERT_EQUAL_INT(1, lvlprest_files_value(t, 168));
+   TEST_ASSERT_EQUAL_INT(1, lvlprest_find_path_slot(t, 168, "r2.ds1"));
+   TEST_ASSERT_TRUE(lvlprest_row_is_simple(t, 168));
+   free(t);
+}
+
+void test_delete_refuses_a_new_map_in_a_row_with_a_hole(void)
+{
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_unregister_new(dir, ROWS, 6, "new.ds1", err, sizeof(err)));
+   TEST_ASSERT_NOT_NULL(strstr(err, "File2"));
+   TEST_ASSERT_FALSE(exists("Global/Excel/LvlPrest.txt"));
+}
+
+void test_delete_of_a_rows_only_counted_map_says_what_to_do(void)
+{
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_unregister_new(dir, ROWS, 9, "new.ds1", err, sizeof(err)));
+   TEST_ASSERT_NOT_NULL(strstr(err, "only map"));
+   TEST_ASSERT_NOT_NULL(strstr(err, "Restore Slot"));
+   TEST_ASSERT_NOT_NULL(strstr(err, "by hand"));
+   TEST_ASSERT_FALSE(exists("Global/Excel/LvlPrest.txt"));
+}
+
+void test_delete_refuses_a_row_with_files_0(void)
+{
+   /* The generator chooses these cells itself, so the game may well read it. */
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_unregister_new(dir, ROWS, 8, "new.ds1", err, sizeof(err)));
+   TEST_ASSERT_NOT_NULL(strstr(err, "by hand"));
+   TEST_ASSERT_FALSE(exists("Global/Excel/LvlPrest.txt"));
+}
+
+void test_delete_of_a_counted_map_in_an_unusual_row_is_refused(void)
+{
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_unregister_new(dir, ROWS, 5, "t1.ds1", err, sizeof(err)));
+   TEST_ASSERT_FALSE(exists("Global/Excel/LvlPrest.txt"));
+}
+
+void test_a_hole_below_files_is_reported_by_every_check(void)
+{
+   static const char HOLE[] = "Def 6's File2 is empty, but Files counts it, which can crash "
+                              "the game. Fix that row in LvlPrest.txt by hand.";
+
+   fresh_rows();
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_check_register(rows, 6, err, sizeof(err)));
+   TEST_ASSERT_EQUAL_STRING(HOLE, err);
+   err[0] = 0;
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_check_unregister(rows, 6, "h1.ds1", err, sizeof(err)));
+   TEST_ASSERT_EQUAL_STRING(HOLE, err);
+   err[0] = 0;
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_check_unregister_new(rows, 6, "new.ds1", err, sizeof(err)));
+   TEST_ASSERT_EQUAL_STRING(HOLE, err);
+
+   /* A blank counts as well as a 0. */
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_check_register(rows, 7, err, sizeof(err)));
+   TEST_ASSERT_NOT_NULL(strstr(err, "Def 7's File1 is empty"));
+
+   /* No automatic rewrite. */
+   TEST_ASSERT_EQUAL_STRING(ROWS, rows);
+}
+
+void test_a_hole_doesnt_stop_a_map_the_row_doesnt_list(void)
+{
+   fresh_rows();
+   TEST_ASSERT_EQUAL_INT(0, map_ops_check_unregister(rows, 6, "elsewhere.ds1", err, sizeof(err)));
+   TEST_ASSERT_EQUAL_INT(0, map_ops_check_unregister_new(rows, 6, "elsewhere.ds1", err, sizeof(err)));
+}
+
+void test_new_is_refused_and_clone_allowed_on_a_whole_level(void)
+{
+   fresh_rows();
+   TEST_ASSERT_EQUAL_INT(0, map_ops_check_register(rows, 300, err, sizeof(err)));
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_check_new_empty(rows, 300, err, sizeof(err)));
+   TEST_ASSERT_EQUAL_STRING("Def 300's row is a whole level, and an empty map would join the "
+                            "game's random pick for it. Clone a working map instead.", err);
+   TEST_ASSERT_EQUAL_INT(0, map_ops_check_new_empty(rows, 168, err, sizeof(err)));
+   /* One size is a size. */
+   TEST_ASSERT_EQUAL_INT(0, map_ops_check_new_empty(rows, 10, err, sizeof(err)));
+   /* map_ops_check_register's reasons come first. */
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_check_new_empty(rows, 8, err, sizeof(err)));
+   TEST_ASSERT_NOT_NULL(strstr(err, "own rules"));
+}
+
+void test_create_refuses_a_whole_level_and_writes_nothing(void)
+{
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_create_empty(dir, ROWS, 300, "New.ds1", 5, 5, 1, err, sizeof(err)));
+   TEST_ASSERT_NOT_NULL(strstr(err, "whole level"));
+   TEST_ASSERT_FALSE(exists("Global/Tiles/New.ds1"));
+   TEST_ASSERT_FALSE(exists("Global/Excel/LvlPrest.txt"));
+
+   /* Clone's route, registering a map, still takes it. */
+   TEST_ASSERT_EQUAL_INT(0, map_ops_register(dir, ROWS, 300, "New.ds1", err, sizeof(err)));
+   TEST_ASSERT_TRUE(exists("Global/Excel/LvlPrest.txt"));
+}
+
+void test_a_table_with_no_size_columns_doesnt_call_a_row_a_whole_level(void)
+{
+   char game[sizeof(GAME)];
+
+   memcpy(game, GAME, sizeof(GAME));
+   TEST_ASSERT_EQUAL_INT(0, map_ops_check_new_empty(game, 1, err, sizeof(err)));
+}
+
+void test_size_defaults_are_the_map_s_width_not_the_stored_value(void)
+{
+   int w = 20, h = 30;
+
+   /* barW.ds1 stores 10 and 14, its width and height minus one, and Def 168's
+      SizeX and SizeY are 10 and 14. */
+   fresh_rows();
+   map_ops_default_size(rows, 168, &w, &h);
+   TEST_ASSERT_EQUAL_INT(11, w);
+   TEST_ASSERT_EQUAL_INT(15, h);
+
+   w = 20;
+   h = 30;
+   map_ops_default_size(rows, 300, &w, &h);    /* no size: today's default */
+   TEST_ASSERT_EQUAL_INT(20, w);
+   TEST_ASSERT_EQUAL_INT(30, h);
+   map_ops_default_size(rows, 10, &w, &h);     /* one nonzero */
+   TEST_ASSERT_EQUAL_INT(9, w);
+   TEST_ASSERT_EQUAL_INT(30, h);
+   w = 20;
+   map_ops_default_size(rows, 999, &w, &h);    /* no row */
+   TEST_ASSERT_EQUAL_INT(20, w);
+   map_ops_default_size(rows, 11, &w, &h);     /* SizeY 1000 would be past the limit */
+   TEST_ASSERT_EQUAL_INT(1000, w);
+   TEST_ASSERT_EQUAL_INT(30, h);
+}
+
+void test_the_shared_refusal_doesnt_mention_a_tileset(void)
+{
+   char game[sizeof(GAME)];
+
+   memcpy(game, GAME, sizeof(GAME));
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_check_register(game, 4, err, sizeof(err)));
+   TEST_ASSERT_NOT_NULL(strstr(err, "own rules"));
+   TEST_ASSERT_NULL(strstr(err, "tileset"));
+}
+
+void test_a_table_with_no_files_column_says_so_first(void)
+{
+   char no_files[] = "Name\tDef\tFile1\tFile2\tFile3\tFile4\tFile5\tFile6\r\n"
+                     "A\t1\ta.ds1\t0\t0\t0\t0\t0\r\n";
+   char no_file3[] = "Name\tDef\tFiles\tFile1\tFile2\tFile4\tFile5\tFile6\r\n"
+                     "A\t1\t1\ta.ds1\t0\t0\t0\t0\r\n";
+   static const char NO_FILES[] = "The project's LvlPrest.txt has no Files column, so maps can't "
+                                  "be added to or removed from it.";
+
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_check_register(no_files, 1, err, sizeof(err)));
+   TEST_ASSERT_EQUAL_STRING(NO_FILES, err);
+   err[0] = 0;
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_check_unregister(no_files, 1, "a.ds1", err, sizeof(err)));
+   TEST_ASSERT_EQUAL_STRING(NO_FILES, err);
+   err[0] = 0;
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_check_unregister_new(no_files, 1, "a.ds1", err, sizeof(err)));
+   TEST_ASSERT_EQUAL_STRING(NO_FILES, err);
+
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_check_register(no_file3, 1, err, sizeof(err)));
+   TEST_ASSERT_NOT_NULL(strstr(err, "no File3 column"));
+}
+
+void test_a_path_past_the_limit_says_to_rename_it(void)
+{
+   char path[64];
+
+   memset(path, 'a', sizeof(path));
+   memcpy(path + 42 - 4, ".ds1", 5);
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_register(dir, GAME, 1, path, err, sizeof(err)));
+   TEST_ASSERT_NOT_NULL(strstr(err, "renamed by hand"));
+}
+
+/* The dialog's status row fits about 62 glyphs. */
+static void assert_status(char * text, int def, int empty_map, const char * part)
+{
+   int rc = empty_map ? map_ops_check_new_empty(text, def, err, sizeof(err))
+                      : map_ops_check_register(text, def, err, sizeof(err));
+
+   TEST_ASSERT_EQUAL_INT(-1, rc);
+   map_ops_dialog_status(text, def, err, sizeof(err));
+   TEST_ASSERT_NOT_NULL(strstr(err, part));
+   TEST_ASSERT_TRUE(strlen(err) <= 62);
+}
+
+void test_the_dialog_gets_a_short_status_that_fits_the_case(void)
+{
+   char no_files[] = "Name\tDef\tFile1\tFile2\tFile3\tFile4\tFile5\tFile6\r\n"
+                     "A\t1090\ta.ds1\t0\t0\t0\t0\t0\r\n";
+   char big_hole[] = "Name\tDef\tFiles\tFile1\tFile2\tFile3\tFile4\tFile5\tFile6\r\n"
+                     "A\t1090\t6\ta.ds1\tb.ds1\tc.ds1\td.ds1\te.ds1\t0\r\n";
+
+   fresh_rows();
+   assert_status(rows, 300, 1, "whole level");
+   assert_status(rows, 300, 1, "Clone");
+   assert_status(rows, 6, 0, "File2");
+   assert_status(rows, 8, 0, "Pick another tileset");
+   assert_status(rows, 12, 0, "no free File slot");
+   assert_status(rows, 999, 0, "isn't in");
+   assert_status(big_hole, 1090, 0, "File6");
+   assert_status(no_files, 1090, 0, "no Files column");
+   TEST_ASSERT_NULL(strstr(err, "tileset"));
+}
+
+void test_the_same_file_either_side_of_another_round_trips(void)
+{
+   static const char SPLIT[] =
+      "Name\tDef\tFiles\tFile1\tFile2\tFile3\tFile4\tFile5\tFile6\r\n"
+      "Dup\t3\t3\tAct1\\Dup.ds1\tAct1\\Other.ds1\tAct1\\Dup.ds1\t0\t0\t0\r\n";
+   char game[sizeof(SPLIT)];
+   char *t;
+
+   memcpy(game, SPLIT, sizeof(SPLIT));
+   TEST_ASSERT_EQUAL_INT(0, map_ops_unregister(dir, SPLIT, 3, "Act1/Dup.ds1", err, sizeof(err)));
+   t = table();
+   TEST_ASSERT_EQUAL_INT(1, lvlprest_files_value(t, 3));
+   TEST_ASSERT_EQUAL_INT(1, lvlprest_find_path_slot(t, 3, "Act1/Other.ds1"));
+   TEST_ASSERT_FALSE(lvlprest_lists_path(t, 3, "Act1/Dup.ds1"));
+   free(t);
+
+   TEST_ASSERT_EQUAL_INT(0, map_ops_restore_slot(dir, SPLIT, game, 3, "Act1/Dup.ds1", err, sizeof(err)));
+   t = table();
+   TEST_ASSERT_EQUAL_STRING(SPLIT, t);
+   free(t);
+}
+
+static void assert_restore_slot_refused(int def)
+{
+   char game[] =
+      "Name\tDef\tFiles\tFile1\tFile2\tFile3\tFile4\tFile5\tFile6\r\n"
+      "Row\t12\t1\tgone.ds1\t0\t0\t0\t0\t0\r\n"
+      "Row\t8\t1\tgone.ds1\t0\t0\t0\t0\t0\r\n";
+   char *t;
+
+   write_rel("Global/Excel/LvlPrest.txt", ROWS);
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_restore_slot(dir, NULL, game, def, "gone.ds1", err, sizeof(err)));
+   t = table();
+   TEST_ASSERT_EQUAL_STRING(ROWS, t);
+   free(t);
+}
+
+void test_restore_slot_refuses_a_full_row_and_changes_nothing(void)
+{
+   assert_restore_slot_refused(12);
+   TEST_ASSERT_NOT_NULL(strstr(err, "no free File slot"));
+}
+
+void test_restore_slot_refuses_an_unusual_row_and_changes_nothing(void)
+{
+   assert_restore_slot_refused(8);
+   TEST_ASSERT_NOT_NULL(strstr(err, "own rules"));
+}
+
 int main(void)
 {
    UNITY_BEGIN();
@@ -616,7 +1031,7 @@ int main(void)
    RUN_TEST(test_overwriting_the_table_leaves_no_side_files);
    RUN_TEST(test_nothing_is_written_to_a_project_inside_the_game_install);
    RUN_TEST(test_unregister_then_restore_returns_the_table_to_the_original);
-   RUN_TEST(test_restore_uses_another_slot_when_its_own_was_taken);
+   RUN_TEST(test_restore_goes_back_to_its_own_place_among_new_maps);
    RUN_TEST(test_restore_slot_writes_nothing_when_the_row_already_lists_the_map);
    RUN_TEST(test_create_writes_the_map_and_registers_it);
    RUN_TEST(test_a_failed_table_write_removes_the_new_map);
@@ -639,5 +1054,36 @@ int main(void)
    RUN_TEST(test_unregister_leaves_a_namesake_in_another_folder);
    RUN_TEST(test_namesakes_round_trip_one_at_a_time);
    RUN_TEST(test_restore_slot_wants_the_game_to_list_the_whole_path);
+   RUN_TEST(test_register_raises_files);
+   RUN_TEST(test_register_refuses_rows_that_choose_their_own_maps);
+   RUN_TEST(test_register_refuses_a_path_past_the_games_limit);
+   RUN_TEST(test_create_that_cant_register_removes_the_map);
+   RUN_TEST(test_unregister_leaves_no_hole_and_lowers_files);
+   RUN_TEST(test_unregister_refuses_a_rows_only_map);
+   RUN_TEST(test_unregister_refuses_rows_that_choose_their_own_maps);
+   RUN_TEST(test_a_row_listing_only_one_file_twice_counts_as_an_only_map);
+   RUN_TEST(test_restore_slot_raises_files_again);
+   RUN_TEST(test_a_map_the_table_lists_needs_no_register);
+   RUN_TEST(test_no_table_and_no_seed_lists_nothing);
+   RUN_TEST(test_delete_clears_a_new_map_past_files_and_leaves_files_alone);
+   RUN_TEST(test_remove_refuses_that_same_cell);
+   RUN_TEST(test_delete_moves_a_counted_map_out_like_remove);
+   RUN_TEST(test_delete_refuses_a_new_map_in_a_row_with_a_hole);
+   RUN_TEST(test_delete_of_a_rows_only_counted_map_says_what_to_do);
+   RUN_TEST(test_delete_refuses_a_row_with_files_0);
+   RUN_TEST(test_delete_of_a_counted_map_in_an_unusual_row_is_refused);
+   RUN_TEST(test_a_hole_below_files_is_reported_by_every_check);
+   RUN_TEST(test_a_hole_doesnt_stop_a_map_the_row_doesnt_list);
+   RUN_TEST(test_new_is_refused_and_clone_allowed_on_a_whole_level);
+   RUN_TEST(test_create_refuses_a_whole_level_and_writes_nothing);
+   RUN_TEST(test_a_table_with_no_size_columns_doesnt_call_a_row_a_whole_level);
+   RUN_TEST(test_size_defaults_are_the_map_s_width_not_the_stored_value);
+   RUN_TEST(test_the_shared_refusal_doesnt_mention_a_tileset);
+   RUN_TEST(test_a_table_with_no_files_column_says_so_first);
+   RUN_TEST(test_a_path_past_the_limit_says_to_rename_it);
+   RUN_TEST(test_the_dialog_gets_a_short_status_that_fits_the_case);
+   RUN_TEST(test_the_same_file_either_side_of_another_round_trips);
+   RUN_TEST(test_restore_slot_refuses_a_full_row_and_changes_nothing);
+   RUN_TEST(test_restore_slot_refuses_an_unusual_row_and_changes_nothing);
    return UNITY_END();
 }

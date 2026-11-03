@@ -298,9 +298,11 @@ The bar across the top holds **File**, **Edit**, **Map**, **View** and **Build**
 
 #### Creating maps
 
-**Map > New** and **Map > Clone** open a dialog with the map's name, area and tileset. New also asks for the width and height, each 1 to 1000 (it starts at 20, or at the open map's size). A clone keeps the size of the map it copies. Clone copies the map as it is in memory, so it includes unsaved edits, and it works on maps that exist only in an MPQ. The original stays as it was, still marked unsaved if it had edits. With no project open, the editor asks for one first.
+**Map > New** and **Map > Clone** open a dialog with the map's name, area and tileset. New also asks for the width and height, each 1 to 1000. They start at the chosen tileset's size, from its row's `SizeX` and `SizeY` plus one, and follow as you change the area or tileset. A row with no size starts at 20, or at the open map's size. You can change them, and nothing warns you if they differ. A clone keeps the size of the map it copies. Clone copies the map as it is in memory, so it includes unsaved edits, and it works on maps that exist only in an MPQ. The original stays as it was, still marked unsaved if it had edits. With no project open, the editor asks for one first.
 
-The dialog stays up, with a message, if the name is empty, uses anything but letters, digits, `_`, `-` and `.`, starts or ends with a dot, is a Windows reserved name such as `CON`, is too long, or is already used in that map's folder, in any area, or if the chosen tileset has no free File slot in `LvlPrest.txt`. A name is too long if the map's whole path, folder included, would be over the 59 characters a File column of `LvlPrest.txt` allows. If the table can't be written, the new map is removed again and nothing changes. A new map shows `N` in the area browser, which scrolls to it. Click it to open it.
+The dialog stays up, with a message, if the name is empty, uses anything but letters, digits, `_`, `-` and `.`, starts or ends with a dot, is a Windows reserved name such as `CON`, is too long, or is already used in that map's folder, in any area, or if the chosen tileset can't take another map. A row in `LvlPrest.txt` takes no new map if its `Files` column is 0, if it has filled cells past `Files`, or if it's full, with `Files` at 6. A row that is a whole level with no fixed size, with `SizeX` and `SizeY` both 0, takes a clone but not an empty new map: Tristram and the towns of Acts 3 and 5 are like this, while the town of Act 1 has `Files` of 0 and takes neither. A row with an empty cell below `Files` takes nothing until you fix it by hand, since that can already crash the game. A name is too long if the map's whole path, folder included, would be over the 41 characters a File column of `LvlPrest.txt` allows. A new map is added at the end of its row and raises `Files` by one. **It joins the game's random pick at once:** any time the game builds that row's level or room it can choose the new map, however unfinished. If the table can't be written, the new map is removed again and nothing changes. A new map shows `N` in the area browser, which scrolls to it. Click it to open it.
+
+The properties panel shows a row's File cells but can't edit them. Use these commands to add a map to a row or take one out.
 
 #### Deleting maps
 
@@ -308,16 +310,22 @@ What a map's delete command does depends on its mark in the area browser:
 
 | Map's mark | Command | What happens | Undo by |
 |---|---|---|---|
-| `N` | Delete Map | The file moves to the project's `backup` folder and its slot is cleared | Restore from Backup |
+| `N` | Delete Map | The file moves to the project's `backup` folder and is taken out of its row, lowering `Files` | Restore from Backup |
 | `M` | Revert to Game Version | The project's copy moves to the `backup` folder | Restore from Backup |
-| none | Remove from Project | Its slot is cleared in the project's `LvlPrest.txt` | Restore Slot |
-| struck through | Restore Slot | The game's value goes back in the slot | Remove from Project |
+| none | Remove from Project | It is taken out of its row in the project's `LvlPrest.txt`, lowering `Files` | Restore Slot |
+| struck through | Restore Slot | The game's value goes back in the row, raising `Files` | Remove from Project |
 
 These act on the open map. Right-click a row in the area browser to do the same for any row. A struck-through row can't be opened until its slot is restored. Each command asks first, and nothing is ever written to the Diablo II folder. **Ctrl+Del** runs Delete, Revert or Remove for the open map; Restore Slot has no hotkey, so use the Map menu or a right-click, and Clone is dimmed on a struck-through map.
 
 If you delete or revert a map while it's open, it stays on screen but can't be saved, because saving would recreate a file nothing lists. Saving says so. Reopen the map, or use Restore from Backup, to save again. If you've edited it since, quitting or opening another map asks as usual, and Discard works.
 
-Remove from Project works only on a map the game's own `LvlPrest.txt` lists under that row, since that's what Restore Slot puts back. For any other row it stops with a message.
+Remove from Project works only on a map the game's own `LvlPrest.txt` lists under that row, since that's what Restore Slot puts back. For any other row it stops with a message. It also refuses a row's only map, and any map in a row that picks by its own rules, including a row with cells past `Files`.
+
+Delete Map can be refused too, before it asks to confirm. A row's only counted map can't go, because its level would have nothing to load: if that's because you removed the row's other maps, use Restore Slot on one of them first, and otherwise edit the row by hand. A row with `Files` of 0 can't lose a map either, and neither can a map below `Files` in a row with extra cells. A new map in a cell past `Files`, which 2.2.0 could write, is cleared and `Files` is left alone, since the game never picks it. Any of these commands also refuses a row with an empty cell below `Files`, and says which.
+
+Restore from Backup can be refused when it has to add the map back to its row: if the row now can't take a map, by the rules above, or if the map's path is over the 41-character limit, which 2.2.0 allowed. For a path that's too long, the file must be renamed by hand. Either way the backup stays where it was.
+
+Taking a map out of a row moves the later maps back and lowers `Files`, because the game crashes on a blank map below `Files`. A row's only map can't be removed: Remove says so before it asks to confirm, and changes nothing. The same goes for a map in a town or other special area, whose row picks its maps by its own rules. To replace a level's only map, edit that map instead.
 
 In a project over a mod overlay, game files the overlay replaced show struck through once the project writes its first table, since that table doesn't list them.
 

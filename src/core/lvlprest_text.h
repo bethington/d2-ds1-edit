@@ -31,10 +31,6 @@ int lvlprest_find_path_slot(char * buf, int def, const char * ds1_path);
 /* 1 if a File column of this Def's row holds this whole path. */
 int lvlprest_lists_path(char * buf, int def, const char * ds1_path);
 
-/* The first File column (1-6) of this Def's row that is blank or "0". 0 if all
-   six are used or the Def isn't there. LVLPREST_TABLE_UNUSABLE as above. */
-int lvlprest_empty_slot(char * buf, int def);
-
 /* Copy File column `slot` of this Def's row. 1 if copied, 0 if there's no such
    cell or it doesn't fit. */
 int lvlprest_get_cell(char * buf, int def, int slot, char * out, int cap);
@@ -53,5 +49,39 @@ void lvlprest_each_file(char * table, LVLPREST_ROW_CB cb, void * ctx);
    `project` doesn't, by whole path. A Def with no row in `project` is skipped. */
 void lvlprest_each_cleared(char * game, char * project, LVLPREST_ROW_CB cb,
                            void * ctx);
+
+/* The row's Files column, the count the game's random pick uses. -1 if there's no
+   such row or column. */
+int lvlprest_files_value(char * buf, int def);
+
+/* 1 if Files is 1 to 6, File1 to File<Files> are filled and the rest are empty.
+   The game's random pick reads these cells. It indexes a cell blindly, so a blank
+   below Files crashes it, and rows that aren't simple choose by their own rules. */
+int lvlprest_row_is_simple(char * buf, int def);
+
+/* The first File column (1-6) below this row's Files that is blank or "0", or missing
+   from a row cut short. The game's random pick reads it blindly. 0 if there's none,
+   or no such row. */
+int lvlprest_files_hole(char * buf, int def);
+
+/* The row's SizeX and SizeY as the table has them. A map's DS1 header stores the same
+   numbers, which are its width and height minus one. 1 if read, or 0 with nothing
+   set if the row or a column isn't there. */
+int lvlprest_row_size(char * buf, int def, int * size_x, int * size_y);
+
+/* 0 if the row's SizeX and SizeY are both 0, which marks a map that is a whole level.
+   1 otherwise, including a table that doesn't say. */
+int lvlprest_row_has_size(char * buf, int def);
+
+/* The table with a map added to a simple row, at `slot` or at the end if that is
+   past the last map, later cells moved along and Files raised. New malloc'd text
+   with a NUL after *out_len bytes; NULL if the row isn't simple or is full. */
+char * lvlprest_with_map_inserted(char * buf, int def, int slot, const char * value,
+                                  long * out_len);
+
+/* The table with File column `slot` taken out of a simple row, later cells moved
+   back and Files lowered. NULL if the row isn't simple, the slot holds no map, or
+   it is the row's only map. */
+char * lvlprest_with_map_removed(char * buf, int def, int slot, long * out_len);
 
 #endif

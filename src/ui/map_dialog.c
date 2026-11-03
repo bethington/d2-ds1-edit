@@ -35,6 +35,7 @@ typedef struct DLG
    int  * defs;      /* one slot per row of the area, grown when the area changes */
    int  defs_cap;
    int  def_count, def_index;
+   int  open_w, open_h;   /* New's size where the row doesn't give one */
    char status[160];
    int  x0, y0;
 } DLG;
@@ -85,6 +86,19 @@ static void load_defs(DLG * m)
    m->d->def = m->def_count > 0 ? m->defs[m->def_index] : 0;
 }
 
+/* New starts at the chosen row's size, if it has one. It stays editable. */
+static void default_size(DLG * m)
+{
+   int w = m->open_w, h = m->open_h;
+
+   if (m->d->is_clone)
+      return;
+   if (m->d->def > 0)
+      ds1_manager_def_default_size(m->d->def, &w, &h);
+   snprintf(m->w, sizeof(m->w), "%d", w);
+   snprintf(m->h, sizeof(m->h), "%d", h);
+}
+
 static void cycle_area(DLG * m, int dir)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
@@ -97,6 +111,7 @@ static void cycle_area(DLG * m, int dir)
       {
          m->d->group_idx = gi;
          load_defs(m);
+         default_size(m);
          return;
       }
    }
@@ -108,6 +123,7 @@ static void cycle_tileset(DLG * m, int dir)
       return;
    m->def_index = (m->def_index + dir + m->def_count) % m->def_count;
    m->d->def = m->defs[m->def_index];
+   default_size(m);
 }
 
 static char * focused_text(DLG * m, int * cap, int * digits_only)
@@ -149,12 +165,8 @@ static int try_accept(DLG * m)
       snprintf(m->status, sizeof(m->status), "This folder already has a map named %s.", file);
       return 0;
    }
-   if (!ds1_manager_def_has_free_slot(m->d->def))
-   {
-      snprintf(m->status, sizeof(m->status),
-               "Def %d has no free File slot. Pick another tileset.", m->d->def);
+   if (!ds1_manager_def_can_take_map(m->d->def, !m->d->is_clone, m->status, sizeof(m->status)))
       return 0;
-   }
    if (!m->d->is_clone)
    {
       int w = atoi(m->w), h = atoi(m->h);
@@ -312,12 +324,15 @@ int map_dialog_show(MAP_DIALOG_S * d)
    memset(&m, 0, sizeof(m));
    m.d = d;
    snprintf(m.name, sizeof(m.name), "%s", d->file_name);
+   m.open_w = d->width;
+   m.open_h = d->height;
    snprintf(m.w, sizeof(m.w), "%d", d->width);
    snprintf(m.h, sizeof(m.h), "%d", d->height);
    m.x0 = (glb_config.screen.width - DLG_W) / 2;
    m.y0 = (glb_config.screen.height - DLG_H) / 2;
    txt_ensure_lvlprest();
    load_defs(&m);
+   default_size(&m);
 
    input_suppress_held();
    input_pump();

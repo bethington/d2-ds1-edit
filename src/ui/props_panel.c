@@ -317,6 +317,9 @@ static int pp_is_read_only(int field_idx)
    return 0;
 }
 
+/* The next row drawn shows as read-only, whatever its field index. */
+static int pp_next_field_read_only = 0;
+
 /* Draw a label:value field row. Returns the new y position. */
 static int pp_draw_field(int panel_x, int panel_right, int y,
                           int draw_row, int scroll_off, int panel_bottom,
@@ -325,13 +328,15 @@ static int pp_draw_field(int panel_x, int panel_right, int y,
    PROPS_PANEL_S * pp = &glb_ds1edit.props_panel;
    int cur_field = pp_field_idx++;
    int pend_idx = pp_find_pending(cur_field);
-   int is_ro = pp_is_read_only(cur_field);
+   int is_ro = pp_is_read_only(cur_field) || pp_next_field_read_only;
    int is_hovered = 0;
    int val_x = panel_x + PP_MARGIN_X + PP_LABEL_W;
    ALLEGRO_COLOR col_label = al_map_rgb(140, 130, 120);
    /* Editable = bright white, read-only = dim gray */
    ALLEGRO_COLOR col_value = is_ro ? al_map_rgb(130, 130, 130)
                                     : al_map_rgb(220, 220, 220);
+
+   pp_next_field_read_only = 0;
 
    if (draw_row >= scroll_off && y + PP_LINE_H < panel_bottom)
    {
@@ -887,6 +892,9 @@ void props_panel_draw(int width, int height)
                ffname = strrchr(fpath, '/');
                if (ffname == NULL) ffname = strrchr(fpath, '\\');
                if (ffname != NULL) ffname++; else ffname = fpath;
+               /* Read-only: an edit here could leave a hole below Files, which
+                  crashes the game. Maps join and leave a row by the Map commands. */
+               pp_next_field_read_only = 1;
                y = pp_draw_field_tagged(panel_x, width, y, draw_row++, pp->scroll_offset,
                      panel_bottom, fcol, ffname, "[Prest]");
             }
@@ -1481,6 +1489,18 @@ int props_panel_click(int mx, int my, int panel_w, int disp_h)
             if (pp->section_expanded[cur_sec]) { y += PP_LINE_H; draw_row++; } \
          }
 
+      /* Helper: a row that shows but can't be edited. It keeps the field count and
+       * layout in step with the draw, and a click on it does nothing. */
+      #define PP_CLICK_READ_ONLY_FIELD() \
+         { \
+            pp_field_idx++; \
+            if (pp->section_expanded[cur_sec]) { \
+               if (draw_row >= pp->scroll_offset && my >= y && my < y + PP_LINE_H) \
+                  return 1; \
+               y += PP_LINE_H; draw_row++; \
+            } \
+         }
+
       {
          PP_SECTION_E cur_sec;
          char vbuf[64];
@@ -1616,7 +1636,7 @@ int props_panel_click(int mx, int my, int panel_w, int disp_h)
                fp = pp_txt_get_str(lp, RQ_LVLPREST, lp_row, fcol);
                if (fp[0] == '\0' || (fp[0] == '0' && fp[1] == '\0'))
                   continue;
-               PP_CLICK_FIELD(PFS_LVLPREST, lvlprest_def, fcol, fp)
+               PP_CLICK_READ_ONLY_FIELD()
             }
          }
 
@@ -1785,6 +1805,7 @@ int props_panel_click(int mx, int my, int panel_w, int disp_h)
          }
 
       #undef PP_CLICK_SECTION
+      #undef PP_CLICK_READ_ONLY_FIELD
       #undef PP_CLICK_FIELD
    }
 

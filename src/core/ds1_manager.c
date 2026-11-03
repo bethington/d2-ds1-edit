@@ -224,6 +224,8 @@ int ds1_manager_delete(int group_idx, int entry_idx, char * error, int cap)
    g = &ab->groups[group_idx];
    if (entry_idx < 0 || entry_idx >= g->entry_count)
       return -1;
+   if (ds1_manager_delete_check(group_idx, entry_idx, error, cap) != 0)
+      return -1;
    e = g->entries[entry_idx];
 
    /* A table that can't be read stops this before the file moves. */
@@ -252,7 +254,7 @@ int ds1_manager_delete(int group_idx, int entry_idx, char * error, int cap)
       return -1;
    }
 
-   rc = map_ops_unregister(glb_project.path, seed, e.lvlprest_def, e.ds1_path, error, cap);
+   rc = map_ops_unregister_new(glb_project.path, seed, e.lvlprest_def, e.ds1_path, error, cap);
    free(seed);
    if (rc != 0)
    {
@@ -331,18 +333,54 @@ int ds1_manager_revert(int group_idx, int entry_idx, char * error, int cap)
    return 0;
 }
 
-/* A Game map: its slot is cleared in the project's table. The file isn't touched. */
-int ds1_manager_remove_slot(int group_idx, int entry_idx, char * error, int cap)
+/* The table an edit would start from: the project's, or the one it would be seeded
+ * from. NULL if neither can be read. Caller frees. */
+static char * manager_current_table(void)
+{
+   char * table = NULL;
+   long len;
+
+   if (glb_project.is_open)
+      table = map_ops_read_table(glb_project.path, &len);
+   return table != NULL ? table : manager_seed();
+}
+
+/* 0 if Delete may go ahead, else -1 with a sentence. */
+int ds1_manager_delete_check(int group_idx, int entry_idx, char * error, int cap)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
    AREA_DS1_ENTRY_S * e;
-   char name[] = "Data\\Global\\Excel\\LvlPrest.txt";
-   char * game, * seed;
-   int rc, listed;
+   char * table;
+   int rc;
 
    if (group_idx < 0 || group_idx >= ab->group_count || !manager_need_project(error, cap))
       return -1;
    if (entry_idx < 0 || entry_idx >= ab->groups[group_idx].entry_count)
+      return -1;
+   e = &ab->groups[group_idx].entries[entry_idx];
+
+   table = manager_current_table();
+   if (table == NULL)
+   {
+      snprintf(error, cap, "LvlPrest.txt can't be read.");
+      return -1;
+   }
+   rc = map_ops_check_unregister_new(table, e->lvlprest_def, e->ds1_path, error, cap);
+   free(table);
+   return rc;
+}
+
+/* 0 if Remove from Project may go ahead, else -1 with a sentence. */
+int ds1_manager_remove_check(int group_idx, int entry_idx, char * error, int cap)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   AREA_DS1_ENTRY_S * e;
+   char name[] = "Data\\Global\\Excel\\LvlPrest.txt";
+   char * game, * table;
+   int listed, rc;
+
+   if (group_idx < 0 || group_idx >= ab->group_count ||
+       entry_idx < 0 || entry_idx >= ab->groups[group_idx].entry_count)
       return -1;
    e = &ab->groups[group_idx].entries[entry_idx];
 
@@ -358,10 +396,37 @@ int ds1_manager_remove_slot(int group_idx, int entry_idx, char * error, int cap)
    free(game);
    if (!listed)
    {
-      snprintf(error, cap, "The game's LvlPrest.txt doesn't list %s here, so it has no slot "
-               "to clear.", e->ds1_path);
+      snprintf(error, cap, "The game's LvlPrest.txt doesn't list %s here, so there's nothing "
+               "to take out of the row.", e->ds1_path);
       return -1;
    }
+
+   table = manager_current_table();
+   if (table == NULL)
+   {
+      snprintf(error, cap, "LvlPrest.txt can't be read.");
+      return -1;
+   }
+   rc = map_ops_check_unregister(table, e->lvlprest_def, e->ds1_path, error, cap);
+   free(table);
+   return rc;
+}
+
+/* A Game map: the project's table takes it out of the row. The file isn't touched. */
+int ds1_manager_remove_slot(int group_idx, int entry_idx, char * error, int cap)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   AREA_DS1_ENTRY_S * e;
+   char * seed;
+   int rc;
+
+   if (group_idx < 0 || group_idx >= ab->group_count || !manager_need_project(error, cap))
+      return -1;
+   if (entry_idx < 0 || entry_idx >= ab->groups[group_idx].entry_count)
+      return -1;
+   if (ds1_manager_remove_check(group_idx, entry_idx, error, cap) != 0)
+      return -1;
+   e = &ab->groups[group_idx].entries[entry_idx];
 
    seed = manager_seed();
    rc = map_ops_unregister(glb_project.path, seed, e->lvlprest_def, e->ds1_path, error, cap);
@@ -410,21 +475,29 @@ int ds1_manager_restore_slot(int group_idx, int entry_idx, char * error, int cap
    return 0;
 }
 
-int ds1_manager_def_has_free_slot(int def)
+int ds1_manager_def_can_take_map(int def, int empty_map, char * error, int cap)
 {
-   char * table = NULL;
-   long len;
-   int slot;
+   char * table = manager_current_table();
+   int rc;
 
-   if (glb_project.is_open)
-      table = map_ops_read_table(glb_project.path, &len);
-   if (table == NULL)
-      table = manager_seed();
    if (table == NULL)
       return 1;   /* nothing to judge by: the create itself will say */
-   slot = lvlprest_empty_slot(table, def);
+   rc = empty_map ? map_ops_check_new_empty(table, def, error, cap)
+                  : map_ops_check_register(table, def, error, cap);
+   if (rc != 0)
+      map_ops_dialog_status(table, def, error, cap);
    free(table);
-   return slot > 0;
+   return rc == 0;
+}
+
+void ds1_manager_def_default_size(int def, int * width, int * height)
+{
+   char * table = manager_current_table();
+
+   if (table == NULL)
+      return;
+   map_ops_default_size(table, def, width, height);
+   free(table);
 }
 
 /* An Unlisted group's id isn't a LvlType, so the row takes its Def's: otherwise the
@@ -852,36 +925,26 @@ int ds1_manager_restore(int group_idx, int entry_idx, int * row_group, int * row
       error[0] = '\0';
    }
 
-   /* A New map's slot was cleared when it was deleted. A Modified map's never
-      was, and map_ops_register would then list it twice. */
+   /* Deleting a New map took it out of the row. A Modified map never left, and
+      map_ops_register would then list it twice or refuse its row. A project with
+      no table of its own lists what the seed does. */
+   if (def > 0 && !map_ops_lists_map(glb_project.path, seed, def, original_path) &&
+       map_ops_register(glb_project.path, seed, def, original_path, error, cap) != 0)
    {
-      long len;
-      char * table = map_ops_read_table(glb_project.path, &len);
-      int listed = 0;
+      /* The file has moved but the table doesn't list it. Put it back in the
+         backup so the row, the JSON and a retry all still work. */
+      char moved[768], table_error[256];
 
-      if (table != NULL)
-      {
-         listed = lvlprest_lists_path(table, def, original_path);
-         free(table);
-      }
-      if (!listed && def > 0 &&
-          map_ops_register(glb_project.path, seed, def, original_path, error, cap) != 0)
-      {
-         /* The file has moved but the table doesn't list it. Put it back in the
-            backup so the row, the JSON and a retry all still work. */
-         char moved[768], table_error[256];
-
-         free(seed);
-         snprintf(table_error, sizeof(table_error), "%s", error);
-         if (map_ops_tile_path(glb_project.path, original_path, moved, sizeof(moved)) != 0 ||
-             file_copy_checked(moved, backup_ds1_path) != FILE_COPY_OK ||
-             remove(moved) != 0)
-            snprintf(error, cap, "%s The map's file is in the project at %s, not listed "
-                     "in LvlPrest.txt.", table_error, moved);
-         return -1;
-      }
       free(seed);
+      snprintf(table_error, sizeof(table_error), "%s", error);
+      if (map_ops_tile_path(glb_project.path, original_path, moved, sizeof(moved)) != 0 ||
+          file_copy_checked(moved, backup_ds1_path) != FILE_COPY_OK ||
+          remove(moved) != 0)
+         snprintf(error, cap, "%s The map's file is in the project at %s, not listed "
+                  "in LvlPrest.txt.", table_error, moved);
+      return -1;
    }
+   free(seed);
 
    manager_tables_changed();
 
