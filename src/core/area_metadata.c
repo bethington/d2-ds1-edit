@@ -56,18 +56,18 @@ int area_preset_resolve_act(int level_id, int levels_act, const char * preset_na
 }
 
 
-/* Palette act for a DS1: LvlTypes first, then the LvlPrest preset, then the
- * browser group's folder-derived act as a last resort. 0 = nothing valid. */
-int area_resolve_txt_act(int lvltypes_act, int preset_act, int folder_act)
+/* Palette act for a map with no LvlTypes row. A file that names a later act
+ * means it: expansion\\lavaX.ds1 holds Act 4 tiles in a folder filed under Act 5.
+ * Act 1 is what files say when nothing set it, so the folder outranks that.
+ * 0 = nothing valid. */
+int area_tileless_palette_act(int ds1_act, int folder_act)
 {
-   if (lvltypes_act >= 1 && lvltypes_act <= 5)
-      return lvltypes_act;
-   if (preset_act >= 1 && preset_act <= 5)
-      return preset_act;
+   if (ds1_act >= 2 && ds1_act <= 5)
+      return ds1_act;
    if (folder_act >= 1 && folder_act <= 5)
       return folder_act;
 
-   return 0;
+   return ds1_act == 1 ? 1 : 0;
 }
 
 

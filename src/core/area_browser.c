@@ -661,7 +661,7 @@ static void area_browser_apply_folder_act(int ds1_idx, const AREA_GROUP_S * g)
 {
    if (glb_ds1[ds1_idx].txt_act < 1 || glb_ds1[ds1_idx].txt_act > 5)
    {
-      int act = area_resolve_txt_act(0, 0, g->act);
+      int act = area_tileless_palette_act((int) glb_ds1[ds1_idx].act, g->act);
 
       if (act != 0)
          glb_ds1[ds1_idx].txt_act = act;

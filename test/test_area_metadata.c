@@ -87,21 +87,6 @@ void test_area_name_strip_prefix_preserves_nonstandard_names(void)
 }
 
 
-void test_area_resolve_txt_act_precedence_and_folder_fallback(void)
-{
-   /* LvlTypes beats preset beats folder */
-   TEST_ASSERT_EQUAL_INT(2, area_resolve_txt_act(2, 3, 4));
-   TEST_ASSERT_EQUAL_INT(3, area_resolve_txt_act(0, 3, 4));
-   TEST_ASSERT_EQUAL_INT(3, area_resolve_txt_act(-1, 3, 4));
-   /* folder act is the last resort */
-   TEST_ASSERT_EQUAL_INT(4, area_resolve_txt_act(0, 0, 4));
-   TEST_ASSERT_EQUAL_INT(5, area_resolve_txt_act(6, 9, 5));
-   /* nothing valid -> 0, caller keeps the DS1's own act */
-   TEST_ASSERT_EQUAL_INT(0, area_resolve_txt_act(0, 0, 0));
-   TEST_ASSERT_EQUAL_INT(0, area_resolve_txt_act(7, -2, 6));
-}
-
-
 void test_area_preset_area_name_files_rows_whose_names_differ_from_their_area(void)
 {
    TEST_ASSERT_EQUAL_STRING("Act 3 - Kurast", area_preset_area_name("Act 3 - Burbs Border E"));
@@ -159,6 +144,26 @@ void test_area_section_key_keeps_pd2_after_the_acts_and_before_other(void)
 }
 
 
+void test_area_tileless_palette_act_trusts_a_map_that_names_a_later_act(void)
+{
+   /* expansion\\lavaX.ds1 holds Act 4 tiles in a folder filed under Act 5 */
+   TEST_ASSERT_EQUAL_INT(4, area_tileless_palette_act(4, 5));
+   TEST_ASSERT_EQUAL_INT(5, area_tileless_palette_act(5, 2));
+}
+
+
+void test_area_tileless_palette_act_treats_act_1_as_the_files_default(void)
+{
+   /* expansion\\Siege\\cliff2.ds1 says Act 1 only because nothing set it */
+   TEST_ASSERT_EQUAL_INT(5, area_tileless_palette_act(1, 5));
+   TEST_ASSERT_EQUAL_INT(1, area_tileless_palette_act(1, 1));
+   /* no folder to go on: the map's word is all there is */
+   TEST_ASSERT_EQUAL_INT(1, area_tileless_palette_act(1, 0));
+   TEST_ASSERT_EQUAL_INT(0, area_tileless_palette_act(0, 0));
+   TEST_ASSERT_EQUAL_INT(3, area_tileless_palette_act(9, 3));
+}
+
+
 int main(void)
 {
    UNITY_BEGIN();
@@ -171,11 +176,12 @@ int main(void)
    RUN_TEST(test_area_preset_resolve_act_uses_zero_based_levels_act);
    RUN_TEST(test_area_preset_resolve_act_uses_preset_name_for_null_level);
    RUN_TEST(test_area_name_strip_prefix_preserves_nonstandard_names);
-   RUN_TEST(test_area_resolve_txt_act_precedence_and_folder_fallback);
    RUN_TEST(test_area_preset_area_name_files_rows_whose_names_differ_from_their_area);
    RUN_TEST(test_area_preset_area_name_leaves_other_rows_alone);
    RUN_TEST(test_area_pd2_folder_group_names_maps_no_table_mentions);
    RUN_TEST(test_area_map_destination_prefers_pd2_then_a_known_area);
    RUN_TEST(test_area_section_key_keeps_pd2_after_the_acts_and_before_other);
+   RUN_TEST(test_area_tileless_palette_act_trusts_a_map_that_names_a_later_act);
+   RUN_TEST(test_area_tileless_palette_act_treats_act_1_as_the_files_default);
    return UNITY_END();
 }
