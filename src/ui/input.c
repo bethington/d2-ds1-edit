@@ -44,6 +44,10 @@ int input_quit_needs_prompt(int any_map_dirty, int panel_pending_count)
 
 int input_delete_hits_tiles(int tile_mode, int paste_preview_active)
 {
+   /* Ctrl+Del is Delete Map, and Ctrl+Shift+Del isn't a tile delete either. */
+   if (al_key_down(&a5_kb_state, ALLEGRO_KEY_LCTRL) ||
+       al_key_down(&a5_kb_state, ALLEGRO_KEY_RCTRL))
+      return FALSE;
    return tile_mode && !paste_preview_active &&
           (key_hit(KEY_DEL) || key_hit(KEY_DEL_PAD));
 }

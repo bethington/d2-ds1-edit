@@ -158,6 +158,30 @@ void test_delete_key_leaves_tiles_alone_outside_tile_mode_and_during_paste(void)
    TEST_ASSERT_FALSE(input_delete_hits_tiles(1, 1));
 }
 
+/* Ctrl+Del is Delete Map; Ctrl+KeypadDel and Ctrl+Shift+Del must not take
+   tiles either. */
+void test_delete_key_ignored_while_ctrl_held(void)
+{
+   ALLEGRO_EVENT del = key_down_event(ALLEGRO_KEY_DELETE);
+   ALLEGRO_EVENT pad = key_down_event(ALLEGRO_KEY_PAD_DELETE);
+
+   hold_key(ALLEGRO_KEY_RCTRL);
+   input_begin_frame();
+   input_note_event(&pad);
+   TEST_ASSERT_FALSE(input_delete_hits_tiles(1, 0));
+
+   hold_key(ALLEGRO_KEY_LSHIFT);
+   input_begin_frame();
+   input_note_event(&del);
+   TEST_ASSERT_FALSE(input_delete_hits_tiles(1, 0));
+   release_key(ALLEGRO_KEY_LSHIFT);
+   release_key(ALLEGRO_KEY_RCTRL);
+
+   input_begin_frame();
+   input_note_event(&del);
+   TEST_ASSERT_TRUE(input_delete_hits_tiles(1, 0));
+}
+
 /* ---- key_hit: once per press, not once per frame ---------------------- */
 
 void test_key_hit_fires_on_the_frame_the_key_goes_down(void)
@@ -333,6 +357,7 @@ int main(void)
    RUN_TEST(test_quit_asks_for_unsaved_maps_or_pending_panel_values);
    RUN_TEST(test_delete_key_hits_tiles_once_per_press_on_either_key);
    RUN_TEST(test_delete_key_leaves_tiles_alone_outside_tile_mode_and_during_paste);
+   RUN_TEST(test_delete_key_ignored_while_ctrl_held);
    RUN_TEST(test_key_hit_fires_on_the_frame_the_key_goes_down);
    RUN_TEST(test_key_hit_is_clear_on_later_frames_while_still_held);
    RUN_TEST(test_key_hit_fires_again_after_release_and_repress);

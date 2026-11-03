@@ -169,7 +169,10 @@ static CMD_ID run_menu(int start_menu, const CMD_CTX *ctx)
 
    /* The press that closed the menu mustn't land on the map behind it. */
    input_pump();
-   while ((a5_mouse_b & 1) && !a5_display_closed)
+   /* Raw state, not key_pressed(): Enter is suppressed while held, and that is
+      what this loop must outwait so it can't answer the dialog a row opens. */
+   while (((a5_mouse_b & 1) || al_key_down(&a5_kb_state, ALLEGRO_KEY_ENTER) ||
+           al_key_down(&a5_kb_state, ALLEGRO_KEY_PAD_ENTER)) && !a5_display_closed)
    {
       al_rest(0.01);
       input_pump();
@@ -195,8 +198,22 @@ CMD_ID menu_bar_poll(const CMD_CTX *ctx, int keys_enabled)
    if (mouse_hit(1) && a5_mouse_y < bar_h)
       return run_menu(menu_title_at(a5_mouse_x, a5_mouse_y, bar_h), ctx);
 
+   /* While the panel is editing, mnemonics and plain keys belong to it. A key
+      with a modifier that the table owns is still used up, so it doesn't reach
+      polled code: Ctrl+N mustn't toggle night mode behind a text field. */
    if (!keys_enabled)
+   {
+      int mods = held_mods();
+
+      if (mods != 0)
+         for (key = 1; key < ALLEGRO_KEY_MAX; key++)
+            if (a5_key_hit[key] && commands_find_key(key, mods) != CMD_NONE)
+            {
+               a5_key_hit[key] = 0;
+               a5_key_suppressed[key] = 1;
+            }
       return CMD_NONE;
+   }
 
    if (held_mods() == CMD_MOD_ALT)
       for (i = 0; i < sizeof(mnemonics) / sizeof(mnemonics[0]); i++)

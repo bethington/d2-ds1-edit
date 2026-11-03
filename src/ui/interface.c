@@ -36,7 +36,7 @@
 
 /* Delete a map from the mod folder, once the user has said yes to that map by
  * name. Undo can't bring it back: this is a file operation, not a map edit. So
- * it has no keyboard shortcut, and the browser's context menu is its one route.
+ * it takes Ctrl+Del, which no polled key shares, or the browser's context menu.
  */
 static void interface_delete_map(int gi, int ei)
 {
@@ -430,14 +430,39 @@ static void interface_begin_paste(int ds1_idx, int cx, int cy, PASTE_POS_S *past
    edittile_paste_preview(ds1_idx, cx - paste->start_x, cy - paste->start_y, paste);
 }
 
-/* Create a map beside the open one, or clone it. The browser's selected row
- * follows the mouse, so these act on the open map's row. */
+/* Does the browser's loaded row name the map open in slot ds1_idx? A map opened
+ * from the preset picker or switched to with a number key can leave the row
+ * pointing at another map, and a backup row never names an open map. */
+static int interface_loaded_row_is_open_map(int ds1_idx)
+{
+   AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
+
+   if (!glb_ds1edit.has_loaded_ds1 || ds1_idx < 0 || ds1_idx >= DS1_MAX ||
+       glb_ds1[ds1_idx].name[0] == '\0')
+      return FALSE;
+   if (ab->loaded_group < 0 || ab->loaded_entry < 0 ||
+       ab->loaded_group >= ab->group_count ||
+       ab->loaded_entry >= ab->groups[ab->loaded_group].entry_count)
+      return FALSE;
+   if (ab->groups[ab->loaded_group].is_backup)
+      return FALSE;
+   return map_state_path_matches(glb_ds1[ds1_idx].name,
+             ab->groups[ab->loaded_group].entries[ab->loaded_entry].ds1_path);
+}
+
+/* Create a map beside the open one, or clone it. Clone acts on the open map's
+ * row. New uses it too, and otherwise the browser's selected row. */
 static void interface_new_map(int ds1_idx, int clone)
 {
    AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
-   int gi = ab->loaded_group >= 0 ? ab->loaded_group : ab->selected_group;
-   int ei = ab->loaded_group >= 0 ? ab->loaded_entry : ab->selected_entry;
+   int use_loaded = interface_loaded_row_is_open_map(ds1_idx);
+   int gi, ei;
    AREA_GROUP_S *g;
+
+   if (clone && !use_loaded)
+      return;
+   gi = use_loaded ? ab->loaded_group : ab->selected_group;
+   ei = use_loaded ? ab->loaded_entry : ab->selected_entry;
 
    if (gi < 0 || gi >= ab->group_count)
       return;
@@ -447,8 +472,17 @@ static void interface_new_map(int ds1_idx, int clone)
 
    if (clone)
    {
-      if (glb_ds1edit.has_loaded_ds1 && ds1_manager_clone(ds1_idx, gi, ei) == 0)
+      if (ds1_manager_clone(ds1_idx, gi, ei) == 0)
          printf("Map: cloned DS1 successfully\n");
+      else
+      {
+         al_show_native_message_box(a5_display, "Clone Map",
+            "The map couldn't be cloned.",
+            "Clone needs a project or mod folder, a saved file for this map, "
+            "and a free map slot in LvlPrest.txt. Nothing was changed.",
+            NULL, ALLEGRO_MESSAGEBOX_WARN);
+         input_suppress_held();
+      }
    }
    else
    {
@@ -465,22 +499,28 @@ static void interface_new_map(int ds1_idx, int clone)
       }
       if (ds1_manager_create_empty(gi, ei, new_w, new_h, new_act) == 0)
          printf("Map: created new empty DS1 (%dx%d)\n", new_w, new_h);
+      else
+      {
+         al_show_native_message_box(a5_display, "New Map",
+            "The map couldn't be created.",
+            "New needs a project or mod folder and a free map slot in "
+            "LvlPrest.txt. Nothing was changed.",
+            NULL, ALLEGRO_MESSAGEBOX_WARN);
+         input_suppress_held();
+      }
    }
    fflush(stdout);
 }
 
 static CMD_CTX interface_command_context(int ds1_idx, const PASTE_POS_S *paste)
 {
-   AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
    CMD_CTX c;
 
    memset(&c, 0, sizeof(c));
    c.tile_mode = glb_ds1edit.mode == MOD_T;
    c.object_mode = glb_ds1edit.mode == MOD_O;
    c.has_map = glb_ds1edit.has_loaded_ds1 && glb_ds1[ds1_idx].name[0] != 0;
-   c.has_open_entry = c.has_map && ab->loaded_group >= 0 && ab->loaded_entry >= 0 &&
-                      ab->loaded_group < ab->group_count &&
-                      ab->loaded_entry < ab->groups[ab->loaded_group].entry_count;
+   c.has_open_entry = c.has_map && interface_loaded_row_is_open_map(ds1_idx);
    c.any_dirty = map_any_dirty();
    c.paste_active = paste->start != FALSE;
    c.can_undo_object = c.has_map && glb_ds1[ds1_idx].can_undo_obj != FALSE;
@@ -690,10 +730,29 @@ void interfac_user_handler(int start_ds1_idx)
          so a command that marks a key as hit reaches them this frame. */
       {
          CMD_CTX cmd_ctx = interface_command_context(ds1_idx, &paste_pos);
+         int z_before = a5_mouse_z;
          CMD_ID cmd = menu_bar_poll(&cmd_ctx, !glb_ds1edit.props_panel.editing);
 
          if (cmd != CMD_NONE)
             interface_run_command(cmd, ds1_idx, cx, cy, &paste_pos, &done);
+
+         /* A menu that ran its own loop pumped input. Wheel turns it took
+            belong to the menu, so they must not zoom the map on return. */
+         old_mouse_z += a5_mouse_z - z_before;
+
+         /* A dialog ran its own loop too: take in what happened meanwhile, and
+            keep keys still held from the dialog from acting on the map. */
+         switch (cmd)
+         {
+         case CMD_NEW_PROJECT: case CMD_OPEN_PROJECT: case CMD_CLOSE_PROJECT:
+         case CMD_OPEN_PRESET: case CMD_EXPORT_ASSETS: case CMD_SAVE:
+         case CMD_SAVE_ALL: case CMD_QUIT:
+            input_pump();
+            input_suppress_held();
+            break;
+         default:
+            break;
+         }
       }
       if (!glb_ds1edit.has_loaded_ds1)
          ds1_idx = 0;  /* closing a project can discard the open maps */
