@@ -8,6 +8,12 @@
  *              <name>-NNN.ds1, then the staging file becomes <name>.ds1.
  *              If that last rename fails the backup is renamed back.
  *   .tmp save: the staging file replaces <name>.tmp (the rolling autosave).
+ *              <name> stays beside a rooted map; a relative name goes in the open
+ *              project's Global/Tiles, or with no project in the editor's tmp
+ *              folder, as does a map inside the Diablo II install.
+ *
+ * A real save refuses a path that could leave the project (a ".." component) and
+ * one that lands inside the Diablo II install.
  *
  * A failed save returns -1 with a message, leaves the existing destination's
  * bytes in place (or, if even the rollback failed, names the backup that

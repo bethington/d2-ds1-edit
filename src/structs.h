@@ -39,7 +39,7 @@
 #define D2_USE_PD2_AUTO        0
 #define D2_USE_PD2_YES         1
 #define D2_USE_PD2_NO          2
-#define MAX_MOD_DIR            1
+#define MAX_MOD_DIR            2   /* an open project, then the configured mod_dir */
 #define DT1_IN_DS1_MAX        33
 #define DS1_MAX             2048
 #define DT1_MAX              512
@@ -612,6 +612,7 @@ typedef struct AREA_BROWSER_S
    int  is_active;             /* TRUE if browser is showing           */
    int  loaded_group;          /* group_idx of currently loaded area, -1=none */
    int  loaded_entry;          /* entry within loaded_group, -1=none   */
+   int  reload_generation;     /* bumped when area_browser_reload rebuilds groups */
    int  lvltypes_act_mismatch_count; /* mismatched Name prefix vs Act column */
 } AREA_BROWSER_S;
 

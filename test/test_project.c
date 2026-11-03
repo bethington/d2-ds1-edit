@@ -59,6 +59,7 @@ void setUp(void)
 
 void tearDown(void)
 {
+   project_close();
    rmrf(SCRATCH_DIR);
 }
 
@@ -332,6 +333,16 @@ void test_redirect_no_tiles_segment_returns_zero(void)
    TEST_ASSERT_EQUAL_STRING("C:\\randomplace\\file.ds1", dst);
 }
 
+void test_redirect_refuses_a_relative_name_with_a_parent_component(void)
+{
+   char dst[256];
+
+   open_fake_project(T_ROOT2);
+   TEST_ASSERT_EQUAL_INT(-1, project_redirect_ds1_save_path(
+      "Act1/../../evil.ds1", dst, sizeof(dst)));
+   TEST_ASSERT_EQUAL_STRING("Act1/../../evil.ds1", dst);
+}
+
 void test_redirect_project_subpath_is_preserved(void)
 {
    char dst[256];
@@ -487,6 +498,7 @@ int main(void)
    RUN_TEST(test_redirect_handles_mpq_extracted_path);
    RUN_TEST(test_redirect_case_insensitive_tiles_match);
    RUN_TEST(test_redirect_no_tiles_segment_returns_zero);
+   RUN_TEST(test_redirect_refuses_a_relative_name_with_a_parent_component);
    RUN_TEST(test_redirect_project_subpath_is_preserved);
    RUN_TEST(test_redirect_sibling_with_project_name_as_prefix_is_outside);
    RUN_TEST(test_redirect_reports_a_target_that_does_not_fit);

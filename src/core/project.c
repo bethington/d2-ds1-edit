@@ -26,8 +26,9 @@
 
 PROJECT_S glb_project;
 
-// The mod_dir[0] the project replaced, restored when it closes.
-static char *s_configured_mod_dir;
+// The configured read chain, moved down one by the project and restored when it
+// closes.
+static char *s_configured_mod_dir[MAX_MOD_DIR];
 static int   s_mod_dir_replaced;
 
 static int file_exists(const char *path)
@@ -192,7 +193,10 @@ void project_close(void)
 {
    if (s_mod_dir_replaced)
    {
-      glb_config.mod_dir[0] = s_configured_mod_dir;
+      int i;
+
+      for (i = 0; i < MAX_MOD_DIR; i++)
+         glb_config.mod_dir[i] = s_configured_mod_dir[i];
       s_mod_dir_replaced = 0;
    }
    memset(&glb_project, 0, sizeof(glb_project));
@@ -205,9 +209,10 @@ void project_apply_to_config(void)
 
    if (!glb_project.is_open) return;
 
-   // Point the overlay at the project folder. This replaces mod_dir[0];
-   // previous value (if any) leaks -- acceptable given the lifecycle and
-   // the existing INI loader does the same thing.
+   // Put the project folder first in the read chain. The configured overlays
+   // stay behind it. Changing project replaces only entry 0; the old project's
+   // string leaks, which is acceptable given the lifecycle, and the existing INI
+   // loader does the same thing.
    len = strlen(glb_project.path);
    buf = (char *) malloc(len + 1);
    if (buf != NULL)
@@ -215,7 +220,17 @@ void project_apply_to_config(void)
       memcpy(buf, glb_project.path, len + 1);
       if (!s_mod_dir_replaced)
       {
-         s_configured_mod_dir = glb_config.mod_dir[0];
+         int i;
+
+         for (i = 0; i < MAX_MOD_DIR; i++)
+            s_configured_mod_dir[i] = glb_config.mod_dir[i];
+         if (glb_config.mod_dir[MAX_MOD_DIR - 1] != NULL)
+            fprintf(stderr,
+               "project_apply_to_config: the read chain is full; <%s> is not "
+               "read while the project is open\n",
+               glb_config.mod_dir[MAX_MOD_DIR - 1]);
+         for (i = MAX_MOD_DIR - 1; i > 0; i--)
+            glb_config.mod_dir[i] = glb_config.mod_dir[i - 1];
          s_mod_dir_replaced = 1;
       }
       glb_config.mod_dir[0] = buf;
@@ -358,10 +373,40 @@ int project_path_is_inside(const char *path, const char *dir)
 
 // "/x", "\x" and "C:\x" name a real place on disk. Anything else is a name
 // relative to Tiles, which is how the area browser names maps.
-static int is_rooted_path(const char *path)
+int project_path_is_rooted(const char *path)
 {
+   if (path == NULL) return 0;
    if (path[0] == '/' || path[0] == '\\') return 1;
    return isalpha((unsigned char) path[0]) && path[1] == ':';
+}
+
+int project_path_has_parent_ref(const char *path)
+{
+   const char *p;
+
+   if (path == NULL) return 0;
+   for (p = path; *p != 0; p++)
+   {
+      if (p[0] == '.' && p[1] == '.' &&
+          (p == path || p[-1] == '/' || p[-1] == '\\') &&
+          (p[2] == 0 || p[2] == '/' || p[2] == '\\'))
+         return 1;
+   }
+   return 0;
+}
+
+static int path_in_install(const char *path, const char *install)
+{
+   if (install == NULL || install[0] == 0) return 0;
+   if (project_path_is_inside(path, install)) return 1;
+   return project_path_is_rooted(path) && project_path_has_parent_ref(path);
+}
+
+int project_path_in_game_install(const char *path)
+{
+   if (path == NULL) return 0;
+   return path_in_install(path, glb_config.d2_install) ||
+          path_in_install(path, glb_project.d2_install);
 }
 
 int project_redirect_ds1_save_path(const char *src, char *dst, int dst_cap)
@@ -378,14 +423,19 @@ int project_redirect_ds1_save_path(const char *src, char *dst, int dst_cap)
    if (!glb_project.is_open)               return 0;
    if (glb_project.path[0] == 0)           return 0;
 
-   // Already inside the project folder -> save in place.
-   if (path_starts_with(src, glb_project.path)) return 0;
+   // Already inside the project folder -> save in place, unless a ".." could
+   // take it back out.
+   if (path_starts_with(src, glb_project.path))
+      return project_path_has_parent_ref(src) ? -1 : 0;
 
    // Only redirect if we can pull a meaningful in-game suffix out.
    suffix = find_tiles_suffix(src);
-   if (suffix == NULL && !is_rooted_path(src))
+   if (suffix == NULL && !project_path_is_rooted(src))
       suffix = src;
    if (suffix == NULL || suffix[0] == 0)   return 0;
+
+   // A ".." in what gets appended would climb back out of the project.
+   if (project_path_has_parent_ref(suffix)) return -1;
 
    {
       size_t plen = strlen(glb_project.path);
@@ -412,4 +462,15 @@ int project_redirect_ds1_save_path(const char *src, char *dst, int dst_cap)
    }
 #endif
    return 1;
+}
+
+int project_save_would_replace(const char *src)
+{
+   char target[sizeof(glb_ds1[0].name)];
+   struct stat st;
+
+   if (src == NULL) return 0;
+   if (project_redirect_ds1_save_path(src, target, (int) sizeof(target)) != 1)
+      return 0;
+   return stat(target, &st) == 0;
 }

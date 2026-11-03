@@ -39,12 +39,15 @@ int  project_load(const char *path);
 // Persist glb_project back to its project.ini. Returns 1 on success.
 int  project_save(void);
 
-// Clears glb_project (in-memory only; file is left on disk).
+// Clears glb_project (in-memory only; file is left on disk) and puts every
+// glb_config.mod_dir entry back as it was before the project was applied.
 void project_close(void);
 
-// Apply the currently-open project to glb_config: sets mod_dir[0] to the
-// project directory and, if glb_config.d2_install is empty, fills it from
-// the project. Safe to call multiple times.
+// Apply the currently-open project to glb_config: puts the project directory at
+// mod_dir[0], moving the configured entries down one (a full list drops its last
+// entry until the project closes) and, if glb_config.d2_install is empty, fills
+// it from the project. Safe to call multiple times: a later call, for another
+// project, replaces only mod_dir[0].
 void project_apply_to_config(void);
 
 // Recursively mkdir every intermediate directory of `path` (not including
@@ -61,8 +64,25 @@ int  project_ensure_parent_dirs(const char *path);
 // happened); 0 if it was passed through unchanged (no project, already
 // inside the project -- at a path-component boundary -- or a rooted path with
 // no tiles segment to rewrite from); -1 if it must be redirected but the target
-// does not fit in `dst_cap` (dst then holds `src`; do not save in place).
+// does not fit in `dst_cap`, or if a ".." component could take it out of the
+// project (dst then holds `src`; do not save in place).
 int  project_redirect_ds1_save_path(const char *src, char *dst, int dst_cap);
+
+// 1 only when a real save of `src` would redirect into the project and land on
+// a file that is already there, which the save would then replace (the old file
+// becoming a numbered backup). The UI asks first; see map_save_ui_save().
+int  project_save_would_replace(const char *src);
+
+// 1 if `path` has a ".." component, in either slash style.
+int  project_path_has_parent_ref(const char *path);
+
+// 1 for "/x", "\x" and "C:\x". Anything else is relative.
+int  project_path_is_rooted(const char *path);
+
+// May `path` be inside the Diablo II install? 1 if it is inside the configured
+// or the project's d2_install, and also for a rooted path with a ".." component
+// while an install is known, since nothing here can tell where that one ends up.
+int  project_path_in_game_install(const char *path);
 
 // 1 if `path` is `dir` or lies inside it (compared at path-component
 // boundaries, ignoring case and slash direction); 0 otherwise, and for a
