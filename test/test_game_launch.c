@@ -4,7 +4,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#ifndef WIN32
+#ifdef WIN32
+#include <direct.h>
+#define getcwd _getcwd
+#else
 #include <unistd.h>
 #endif
 
@@ -22,6 +25,8 @@ CONFIG_S glb_config;
 static char root[512];
 static char game[640];
 static char err[512];
+static char cwd[512];
+static char abs_root[1100];
 
 void setUp(void)
 {
@@ -31,7 +36,10 @@ void setUp(void)
    TEST_ASSERT_TRUE(tt_root_create("game_launch", root, sizeof(root)));
    n = strlen(root);
    if (n > 0 && (root[n - 1] == '/' || root[n - 1] == '\\')) root[n - 1] = 0;
-   snprintf(game, sizeof(game), "%s/game", root);
+   /* The profile wants full paths, and tt_root_create gives a relative one. */
+   TEST_ASSERT_NOT_NULL(getcwd(cwd, sizeof(cwd)));
+   snprintf(abs_root, sizeof(abs_root), "%s/%s", cwd, root);
+   snprintf(game, sizeof(game), "%s/game", abs_root);
    TEST_ASSERT_TRUE(tt_mkdir(game));
    snprintf(exe, sizeof(exe), "%s/Game.exe", game);
    TEST_ASSERT_TRUE(tt_write_file(exe, "", 0));
@@ -146,9 +154,80 @@ void test_a_game_folder_inside_an_install_is_refused(void)
    GAME_PROFILE_S p = profile(game, "Game.exe", "-direct -txt");
    const char *installs[1];
 
-   installs[0] = root;
+   installs[0] = abs_root;
    TEST_ASSERT_EQUAL_INT(-1, check(&p, installs, 1));
    TEST_ASSERT_NOT_NULL(strstr(err, "install"));
+}
+
+void test_a_relative_folder_or_one_with_a_parent_reference_is_refused(void)
+{
+   GAME_PROFILE_S p = profile(".", "Game.exe", "-direct -txt");
+   char dotted[1300];
+   const char *installs[1];
+
+   installs[0] = game;
+   TEST_ASSERT_EQUAL_INT(-1, check(&p, installs, 1));
+   TEST_ASSERT_EQUAL_STRING("Choose the test folder by its full path.", err);
+   p.game_dir = "..";
+   TEST_ASSERT_EQUAL_INT(-1, check(&p, installs, 1));
+   p.game_dir = "sub/x";
+   TEST_ASSERT_EQUAL_INT(-1, check(&p, installs, 1));
+   TEST_ASSERT_EQUAL_STRING("Choose the test folder by its full path.", err);
+   p.game_dir = "..\\game";
+   TEST_ASSERT_EQUAL_INT(-1, check(&p, installs, 1));
+
+   /* Rooted, but it steps out and back into the install. */
+   snprintf(dotted, sizeof(dotted), "%s/other/../game", abs_root);
+   p.game_dir = dotted;
+   TEST_ASSERT_EQUAL_INT(-1, check(&p, installs, 1));
+   TEST_ASSERT_EQUAL_STRING("Choose the test folder by its full path.", err);
+   /* Nothing was written. */
+   TEST_ASSERT_EQUAL_INT(1, tt_count_entries(game));
+}
+
+void test_a_link_to_an_install_is_refused(void)
+{
+   GAME_PROFILE_S p;
+   char link[1300], cmd[2800];
+   const char *installs[1];
+   int rc;
+
+   snprintf(link, sizeof(link), "%s/link", abs_root);
+#ifdef WIN32
+   {
+      size_t i;
+      char a[1300], b[1300];
+
+      snprintf(a, sizeof(a), "%s", link);
+      snprintf(b, sizeof(b), "%s", game);
+      for (i = 0; a[i]; i++) if (a[i] == '/') a[i] = '\\';
+      for (i = 0; b[i]; i++) if (b[i] == '/') b[i] = '\\';
+      snprintf(cmd, sizeof(cmd), "cmd /c mklink /J \"%s\" \"%s\" >nul 2>nul", a, b);
+   }
+#else
+   snprintf(cmd, sizeof(cmd), "ln -s \"%s\" \"%s\"", game, link);
+#endif
+   rc = system(cmd);
+   if (rc != 0) TEST_IGNORE_MESSAGE("this system can't make a link here");
+
+   p = profile(link, "Game.exe", "-direct -txt");
+   installs[0] = game;
+   TEST_ASSERT_EQUAL_INT(-1, check(&p, installs, 1));
+   TEST_ASSERT_NOT_NULL(strstr(err, "install"));
+   TEST_ASSERT_EQUAL_INT(1, tt_count_entries(game));
+}
+
+void test_an_install_that_does_not_exist_falls_back_to_the_text_compare(void)
+{
+   GAME_PROFILE_S p = profile(game, "Game.exe", "-direct -txt");
+   char missing[1300];
+   const char *installs[1];
+
+   snprintf(missing, sizeof(missing), "%s/game/nope", abs_root);
+   installs[0] = missing;
+   TEST_ASSERT_EQUAL_INT(-1, check(&p, installs, 1));   /* inside it, textually */
+   snprintf(missing, sizeof(missing), "%s/nope", abs_root);
+   TEST_ASSERT_EQUAL_INT(0, check(&p, installs, 1));    /* unrelated and absent */
 }
 
 void test_an_install_inside_the_game_folder_is_refused(void)
@@ -243,6 +322,9 @@ int main(void)
    RUN_TEST(test_the_game_folder_may_not_be_an_install);
    RUN_TEST(test_the_game_folder_in_another_case_and_slash_style_is_still_an_install);
    RUN_TEST(test_a_game_folder_inside_an_install_is_refused);
+   RUN_TEST(test_a_relative_folder_or_one_with_a_parent_reference_is_refused);
+   RUN_TEST(test_a_link_to_an_install_is_refused);
+   RUN_TEST(test_an_install_that_does_not_exist_falls_back_to_the_text_compare);
    RUN_TEST(test_an_install_inside_the_game_folder_is_refused);
    RUN_TEST(test_a_sibling_with_the_same_prefix_is_not_an_install);
    RUN_TEST(test_args_need_direct_and_txt_as_whole_words_in_any_case);

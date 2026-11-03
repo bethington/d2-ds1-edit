@@ -1,6 +1,14 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <ctype.h>
+
+#ifdef WIN32
+   #define WIN32_LEAN_AND_MEAN
+   #include <windows.h>
+#else
+   #include <limits.h>
+#endif
 
 #include "core/game_launch.h"
 #include "core/project.h"
@@ -17,6 +25,40 @@ static int fail(char *error, int cap, const char *fmt, const char *a)
 static int has_text(const char *s)
 {
    return s != NULL && s[0] != 0;
+}
+
+// The real location of an existing folder, links and junctions followed.
+// 0 when it can't be resolved (it may not exist).
+static int resolve_dir(const char *path, char *out, int cap)
+{
+#ifdef WIN32
+   HANDLE h;
+   DWORD n;
+
+   h = CreateFileA(path, 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                   NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+   if (h == INVALID_HANDLE_VALUE) return 0;
+   n = GetFinalPathNameByHandleA(h, out, (DWORD) cap, FILE_NAME_NORMALIZED);
+   CloseHandle(h);
+   if (n == 0 || n >= (DWORD) cap) return 0;
+   // Drop the \\?\ prefix; \\?\UNC\srv\share becomes \\srv\share.
+   if (strncmp(out, "\\\\?\\UNC\\", 8) == 0)
+      memmove(out + 1, out + 7, strlen(out + 7) + 1);
+   else if (strncmp(out, "\\\\?\\", 4) == 0)
+      memmove(out, out + 4, strlen(out + 4) + 1);
+   return 1;
+#else
+   char buf[PATH_MAX];
+
+   if (realpath(path, buf) == NULL || strlen(buf) >= (size_t) cap) return 0;
+   strcpy(out, buf);
+   return 1;
+#endif
+}
+
+static int overlaps(const char *a, const char *b)
+{
+   return project_path_is_inside(a, b) || project_path_is_inside(b, a);
 }
 
 // Does `args` hold `word` as a whole, space-separated word, in any case?
@@ -47,6 +89,8 @@ int game_profile_check(const GAME_PROFILE_S * p, const char * const * installs, 
                        char * error, int cap)
 {
    char path[1100];
+   char real_game[1100], real_install[1100];
+   int game_resolved;
    FILE *fp;
    int i;
 
@@ -55,16 +99,23 @@ int game_profile_check(const GAME_PROFILE_S * p, const char * const * installs, 
    if (p == NULL || !has_text(p->game_dir))
       return fail(error, cap, "%s", "Set the test folder: the copy of the game that runs your map.");
 
+   if (!project_path_is_rooted(p->game_dir) || project_path_has_parent_ref(p->game_dir))
+      return fail(error, cap, "%s", "Choose the test folder by its full path.");
+
    if (!has_text(p->exe) || project_path_is_rooted(p->exe) || project_path_has_parent_ref(p->exe))
       return fail(error, cap, "%s",
                   "The game program must be a file name inside the test folder, "
                   "such as Game.exe.");
 
+   // Compare the spelling, and the real locations too, so a link or junction
+   // to an install is caught.
+   game_resolved = resolve_dir(p->game_dir, real_game, sizeof(real_game));
    for (i = 0; installs != NULL && i < install_count; i++)
    {
       if (!has_text(installs[i])) continue;
-      if (project_path_is_inside(p->game_dir, installs[i]) ||
-          project_path_is_inside(installs[i], p->game_dir))
+      if (overlaps(p->game_dir, installs[i]) ||
+          (game_resolved && resolve_dir(installs[i], real_install, sizeof(real_install)) &&
+           overlaps(real_game, real_install)))
          return fail(error, cap, "%s",
                      "The test folder can't be your Diablo II install, or contain "
                      "it or sit inside it. Make a separate copy of the game and "
