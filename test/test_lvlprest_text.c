@@ -321,6 +321,15 @@ void test_remove_then_insert_at_the_same_slot_is_byte_identical(void)
    free(back);
 }
 
+void test_inserting_refuses_a_value_that_would_break_the_row(void)
+{
+   long len = 0;
+   TEST_ASSERT_NULL(lvlprest_with_map_inserted(rows, 1, 1, "", &len));
+   TEST_ASSERT_NULL(lvlprest_with_map_inserted(rows, 1, 1, "0", &len));
+   TEST_ASSERT_NULL(lvlprest_with_map_inserted(rows, 1, 1, "a\tb.ds1", &len));
+   TEST_ASSERT_NULL(lvlprest_with_map_inserted(rows, 1, 1, "a\nb.ds1", &len));
+}
+
 int main(void)
 {
    UNITY_BEGIN();
@@ -349,5 +358,6 @@ int main(void)
    RUN_TEST(test_removing_moves_later_cells_up_and_lowers_files);
    RUN_TEST(test_removing_is_refused_for_an_only_map_and_unusual_rows);
    RUN_TEST(test_remove_then_insert_at_the_same_slot_is_byte_identical);
+   RUN_TEST(test_inserting_refuses_a_value_that_would_break_the_row);
    return UNITY_END();
 }

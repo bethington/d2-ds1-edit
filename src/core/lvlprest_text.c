@@ -458,6 +458,11 @@ char * lvlprest_with_map_inserted(char * buf, int def, int slot, const char * va
 
    if (!lvlprest_row_is_simple(buf, def) || strlen(value) >= ROW_CELL_CAP)
       return NULL;
+   /* A blank or "0" cell below Files crashes the game's pick, and a tab or line
+      break would change the row's layout. */
+   if (value[0] == '\0' || (value[0] == '0' && value[1] == '\0')
+       || strpbrk(value, "\t\r\n") != NULL)
+      return NULL;
    files = lvlprest_files_value(buf, def);
    if (files >= 6 || slot < 1 || !read_row_cells(buf, def, cells))
       return NULL;
