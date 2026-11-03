@@ -1,0 +1,55 @@
+/* Creating, registering and backing up maps in a project folder. Everything
+ * takes explicit paths and reports problems as a sentence in `error`, so it can
+ * run without a display or a loaded game. Functions return 0, or -1 with
+ * nothing changed unless a comment says otherwise.
+ *
+ * `seed` is the LvlPrest.txt text to start from if the project has no copy yet.
+ */
+#ifndef DS1EDIT_MAP_OPS_H
+#define DS1EDIT_MAP_OPS_H
+
+/* The longest table path that fits the game's File columns. */
+#define MAP_OPS_TABLE_PATH_MAX 59
+#define MAP_OPS_SIZE_MAX 1000
+
+int map_ops_check_name(const char * name, char * out_file, int out_cap,
+                       char * error, int cap);
+int map_ops_check_size(int width, int height, char * error, int cap);
+
+int map_ops_table_path(const char * project_dir, char * out, int cap);
+int map_ops_tile_path(const char * project_dir, const char * ds1_path,
+                      char * out, int cap);
+
+/* A whole file as malloc'd text with a NUL after *out_len bytes, or NULL. */
+char * map_ops_read_file(const char * path, long * out_len);
+
+int map_ops_write_empty_ds1(const char * path, int width, int height, int act);
+
+/* Put ds1_path in this Def's first empty File column. */
+int map_ops_register(const char * project_dir, const char * seed, int def,
+                     const char * ds1_path, char * error, int cap);
+/* Clear the column naming ds1_path. A map the row doesn't list is not an error. */
+int map_ops_unregister(const char * project_dir, const char * seed, int def,
+                       const char * ds1_path, char * error, int cap);
+/* Put the game's cell for ds1_path back: in its own column, or the first empty
+ * one if that was taken. */
+int map_ops_restore_slot(const char * project_dir, const char * seed, char * game_table,
+                         int def, const char * ds1_path, char * error, int cap);
+
+/* Write an empty map and register it. If registering fails, the map is removed. */
+int map_ops_create_empty(const char * project_dir, const char * seed, int def,
+                         const char * ds1_path, int width, int height, int act,
+                         char * error, int cap);
+
+/* Move the project's copy of ds1_path to backup/<date>_<label>_<name>[_N]/, with
+ * <name>.json holding `json`. Sets out_ds1 to the backup's path. The original is
+ * removed last, after the copy and the JSON are in place. */
+int map_ops_backup_file(const char * project_dir, const char * ds1_path,
+                        const char * label, const char * date, const char * json,
+                        char * out_ds1, int out_cap, char * error, int cap);
+
+/* Move a backup to the project's copy of ds1_path. Refuses to replace a file. */
+int map_ops_restore_file(const char * project_dir, const char * backup_ds1,
+                         const char * ds1_path, char * error, int cap);
+
+#endif

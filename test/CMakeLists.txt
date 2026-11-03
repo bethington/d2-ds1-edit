@@ -143,6 +143,18 @@ target_include_directories(test_lvlprest_text PRIVATE
 add_test(NAME lvlprest_text COMMAND test_lvlprest_text)
 set_tests_properties(lvlprest_text PROPERTIES LABELS "portable")
 
+# Creating, registering and backing up maps in a project folder
+add_executable(test_map_ops test_map_ops.c
+    support/test_tmp.c
+    ../src/core/map_ops.c ../src/core/lvlprest_text.c ../src/core/file_copy.c
+    ../src/core/project.c ../src/core/preferences.c)
+target_link_libraries(test_map_ops PRIVATE unity ds1edit_allegro)
+target_include_directories(test_map_ops PRIVATE
+    ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/test)
+target_compile_definitions(test_map_ops PRIVATE DS1EDIT_VERSION_STR="${PROJECT_VERSION}")
+add_test(NAME map_ops COMMAND test_map_ops)
+set_tests_properties(map_ops PROPERTIES LABELS "portable")
+
 # GTK backend choice for Allegro's native dialogs
 add_executable(test_platform_dialogs test_platform_dialogs.c)
 target_link_libraries(test_platform_dialogs PRIVATE unity)
@@ -342,7 +354,8 @@ set_tests_properties(selftest_verdict PROPERTIES LABELS "portable")
 # Allegro appends its target names to DS1EDIT_ALLEGRO_TESTS so the DLL copy
 # below covers it.
 set(DS1EDIT_ALLEGRO_TESTS test_rgba_cache test_asset_export_smoke test_project
-    test_input_edges test_editor_selection test_blend_convention test_commands)
+    test_input_edges test_editor_selection test_blend_convention test_commands
+    test_map_ops)
 find_package(Python3 COMPONENTS Interpreter)
 # CTest cuts the output it keeps for a passed test at 1 KiB. The CI evidence
 # (scripts/equivalence/ci_evidence.py) reads per-test lines (Unity PASS lines,
