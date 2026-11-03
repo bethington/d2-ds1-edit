@@ -105,6 +105,22 @@ void test_editor_undo_shortcuts_fire_once_and_respect_active_property_edits(void
    TEST_ASSERT_FALSE(input_undo_shortcut_hit(0));
 }
 
+void test_escape_only_asks_to_quit_when_the_panel_does_not_own_it(void)
+{
+   TEST_ASSERT_TRUE(input_escape_may_quit(0, 0));
+   TEST_ASSERT_FALSE(input_escape_may_quit(1, 0));
+   TEST_ASSERT_FALSE(input_escape_may_quit(0, 1));
+   TEST_ASSERT_FALSE(input_escape_may_quit(1, 1));
+}
+
+void test_quit_asks_for_unsaved_maps_or_pending_panel_values(void)
+{
+   TEST_ASSERT_FALSE(input_quit_needs_prompt(0, 0));
+   TEST_ASSERT_TRUE(input_quit_needs_prompt(1, 0));
+   TEST_ASSERT_TRUE(input_quit_needs_prompt(0, 2));
+   TEST_ASSERT_TRUE(input_quit_needs_prompt(1, 2));
+}
+
 /* ---- key_hit: once per press, not once per frame ---------------------- */
 
 void test_key_hit_fires_on_the_frame_the_key_goes_down(void)
@@ -276,6 +292,8 @@ int main(void)
    RUN_TEST(test_display_found_restores_video_bitmaps_once_and_clears_lost);
    RUN_TEST(test_display_found_without_a_loss_still_restores);
    RUN_TEST(test_editor_undo_shortcuts_fire_once_and_respect_active_property_edits);
+   RUN_TEST(test_escape_only_asks_to_quit_when_the_panel_does_not_own_it);
+   RUN_TEST(test_quit_asks_for_unsaved_maps_or_pending_panel_values);
    RUN_TEST(test_key_hit_fires_on_the_frame_the_key_goes_down);
    RUN_TEST(test_key_hit_is_clear_on_later_frames_while_still_held);
    RUN_TEST(test_key_hit_fires_again_after_release_and_repress);

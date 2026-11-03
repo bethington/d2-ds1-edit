@@ -300,7 +300,8 @@ static int interface_confirm_quit(void)
 {
    int i;
 
-   if (!map_any_dirty())
+   if (!input_quit_needs_prompt(map_any_dirty(),
+                                glb_ds1edit.props_panel.pending_count))
       return TRUE;
 
    /* The close request has been taken; the dialog must not see it as well. */
@@ -312,7 +313,6 @@ static int interface_confirm_quit(void)
       // stay open if any map could not be saved
       return map_save_ui_save_dirty() == 0;
 
-   case -1:
    case 1:
       for (i = 0; i < DS1_MAX; i++)
          if (map_is_dirty(i))
@@ -320,6 +320,8 @@ static int interface_confirm_quit(void)
       return TRUE;
 
    default:
+      /* Cancel. That includes -1: another window close while the dialog was up.
+         It stays pending, so the next frame asks again. */
       return FALSE;
    }
 }
@@ -424,6 +426,10 @@ void interfac_user_handler(int start_ds1_idx)
                   props_panel_handle_keychar(
                       event.keyboard.unichar,
                       event.keyboard.keycode);
+                  /* The panel consumed this press; it may have just given up
+                   * focus, and the quit check below must not see it as well. */
+                  if (event.keyboard.keycode == ALLEGRO_KEY_ESCAPE)
+                     a5_key_hit[ALLEGRO_KEY_ESCAPE] = 0;
                }
             }
          }
@@ -441,8 +447,11 @@ void interfac_user_handler(int start_ds1_idx)
          it behaves the same whether or not a panel has focus. */
       if (a5_display_closed)
       {
+         /* It clears the request itself once it asks, so a close that arrives
+            during the question stays pending. */
          done = interface_confirm_quit();
-         a5_display_closed = 0;
+         if (done)
+            a5_display_closed = 0;
       }
 
       perf_accumulate(
@@ -1504,8 +1513,10 @@ void interfac_user_handler(int start_ds1_idx)
       if (key_hit(KEY_S) && (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)) &&
           (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT)))
       {
-         // CTRL + SHIFT + S : save every map with unsaved edits
-         map_save_ui_save_dirty();
+         // CTRL + SHIFT + S : save every map with unsaved edits. A window close
+         // while the message is up stays pending for the quit check.
+         if (map_any_dirty() && map_save_ui_save_dirty() == 0)
+            msg_save_main();
       }
       else if (key_hit(KEY_S) && (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)) &&
                glb_ds1[ds1_idx].name[0] != 0)
@@ -2137,7 +2148,9 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       // quit
-      if (key_hit(KEY_ESC) && (glb_ds1[ds1_idx].draw_edit_obj == FALSE))
+      if (key_hit(KEY_ESC) && (glb_ds1[ds1_idx].draw_edit_obj == FALSE) &&
+          input_escape_may_quit(glb_ds1edit.props_panel.editing,
+                                glb_ds1edit.props_panel.has_focus))
       {
          done = interface_confirm_quit();
       }

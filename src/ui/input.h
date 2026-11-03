@@ -128,6 +128,14 @@ void input_discard_pending(void);
 int input_properties_panel_owns_undo(int visible, int editing, int pending_count);
 int input_undo_shortcut_hit(int properties_panel_owns_undo);
 
+/* A properties panel that is editing or has focus owns Escape, so that press
+ * must not also ask to quit. */
+int input_escape_may_quit(int panel_editing, int panel_has_focus);
+
+/* Quitting asks only when something would be lost: an unsaved map, or property
+ * values waiting in the panel. */
+int input_quit_needs_prompt(int any_map_dirty, int panel_pending_count);
+
 /* Did this key go down since the last pump? */
 #define key_hit(k)     (a5_key_hit[(k)] != 0)
 

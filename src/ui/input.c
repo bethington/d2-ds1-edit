@@ -32,6 +32,16 @@ int input_undo_shortcut_hit(int properties_panel_owns_undo)
            (!properties_panel_owns_undo && key_hit(ALLEGRO_KEY_Z)));
 }
 
+int input_escape_may_quit(int panel_editing, int panel_has_focus)
+{
+   return !panel_editing && !panel_has_focus;
+}
+
+int input_quit_needs_prompt(int any_map_dirty, int panel_pending_count)
+{
+   return any_map_dirty || panel_pending_count > 0;
+}
+
 void input_init(void)
 {
    memset(a5_key_hit, 0, sizeof(a5_key_hit));
