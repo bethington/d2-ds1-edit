@@ -454,8 +454,11 @@ int map_ops_check_row_size(char * table, int def, int width, int height, char * 
    map_ops_default_size(table, def, &want_w, &want_h);
    if ((want_w == 0 || width == want_w) && (want_h == 0 || height == want_h))
       return 0;
-   return fail(error, cap, "Def %d's maps are %d by %d, and the game can't use another size here.",
-               def, want_w, want_h);
+   if (want_w != 0 && want_h != 0)
+      return fail(error, cap, "This row's maps are %d by %d. Use that size.", want_w, want_h);
+   if (want_w != 0)
+      return fail(error, cap, "This row's maps are %d wide. Use that width.", want_w);
+   return fail(error, cap, "This row's maps are %d high. Use that height.", want_h);
 }
 
 /* How many of the row's cells hold this whole path. */

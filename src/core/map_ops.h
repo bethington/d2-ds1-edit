@@ -68,9 +68,11 @@ void map_ops_dialog_status(char * table, int def, char * sentence, int cap);
  * or a row that isn't there, leaves its value alone. */
 void map_ops_default_size(char * table, int def, int * width, int * height);
 
-/* Must a map of this size fit this row? 0, or -1 with why. The game halts while loading
- * a level whose row holds a map of another size (gate results, 2026-11-03). A row with
- * no size takes any, and a row with only one of the two checks only that one. */
+/* Must a map of this size fit this row? 0, or -1 with a sentence under 62 characters
+ * that names the row's size. A swap test halted the game with every cell of 182 rows
+ * replaced by another row's map of another size; whether size was the cause isn't
+ * proved (gate results, 2026-11-03). A row with no size takes any, and a row with only
+ * one of the two checks only that one. */
 int map_ops_check_row_size(char * table, int def, int width, int height, char * error, int cap);
 
 /* 1 if the project's table, or the seed if the project has none, lists this whole path

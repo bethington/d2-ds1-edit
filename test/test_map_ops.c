@@ -904,8 +904,14 @@ void test_a_row_takes_only_its_own_size(void)
    fresh_rows();
    TEST_ASSERT_EQUAL_INT(0, map_ops_check_row_size(rows, 168, 11, 15, err, sizeof(err)));
    TEST_ASSERT_EQUAL_INT(-1, map_ops_check_row_size(rows, 168, 12, 15, err, sizeof(err)));
-   TEST_ASSERT_NOT_NULL(strstr(err, "11 by 15"));
+   TEST_ASSERT_EQUAL_STRING("This row's maps are 11 by 15. Use that size.", err);
+   TEST_ASSERT_TRUE(strlen(err) < 62);
    TEST_ASSERT_EQUAL_INT(-1, map_ops_check_row_size(rows, 168, 11, 16, err, sizeof(err)));
+   /* One size only: names that one, never "0 by N". */
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_check_row_size(rows, 10, 7, 30, err, sizeof(err)));
+   TEST_ASSERT_EQUAL_STRING("This row's maps are 9 wide. Use that width.", err);
+   TEST_ASSERT_TRUE(strlen(err) < 62);
+   TEST_ASSERT_EQUAL_INT(0, map_ops_check_row_size(rows, 10, 9, 30, err, sizeof(err)));
    TEST_ASSERT_EQUAL_INT(0, map_ops_check_row_size(rows, 300, 7, 9, err, sizeof(err)));  /* no size */
    TEST_ASSERT_EQUAL_INT(0, map_ops_check_row_size(rows, 999, 7, 9, err, sizeof(err)));  /* no row */
 }
