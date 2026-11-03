@@ -69,12 +69,18 @@ static void interface_delete_map(int gi, int ei)
    if (rc != 1)
       return;
 
-   if (ds1_manager_delete(gi, ei) != 0)
+   rc = ds1_manager_delete(gi, ei);
+   if (rc != 0)
    {
       al_show_native_message_box(a5_display, "Delete Map",
-         "The map couldn't be backed up, so it wasn't deleted.",
-         "Nothing was changed. Check that the backup folder next to the editor "
-         "is writable and the disk isn't full.",
+         rc == DS1_DELETE_ERR_TABLE ?
+            "LvlPrest.txt couldn't be read or updated, so the map wasn't deleted." :
+            "The map couldn't be backed up, so it wasn't deleted.",
+         rc == DS1_DELETE_ERR_TABLE ?
+            "The map's file is still there. The mod folder needs a writable copy "
+            "of the table at Global\\Excel\\LvlPrest.txt." :
+            "Nothing was changed. Check that the backup folder next to the editor "
+            "is writable and the disk isn't full.",
          NULL, ALLEGRO_MESSAGEBOX_ERROR);
       input_suppress_held();
       input_discard_pending();

@@ -57,5 +57,28 @@ class MapDeleteRouteTests(unittest.TestCase):
             self.assertTrue(menu_start < main_loop.index(name) < menu_end, name)
 
 
+class MapDeleteOrderTests(unittest.TestCase):
+    """Everything that can stop a delete comes before the file goes."""
+
+    def setUp(self):
+        manager = (ROOT / "src" / "core" / "ds1_manager.c").read_text(encoding="utf-8")
+        match = re.search(r"^int ds1_manager_delete\([^)]*\)\n\{\n(.*?)^\}", manager,
+                          re.MULTILINE | re.DOTALL)
+        self.body = match.group(1)
+
+    def test_steps_run_table_check_backup_clear_remove(self):
+        steps = [self.body.index(step) for step in (
+            "lvlprest_find_file_slot(", "ds1_manager_backup(",
+            "ds1_manager_lvlprest_clear_file(", "remove(src_path)")]
+        self.assertEqual(steps, sorted(steps))
+
+    def test_each_failure_returns_before_the_file_is_removed(self):
+        removed = self.body.index("remove(src_path)")
+        for code in ("return DS1_DELETE_ERR_TABLE", "return DS1_DELETE_ERR_BACKUP"):
+            self.assertIn(code, self.body[:removed])
+        clear = self.body.index("ds1_manager_lvlprest_clear_file(")
+        self.assertIn("return DS1_DELETE_ERR_TABLE", self.body[clear:removed])
+
+
 if __name__ == "__main__":
     unittest.main()
