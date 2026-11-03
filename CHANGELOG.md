@@ -75,6 +75,20 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
 
 ### Fixed
 
+- **The properties panel shows and edits the open map's row.** Hovering another map
+  in the area browser, or opening a map by Restore from Backup or Revert, showed a
+  different map's `LvlPrest.txt` row. An edit made while that row showed, once
+  applied, changed the other map's row. If you edited a row's `Name`, `Def`,
+  `Dt1Mask` or `LevelId` in the panel, or its `File` cells in 2.2.0, check the
+  project's `LvlPrest.txt`. A map opened without a row now shows no table rows at
+  all, where it used to show `Def` 0's.
+
+- **The panel dims and blocks the right DS1 header fields.** `file`, `width`,
+  `height`, `txt_act`, `walls`, `floors`, `shadows`, `tags` and `objects` are dimmed
+  and a click on one starts no edit. They could be clicked before, while unrelated
+  table rows further up were dimmed. With a section above collapsed, an edit box also
+  opened on the wrong row.
+
 - **The Delete key no longer deletes the map.** One press in the map view also
   ran the area browser's map delete on the last row the mouse had hovered, in
   tile and object mode alike, with no confirmation: under a mod folder that
