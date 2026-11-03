@@ -43,6 +43,8 @@ Tested on 1.13c with `-direct -txt`, using the four Act 1 Wild Border rows (Defs
 
 So a map added at the end with `Files` raised is reachable, and doesn't disturb the row's loading.
 
+**Tables the fixed editor writes.** A table from the editor's Create, with `BarW5` added to Def 168 and `Files` at 5, compiled and entered the game. The Barracks rooms weren't generated in that run, so the new map itself wasn't drawn. Remove's edit, first map out, the rest moved up and `Files` lowered, applied to all 400 rows with two or more maps, ran from town into Blood Moor with no crash.
+
 From the binaries, a row with `Files` of 0 takes index -1 and the generator chooses the cell itself: town rows and transitions work this way. Otherwise the game picks a random index, and the row's other cells are not random choices. Of the 1,088 rows with any cell filled, 1,007 have `Files` equal to their filled cells, 34 have `Files` of 0, and 47 differ, like Wild Border.
 
 So:
