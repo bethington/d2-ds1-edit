@@ -7,7 +7,7 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
 
 ### Added
 
-- **Menu bar.** File, Edit, Map, View and Build menus, opened with a click or **Alt** plus the first letter. Every command shows its hotkey. Build commands and some Map commands are dimmed until they arrive.
+- **Menu bar.** File, Edit, Map, View and Build menus, opened with a click or **Alt** plus the first letter. Commands that have a hotkey show it; six rows (Project Settings, Revert to Game Version, Remove from Project, Restore Slot, Restore from Backup, Launch Profile) have none. Some rows are dimmed when they don't apply, and Build and some Map commands are dimmed until they arrive.
 
 - **Hotkeys for maps.** **Ctrl+N** creates a map, **Ctrl+D** clones the open one, and **Ctrl+Del** deletes the open one after asking. These replace **Insert** and **Shift+Insert**, and **Insert** keeps its object-mode role.
 

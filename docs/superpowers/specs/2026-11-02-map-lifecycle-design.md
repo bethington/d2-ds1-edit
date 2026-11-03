@@ -187,8 +187,8 @@ before step 4 ships.
 ## Menus
 
 The bar is drawn with the editor's existing UI primitives, in a new row above the
-HUD rows. The map view's top edge moves down to make room, and hit testing moves
-with it. It must keep working under the software renderer planned for 2.3.0.
+HUD rows. The bar overlays the top of the map view rather than moving its edge,
+and hit testing treats the bar's rows as the bar's. It must keep working under the software renderer planned for 2.3.0.
 
 Input rules:
 

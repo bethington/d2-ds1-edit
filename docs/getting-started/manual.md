@@ -124,6 +124,7 @@ This is not a complete tutorial explaining all you need to know, but at least I 
 - [What's inside the win_ds1edit.zip](#whats-inside-the-win_ds1editzip)
 - [Installing the Editor](#installing-the-editor)
 - [Working with the Editor](#working-with-the-editor)
+  - [Menus](#menus)
   - [ESC](#esc)
   - [TAB](#tab)
   - [F1, F2](#f1-f2)
@@ -251,6 +252,9 @@ This is not a complete tutorial explaining all you need to know, but at least I 
 
 This editor is using essentially the keyboard and the mouse together. There's no menus, all of the command are done by the keyboard. In this documentation, you can click on almost all images to enlarge them.
 
+> **Current editor.** The editor now has a menu bar across the top; see
+> [Menus](#menus) below. Every key below still works.
+
 > **How to read the rest of this document.** Every key binding below describes
 > the 2006 `win_ds1edit` build. None of it is verifiable — the binary is not
 > here — so read it in the past tense, as a record of how the tool worked, not
@@ -280,7 +284,17 @@ This editor is using essentially the keyboard and the mouse together. There's no
 
 ### Menus
 
-The bar across the top holds **File**, **Edit**, **Map**, **View** and **Build**. Click a title, or press **Alt** with its first letter. Arrow keys move, **Enter** runs the highlighted command, and **Esc** closes the menu. Every command shows its hotkey, and commands that don't apply right now are dimmed.
+The bar across the top holds **File**, **Edit**, **Map**, **View** and **Build**. Click a title, or press **Alt** with its first letter. Arrow keys move, **Enter** runs the highlighted command, and **Esc** closes the menu. A command with a hotkey shows it; six rows (Project Settings, Revert to Game Version, Remove from Project, Restore Slot, Restore from Backup, Launch Profile) have none. Commands that don't apply right now are dimmed, and some arrive in later releases.
+
+| Key | Command |
+|---|---|
+| **Ctrl+N** | New map beside the open one |
+| **Ctrl+D** | Clone the open map (copies its saved file) |
+| **Ctrl+Del** | Delete the open map, after asking |
+| **Ctrl+Shift+N** / **O** / **W** | New, Open or Close Project |
+| **Ctrl+Shift+P** | Open a preset |
+| **Ctrl+Shift+A** | Export assets |
+| **Ctrl+Shift+S** | Save every map with unsaved edits |
 
 * * *
 
@@ -749,8 +763,9 @@ Cut'n paste. Almost the same as **Ctrl** \+ **C** , except that this time you're
 Select some tiles, even in different layers, then press **DEL** to delete them.
 
 > **Current editor.** **DEL** only affects the selected tiles or objects. To delete
-> a whole map from a mod folder, right-click its row in the area browser and choose
-> **Delete map...**, which asks for confirmation and keeps a copy in the backup folder.
+> a whole map from a mod folder, press **Ctrl+Del** (the open map) or right-click its
+> row in the area browser and choose **Delete map...**. Either asks for confirmation
+> and keeps a copy in the backup folder.
 
 After a Copy, a Deletion or a modification of the Selection, if you want to cancel your actions and come to a precedent state, don't forget to use the **Ctrl** \+ **U** (Undo) feature.
 

@@ -180,7 +180,13 @@ Use act 1 Town and at least two other maps from different acts.
   ignores keys and clicks, and a click that closes the menu doesn't touch the map.
   Dimmed rows do nothing. **Ctrl+N** doesn't toggle night mode, **Ctrl+S** doesn't
   scroll, and **Insert** in tile mode creates no map. Side panels and the HUD sit
-  below the bar with no overlap. On macOS, repeat with **Cmd**.
+  below the bar with no overlap. **Ctrl+Del** names the on-screen map after a
+  preset open and after a number-key switch, or stays dimmed; **No** leaves the
+  map and **Yes** removes it. Hold **Enter** on a menu row: it runs once and
+  doesn't answer the dialog it opens. Check **File > Save** and the Edit rows,
+  **Insert** in object mode, and two HUD rows toggled with **~**. On Windows,
+  check **Alt**+letter. On macOS, repeat with **Cmd**, and confirm **Cmd+W** and
+  **Cmd+C** don't stick.
 
 Total items: 15.
 
