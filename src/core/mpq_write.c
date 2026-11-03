@@ -111,51 +111,6 @@ static int same_name_ignoring_case(const char * a, const char * b)
    return *a == *b;
 }
 
-/* Point the slot for this name at this block. A name already there is replaced, in
-   whatever locale it has. Otherwise the first empty or deleted slot along its probe. */
-static int set_slot(unsigned int * hash, unsigned int hash_count, const char * name,
-                    unsigned int block)
-{
-   unsigned int a = mpq_hash_string(name, MPQ_HASH_A);
-   unsigned int b = mpq_hash_string(name, MPQ_HASH_B);
-   unsigned int start = mpq_hash_string(name, MPQ_HASH_OFFSET) & (hash_count - 1);
-   unsigned int i, free_slot = hash_count;
-
-   for (i = 0; i < hash_count; i++)
-   {
-      unsigned int s = (start + i) & (hash_count - 1);
-      unsigned int * e = hash + s * 4;
-
-      if (e[3] == HASH_EMPTY)
-      {
-         if (free_slot == hash_count)
-            free_slot = s;
-         break;
-      }
-      if (e[3] == HASH_DELETED)
-      {
-         if (free_slot == hash_count)
-            free_slot = s;
-         continue;
-      }
-      if (e[0] == a && e[1] == b)
-      {
-         e[3] = block;
-         return 0;
-      }
-   }
-   if (free_slot == hash_count)
-      return -1;
-   {
-      unsigned int * e = hash + free_slot * 4;
-      e[0] = a;
-      e[1] = b;
-      e[2] = 0;
-      e[3] = block;
-   }
-   return 0;
-}
-
 /* Mark every live slot for this name deleted. The name checks are cleared too, so
    a reader that doesn't look at the block index can't find the name any more. */
 static void delete_slot(unsigned int * hash, unsigned int hash_count, const char * name)
@@ -179,6 +134,33 @@ static void delete_slot(unsigned int * hash, unsigned int hash_count, const char
          e[3] = HASH_DELETED;
       }
    }
+}
+
+/* Give this name one slot, at locale 0 and platform 0, pointing at this block. Any
+   slot the name already has, in whatever locale, is deleted first, so none is left
+   pointing at a stale block. The new slot is the first empty or deleted one along
+   its probe. */
+static int set_slot(unsigned int * hash, unsigned int hash_count, const char * name,
+                    unsigned int block)
+{
+   unsigned int start = mpq_hash_string(name, MPQ_HASH_OFFSET) & (hash_count - 1);
+   unsigned int i;
+
+   delete_slot(hash, hash_count, name);
+   for (i = 0; i < hash_count; i++)
+   {
+      unsigned int * e = hash + ((start + i) & (hash_count - 1)) * 4;
+
+      if (e[3] == HASH_EMPTY || e[3] == HASH_DELETED)
+      {
+         e[0] = mpq_hash_string(name, MPQ_HASH_A);
+         e[1] = mpq_hash_string(name, MPQ_HASH_B);
+         e[2] = 0;
+         e[3] = block;
+         return 0;
+      }
+   }
+   return -1;
 }
 
 /* Read and check the base. Returns NULL with the open file in *fp, or the

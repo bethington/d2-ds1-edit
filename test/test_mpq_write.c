@@ -161,7 +161,7 @@ static void make_base(const char * rel, int hash_count, const char ** names, int
          s = (s + 1) & (unsigned) (hash_count - 1);
       hash[s * 4] = mpq_hash_string(names[i], MPQ_HASH_A);
       hash[s * 4 + 1] = mpq_hash_string(names[i], MPQ_HASH_B);
-      hash[s * 4 + 2] = 0;
+      hash[s * 4 + 2] = (unsigned int) i;   /* a different locale for each */
       hash[s * 4 + 3] = (unsigned int) i;
       img[32 + i] = (unsigned char) ('0' + i);
       block[i * 4] = (unsigned int) (32 + i);
@@ -333,6 +333,53 @@ void test_append_keeps_base(void)
    expect_file("out.mpq", "n\\a", "a.bin");
    expect_file("out.mpq", "n\\c", "c.bin");
    expect_file("out.mpq", "n\\b", "b2.bin");
+}
+
+void test_replacing_a_name_leaves_one_slot_at_locale_zero(void)
+{
+   const char * names[3] = { "n\\a", "n\\a", "n\\b" };   /* "n\\a" in locales 0 and 1 */
+   char path[768];
+   unsigned char * img, * got;
+   unsigned int * hash;
+   unsigned int a, b, hash_pos, hash_count, i, live = 0, block = 0, locale = 99;
+   size_t len;
+   long glen;
+
+   make_base("base.mpq", 16, names, 3);
+   make_source("c.bin", 20, 5);
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, write_one("base.mpq", "out.mpq", "n\\a", "c.bin"), err);
+
+   path_of(path, "out.mpq");
+   img = tt_read_file(path, &len);
+   TEST_ASSERT_NOT_NULL(img);
+   hash_pos = le(img + 16);
+   hash_count = le(img + 24);
+   hash = (unsigned int *) malloc((size_t) hash_count * 16);
+   TEST_ASSERT_NOT_NULL(hash);
+   for (i = 0; i < hash_count * 4; i++)
+      hash[i] = le(img + hash_pos + (size_t) i * 4);
+   mpq_decrypt(hash, (int) (hash_count * 4), mpq_hash_string("(hash table)", MPQ_HASH_KEY));
+   a = mpq_hash_string("n\\a", MPQ_HASH_A);
+   b = mpq_hash_string("n\\a", MPQ_HASH_B);
+   for (i = 0; i < hash_count; i++)
+      if (hash[i * 4] == a && hash[i * 4 + 1] == b && hash[i * 4 + 3] < 0xFFFFFFFEu)
+      {
+         live++;
+         locale = hash[i * 4 + 2];
+         block = hash[i * 4 + 3];
+      }
+   TEST_ASSERT_EQUAL_UINT32(1, live);
+   TEST_ASSERT_EQUAL_UINT32(0, locale);
+   TEST_ASSERT_EQUAL_UINT32(3, block);   /* the base had blocks 0 to 2 */
+   free(hash);
+   free(img);
+
+   TEST_ASSERT_TRUE(read_back("out.mpq", "n\\a", &got, &glen) != -1);
+   TEST_ASSERT_EQUAL_INT(20, (int) glen);
+   free(got);
+   TEST_ASSERT_TRUE(read_back("out.mpq", "n\\b", &got, &glen) != -1);
+   TEST_ASSERT_EQUAL_HEX8('2', got[0]);
+   free(got);
 }
 
 void test_append_drops_attributes(void)
@@ -513,6 +560,7 @@ int main(void)
    RUN_TEST(test_name_case_and_slash);
    RUN_TEST(test_flags_and_header);
    RUN_TEST(test_append_keeps_base);
+   RUN_TEST(test_replacing_a_name_leaves_one_slot_at_locale_zero);
    RUN_TEST(test_append_drops_attributes);
    RUN_TEST(test_append_refuses_unusual_base);
    RUN_TEST(test_full_table_refused);
