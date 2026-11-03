@@ -7,18 +7,23 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
 
 ### Added
 
-- **Menu bar.** File, Edit, Map, View and Build menus, opened with a click or **Alt** plus the first letter. Commands that have a hotkey show it; six rows (Project Settings, Revert to Game Version, Remove from Project, Restore Slot, Restore from Backup, Launch Profile) have none. Some rows are dimmed when they don't apply, and Build and some Map commands are dimmed until they arrive.
+- **Menu bar.** File, Edit, Map, View and Build menus, opened with a click or **Alt** plus the first letter. Commands that have a hotkey show it; six rows (Project Settings, Revert to Game Version, Remove from Project, Restore Slot, Restore from Backup, Launch Profile) have none. Some rows are dimmed when they don't apply, and Project Settings and the Build commands are dimmed until they arrive.
 
-- **Hotkeys for maps.** **Ctrl+N** creates a map, **Ctrl+D** clones the open one, and **Ctrl+Del** deletes the open one after asking. These replace **Insert** and **Shift+Insert**, and **Insert** keeps its object-mode role.
+- **Hotkeys for maps.** **Ctrl+N** creates a map, **Ctrl+D** clones the open one, and **Ctrl+Del** deletes, reverts or removes the open one by its state, after asking. These replace **Insert** and **Shift+Insert**, and **Insert** keeps its object-mode role.
 
 - **Map > New and Clone open a dialog** for the name, area, tileset and size.
   Clone copies the map as it is in memory, so it includes unsaved edits and works
   on maps that exist only in an MPQ. A failed table write removes the new map.
+  The new row is scrolled to in the area browser, where a click opens it.
 
 - **Deleting follows the map's state.** A map new to the project is deleted, a
   modified one is reverted to the game's version, and a game map is removed from
   the project's table, where it stays listed, struck through, until its slot is
-  restored. Each one asks first and can be undone.
+  restored. Each one asks first and can be undone. An open map whose file has gone
+  this way can't be saved until it's reopened or restored. A game map the game's own
+  table doesn't list has no slot to clear, so Remove stops with a message. In a
+  project over a mod overlay, game files the overlay replaced show struck through
+  after the project's first table write.
 
 - **Backups now live in the project's `backup` folder**, and a second backup of a
   map on the same day no longer replaces the first.
@@ -64,8 +69,7 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
   bring it back. Delete now acts only on the selected tiles or objects. To delete
   a map, right-click its row in the area browser and choose **Delete map...**,
   which asks first and names the file. **Delete permanently** on a backup asks
-  too, and without a mod folder the editor says so instead of hiding the row
-  until the next start.
+  too. A command that changes a map asks for a project first if none is open.
 - **A map is no longer deleted when its backup fails.** A backup that could not
   be written still counted as a success, so the delete went on to remove the
   original. Every write is now checked, a failure stops the delete, and the
@@ -74,8 +78,9 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
   With no table in the mod folder, or a second delete in the same session, the
   file was removed and the slot left naming it. The slot is now found in the
   table on disk before anything changes, and a table that can't be read or
-  written stops the delete with a message. Maps the table doesn't list can still
-  be deleted.
+  written stops the delete with a message. A new map the project's table doesn't
+  list can still be deleted, as long as that table can be read. In a project with
+  no table of its own, the delete stops with the same message.
 - **One Delete press makes one undo step in tile mode.** It ran once per frame
   while the key was down, stacking empty undo steps, so the first Ctrl+Z could
   appear to do nothing.

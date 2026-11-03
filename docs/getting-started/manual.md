@@ -300,7 +300,7 @@ The bar across the top holds **File**, **Edit**, **Map**, **View** and **Build**
 
 **Map > New** and **Map > Clone** open a dialog with the map's name, area and tileset. New also asks for the width and height, each 1 to 1000 (it starts at 20, or at the open map's size). A clone keeps the size of the map it copies. Clone copies the map as it is in memory, so it includes unsaved edits, and it works on maps that exist only in an MPQ. The original stays as it was, still marked unsaved if it had edits. With no project open, the editor asks for one first.
 
-The dialog stays up, with a message, if the name is empty, uses anything but letters, digits, `_`, `-` and `.`, starts or ends with a dot, is a Windows reserved name such as `CON`, is too long, or is already used in that area, or if the chosen tileset has no free File slot in `LvlPrest.txt`. If the table can't be written, the new map is removed again and nothing changes. A new map shows `N` in the area browser.
+The dialog stays up, with a message, if the name is empty, uses anything but letters, digits, `_`, `-` and `.`, starts or ends with a dot, is a Windows reserved name such as `CON`, is too long, or is already used in that map's folder, in any area, or if the chosen tileset has no free File slot in `LvlPrest.txt`. A name is too long if the map's whole path, folder included, would be over the 59 characters a File column of `LvlPrest.txt` allows. If the table can't be written, the new map is removed again and nothing changes. A new map shows `N` in the area browser, which scrolls to it. Click it to open it.
 
 #### Deleting maps
 
@@ -314,6 +314,12 @@ What a map's delete command does depends on its mark in the area browser:
 | struck through | Restore Slot | The game's value goes back in the slot | Remove from Project |
 
 These act on the open map. Right-click a row in the area browser to do the same for any row. A struck-through row can't be opened until its slot is restored. Each command asks first, and nothing is ever written to the Diablo II folder. **Ctrl+Del** runs Delete, Revert or Remove for the open map; Restore Slot has no hotkey, so use the Map menu or a right-click, and Clone is dimmed on a struck-through map.
+
+If you delete or revert a map while it's open, it stays on screen but can't be saved, because saving would recreate a file nothing lists. Saving says so. Reopen the map, or use Restore from Backup, to save again. If you've edited it since, quitting or opening another map asks as usual, and Discard works.
+
+Remove from Project works only on a map the game's own `LvlPrest.txt` lists under that row, since that's what Restore Slot puts back. For any other row it stops with a message.
+
+In a project over a mod overlay, game files the overlay replaced show struck through once the project writes its first table, since that table doesn't list them.
 
 Backups now live in `<project>/backup`. A second backup of the same map on the same day gets its own folder (`_2`, `_3`, ...) instead of replacing the first. Backups made by older versions in the editor's own `backup` folder stay listed, and move into the project when restored.
 
