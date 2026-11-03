@@ -86,6 +86,9 @@ static void interface_delete_map(int gi, int ei)
       ab->selected_entry = ab->groups[gi].entry_count - 1;
    if (ab->selected_entry < 0)
       ab->selected_entry = -1;
+
+   /* The entries shifted up; keep the open map's row pointing at its own. */
+   commands_loaded_after_delete(&ab->loaded_group, &ab->loaded_entry, gi, ei);
 }
 
 /* Delete a backup for good. It may be the only copy of a deleted map. */
@@ -519,14 +522,18 @@ static void interface_run_command(CMD_ID cmd, int ds1_idx, int cx, int cy,
       break;
 
    case CMD_QUIT:
-      *done = interface_confirm_quit();
+      if (interface_confirm_quit())
+         *done = TRUE;
       break;
 
    case CMD_UNDO:
       if (glb_ds1edit.mode == MOD_T)
          undo_apply_tile_buffer(ds1_idx);
       else if (glb_ds1edit.mode == MOD_O)
+      {
          editobj_undo(ds1_idx);
+         anim_update_gfx(FALSE);
+      }
       break;
 
    case CMD_CUT:  interface_begin_paste(ds1_idx, cx, cy, paste, TRUE);  break;

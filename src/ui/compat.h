@@ -449,8 +449,6 @@ extern ALLEGRO_KEYBOARD_STATE a5_kb_state;
    Homebrew builds this project targets. Declared in ui/input.h. */
 #include "ui/input.h"
 
-/* key_pressed(k): is key k held down right now? For one-shot commands use
-   key_hit(k) from ui/input.h instead -- see the note there. */
 /* The keymod that means "Ctrl" in a KEY_CHAR event. */
 #ifdef __APPLE__
    #define DS1_KEYMOD_PRIMARY (ALLEGRO_KEYMOD_CTRL | ALLEGRO_KEYMOD_COMMAND)
@@ -458,6 +456,8 @@ extern ALLEGRO_KEYBOARD_STATE a5_kb_state;
    #define DS1_KEYMOD_PRIMARY ALLEGRO_KEYMOD_CTRL
 #endif
 
+/* key_pressed(k): is key k held down right now? For one-shot commands use
+   key_hit(k) from ui/input.h instead -- see the note there. */
 static inline bool ds1_key_is_down(int k)
 {
    if (k <= 0 || k >= ALLEGRO_KEY_MAX)
