@@ -3,12 +3,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#ifdef WIN32
+#include <sys/utime.h>
+#define set_times _utime
+#define TIMES_S _utimbuf
+#else
+#include <utime.h>
+#define set_times utime
+#define TIMES_S utimbuf
+#endif
 
 #include "unity/unity.h"
 #include "structs.h"
 #include "error.h"
 #include "mpq/MpqView.h"
 #include "mpq/mpqtypes.h"
+#include "core/map_ops.h"
 #include "core/mpq_build.h"
 #include "core/mpq_write.h"
 #include "core/project.h"
@@ -823,9 +834,135 @@ void test_problems_that_do_not_fit_are_cut_short_and_terminated(void)
    TEST_ASSERT_TRUE(strlen(small) > 0);
 }
 
+static void make_old(const char * rel)
+{
+   char path[768];
+   struct TIMES_S t;
+
+   path_of(path, rel);
+   t.actime = 1000000000;
+   t.modtime = 1000000000;
+   TEST_ASSERT_EQUAL_INT(0, set_times(path, &t));
+}
+
+void test_an_empty_or_older_bin_is_not_a_compiled_table(void)
+{
+   const char * msg = "Misc.txt has changed since the game last compiled it. "
+                      "Run Build & Test and start a game first.";
+
+   put("proj/Global/Excel/Misc.txt", "one");
+   compile("Misc");
+   test_copy_patch();
+   expect_ok();
+
+   put("test/DATA/GLOBAL/EXCEL/Misc.bin", "");
+   expect_problem(msg);
+
+   /* The same text, but the .bin predates it. */
+   put("test/DATA/GLOBAL/EXCEL/Misc.bin", "compiled");
+   make_old("test/DATA/GLOBAL/EXCEL/Misc.bin");
+   expect_problem(msg);
+
+   /* The .bin as new as the text is fine. */
+   put("test/DATA/GLOBAL/EXCEL/Misc.bin", "compiled");
+   expect_ok();
+}
+
+#define SIZE_HEAD "Name\tDef\tFiles\tFile1\tFile2\tFile3\tFile4\tFile5\tFile6\tSizeX\tSizeY\r\n"
+#define MINE "Act1\\Town\\Mine.ds1"
+
+/* One row, Def 900, which the game's table doesn't have, with its size as stored. */
+static void sized_table(int w_stored, int h_stored)
+{
+   char t[600];
+
+   sprintf(t, SIZE_HEAD "Own\t900\t1\t" MINE "\t0\t0\t0\t0\t0\t%d\t%d\r\n", w_stored, h_stored);
+   project_table(t);
+   compile("LvlPrest");
+   test_copy_patch();
+}
+
+static void make_ds1(const char * rel, int width, int height)
+{
+   char path[768];
+
+   path_of(path, rel);
+   TEST_ASSERT_EQUAL_INT(0, map_ops_write_empty_ds1(path, width, height, 1));
+}
+
+void test_a_map_must_be_the_size_of_its_row(void)
+{
+   make_ds1("proj/Global/Tiles/Act1/Town/Mine.ds1", 5, 5);
+   sized_table(7, 9);   /* 8 by 10 */
+   expect_problem("Act1/Town/Mine.ds1 is 5 by 5, but Def 900's maps are 8 by 10. "
+                  "The game can't use it.");
+   TEST_ASSERT_FALSE(exists("proj/build"));
+
+   make_ds1("proj/Global/Tiles/Act1/Town/Mine.ds1", 8, 10);
+   expect_ok();
+
+   /* A row with one side set holds the map to that side only. */
+   sized_table(7, 0);
+   expect_ok();
+   make_ds1("proj/Global/Tiles/Act1/Town/Mine.ds1", 9, 3);
+   expect_problem("is 9 by 3, but Def 900's maps are 8 wide.");
+}
+
+void test_a_row_with_no_size_takes_any_map(void)
+{
+   make_ds1("proj/Global/Tiles/Act1/Town/Mine.ds1", 5, 5);
+   sized_table(0, 0);
+   expect_ok();
+}
+
+void test_a_map_shared_by_rows_is_checked_against_each(void)
+{
+   make_ds1("proj/Global/Tiles/Act1/Town/Mine.ds1", 8, 10);
+   put("proj/Global/Excel/LvlPrest.txt",
+       SIZE_HEAD
+       "A\t900\t1\t" MINE "\t0\t0\t0\t0\t0\t7\t9\r\n"
+       "B\t901\t1\t" MINE "\t0\t0\t0\t0\t0\t4\t4\r\n");
+   compile("LvlPrest");
+   test_copy_patch();
+   expect_problem("Def 901's maps are 5 by 5");
+   TEST_ASSERT_NULL(strstr(problems, "Def 900"));
+}
+
+void test_a_map_too_short_for_a_header_is_a_problem(void)
+{
+   put("proj/Global/Tiles/Act1/Town/Mine.ds1", "short");
+   sized_table(7, 9);
+   expect_problem("Act1/Town/Mine.ds1 is too short to be a map");
+}
+
+void test_a_map_of_a_row_only_the_game_lists_is_not_checked(void)
+{
+   MPQ_BUILD_ARGS_S a;
+   MPQ_BUILD_RESULT_S res;
+   static char game[] =
+      SIZE_HEAD "Town\t1\t1\tAct1\\Town\\TownN1.ds1\t0\t0\t0\t0\t0\t7\t9\r\n";
+
+   make_ds1("proj/Data/Global/Tiles/Act1/Town/TownN1.ds1", 3, 3);
+   memset(&a, 0, sizeof(a));
+   a.project_dir = proj;
+   a.base_mpq = base;
+   a.test_game_dir = "";
+   a.out_mpq = out;
+   a.game_table = game;
+   a.in_game = in_game;
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, mpq_build_run(&a, &res, problems, sizeof(problems)),
+                                 problems);
+}
+
 int main(void)
 {
    UNITY_BEGIN();
+   RUN_TEST(test_an_empty_or_older_bin_is_not_a_compiled_table);
+   RUN_TEST(test_a_map_must_be_the_size_of_its_row);
+   RUN_TEST(test_a_row_with_no_size_takes_any_map);
+   RUN_TEST(test_a_map_shared_by_rows_is_checked_against_each);
+   RUN_TEST(test_a_map_too_short_for_a_header_is_a_problem);
+   RUN_TEST(test_a_map_of_a_row_only_the_game_lists_is_not_checked);
    RUN_TEST(test_files_taken_by_extension_folder_and_case);
    RUN_TEST(test_folders_are_found_in_any_case);
    RUN_TEST(test_data_wins_over_global_for_the_same_path);

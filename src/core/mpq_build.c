@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include "platform.h"
 #include "core/lvlprest_text.h"
@@ -461,7 +462,84 @@ typedef struct RUN_S
    PROBLEMS_S * problems;
    char * project_table;
    char * game_table;
+   const ENTRY_LIST_S * list;
 } RUN_S;
+
+/* A stored size plus one, as a number that can't overflow. */
+static long le_size(const unsigned char * p)
+{
+   unsigned long v = (unsigned long) p[0] | ((unsigned long) p[1] << 8) |
+                     ((unsigned long) p[2] << 16) | ((unsigned long) p[3] << 24);
+
+   return v > 1000000ul ? 1000001L : (long) v + 1;
+}
+
+/* A map's width and height from its DS1 header: version, then width - 1 and height - 1,
+   as map_ops_write_empty_ds1 writes them and ds1.c reads them. 0 if the file is too short
+   to have them. */
+static int ds1_header_size(const char * path, long * width, long * height)
+{
+   unsigned char h[12];
+   FILE * f = fopen(path, "rb");
+   size_t got;
+
+   if (f == NULL)
+      return 0;
+   got = fread(h, 1, sizeof(h), f);
+   fclose(f);
+   if (got < sizeof(h))
+      return 0;
+   *width = le_size(h + 4);
+   *height = le_size(h + 8);
+   return 1;
+}
+
+/* Each map a sized row names must be the row's size: the game halts or draws wrongly
+   on one that isn't. */
+static void check_def_sizes(int def, void * ctx)
+{
+   RUN_S * r = (RUN_S *) ctx;
+   int want_w = 0, want_h = 0, slot;
+
+   if (!lvlprest_row_has_size(r->project_table, def))
+      return;
+   map_ops_default_size(r->project_table, def, &want_w, &want_h);
+   if (want_w == 0 && want_h == 0)
+      return;
+   for (slot = 1; slot <= 6; slot++)
+   {
+      char cell[PATH_CAP], * key;
+      const ENTRY_S * e;
+      long w, h;
+
+      if (!lvlprest_get_cell(r->project_table, def, slot, cell, sizeof(cell)) ||
+          cell[0] == '\0' || strcmp(cell, "0") == 0)
+         continue;
+      key = dup_lower_slashes(cell);
+      e = key != NULL ? find_entry(r->list, 0, key) : NULL;
+      free(key);
+      if (e == NULL || !has_extension(e->rel, ".ds1"))
+         continue;
+      if (!ds1_header_size(e->source, &w, &h))
+      {
+         add_problem(r->problems, "%s is too short to be a map, so the game can't use it.",
+                     e->rel);
+         continue;
+      }
+      if ((want_w != 0 && w != want_w) || (want_h != 0 && h != want_h))
+      {
+         if (want_w != 0 && want_h != 0)
+            add_problem(r->problems, "%s is %ld by %ld, but Def %d's maps are %d by %d. "
+                        "The game can't use it.", e->rel, w, h, def, want_w, want_h);
+         else if (want_w != 0)
+            add_problem(r->problems, "%s is %ld by %ld, but Def %d's maps are %d wide. "
+                        "The game can't use it.", e->rel, w, h, def, want_w);
+         else
+            add_problem(r->problems, "%s is %ld by %ld, but Def %d's maps are %d high. "
+                        "The game can't use it.", e->rel, w, h, def, want_h);
+      }
+   }
+}
 
 static int cell_is_empty(char * table, int def, int slot)
 {
@@ -542,13 +620,14 @@ static int same_path(const char * a, const char * b)
 }
 
 /* The compiled .bin of one project table in the test copy, if the copy has compiled this
-   very text. 1 and the bin's path in bin_path, or 0. */
+   very text, not before it and not empty. 1 and the bin's path in bin_path, or 0. */
 static int compiled_bin(const char * test_dir, const char * name, const char * source,
                         char * bin_path, int cap)
 {
    char rel[PATH_CAP], txt_path[PATH_CAP];
    char * mine, * theirs;
    long mine_len, theirs_len;
+   struct stat txt_st, bin_st;
    int same;
 
    if (test_dir == NULL || test_dir[0] == '\0')
@@ -565,7 +644,13 @@ static int compiled_bin(const char * test_dir, const char * name, const char * s
    if (!same)
       return 0;
    strcpy(rel + strlen(rel) - 4, ".bin");
-   return ds1_path_resolve_nocase(test_dir, rel, bin_path, (size_t) cap);
+   if (!ds1_path_resolve_nocase(test_dir, rel, bin_path, (size_t) cap))
+      return 0;
+   /* A compile writes the .bin after reading the text, and never leaves it empty. */
+   if (stat(txt_path, &txt_st) != 0 || stat(bin_path, &bin_st) != 0 || bin_st.st_size <= 0 ||
+       bin_st.st_mtime < txt_st.st_mtime)
+      return 0;
+   return 1;
 }
 
 /* ---- run -------------------------------------------------------------- */
@@ -614,6 +699,7 @@ int mpq_build_run(const MPQ_BUILD_ARGS_S * a, MPQ_BUILD_RESULT_S * out, char * p
    run.problems = &problems;
    run.project_table = table;
    run.game_table = a->game_table;
+   run.list = &list;
 
    base_size = file_size(a->base_mpq);
    if (base_size < 0)
@@ -664,6 +750,9 @@ int mpq_build_run(const MPQ_BUILD_ARGS_S * a, MPQ_BUILD_RESULT_S * out, char * p
          lvlprest_each_def(table, check_def_for_holes, &run);
       }
    }
+
+   if (table != NULL)
+      lvlprest_each_def(table, check_def_sizes, &run);
 
    /* A map the game's table can't reach. */
    table_paths(table, &listed);
