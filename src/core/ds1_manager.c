@@ -173,7 +173,10 @@ int ds1_manager_delete(int group_idx, int entry_idx, char * error, int cap)
 
    /* A table that can't be read stops this before the file moves. */
    if (map_ops_table_path(glb_project.path, path, sizeof(path)) != 0)
+   {
+      snprintf(error, cap, "The path to the project's LvlPrest.txt is too long.");
       return -1;
+   }
    table = map_ops_read_file(path, &len);
    if (table == NULL)
    {
@@ -198,9 +201,30 @@ int ds1_manager_delete(int group_idx, int entry_idx, char * error, int cap)
    free(seed);
    if (rc != 0)
    {
-      /* The table still names it, so the file goes back. */
-      char ignored[8];
-      map_ops_restore_file(glb_project.path, backup, e.ds1_path, ignored, sizeof(ignored));
+      /* The table still names it, so the file goes back, and with it the backup
+         is gone: no JSON is left to list a row with no data. */
+      char ignored[8], table_error[256], jpath[576];
+      int n = (int) strlen(backup);
+
+      snprintf(table_error, sizeof(table_error), "%s", error);
+      if (map_ops_restore_file(glb_project.path, backup, e.ds1_path, ignored,
+                               sizeof(ignored)) == 0 &&
+          n > 4 && stricmp(backup + n - 4, ".ds1") == 0)
+      {
+         char dir[576];
+
+         snprintf(jpath, sizeof(jpath), "%.*s.json", n - 4, backup);
+         remove(jpath);
+         manager_dir_of(backup, dir, sizeof(dir));
+         if (dir[0] != '\0')
+            dir[strlen(dir) - 1] = '\0';
+         RMDIR(dir);
+      }
+      else
+      {
+         snprintf(error, cap, "%s The map's file is kept as a backup at %s.",
+                  table_error, backup);
+      }
       return -1;
    }
 
@@ -729,7 +753,17 @@ int ds1_manager_restore(int group_idx, int entry_idx, char * error, int cap)
       if (!listed && def > 0 &&
           map_ops_register(glb_project.path, seed, def, original_path, error, cap) != 0)
       {
+         /* The file has moved but the table doesn't list it. Put it back in the
+            backup so the row, the JSON and a retry all still work. */
+         char moved[768], table_error[256];
+
          free(seed);
+         snprintf(table_error, sizeof(table_error), "%s", error);
+         if (map_ops_tile_path(glb_project.path, original_path, moved, sizeof(moved)) != 0 ||
+             file_copy_checked(moved, backup_ds1_path) != FILE_COPY_OK ||
+             remove(moved) != 0)
+            snprintf(error, cap, "%s The map's file is in the project at %s, not listed "
+                     "in LvlPrest.txt.", table_error, moved);
          return -1;
       }
       free(seed);
@@ -740,7 +774,12 @@ int ds1_manager_restore(int group_idx, int entry_idx, char * error, int cap)
    /* Add a row to the matching regular group, unless the map already has one */
    {
       int gi, ei;
-      if (!area_browser_find_row(original_path, def, &gi, &ei))
+      if (area_browser_find_row(original_path, def, &gi, &ei))
+      {
+         /* A Removed row: the table lists the map again now. */
+         ab->groups[gi].entries[ei].slot_cleared = 0;
+      }
+      else
       {
          for (gi = 0; gi < ab->group_count; gi++)
          {

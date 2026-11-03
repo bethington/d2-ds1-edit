@@ -322,6 +322,13 @@ int map_ops_restore_slot(const char * project_dir, const char * seed, char * gam
    if (table == NULL)
       return -1;
 
+   /* Already listed: nothing to put back, and a second copy would be ambiguous. */
+   if (lvlprest_find_file_slot(table, def, ds1_path) > 0)
+   {
+      free(table);
+      return 0;
+   }
+
    slot = game_slot;
    if (!lvlprest_get_cell(table, def, slot, current, sizeof(current)) ||
        (current[0] != '\0' && strcmp(current, "0") != 0))

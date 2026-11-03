@@ -193,6 +193,22 @@ void test_restore_uses_another_slot_when_its_own_was_taken(void)
    free(t);
 }
 
+void test_restore_slot_writes_nothing_when_the_row_already_lists_the_map(void)
+{
+   char game[sizeof(GAME)];
+   char *before, *after;
+
+   memcpy(game, GAME, sizeof(GAME));
+   TEST_ASSERT_EQUAL_INT(0, map_ops_register(dir, GAME, 1, "Act1/Town/TownN1.ds1", err, sizeof(err)));
+   before = table();
+   TEST_ASSERT_NOT_NULL(before);
+   TEST_ASSERT_EQUAL_INT(0, map_ops_restore_slot(dir, GAME, game, 1, "Act1/Town/TownN1.ds1", err, sizeof(err)));
+   after = table();
+   TEST_ASSERT_EQUAL_STRING(before, after);
+   free(before);
+   free(after);
+}
+
 void test_create_writes_the_map_and_registers_it(void)
 {
    TEST_ASSERT_EQUAL_INT(0, map_ops_create_empty(dir, GAME, 1, "Act1/Town/New.ds1",
@@ -306,6 +322,7 @@ int main(void)
    RUN_TEST(test_nothing_is_written_to_a_project_inside_the_game_install);
    RUN_TEST(test_unregister_then_restore_returns_the_table_to_the_original);
    RUN_TEST(test_restore_uses_another_slot_when_its_own_was_taken);
+   RUN_TEST(test_restore_slot_writes_nothing_when_the_row_already_lists_the_map);
    RUN_TEST(test_create_writes_the_map_and_registers_it);
    RUN_TEST(test_a_failed_table_write_removes_the_new_map);
    RUN_TEST(test_create_refuses_an_existing_file);
