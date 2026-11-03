@@ -199,6 +199,128 @@ void test_each_file_visits_every_listed_cell(void)
    TEST_ASSERT_EQUAL_STRING("Act2\\Last.ds1", seen.last);
 }
 
+static char rows[] =
+   "Name\tDef\tFiles\tFile1\tFile2\tFile3\tFile4\tFile5\tFile6\tDt1Mask\r\n"
+   "Two\t1\t2\ta.ds1\tb.ds1\t0\t0\t0\t0\t5\r\n"
+   "One\t2\t1\tonly.ds1\t0\t0\t0\t0\t0\t5\r\n"
+   "Own\t3\t0\tx.ds1\ty.ds1\t0\t0\t0\t0\t5\r\n"
+   "Tail\t4\t3\tp.ds1\tq.ds1\tr.ds1\ts.ds1\tt.ds1\t0\t5\r\n"
+   "Hole\t5\t3\ta.ds1\t0\tc.ds1\t0\t0\t0\t5\r\n"
+   "Full\t6\t6\ta.ds1\tb.ds1\tc.ds1\td.ds1\te.ds1\tf.ds1\t5\r\n";
+
+void test_files_value_reads_the_row(void)
+{
+   TEST_ASSERT_EQUAL_INT(2, lvlprest_files_value(rows, 1));
+   TEST_ASSERT_EQUAL_INT(0, lvlprest_files_value(rows, 3));
+   TEST_ASSERT_EQUAL_INT(-1, lvlprest_files_value(rows, 99));
+}
+
+void test_a_simple_row_counts_exactly_its_filled_cells(void)
+{
+   TEST_ASSERT_TRUE(lvlprest_row_is_simple(rows, 1));
+   TEST_ASSERT_TRUE(lvlprest_row_is_simple(rows, 2));
+   TEST_ASSERT_TRUE(lvlprest_row_is_simple(rows, 6));
+   TEST_ASSERT_FALSE(lvlprest_row_is_simple(rows, 3));   /* Files 0 */
+   TEST_ASSERT_FALSE(lvlprest_row_is_simple(rows, 4));   /* cells past Files */
+   TEST_ASSERT_FALSE(lvlprest_row_is_simple(rows, 5));   /* a hole */
+   TEST_ASSERT_FALSE(lvlprest_row_is_simple(rows, 99));
+}
+
+void test_a_table_with_no_files_column_has_no_simple_rows(void)
+{
+   TEST_ASSERT_FALSE(lvlprest_row_is_simple(table, 1));
+}
+
+void test_inserting_at_the_end_raises_files(void)
+{
+   long len = 0;
+   char *out = lvlprest_with_map_inserted(rows, 1, 3, "new.ds1", &len);
+   char cell[32];
+
+   TEST_ASSERT_NOT_NULL(out);
+   TEST_ASSERT_EQUAL_INT(3, lvlprest_files_value(out, 1));
+   TEST_ASSERT_TRUE(lvlprest_get_cell(out, 1, 3, cell, sizeof(cell)));
+   TEST_ASSERT_EQUAL_STRING("new.ds1", cell);
+   TEST_ASSERT_TRUE(lvlprest_row_is_simple(out, 1));
+   free(out);
+}
+
+void test_inserting_in_the_middle_moves_later_cells_down(void)
+{
+   long len = 0;
+   char *out = lvlprest_with_map_inserted(rows, 1, 1, "new.ds1", &len);
+   char cell[32];
+
+   TEST_ASSERT_NOT_NULL(out);
+   TEST_ASSERT_TRUE(lvlprest_get_cell(out, 1, 1, cell, sizeof(cell)));
+   TEST_ASSERT_EQUAL_STRING("new.ds1", cell);
+   TEST_ASSERT_TRUE(lvlprest_get_cell(out, 1, 3, cell, sizeof(cell)));
+   TEST_ASSERT_EQUAL_STRING("b.ds1", cell);
+   free(out);
+}
+
+void test_inserting_past_the_end_lands_at_the_end(void)
+{
+   long len = 0;
+   char *out = lvlprest_with_map_inserted(rows, 2, 5, "new.ds1", &len);
+   char cell[32];
+
+   TEST_ASSERT_NOT_NULL(out);
+   TEST_ASSERT_TRUE(lvlprest_get_cell(out, 2, 2, cell, sizeof(cell)));
+   TEST_ASSERT_EQUAL_STRING("new.ds1", cell);
+   TEST_ASSERT_EQUAL_INT(2, lvlprest_files_value(out, 2));
+   free(out);
+}
+
+void test_inserting_is_refused_on_full_and_unusual_rows(void)
+{
+   long len = 0;
+   TEST_ASSERT_NULL(lvlprest_with_map_inserted(rows, 6, 1, "new.ds1", &len));
+   TEST_ASSERT_NULL(lvlprest_with_map_inserted(rows, 3, 1, "new.ds1", &len));
+   TEST_ASSERT_NULL(lvlprest_with_map_inserted(rows, 4, 1, "new.ds1", &len));
+   TEST_ASSERT_NULL(lvlprest_with_map_inserted(rows, 5, 2, "new.ds1", &len));
+}
+
+void test_removing_moves_later_cells_up_and_lowers_files(void)
+{
+   long len = 0;
+   char *out = lvlprest_with_map_removed(rows, 1, 1, &len);
+   char cell[32];
+
+   TEST_ASSERT_NOT_NULL(out);
+   TEST_ASSERT_EQUAL_INT(1, lvlprest_files_value(out, 1));
+   TEST_ASSERT_TRUE(lvlprest_get_cell(out, 1, 1, cell, sizeof(cell)));
+   TEST_ASSERT_EQUAL_STRING("b.ds1", cell);
+   TEST_ASSERT_TRUE(lvlprest_get_cell(out, 1, 2, cell, sizeof(cell)));
+   TEST_ASSERT_EQUAL_STRING("0", cell);
+   TEST_ASSERT_TRUE(lvlprest_row_is_simple(out, 1));
+   free(out);
+}
+
+void test_removing_is_refused_for_an_only_map_and_unusual_rows(void)
+{
+   long len = 0;
+   TEST_ASSERT_NULL(lvlprest_with_map_removed(rows, 2, 1, &len));
+   TEST_ASSERT_NULL(lvlprest_with_map_removed(rows, 3, 1, &len));
+   TEST_ASSERT_NULL(lvlprest_with_map_removed(rows, 4, 1, &len));
+   TEST_ASSERT_NULL(lvlprest_with_map_removed(rows, 5, 1, &len));
+   TEST_ASSERT_NULL(lvlprest_with_map_removed(rows, 1, 3, &len));   /* an empty cell */
+}
+
+void test_remove_then_insert_at_the_same_slot_is_byte_identical(void)
+{
+   long len = 0;
+   char *gone = lvlprest_with_map_removed(rows, 6, 2, &len);
+   char *back;
+
+   TEST_ASSERT_NOT_NULL(gone);
+   back = lvlprest_with_map_inserted(gone, 6, 2, "b.ds1", &len);
+   TEST_ASSERT_NOT_NULL(back);
+   TEST_ASSERT_EQUAL_STRING(rows, back);
+   free(gone);
+   free(back);
+}
+
 int main(void)
 {
    UNITY_BEGIN();
@@ -217,5 +339,15 @@ int main(void)
    RUN_TEST(test_find_path_slot_says_when_the_table_is_unusable);
    RUN_TEST(test_each_file_visits_every_listed_cell);
    RUN_TEST(test_each_cleared_tells_namesakes_apart);
+   RUN_TEST(test_files_value_reads_the_row);
+   RUN_TEST(test_a_simple_row_counts_exactly_its_filled_cells);
+   RUN_TEST(test_a_table_with_no_files_column_has_no_simple_rows);
+   RUN_TEST(test_inserting_at_the_end_raises_files);
+   RUN_TEST(test_inserting_in_the_middle_moves_later_cells_down);
+   RUN_TEST(test_inserting_past_the_end_lands_at_the_end);
+   RUN_TEST(test_inserting_is_refused_on_full_and_unusual_rows);
+   RUN_TEST(test_removing_moves_later_cells_up_and_lowers_files);
+   RUN_TEST(test_removing_is_refused_for_an_only_map_and_unusual_rows);
+   RUN_TEST(test_remove_then_insert_at_the_same_slot_is_byte_identical);
    return UNITY_END();
 }

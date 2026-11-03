@@ -54,4 +54,24 @@ void lvlprest_each_file(char * table, LVLPREST_ROW_CB cb, void * ctx);
 void lvlprest_each_cleared(char * game, char * project, LVLPREST_ROW_CB cb,
                            void * ctx);
 
+/* The row's Files column, the count the game's random pick uses. -1 if there's no
+   such row or column. */
+int lvlprest_files_value(char * buf, int def);
+
+/* 1 if Files is 1 to 6, File1 to File<Files> are filled and the rest are empty.
+   The game's random pick reads these cells. It indexes a cell blindly, so a blank
+   below Files crashes it, and rows that aren't simple choose by their own rules. */
+int lvlprest_row_is_simple(char * buf, int def);
+
+/* The table with a map added to a simple row, at `slot` or at the end if that is
+   past the last map, later cells moved along and Files raised. New malloc'd text
+   with a NUL after *out_len bytes; NULL if the row isn't simple or is full. */
+char * lvlprest_with_map_inserted(char * buf, int def, int slot, const char * value,
+                                  long * out_len);
+
+/* The table with File column `slot` taken out of a simple row, later cells moved
+   back and Files lowered. NULL if the row isn't simple, the slot holds no map, or
+   it is the row's only map. */
+char * lvlprest_with_map_removed(char * buf, int def, int slot, long * out_len);
+
 #endif

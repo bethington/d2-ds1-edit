@@ -96,31 +96,27 @@ static const char * lvlprest_base_name(const char * path)
    return base;
 }
 
-/* The bounds of File column `slot` in this Def's row. 1 if found. */
-static int find_cell(char * buf, int def, int slot, char ** start, char ** end)
+/* The bounds of a named column in this Def's row. 1 if found. */
+static int find_named_cell(char * buf, int def, const char * col_name, char ** start, char ** end)
 {
-   char col_name[16];
-   int def_col, file_col, col = 0;
+   int def_col, col_at, col = 0;
    char * row, * row_end, * cell;
 
-   if (slot < 1 || slot > 6)
-      return 0;
-   sprintf(col_name, "File%d", slot);
    def_col = lvlprest_find_col(buf, "Def");
-   file_col = lvlprest_find_col(buf, col_name);
-   if (def_col < 0 || file_col < 0)
+   col_at = lvlprest_find_col(buf, col_name);
+   if (def_col < 0 || col_at < 0)
       return 0;
    row = lvlprest_find_row(buf, def_col, def, &row_end);
    if (row == NULL)
       return 0;
 
    cell = row;
-   while (col < file_col && *cell != '\0' && *cell != '\n' && *cell != '\r')
+   while (col < col_at && *cell != '\0' && *cell != '\n' && *cell != '\r')
    {
       if (*cell == '\t') col++;
       cell++;
    }
-   if (col != file_col)
+   if (col != col_at)
       return 0;
 
    *start = cell;
@@ -128,6 +124,17 @@ static int find_cell(char * buf, int def, int slot, char ** start, char ** end)
       cell++;
    *end = cell;
    return 1;
+}
+
+/* The bounds of File column `slot` in this Def's row. 1 if found. */
+static int find_cell(char * buf, int def, int slot, char ** start, char ** end)
+{
+   char col_name[16];
+
+   if (slot < 1 || slot > 6)
+      return 0;
+   sprintf(col_name, "File%d", slot);
+   return find_named_cell(buf, def, col_name, start, end);
 }
 
 static int cell_is_empty(const char * start, const char * end)
@@ -361,4 +368,119 @@ void lvlprest_each_cleared(char * game, char * project, LVLPREST_ROW_CB cb,
       line = next;
       is_header = 0;
    }
+}
+
+#define ROW_CELL_CAP 256
+
+int lvlprest_files_value(char * buf, int def)
+{
+   char * start, * end;
+   char num[16];
+   int n;
+
+   if (!find_named_cell(buf, def, "Files", &start, &end))
+      return -1;
+   n = (int)(end - start);
+   if (n >= (int) sizeof(num))
+      return -1;
+   memcpy(num, start, n);
+   num[n] = '\0';
+   return atoi(num);
+}
+
+int lvlprest_row_is_simple(char * buf, int def)
+{
+   int files = lvlprest_files_value(buf, def);
+   char * start, * end;
+   int f;
+
+   if (files < 1 || files > 6)
+      return 0;
+   for (f = 1; f <= 6; f++)
+   {
+      if (!find_cell(buf, def, f, &start, &end))
+         return 0;
+      if (cell_is_empty(start, end) != (f > files))
+         return 0;
+   }
+   return 1;
+}
+
+static int read_row_cells(char * buf, int def, char cells[6][ROW_CELL_CAP])
+{
+   int f;
+
+   for (f = 1; f <= 6; f++)
+      if (!lvlprest_get_cell(buf, def, f, cells[f - 1], ROW_CELL_CAP))
+         return 0;
+   return 1;
+}
+
+/* A new table with this row's Files and six File columns replaced. */
+static char * table_with_row(char * buf, int def, char cells[6][ROW_CELL_CAP], int files,
+                             long * out_len)
+{
+   char * start, * end, * text, * next;
+   char num[16];
+   long before, after, val;
+   int f;
+
+   if (!find_named_cell(buf, def, "Files", &start, &end))
+      return NULL;
+   sprintf(num, "%d", files);
+   val = (long) strlen(num);
+   before = (long)(start - buf);
+   after = (long) strlen(end);
+   text = (char *) malloc(before + val + after + 1);
+   if (text == NULL)
+      return NULL;
+   memcpy(text, buf, before);
+   memcpy(text + before, num, val);
+   memcpy(text + before + val, end, after + 1);
+   *out_len = before + val + after;
+
+   for (f = 1; f <= 6; f++)
+   {
+      next = lvlprest_with_cell(text, def, f, cells[f - 1], out_len);
+      free(text);
+      if (next == NULL)
+         return NULL;
+      text = next;
+   }
+   return text;
+}
+
+char * lvlprest_with_map_inserted(char * buf, int def, int slot, const char * value,
+                                  long * out_len)
+{
+   char cells[6][ROW_CELL_CAP];
+   int files, f;
+
+   if (!lvlprest_row_is_simple(buf, def) || strlen(value) >= ROW_CELL_CAP)
+      return NULL;
+   files = lvlprest_files_value(buf, def);
+   if (files >= 6 || slot < 1 || !read_row_cells(buf, def, cells))
+      return NULL;
+   if (slot > files + 1)
+      slot = files + 1;
+   for (f = files; f >= slot; f--)
+      strcpy(cells[f], cells[f - 1]);
+   strcpy(cells[slot - 1], value);
+   return table_with_row(buf, def, cells, files + 1, out_len);
+}
+
+char * lvlprest_with_map_removed(char * buf, int def, int slot, long * out_len)
+{
+   char cells[6][ROW_CELL_CAP];
+   int files, f;
+
+   if (!lvlprest_row_is_simple(buf, def))
+      return NULL;
+   files = lvlprest_files_value(buf, def);
+   if (files < 2 || slot < 1 || slot > files || !read_row_cells(buf, def, cells))
+      return NULL;
+   for (f = slot; f < files; f++)
+      strcpy(cells[f - 1], cells[f]);
+   strcpy(cells[files - 1], "0");
+   return table_with_row(buf, def, cells, files - 1, out_len);
 }
