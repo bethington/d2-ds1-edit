@@ -17,6 +17,7 @@
 #include "core/map_state.h"
 #include "core/project.h"
 #include "ui/props_panel.h"
+#include "ui/ui_layout.h"
 #include "platform.h"
 #include "ui/input.h"
 #include <allegro5/allegro_native_dialog.h>
@@ -2003,7 +2004,7 @@ void area_browser_draw_sidebar(int width, int height)
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
    int y, i, last_act = -1;
    int draw_row = 0;
-   int top_bar_h = glb_ds1edit.show_2nd_row ? 20 : 9;
+   int top_bar_h = ui_top_bar_height();
    int bottom_bar_h = 10;
    int panel_top = top_bar_h;
    int panel_bottom = height - bottom_bar_h;
@@ -2149,7 +2150,7 @@ void area_browser_draw_sidebar(int width, int height)
 /* Draw collapsed sidebar tab — small ">" button at left edge. */
 void area_browser_draw_sidebar_tab(int height)
 {
-   int top_bar_h = glb_ds1edit.show_2nd_row ? 20 : 9;
+   int top_bar_h = ui_top_bar_height();
    int bottom_bar_h = 10;
    int panel_top = top_bar_h;
    int panel_bottom = height - bottom_bar_h;
@@ -2171,7 +2172,7 @@ int area_browser_sidebar_click(int mx, int my, int sidebar_w, int disp_h)
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
    int y, i, last_act = -1;
    int draw_row = 0;
-   int top_bar_h = glb_ds1edit.show_2nd_row ? 20 : 9;
+   int top_bar_h = ui_top_bar_height();
    int panel_top = top_bar_h;
 
    /* Close button */

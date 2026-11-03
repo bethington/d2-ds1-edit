@@ -239,6 +239,7 @@ set(SOURCES
     src/ui/tile_picker.c
     src/ui/project_menu.c
     src/ui/commands.c
+    src/ui/menu_bar.c
     src/ui/map_save_ui.c
     src/ui/export_type_picker.c
     src/ui/upscale_mode_picker.c

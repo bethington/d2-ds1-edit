@@ -6,6 +6,7 @@
 #include "core/txtread.h"
 #include "ui/compat.h"
 #include "ui/props_panel.h"
+#include "ui/ui_layout.h"
 #include "ui/tile_picker.h"
 
 /* Layout constants — match left sidebar style */
@@ -586,7 +587,7 @@ void props_panel_draw(int width, int height)
 {
    PROPS_PANEL_S * pp = &glb_ds1edit.props_panel;
    int disp_w = al_get_display_width(a5_display);
-   int top_bar_h = glb_ds1edit.show_2nd_row ? 20 : 9;
+   int top_bar_h = ui_top_bar_height();
    int bottom_bar_h = 10;
    int panel_top = top_bar_h;
    int panel_bottom = height - bottom_bar_h;
@@ -1361,7 +1362,7 @@ void props_panel_apply(void)
 void props_panel_draw_tab(int height)
 {
    int disp_w = al_get_display_width(a5_display);
-   int top_bar_h = glb_ds1edit.show_2nd_row ? 20 : 9;
+   int top_bar_h = ui_top_bar_height();
    int bottom_bar_h = 10;
    int panel_top = top_bar_h;
    int panel_bottom = height - bottom_bar_h;
@@ -1387,7 +1388,7 @@ int props_panel_click(int mx, int my, int panel_w, int disp_h)
    PROPS_PANEL_S * pp = &glb_ds1edit.props_panel;
    int disp_w = al_get_display_width(a5_display);
    int panel_x = disp_w - panel_w;
-   int top_bar_h = glb_ds1edit.show_2nd_row ? 20 : 9;
+   int top_bar_h = ui_top_bar_height();
    int panel_top = top_bar_h;
    int bottom_bar_h = 10;
    int panel_bottom = disp_h - bottom_bar_h;
@@ -2034,7 +2035,7 @@ void props_panel_handle_keychar(int unichar, int keycode)
                {
                   int disp_w = al_get_display_width(a5_display);
                   int disp_h = al_get_display_height(a5_display);
-                  int top_h = glb_ds1edit.show_2nd_row ? 20 : 9;
+                  int top_h = ui_top_bar_height();
                   int click_x = disp_w - glb_ds1edit.props_panel_width / 2;
                   int click_y = top_h + PP_HEADER_H + 4
                                 + pp->focused_row * PP_LINE_H

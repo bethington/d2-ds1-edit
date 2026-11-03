@@ -19,6 +19,7 @@
 #include "core/area_browser.h"
 #include "core/ds1_manager.h"
 #include "ui/props_panel.h"
+#include "ui/ui_layout.h"
 #include "ui/tile_picker.h"
 #include "ui/project_menu.h"
 #include "ui/preset_picker.h"
@@ -782,7 +783,7 @@ void interfac_user_handler(int start_ds1_idx)
          {
             AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
             int sy, si, s_last_act = -1, s_draw_row = 0;
-            int s_top = glb_ds1edit.show_2nd_row ? 20 : 9;
+            int s_top = ui_top_bar_height();
             int found = 0;
 
             ab->selected_entry = -1;
