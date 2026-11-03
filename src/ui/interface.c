@@ -67,6 +67,18 @@ static void interface_forget_edits(const char *path)
          map_dirty_mark_saved(k);
 }
 
+/* Every slot showing this map now shows a file that's gone, so a real save is
+ * refused until it's reopened: it would recreate a file nothing lists, and block
+ * Restore from Backup. Loading or clearing a slot resets this. */
+static void interface_set_detached(const char *path, int detached)
+{
+   int k;
+
+   for (k = 0; k < DS1_MAX; k++)
+      if (glb_ds1[k].name[0] != 0 && map_state_path_matches(glb_ds1[k].name, path))
+         glb_ds1[k].detached = detached;
+}
+
 static void interface_map_op_failed(const char *title, const char *heading, const char *error)
 {
    al_show_native_message_box(a5_display, title, heading, error, NULL, ALLEGRO_MESSAGEBOX_ERROR);
@@ -95,6 +107,7 @@ static void interface_delete_map(int gi, int ei)
       return;
    }
    interface_forget_edits(path);
+   interface_set_detached(path, TRUE);
 }
 
 static void interface_revert_map(int gi, int ei)
@@ -117,9 +130,11 @@ static void interface_revert_map(int gi, int ei)
    }
 
    interface_forget_edits(path);
+   interface_set_detached(path, TRUE);
 
-   /* Show what was just reverted to. Other open maps with unsaved edits prompt here,
-      and a cancel leaves this one showing until it's reopened. */
+   /* Show what was just reverted to, which reloads every slot. Other open maps with
+      unsaved edits prompt here, and a cancel leaves this one showing until it's
+      reopened. */
    if (was_open && area_browser_find_row(path, def, &gi, &ei))
       area_browser_switch_single(gi, ei);
 }
@@ -138,7 +153,11 @@ static void interface_remove_map(int gi, int ei)
       on it if it's still a game map with no project change. */
    if (!area_browser_find_row(path, def, &gi, &ei) ||
        ab->groups[gi].entries[ei].state != MAP_STATE_GAME)
+   {
+      interface_map_op_failed("Remove from Project", "Nothing was removed.",
+         "In this project the map isn't a plain game map any more. Check its row.");
       return;
+   }
    if (!interface_confirm_map_op("Remove from Project", "Remove %s from the project?", path,
          "This clears its slot in the project's LvlPrest.txt, so the game won't use "
          "this map with your mod. The game's files don't change. Map > Restore Slot "
@@ -166,7 +185,7 @@ static void interface_restore_backup(int gi, int ei)
 {
    AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
    char error[512] = "", path[256];
-   int i, j, found = 0;
+   int i, j, found = 0, was_open, row_gi, row_ei;
 
    snprintf(path, sizeof(path), "%s", ab->groups[gi].entries[ei].ds1_path);
    if (!map_save_ui_require_project())
@@ -184,22 +203,38 @@ static void interface_restore_backup(int gi, int ei)
    if (!found)
       return;
 
+   was_open = ab->loaded_group == gi && ab->loaded_entry == ei;
    if (!interface_confirm_map_op("Restore from Backup", "Restore the backup %s?", path,
-         "This moves it back to the project and registers it in LvlPrest.txt if needed.", FALSE))
+         "This moves it back to the project and registers it in LvlPrest.txt if needed.", TRUE))
       return;
-   if (ds1_manager_restore(gi, ei, error, sizeof(error)) != 0)
+   if (ds1_manager_restore(gi, ei, &row_gi, &row_ei, error, sizeof(error)) != 0)
+   {
       interface_map_op_failed("Restore from Backup", "The backup wasn't restored.", error);
+      return;
+   }
+
+   /* The backup's own file has gone, and the box said its edits wouldn't be saved.
+      A slot still showing the deleted map can save again, now it has a file. */
+   interface_forget_edits(path);
+   interface_set_detached(path, TRUE);
+   if (row_gi >= 0)
+      interface_set_detached(ab->groups[row_gi].entries[row_ei].ds1_path, FALSE);
+
+   /* Like Revert, show what's there now. A cancel at the unsaved prompt leaves the
+      backup showing, refusing saves, until it's reopened. */
+   if (was_open && row_gi >= 0)
+      area_browser_switch_single(row_gi, row_ei);
 }
 
 /* Delete a backup for good. It may be the only copy of a deleted map. */
 static void interface_delete_backup(int gi, int ei)
 {
    AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
-   char heading[600];
+   char heading[600], path[256];
    int rc;
 
-   snprintf(heading, sizeof(heading), "Permanently delete the backup %s?",
-            ab->groups[gi].entries[ei].ds1_path);
+   snprintf(path, sizeof(path), "%s", ab->groups[gi].entries[ei].ds1_path);
+   snprintf(heading, sizeof(heading), "Permanently delete the backup %s?", path);
    rc = al_show_native_message_box(a5_display, "Delete Backup", heading,
       "This can't be undone or restored.",
       NULL, ALLEGRO_MESSAGEBOX_YES_NO | ALLEGRO_MESSAGEBOX_WARN);
@@ -209,7 +244,10 @@ static void interface_delete_backup(int gi, int ei)
       return;
 
    if (ds1_manager_delete_permanent(gi, ei) == 0)
+   {
+      interface_set_detached(path, TRUE);
       printf("Backup deleted permanently\n");
+   }
 }
 
 typedef struct
@@ -1012,8 +1050,6 @@ void interfac_user_handler(int start_ds1_idx)
             int rc_gi = rc_ab->selected_group;
             int rc_ei = rc_ab->selected_entry;
 
-            /* Wait for button release */
-
             /* Show context menu if right-clicked on a map or backup entry */
             if (rc_gi >= 0 && rc_gi < rc_ab->group_count &&
                 rc_ei >= 0 &&
@@ -1023,9 +1059,9 @@ void interfac_user_handler(int start_ds1_idx)
                int rc_is_backup = rc_ab->groups[rc_gi].is_backup;
                int menu_x = a5_mouse_x;
                int menu_y = a5_mouse_y;
-               int row_cmd0;
+               int row_cmd;
                const char *row_label = interface_row_action(
-                  rc_ab->groups[rc_gi].entries[rc_ei].state, &row_cmd0);
+                  rc_ab->groups[rc_gi].entries[rc_ei].state, &row_cmd);
                int menu_w = 212;
                int menu_h = rc_is_backup ? 28 : 14;
                int menu_sel = -1;
@@ -1066,7 +1102,7 @@ void interfac_user_handler(int start_ds1_idx)
                   if (mx >= menu_x && mx < menu_x + menu_w)
                   {
                      if (my >= menu_y && my < menu_y + 14)
-                        menu_sel = 0; /* Restore, or Delete map */
+                        menu_sel = 0; /* Restore, or the row's action */
                      else if (rc_is_backup && my >= menu_y + 14 && my < menu_y + 28)
                         menu_sel = 1; /* Delete permanently */
                   }
@@ -1079,12 +1115,12 @@ void interfac_user_handler(int start_ds1_idx)
                                     (float)(menu_x + menu_w) - 0.5f, (float)(menu_y + menu_h) - 0.5f,
                                     mc_border, 1.0f);
 
-                  /* Item 0: Restore, or Delete map */
+                  /* Item 0: Restore, or the row's action */
                   if (menu_sel == 0)
                      al_draw_filled_rectangle((float)menu_x, (float)menu_y,
                                               (float)(menu_x + menu_w), (float)(menu_y + 14), mc_hover);
                   al_draw_textf(a5_font, mc_text, (float)(menu_x + 6), (float)(menu_y + 3), 0,
-                                rc_is_backup ? "Restore" : row_label);
+                                "%s", rc_is_backup ? "Restore" : row_label);
 
                   /* Item 1: Delete permanently */
                   if (rc_is_backup)
@@ -1106,8 +1142,6 @@ void interfac_user_handler(int start_ds1_idx)
                      {
                         if (!rc_is_backup)
                         {
-                           int row_cmd;
-                           interface_row_action(rc_ab->groups[rc_gi].entries[rc_ei].state, &row_cmd);
                            switch (row_cmd)
                            {
                            case CMD_MAP_DELETE:       interface_delete_map(rc_gi, rc_ei);   break;
@@ -1125,7 +1159,6 @@ void interfac_user_handler(int start_ds1_idx)
                         fflush(stdout);
                      }
                      menu_done = 1;
-                     /* Wait for release */
                   }
                   /* Right-click or Escape cancels */
                   if (mouse_hit(2) ||

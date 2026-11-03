@@ -1182,6 +1182,10 @@ typedef struct DS1_S
    unsigned long long current_tile_hash;  // tile content after the latest edit or undo
    int tile_hash_valid;                   // the two above have been set
 
+   // this map's file was deleted, reverted or restored while it stayed open, so a
+   // real save would recreate a file nothing lists; see ui/map_save_ui.c
+   int  detached;
+
    // current number of objects
    long current_obj_max;
 } DS1_S;

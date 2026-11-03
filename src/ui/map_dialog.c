@@ -132,24 +132,27 @@ static void next_focus(DLG * m, int dir)
 /* 1 if every rule holds; otherwise the first problem goes in the status row. */
 static int try_accept(DLG * m)
 {
-   char file[64];
+   char file[64], rel[256];
 
    if (map_ops_check_name(m->name, file, sizeof(file), m->status, sizeof(m->status)) != 0)
       return 0;
-   if (ds1_manager_name_in_use(m->d->group_idx, file))
-   {
-      snprintf(m->status, sizeof(m->status), "This area already has a map named %s.", file);
-      return 0;
-   }
    if (m->def_count == 0)
    {
       snprintf(m->status, sizeof(m->status), "This area has no LvlPrest row to add a map to.");
       return 0;
    }
+   if (ds1_manager_new_row_path(m->d->group_idx, m->d->def, file, rel, sizeof(rel),
+                                m->status, sizeof(m->status)) != 0)
+      return 0;
+   if (ds1_manager_name_in_use(m->d->group_idx, m->d->def, file))
+   {
+      snprintf(m->status, sizeof(m->status), "This folder already has a map named %s.", file);
+      return 0;
+   }
    if (!ds1_manager_def_has_free_slot(m->d->def))
    {
       snprintf(m->status, sizeof(m->status),
-               "Def %d has no free File slot in LvlPrest.txt. Pick another tileset.", m->d->def);
+               "Def %d has no free File slot. Pick another tileset.", m->d->def);
       return 0;
    }
    if (!m->d->is_clone)
@@ -252,7 +255,7 @@ static void draw_dialog(const DLG * m, int hover_ok, int hover_cancel)
                             (float)(m->x0 + DLG_W), (float)(m->y0 + DLG_H), al_map_rgb(20, 40, 60));
    al_draw_text(a5_font, m->status[0] ? al_map_rgb(255, 170, 120) : al_map_rgb(140, 160, 180),
                 (float)(m->x0 + 8), (float)(m->y0 + DLG_H - STATUS_H + 5), 0,
-                m->status[0] ? m->status : "[Tab] next field   [Left/Right] choose   [Enter] OK   [Esc] Cancel");
+                m->status[0] ? m->status : "[Tab] next  [Left/Right] choose  [Enter] OK  [Esc] Cancel");
 
    if (prev != NULL)
       al_set_target_bitmap(prev);
@@ -318,7 +321,7 @@ int map_dialog_show(MAP_DIALOG_S * d)
 
    input_suppress_held();
    input_pump();
-   while (!done)
+   while (!done && !a5_display_closed)
    {
       ALLEGRO_EVENT ev;
       int mx, my, mb, by, ok_x, cancel_x, hover_ok, hover_cancel, f;
@@ -354,6 +357,9 @@ int map_dialog_show(MAP_DIALOG_S * d)
             }
             if (kc == ALLEGRO_KEY_ENTER || kc == ALLEGRO_KEY_PAD_ENTER)
             {
+               /* The Enter that opened this, still held, mustn't accept it. */
+               if (ev.keyboard.repeat)
+                  continue;
                if (try_accept(&m))
                {
                   accepted = 1;
@@ -373,15 +379,16 @@ int map_dialog_show(MAP_DIALOG_S * d)
       al_get_mouse_state(&a5_ms_state);
       mx = a5_mouse_x;
       my = a5_mouse_y;
-      mb = a5_mouse_b;
+      mb = a5_mouse_b & 1;
       by = m.y0 + DLG_H - STATUS_H - BTN_H - 6;
       ok_x = m.x0 + DLG_W / 2 - BTN_W - 6;
       cancel_x = m.x0 + DLG_W / 2 + 6;
       hover_ok = rect_hit(mx, my, ok_x, by, BTN_W, BTN_H);
       hover_cancel = rect_hit(mx, my, cancel_x, by, BTN_W, BTN_H);
 
-      if (mb && !prev_mb)
+      if (!done && mb && !prev_mb)
       {
+         m.status[0] = '\0';
          if (hover_ok)
          {
             if (try_accept(&m))

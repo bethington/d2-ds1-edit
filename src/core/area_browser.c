@@ -28,6 +28,7 @@
 #define AREA_INIT_ENTRIES   32
 
 static int unlisted_path_equal(const char *a, const char *b);
+static void area_add_project_rows(void);
 
 /* Animation frames contain colors from the palette active when decoded. */
 static const RGBA_PALETTE *browser_animation_palette = NULL;
@@ -214,6 +215,10 @@ int area_browser_init(void)
 {
    int rc;
 
+   /* A table a crash left as .old goes back before anything reads it. */
+   if (glb_project.is_open)
+      map_ops_recover_table(glb_project.path);
+
    /* Parse and cache the two tables. This used to call
     * read_lvltypes_txt(0, 0) on the assumption that 0 "won't match any
     * row" -- but row 0 is ID 0 ("None"), so it matched and went on to
@@ -244,6 +249,14 @@ int area_browser_init(void)
    /* Everything LvlPrest does not name -- maze and room fragments -- would
     * otherwise have no way into the browser at all. */
    area_browser_scan_unlisted();
+
+   /* After the scan, which can only see the archives, and before the sort, since
+      both can add Unlisted groups. */
+   area_add_project_rows();
+   if (glb_ds1edit.area_browser.group_count > 1)
+      qsort(glb_ds1edit.area_browser.groups, glb_ds1edit.area_browser.group_count,
+            sizeof(AREA_GROUP_S), area_group_cmp);
+
    area_browser_refresh_states();
    return 0;
 }
@@ -273,55 +286,6 @@ static void area_note_def_group(int def, int lvltype_id)
    s_def_groups[s_def_group_count].def = def;
    s_def_groups[s_def_group_count].lvltype_id = lvltype_id;
    s_def_group_count++;
-}
-
-/* Add a map the game lists and the project's table has cleared. */
-static void area_add_removed_row(int def, const char * ds1_path, void * ctx)
-{
-   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
-   int i, g;
-
-   (void) ctx;
-   for (i = 0; i < s_def_group_count; i++)
-   {
-      if (s_def_groups[i].def != def)
-         continue;
-      for (g = 0; g < ab->group_count; g++)
-      {
-         AREA_GROUP_S * grp = &ab->groups[g];
-         int before;
-
-         if (grp->is_backup || grp->lvltype_id != s_def_groups[i].lvltype_id)
-            continue;
-         before = grp->entry_count;
-         area_group_add_entry(grp, grp->lvltype_id, def, ds1_path);
-         if (grp->entry_count > before)
-            grp->entries[grp->entry_count - 1].slot_cleared = 1;
-      }
-   }
-}
-
-/* The union the spec asks for: rows the project's table cleared stay visible. */
-static void area_add_removed_rows(void)
-{
-   char path[768];
-   char lvlprest[] = "Data\\Global\\Excel\\LvlPrest.txt";
-   long len;
-   char * project, * game;
-
-   if (!glb_project.is_open ||
-       map_ops_table_path(glb_project.path, path, sizeof(path)) != 0)
-      return;
-   project = map_ops_read_file(path, &len);
-   if (project == NULL)
-      return;
-   game = (char *) txt_read_in_mem_mpq_only(lvlprest);
-   if (game != NULL)
-   {
-      lvlprest_each_cleared(game, project, area_add_removed_row, NULL);
-      free(game);
-   }
-   free(project);
 }
 
 /* Build the grouped area list from the loaded TXT data. */
@@ -568,8 +532,6 @@ void area_browser_build(void)
          }
       }
    }
-
-   area_add_removed_rows();
 
    /* sort groups: by act then alphabetically */
    if (ab->group_count > 1)
@@ -924,13 +886,9 @@ static int area_browser_may_unload(void)
 
 static int project_has_map(const char * ds1_path)
 {
-   char rel[512], found[1024];
+   char found[1024];
 
-   snprintf(rel, sizeof(rel), "Global/Tiles/%s", ds1_path);
-   if (ds1_path_resolve_nocase(glb_project.path, rel, found, sizeof(found)))
-      return 1;
-   snprintf(rel, sizeof(rel), "Data/Global/Tiles/%s", ds1_path);
-   return ds1_path_resolve_nocase(glb_project.path, rel, found, sizeof(found));
+   return map_ops_find_tile(glb_project.path, ds1_path, found, sizeof(found));
 }
 
 /* In the game's own archives, ignoring any overlay? Loads the file, so it is
@@ -1821,6 +1779,241 @@ void area_browser_scan_unlisted(void)
    }
 }
 
+/* ---- Rows only the project's table can name ---- */
+
+int area_browser_path_known(const char * ds1_path)
+{
+   return unlisted_already_known(&glb_ds1edit.area_browser, ds1_path);
+}
+
+/* The preset index's row for this Def, or NULL. */
+static const PRESET_ENTRY_S * area_preset_for_def(int def)
+{
+   int i, count = mpq_index_preset_count();
+
+   for (i = 0; i < count; i++)
+   {
+      const PRESET_ENTRY_S * preset = mpq_index_preset_at(i);
+
+      if (preset != NULL && preset->def == def)
+         return preset;
+   }
+   return NULL;
+}
+
+int area_browser_lvltype_for_def(int def, int fallback)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   const PRESET_ENTRY_S * preset;
+   int g, e;
+
+   for (g = 0; g < ab->group_count; g++)
+   {
+      if (ab->groups[g].is_backup)
+         continue;
+      for (e = 0; e < ab->groups[g].entry_count; e++)
+         if (ab->groups[g].entries[e].lvlprest_def == def &&
+             ab->groups[g].entries[e].lvltype_id > 0)
+            return ab->groups[g].entries[e].lvltype_id;
+   }
+   preset = area_preset_for_def(def);
+   if (preset != NULL && preset->level_type > 0 && preset->type_name[0] != '\0')
+      return preset->level_type;
+   return fallback;
+}
+
+/* Which act's Unlisted group a map goes in, by the same rules as the archive scan. */
+static int area_unlisted_act(int def, int lvltype, const char * ds1_path)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   const PRESET_ENTRY_S * preset = area_preset_for_def(def);
+   int g;
+
+   if (preset != NULL && preset->act >= 1 && preset->act <= 5)
+      return preset->act;
+   for (g = 0; lvltype > 0 && g < ab->group_count; g++)
+      if (ab->groups[g].lvltype_id == lvltype && ab->groups[g].act >= 1 && ab->groups[g].act <= 5)
+         return ab->groups[g].act;
+   return unlisted_act_from_path(ds1_path);
+}
+
+/* An index into ab->groups, since making a group can move them. -1 if it can't be made. */
+static int area_add_unlisted_row(int def, int lvltype, const char * ds1_path)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   AREA_GROUP_S * g = unlisted_group_for_act(ab, area_unlisted_act(def, lvltype, ds1_path));
+   int before;
+
+   if (g == NULL)
+      return -1;
+   before = g->entry_count;
+   area_group_add_entry(g, lvltype, def, ds1_path);
+   return g->entry_count > before ? (int) (g - ab->groups) : -1;
+}
+
+int area_browser_add_map_row(int def, int lvltype, const char * ds1_path,
+                             int * group_idx, int * entry_idx)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   int g, e, found = -1, before;
+
+   /* Beside the Def's other files. */
+   for (g = 0; def > 0 && found < 0 && g < ab->group_count; g++)
+   {
+      if (ab->groups[g].is_backup)
+         continue;
+      for (e = 0; found < 0 && e < ab->groups[g].entry_count; e++)
+         if (ab->groups[g].entries[e].lvlprest_def == def)
+            found = g;
+   }
+   for (g = 0; lvltype > 0 && found < 0 && g < ab->group_count; g++)
+      if (!ab->groups[g].is_backup && ab->groups[g].lvltype_id == lvltype)
+         found = g;
+
+   if (found >= 0)
+   {
+      before = ab->groups[found].entry_count;
+      area_group_add_entry(&ab->groups[found], lvltype, def, ds1_path);
+      if (ab->groups[found].entry_count == before)
+         return 0;
+   }
+   else
+   {
+      found = area_add_unlisted_row(def, lvltype, ds1_path);
+      if (found < 0)
+         return 0;
+   }
+   *group_idx = found;
+   *entry_idx = ab->groups[found].entry_count - 1;
+   return 1;
+}
+
+/* A row an Unlisted group holds for this map. The scan can have filled in no Def:
+ * the index it asks is built from this same table, which no longer lists it. */
+static int area_row_is_cleared_map(const AREA_DS1_ENTRY_S * e, int def, const char * ds1_path)
+{
+   return (e->lvlprest_def == def || e->lvlprest_def <= 0) &&
+          unlisted_path_equal(e->ds1_path, ds1_path);
+}
+
+static int area_group_is_unlisted(const AREA_GROUP_S * g)
+{
+   return !g->is_backup && g->lvltype_id <= -100;
+}
+
+/* A map the game lists and the project's table has cleared. It goes in each group
+ * its Def belongs to, or stays in Unlisted if there's none, so it shows struck
+ * through whether or not its Def has a LvlType group. */
+static void area_add_removed_row(int def, const char * ds1_path, void * ctx)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   int i, g, e, placed = 0;
+
+   (void) ctx;
+   for (i = 0; i < s_def_group_count; i++)
+   {
+      if (s_def_groups[i].def != def)
+         continue;
+      for (g = 0; g < ab->group_count; g++)
+      {
+         AREA_GROUP_S * grp = &ab->groups[g];
+         int have = 0;
+
+         if (grp->is_backup || grp->lvltype_id != s_def_groups[i].lvltype_id)
+            continue;
+         placed = 1;
+         for (e = 0; e < grp->entry_count; e++)
+            if (grp->entries[e].lvlprest_def == def &&
+                unlisted_path_equal(grp->entries[e].ds1_path, ds1_path))
+            {
+               grp->entries[e].slot_cleared = 1;
+               have = 1;
+            }
+         if (!have)
+         {
+            int before = grp->entry_count;
+
+            area_group_add_entry(grp, grp->lvltype_id, def, ds1_path);
+            if (grp->entry_count > before)
+               grp->entries[grp->entry_count - 1].slot_cleared = 1;
+         }
+      }
+   }
+
+   for (g = 0; g < ab->group_count; g++)
+   {
+      AREA_GROUP_S * grp = &ab->groups[g];
+
+      if (!area_group_is_unlisted(grp))
+         continue;
+      for (e = 0; e < grp->entry_count; e++)
+      {
+         AREA_DS1_ENTRY_S * row = &grp->entries[e];
+
+         if (!area_row_is_cleared_map(row, def, ds1_path))
+            continue;
+         if (placed)
+         {
+            /* Its own group has it now; this is the scan's copy. */
+            memmove(row, row + 1, sizeof(AREA_DS1_ENTRY_S) * (grp->entry_count - e - 1));
+            grp->entry_count--;
+            e--;
+         }
+         else
+         {
+            /* Its Def's LvlType over the scan's guess from the folder. */
+            int lvltype = area_browser_lvltype_for_def(def, row->lvltype_id);
+
+            row->lvlprest_def = def;
+            row->lvltype_id = lvltype;
+            row->slot_cleared = 1;
+            placed = 1;
+         }
+      }
+   }
+
+   if (!placed)
+   {
+      int lvltype = area_browser_lvltype_for_def(def, -1);
+
+      g = area_add_unlisted_row(def, lvltype, ds1_path);
+      if (g >= 0)
+         ab->groups[g].entries[ab->groups[g].entry_count - 1].slot_cleared = 1;
+   }
+}
+
+/* A file the project's table lists that no row holds: a map made in a Def with no
+ * LvlType group has no group to come back in, and the archive scan can't see it. */
+static void area_add_listed_row(int def, const char * ds1_path, void * ctx)
+{
+   (void) ctx;
+   if (!unlisted_already_known(&glb_ds1edit.area_browser, ds1_path))
+      area_add_unlisted_row(def, area_browser_lvltype_for_def(def, -1), ds1_path);
+}
+
+/* The union the spec asks for: rows the project's table cleared stay visible, and
+ * rows only it names appear. */
+static void area_add_project_rows(void)
+{
+   char lvlprest[] = "Data\\Global\\Excel\\LvlPrest.txt";
+   long len;
+   char * project, * game;
+
+   if (!glb_project.is_open)
+      return;
+   project = map_ops_read_table(glb_project.path, &len);
+   if (project == NULL)
+      return;
+   game = (char *) txt_read_in_mem_mpq_only(lvlprest);
+   if (game != NULL)
+   {
+      lvlprest_each_cleared(game, project, area_add_removed_row, NULL);
+      free(game);
+   }
+   lvlprest_each_file(project, area_add_listed_row, NULL);
+   free(project);
+}
+
 /* Scan a backup/ directory for backed-up DS1 files and add them
  * as "Backup" sub-groups under each Act. */
 static void scan_backup_root(const char * root)
@@ -2445,6 +2638,49 @@ int area_browser_sidebar_click(int mx, int my, int sidebar_w, int disp_h)
       }
    }
    return -1;
+}
+
+void area_browser_scroll_to_row(int group_idx, int entry_idx)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   int i, last_act = -1, row = 0, visible;
+   int first_y = ui_top_bar_height() + SB_HEADER_H + 4;
+   int disp_h = a5_display != NULL ? al_get_display_height(a5_display) : glb_config.screen.height;
+
+   if (group_idx < 0 || group_idx >= ab->group_count ||
+       entry_idx < 0 || entry_idx >= ab->groups[group_idx].entry_count)
+      return;
+
+   ab->groups[group_idx].is_expanded = TRUE;
+   ab->selected_group = group_idx;
+   ab->selected_entry = entry_idx;
+   glb_ds1edit.sidebar_visible = TRUE;
+
+   /* The rows area_browser_draw_sidebar counts, with its bottom bar of 10. */
+   for (i = 0; i <= group_idx; i++)
+   {
+      if (ab->groups[i].act != last_act)
+      {
+         row++;
+         last_act = ab->groups[i].act;
+      }
+      if (i == group_idx)
+      {
+         row += 1 + entry_idx;
+         break;
+      }
+      row++;
+      if (ab->groups[i].is_expanded)
+         row += ab->groups[i].entry_count;
+   }
+
+   visible = (disp_h - 10 - first_y - 1) / SB_LINE_H;
+   if (visible < 1)
+      visible = 1;
+   if (row < ab->scroll_offset)
+      ab->scroll_offset = row;
+   else if (row >= ab->scroll_offset + visible)
+      ab->scroll_offset = row - visible + 1;
 }
 
 /* Handle mouse wheel scroll in sidebar. Returns 1 if handled. */

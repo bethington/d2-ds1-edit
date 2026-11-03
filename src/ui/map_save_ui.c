@@ -33,6 +33,16 @@ static int save_one(int ds1_idx, int is_tmp_file)
 {
    char error[768];
 
+   /* An autosave stays allowed: it only ever writes a .tmp. */
+   if (!is_tmp_file && glb_ds1[ds1_idx].detached)
+   {
+      snprintf(error, sizeof(error), "%s was removed from the project, so it wasn't saved. "
+               "Reopen it, or use Restore from Backup.", glb_ds1[ds1_idx].name);
+      al_show_native_message_box(a5_display, "DS1Edit", "The map was not saved",
+                                 error, NULL, ALLEGRO_MESSAGEBOX_ERROR);
+      return -1;
+   }
+
    if (!is_tmp_file && project_save_would_replace(glb_ds1[ds1_idx].name) &&
        msg_replace_project_copy_main() != 0)
       return -1;
@@ -49,7 +59,8 @@ static int save_one(int ds1_idx, int is_tmp_file)
 
 int map_save_ui_save(int ds1_idx, int is_tmp_file)
 {
-   if (!is_tmp_file && glb_ds1[ds1_idx].name[0] != 0 && !map_save_ui_require_project())
+   if (!is_tmp_file && glb_ds1[ds1_idx].name[0] != 0 && !glb_ds1[ds1_idx].detached &&
+       !map_save_ui_require_project())
       return -1;
 
    if (save_one(ds1_idx, is_tmp_file) != 0)

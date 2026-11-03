@@ -13,6 +13,7 @@
 #include "core/file_copy.h"
 #include "core/lvlprest_text.h"
 #include "core/map_ops.h"
+#include "core/map_state.h"
 #include "core/project.h"
 #include "core/ds1_save_io.h"
 
@@ -51,11 +52,56 @@ static int manager_need_project(char * error, int cap)
    return 0;
 }
 
-static void manager_remove_row(AREA_GROUP_S * g, int entry_idx)
+/* The open and selected rows keep pointing at the same rows. If the open one goes,
+ * nothing is open as far as the browser knows. */
+static void manager_remove_row(int group_idx, int entry_idx)
 {
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   AREA_GROUP_S * g = &ab->groups[group_idx];
+
    memmove(&g->entries[entry_idx], &g->entries[entry_idx + 1],
            sizeof(AREA_DS1_ENTRY_S) * (g->entry_count - entry_idx - 1));
    g->entry_count--;
+
+   if (ab->loaded_group == group_idx)
+   {
+      if (ab->loaded_entry == entry_idx)
+      {
+         ab->loaded_group = -1;
+         ab->loaded_entry = -1;
+      }
+      else if (ab->loaded_entry > entry_idx)
+         ab->loaded_entry--;
+   }
+   if (ab->selected_group == group_idx)
+   {
+      if (ab->selected_entry == entry_idx)
+         ab->selected_entry = -1;
+      else if (ab->selected_entry > entry_idx)
+         ab->selected_entry--;
+   }
+}
+
+/* Every regular row of this map: a row can list the same file twice. */
+static void manager_set_slot_cleared(int def, const char * ds1_path, int cleared)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   size_t len = strlen(ds1_path);
+   int i, j;
+
+   for (i = 0; i < ab->group_count; i++)
+   {
+      if (ab->groups[i].is_backup)
+         continue;
+      for (j = 0; j < ab->groups[i].entry_count; j++)
+      {
+         AREA_DS1_ENTRY_S * e = &ab->groups[i].entries[j];
+
+         if (e->lvlprest_def == def && strlen(e->ds1_path) == len &&
+             map_state_path_matches(e->ds1_path, ds1_path))
+            e->slot_cleared = cleared;
+      }
+   }
 }
 
 /* "<date>" and "Act1-Town" for a backup folder, and the metadata that goes
@@ -131,26 +177,35 @@ static int manager_new_path(const AREA_GROUP_S * g, int def, const char * file_n
    return 0;
 }
 
-int ds1_manager_name_in_use(int group_idx, const char * file_name)
+int ds1_manager_new_row_path(int group_idx, int def, const char * file_name,
+                             char * out, int cap, char * error, int error_cap)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
-   AREA_GROUP_S * g;
-   int j;
 
    if (group_idx < 0 || group_idx >= ab->group_count)
-      return 0;
-   g = &ab->groups[group_idx];
-   for (j = 0; j < g->entry_count; j++)
    {
-      const char * p = g->entries[j].ds1_path;
-      const char * a = strrchr(p, '/');
-      const char * b = strrchr(p, '\\');
-      const char * base = (a != NULL && (b == NULL || a > b)) ? a + 1 : (b != NULL ? b + 1 : p);
-
-      if (stricmp(base, file_name) == 0)
-         return 1;
+      snprintf(error, error_cap, "That area is gone. Pick another.");
+      return -1;
+   }
+   if (manager_new_path(&ab->groups[group_idx], def, file_name, out, cap, error, error_cap) != 0)
+      return -1;
+   if ((int) strlen(out) > MAP_OPS_TABLE_PATH_MAX)
+   {
+      snprintf(error, error_cap, "That makes a %d-character path. LvlPrest.txt allows %d.",
+               (int) strlen(out), MAP_OPS_TABLE_PATH_MAX);
+      return -1;
    }
    return 0;
+}
+
+int ds1_manager_name_in_use(int group_idx, int def, const char * file_name)
+{
+   char rel[256], ignored[160];
+
+   if (ds1_manager_new_row_path(group_idx, def, file_name, rel, sizeof(rel),
+                                ignored, sizeof(ignored)) != 0)
+      return 0;
+   return area_browser_path_known(rel);
 }
 
 /* A New map: to the project's backup folder, and out of the table. */
@@ -159,7 +214,7 @@ int ds1_manager_delete(int group_idx, int entry_idx, char * error, int cap)
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
    AREA_GROUP_S * g;
    AREA_DS1_ENTRY_S e;
-   char date[32], label[128], json[1024], backup[512], path[768];
+   char date[32], label[128], json[1024], backup[512];
    char * table, * seed;
    long len;
    int rc;
@@ -172,12 +227,7 @@ int ds1_manager_delete(int group_idx, int entry_idx, char * error, int cap)
    e = g->entries[entry_idx];
 
    /* A table that can't be read stops this before the file moves. */
-   if (map_ops_table_path(glb_project.path, path, sizeof(path)) != 0)
-   {
-      snprintf(error, cap, "The path to the project's LvlPrest.txt is too long.");
-      return -1;
-   }
-   table = map_ops_read_file(path, &len);
+   table = map_ops_read_table(glb_project.path, &len);
    if (table == NULL)
    {
       snprintf(error, cap, "The project's LvlPrest.txt can't be read.");
@@ -191,12 +241,17 @@ int ds1_manager_delete(int group_idx, int entry_idx, char * error, int cap)
       return -1;
    }
 
+   /* Read before the file moves, since it can fail for the same reason a table
+      write would. A backup row holds at most this much path. */
+   seed = manager_seed();
    manager_backup_details(g, &e, date, sizeof(date), label, sizeof(label), json, sizeof(json));
    if (map_ops_backup_file(glb_project.path, e.ds1_path, label, date, json,
-                           backup, sizeof(backup), error, cap) != 0)
+                           backup, (int) sizeof(e.ds1_path), error, cap) != 0)
+   {
+      free(seed);
       return -1;
+   }
 
-   seed = manager_seed();
    rc = map_ops_unregister(glb_project.path, seed, e.lvlprest_def, e.ds1_path, error, cap);
    free(seed);
    if (rc != 0)
@@ -243,7 +298,7 @@ int ds1_manager_delete(int group_idx, int entry_idx, char * error, int cap)
                   ab->groups[ab->loaded_group].entries[ab->loaded_entry].ds1_path);
          open_def = ab->groups[ab->loaded_group].entries[ab->loaded_entry].lvlprest_def;
       }
-      manager_remove_row(g, entry_idx);
+      manager_remove_row(group_idx, entry_idx);
       ab->loaded_group = -1;
       ab->loaded_entry = -1;
       if (open_path[0] != '\0')
@@ -269,7 +324,7 @@ int ds1_manager_revert(int group_idx, int entry_idx, char * error, int cap)
    manager_backup_details(g, &g->entries[entry_idx], date, sizeof(date), label, sizeof(label),
                           json, sizeof(json));
    if (map_ops_backup_file(glb_project.path, g->entries[entry_idx].ds1_path, label, date, json,
-                           backup, sizeof(backup), error, cap) != 0)
+                           backup, (int) sizeof(g->entries[entry_idx].ds1_path), error, cap) != 0)
       return -1;
    area_browser_rescan_backups();
    area_browser_refresh_states();
@@ -281,14 +336,32 @@ int ds1_manager_remove_slot(int group_idx, int entry_idx, char * error, int cap)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
    AREA_DS1_ENTRY_S * e;
-   char * seed;
-   int rc;
+   char name[] = "Data\\Global\\Excel\\LvlPrest.txt";
+   char * game, * seed;
+   int rc, listed;
 
    if (group_idx < 0 || group_idx >= ab->group_count || !manager_need_project(error, cap))
       return -1;
    if (entry_idx < 0 || entry_idx >= ab->groups[group_idx].entry_count)
       return -1;
    e = &ab->groups[group_idx].entries[entry_idx];
+
+   /* Restore Slot puts back what the game's table says. A row it doesn't list
+      would have nothing changed and nothing to come back from. */
+   game = (char *) txt_read_in_mem_mpq_only(name);
+   if (game == NULL)
+   {
+      snprintf(error, cap, "The game's LvlPrest.txt can't be read.");
+      return -1;
+   }
+   listed = e->lvlprest_def > 0 && lvlprest_lists_path(game, e->lvlprest_def, e->ds1_path);
+   free(game);
+   if (!listed)
+   {
+      snprintf(error, cap, "The game's LvlPrest.txt doesn't list %s here, so it has no slot "
+               "to clear.", e->ds1_path);
+      return -1;
+   }
 
    seed = manager_seed();
    rc = map_ops_unregister(glb_project.path, seed, e->lvlprest_def, e->ds1_path, error, cap);
@@ -297,7 +370,7 @@ int ds1_manager_remove_slot(int group_idx, int entry_idx, char * error, int cap)
       return -1;
 
    manager_tables_changed();
-   e->slot_cleared = 1;
+   manager_set_slot_cleared(e->lvlprest_def, e->ds1_path, 1);
    area_browser_refresh_states();
    return 0;
 }
@@ -332,20 +405,19 @@ int ds1_manager_restore_slot(int group_idx, int entry_idx, char * error, int cap
       return -1;
 
    manager_tables_changed();
-   e->slot_cleared = 0;
+   manager_set_slot_cleared(e->lvlprest_def, e->ds1_path, 0);
    area_browser_refresh_states();
    return 0;
 }
 
 int ds1_manager_def_has_free_slot(int def)
 {
-   char path[512];
    char * table = NULL;
    long len;
    int slot;
 
-   if (glb_project.is_open && map_ops_table_path(glb_project.path, path, sizeof(path)) == 0)
-      table = map_ops_read_file(path, &len);
+   if (glb_project.is_open)
+      table = map_ops_read_table(glb_project.path, &len);
    if (table == NULL)
       table = manager_seed();
    if (table == NULL)
@@ -353,6 +425,18 @@ int ds1_manager_def_has_free_slot(int def)
    slot = lvlprest_empty_slot(table, def);
    free(table);
    return slot > 0;
+}
+
+/* An Unlisted group's id isn't a LvlType, so the row takes its Def's: otherwise the
+ * map opens without its tileset, and comes back differently after a reload. */
+static void manager_add_new_row(int group_idx, int def, const char * rel)
+{
+   AREA_GROUP_S * g = &glb_ds1edit.area_browser.groups[group_idx];
+   int lvltype = area_browser_lvltype_for_def(def, g->lvltype_id > 0 ? g->lvltype_id : -1);
+
+   area_group_add_entry(g, lvltype, def, rel);
+   area_browser_refresh_states();
+   area_browser_scroll_to_row(group_idx, g->entry_count - 1);
 }
 
 int ds1_manager_create_empty(int group_idx, int def, const char * file_name,
@@ -378,9 +462,7 @@ int ds1_manager_create_empty(int group_idx, int def, const char * file_name,
       return -1;
 
    manager_tables_changed();
-   area_group_add_entry(g, g->lvltype_id, def, rel);
-   g->is_expanded = TRUE;
-   area_browser_refresh_states();
+   manager_add_new_row(group_idx, def, rel);
    return 0;
 }
 
@@ -391,7 +473,7 @@ int ds1_manager_clone(int src_ds1_idx, int group_idx, int def, const char * file
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
    AREA_GROUP_S * g;
-   char rel[256], dest[768];
+   char rel[256], dest[768], found[768];
    char * seed;
    int rc;
 
@@ -403,6 +485,11 @@ int ds1_manager_clone(int src_ds1_idx, int group_idx, int def, const char * file
    if (map_ops_tile_path(glb_project.path, rel, dest, sizeof(dest)) != 0)
    {
       snprintf(error, cap, "The path for %s is too long.", file_name);
+      return -1;
+   }
+   if (map_ops_find_tile(glb_project.path, rel, found, sizeof(found)))
+   {
+      snprintf(error, cap, "%s already exists in the project.", rel);
       return -1;
    }
    if (ds1_save_copy_checked(src_ds1_idx, dest, error, (size_t) cap) != 0)
@@ -418,9 +505,7 @@ int ds1_manager_clone(int src_ds1_idx, int group_idx, int def, const char * file
    }
 
    manager_tables_changed();
-   area_group_add_entry(g, g->lvltype_id, def, rel);
-   g->is_expanded = TRUE;
-   area_browser_refresh_states();
+   manager_add_new_row(group_idx, def, rel);
    return 0;
 }
 
@@ -638,7 +723,8 @@ int ds1_manager_txt_set_cell(RQ_ENUM txt_type, const char * key_col, int key_val
 /* Restore a backup DS1 to its original place in the project, and list it in the
  * project's LvlPrest.txt if the table doesn't already. Returns 0, or -1 with a
  * sentence in error. */
-int ds1_manager_restore(int group_idx, int entry_idx, char * error, int cap)
+int ds1_manager_restore(int group_idx, int entry_idx, int * row_group, int * row_entry,
+                        char * error, int cap)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
    AREA_GROUP_S * g;
@@ -648,7 +734,10 @@ int ds1_manager_restore(int group_idx, int entry_idx, char * error, int cap)
    int def, lvltype_id;
    FILE * jf;
    char backup_dir[512];
+   char * seed;
 
+   *row_group = -1;
+   *row_entry = -1;
    if (group_idx < 0 || group_idx >= ab->group_count)
       return -1;
    g = &ab->groups[group_idx];
@@ -747,26 +836,33 @@ int ds1_manager_restore(int group_idx, int entry_idx, char * error, int cap)
 
    if (!manager_need_project(error, cap))
       return -1;
+
+   /* Read before the file moves, as ds1_manager_delete does. */
+   seed = manager_seed();
+   error[0] = '\0';
    if (map_ops_restore_file(glb_project.path, backup_ds1_path, original_path, error, cap) != 0)
+   {
+      free(seed);
       return -1;
+   }
+   if (error[0] != '\0')
+   {
+      /* The map is back, and a backup left behind does no harm. */
+      printf("ds1_manager_restore: %s\n", error);
+      error[0] = '\0';
+   }
 
    /* A New map's slot was cleared when it was deleted. A Modified map's never
       was, and map_ops_register would then list it twice. */
    {
-      char * seed = manager_seed();
-      char path[768];
       long len;
-      char * table;
+      char * table = map_ops_read_table(glb_project.path, &len);
       int listed = 0;
 
-      if (map_ops_table_path(glb_project.path, path, sizeof(path)) == 0)
+      if (table != NULL)
       {
-         table = map_ops_read_file(path, &len);
-         if (table != NULL)
-         {
-            listed = lvlprest_find_file_slot(table, def, original_path) > 0;
-            free(table);
-         }
+         listed = lvlprest_find_file_slot(table, def, original_path) > 0;
+         free(table);
       }
       if (!listed && def > 0 &&
           map_ops_register(glb_project.path, seed, def, original_path, error, cap) != 0)
@@ -789,35 +885,39 @@ int ds1_manager_restore(int group_idx, int entry_idx, char * error, int cap)
 
    manager_tables_changed();
 
-   /* Add a row to the matching regular group, unless the map already has one */
+   /* Add a row, unless the map already has one. A backup from a Def with no LvlType
+      group names no usable LvlType. This can move the groups, so `g` and `e` are
+      done with here. */
    {
       int gi, ei;
+
       if (area_browser_find_row(original_path, def, &gi, &ei))
       {
          /* A Removed row: the table lists the map again now. */
-         ab->groups[gi].entries[ei].slot_cleared = 0;
+         manager_set_slot_cleared(def, original_path, 0);
+         *row_group = gi;
+         *row_entry = ei;
       }
       else
       {
-         for (gi = 0; gi < ab->group_count; gi++)
+         if (lvltype_id <= 0)
+            lvltype_id = area_browser_lvltype_for_def(def, -1);
+         if (area_browser_add_map_row(def, lvltype_id, original_path, &gi, &ei))
          {
-            if (!ab->groups[gi].is_backup && ab->groups[gi].lvltype_id == lvltype_id)
-            {
-               area_group_add_entry(&ab->groups[gi], lvltype_id, def, original_path);
-               printf("ds1_manager_restore: added to group '%s'\n", ab->groups[gi].name);
-               break;
-            }
+            *row_group = gi;
+            *row_entry = ei;
          }
       }
    }
 
    /* Remove the backup entry from the backup group. map_ops_restore_file moved
       the .ds1, so only the JSON and the folder are left. */
-   manager_remove_row(g, entry_idx);
+   manager_remove_row(group_idx, entry_idx);
    remove(backup_json_path);
    RMDIR(backup_dir);  /* Will only succeed if empty */
 
    area_browser_refresh_states();
+   area_browser_scroll_to_row(*row_group, *row_entry);
 
    printf("ds1_manager_restore: complete\n");
    fflush(stdout);
@@ -880,12 +980,7 @@ int ds1_manager_delete_permanent(int group_idx, int entry_idx)
    printf("ds1_manager_delete_permanent: removed %s\n", backup_ds1_path);
 
    /* Remove entry from backup group */
-   if (entry_idx < g->entry_count - 1)
-   {
-      memmove(&g->entries[entry_idx], &g->entries[entry_idx + 1],
-              sizeof(AREA_DS1_ENTRY_S) * (g->entry_count - entry_idx - 1));
-   }
-   g->entry_count--;
+   manager_remove_row(group_idx, entry_idx);
 
    printf("ds1_manager_delete_permanent: complete\n");
    fflush(stdout);
