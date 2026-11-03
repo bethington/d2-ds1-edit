@@ -60,6 +60,8 @@ So:
 
 The crash test ran with every counted cell cleared. A single cleared cell should crash only when that index is picked, so it may pass a short test and fail later.
 
+**A map of a different size in a row.** Two tables each changed 182 sized Act 1 rows, the ones with `Files` equal to their filled cells, taking the maps from another row of the same folder. In `size-control`, every counted cell named `GateNoSuchMap.ds1`. Entering the game as AudNovBq crashed while the level loaded, before the character could walk, with `Error opening file: DATA\GLOBAL\TILES\Act1\Outdoors\GateNoSuchMap.ds1` and an access violation at `D2Common+0xA57C` (6FD5B57C), the same site as the missing-cell crash above. So these rows are picked at game load. In `size-swap`, every counted cell named a real map from a row of a different size and the same folder. The game did not reach town: it stopped while loading with a halt dialog, `Unrecoverable internal error 6fd5c664`, at `D2Common+0xC664`. That is a different site from the control's, and it came with no missing-file error. So the game does not take a map whose size differs from its row's `SizeX` and `SizeY`, at least when every cell is swapped. It was not tried with a single swapped cell, or with a row's size changed to match. New refuses a different size: Step 5.
+
 ## What Step 4 Must Do
 
 - Write files under `data\global\...` in the archive with flag `0x80000000` only, format 0, sector shift 3, and no `(attributes)`. A stale `(attributes)` arms a fatal CRC check.
@@ -74,7 +76,6 @@ The crash test ran with every counted cell cleared. A single cleared cell should
 These must be checked before step 4 ships, in the end-to-end test the spec requires.
 
 - **A changed map seen in the game.** The edited table was compiled and the game entered town, but the loose map was an unchanged copy of `TownN1`, so the screen doesn't prove which file drew it. The file's last-access time supports it, weakly.
-- **A new map of a different size in a row.** This blocks step 4. Every map tested was a copy of the row's own, and Task 5's run didn't generate the Barracks rooms, so it showed nothing about size. Every sized row's maps match its `SizeX` and `SizeY`, so a new map may have to as well. New defaults to the row's size but lets the author change it, with no warning, until this is known.
 - **File cell length.** Static reading infers a stack buffer limit of 41 characters, and `MAP_OPS_TABLE_PATH_MAX` is now 41. The limit itself is not yet tried in the game.
 - **A rebuilt `patch_d2.mpq` mounted at startup.** A fleet launch rewrites its slot first, so this test mounted the archive from inside the running game, through the same Storm export `D2Win` uses.
 - **Read-only excel folder.** Static reading says a failed write is silent.
