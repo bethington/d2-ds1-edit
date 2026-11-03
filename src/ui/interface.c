@@ -56,6 +56,17 @@ static int interface_confirm_map_op(const char *title, const char *heading_fmt,
    return rc == 1;
 }
 
+/* The box said unsaved edits to this map won't be saved: every slot that has it
+ * open stops asking, so a later Save All can't write it back. */
+static void interface_forget_edits(const char *path)
+{
+   int k;
+
+   for (k = 0; k < DS1_MAX; k++)
+      if (glb_ds1[k].name[0] != 0 && map_state_path_matches(glb_ds1[k].name, path))
+         map_dirty_mark_saved(k);
+}
+
 static void interface_map_op_failed(const char *title, const char *heading, const char *error)
 {
    al_show_native_message_box(a5_display, title, heading, error, NULL, ALLEGRO_MESSAGEBOX_ERROR);
@@ -79,7 +90,11 @@ static void interface_delete_map(int gi, int ei)
    /* ds1_manager_delete removes the row, then finds the open map's row again by
       path. If this was the open map, it has none now and stays in memory. */
    if (ds1_manager_delete(gi, ei, error, sizeof(error)) != 0)
+   {
       interface_map_op_failed("Delete Map", "The map wasn't deleted.", error);
+      return;
+   }
+   interface_forget_edits(path);
 }
 
 static void interface_revert_map(int gi, int ei)
@@ -101,26 +116,29 @@ static void interface_revert_map(int gi, int ei)
       return;
    }
 
+   interface_forget_edits(path);
+
    /* Show what was just reverted to. Other open maps with unsaved edits prompt here,
       and a cancel leaves this one showing until it's reopened. */
    if (was_open && area_browser_find_row(path, def, &gi, &ei))
-   {
-      int k;
-      for (k = 0; k < DS1_MAX; k++)
-         if (glb_ds1[k].name[0] != 0 && map_state_path_matches(glb_ds1[k].name, path))
-            map_dirty_mark_saved(k);
       area_browser_switch_single(gi, ei);
-   }
 }
 
 static void interface_remove_map(int gi, int ei)
 {
    AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
    char error[512] = "", path[256];
+   int def = ab->groups[gi].entries[ei].lvlprest_def;
 
+   snprintf(path, sizeof(path), "%s", ab->groups[gi].entries[ei].ds1_path);
    if (!map_save_ui_require_project())
       return;
-   snprintf(path, sizeof(path), "%s", ab->groups[gi].entries[ei].ds1_path);
+
+   /* Opening a project rebuilds the rows, so find this one again, and only act
+      on it if it's still a game map with no project change. */
+   if (!area_browser_find_row(path, def, &gi, &ei) ||
+       ab->groups[gi].entries[ei].state != MAP_STATE_GAME)
+      return;
    if (!interface_confirm_map_op("Remove from Project", "Remove %s from the project?", path,
          "This clears its slot in the project's LvlPrest.txt, so the game won't use "
          "this map with your mod. The game's files don't change. Map > Restore Slot "
@@ -1008,7 +1026,7 @@ void interfac_user_handler(int start_ds1_idx)
                int row_cmd0;
                const char *row_label = interface_row_action(
                   rc_ab->groups[rc_gi].entries[rc_ei].state, &row_cmd0);
-               int menu_w = 170;
+               int menu_w = 212;
                int menu_h = rc_is_backup ? 28 : 14;
                int menu_sel = -1;
                int menu_done = 0;

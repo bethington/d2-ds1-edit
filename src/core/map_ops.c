@@ -73,10 +73,15 @@ int map_ops_check_name(const char * name, char * out_file, int out_cap,
       if (strlen(reserved[i]) == stem && strncasecmp(name, reserved[i], stem) == 0)
          return fail(error, cap, "%s is a reserved name on Windows.", reserved[i]);
 
-   if (n >= 4 && strcasecmp(name + n - 4, ".ds1") == 0)
-      snprintf(out_file, (size_t) out_cap, "%s", name);
-   else
-      snprintf(out_file, (size_t) out_cap, "%s.ds1", name);
+   {
+      int has_ext = n >= 4 && strcasecmp(name + n - 4, ".ds1") == 0;
+      size_t need = n + (has_ext ? 0 : 4) + 1;
+
+      if (out_cap <= 0 || need > (size_t) out_cap)
+         return fail(error, cap, "That name is too long: %d characters with .ds1 at most.",
+                     out_cap - 1);
+      snprintf(out_file, (size_t) out_cap, has_ext ? "%s" : "%s.ds1", name);
+   }
    return 0;
 }
 

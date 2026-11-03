@@ -337,6 +337,24 @@ int ds1_manager_restore_slot(int group_idx, int entry_idx, char * error, int cap
    return 0;
 }
 
+int ds1_manager_def_has_free_slot(int def)
+{
+   char path[512];
+   char * table = NULL;
+   long len;
+   int slot;
+
+   if (glb_project.is_open && map_ops_table_path(glb_project.path, path, sizeof(path)) == 0)
+      table = map_ops_read_file(path, &len);
+   if (table == NULL)
+      table = manager_seed();
+   if (table == NULL)
+      return 1;   /* nothing to judge by: the create itself will say */
+   slot = lvlprest_empty_slot(table, def);
+   free(table);
+   return slot > 0;
+}
+
 int ds1_manager_create_empty(int group_idx, int def, const char * file_name,
                              int width, int height, char * error, int cap)
 {

@@ -32,7 +32,8 @@ typedef struct DLG
    MAP_DIALOG_S * d;
    char name[64], w[8], h[8];
    int  focus;
-   int  defs[64];
+   int  * defs;      /* one slot per row of the area, grown when the area changes */
+   int  defs_cap;
    int  def_count, def_index;
    char status[160];
    int  x0, y0;
@@ -57,7 +58,19 @@ static void load_defs(DLG * m)
 
    m->def_count = 0;
    m->def_index = 0;
-   for (j = 0; j < g->entry_count && m->def_count < 64; j++)
+   if (g->entry_count > m->defs_cap)
+   {
+      int * grown = (int *) realloc(m->defs, sizeof(int) * (size_t) g->entry_count);
+
+      if (grown == NULL)
+      {
+         m->d->def = 0;
+         return;
+      }
+      m->defs = grown;
+      m->defs_cap = g->entry_count;
+   }
+   for (j = 0; j < g->entry_count; j++)
    {
       int def = g->entries[j].lvlprest_def, seen = 0;
 
@@ -131,6 +144,12 @@ static int try_accept(DLG * m)
    if (m->def_count == 0)
    {
       snprintf(m->status, sizeof(m->status), "This area has no LvlPrest row to add a map to.");
+      return 0;
+   }
+   if (!ds1_manager_def_has_free_slot(m->d->def))
+   {
+      snprintf(m->status, sizeof(m->status),
+               "Def %d has no free File slot in LvlPrest.txt. Pick another tileset.", m->d->def);
       return 0;
    }
    if (!m->d->is_clone)
@@ -315,6 +334,15 @@ int map_dialog_show(MAP_DIALOG_S * d)
             done = 1;
             break;
          }
+         if (ev.type != ALLEGRO_EVENT_KEY_CHAR)
+         {
+            /* Resize, display lost or found and focus loss must reach the input
+               layer, which rebuilds the render targets. Its key and button edges
+               are consumed by the pump after this loop; this loop reads keys
+               from KEY_CHAR events only. */
+            input_note_event(&ev);
+            continue;
+         }
          if (ev.type == ALLEGRO_EVENT_KEY_CHAR)
          {
             int kc = ev.keyboard.keycode;
@@ -337,6 +365,10 @@ int map_dialog_show(MAP_DIALOG_S * d)
             handle_key(&m, &ev);
          }
       }
+
+      /* A resize moves the screen's centre. */
+      m.x0 = (glb_config.screen.width - DLG_W) / 2;
+      m.y0 = (glb_config.screen.height - DLG_H) / 2;
 
       al_get_mouse_state(&a5_ms_state);
       mx = a5_mouse_x;
@@ -394,5 +426,6 @@ int map_dialog_show(MAP_DIALOG_S * d)
       input_pump();
    }
    input_suppress_held();
+   free(m.defs);
    return accepted;
 }

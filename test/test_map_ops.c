@@ -85,6 +85,18 @@ void test_names_get_the_extension_and_bad_ones_are_refused(void)
    TEST_ASSERT_EQUAL_INT(-1, map_ops_check_name("CON", out, sizeof(out), err, sizeof(err)));
    TEST_ASSERT_EQUAL_INT(-1, map_ops_check_name("lpt1.ds1", out, sizeof(out), err, sizeof(err)));
    TEST_ASSERT_EQUAL_INT(-1, map_ops_check_name("trailing.", out, sizeof(out), err, sizeof(err)));
+
+   /* A name that fits without .ds1 but not with it is refused, not cut short. */
+   {
+      char small[8], mid[9];
+
+      TEST_ASSERT_EQUAL_INT(0, map_ops_check_name("abc", small, sizeof(small), err, sizeof(err)));
+      TEST_ASSERT_EQUAL_STRING("abc.ds1", small);
+      TEST_ASSERT_EQUAL_INT(-1, map_ops_check_name("abcd", small, sizeof(small), err, sizeof(err)));
+      TEST_ASSERT_NOT_EQUAL(0, (int) strlen(err));
+      TEST_ASSERT_EQUAL_INT(0, map_ops_check_name("abcd.ds1", mid, sizeof(mid), err, sizeof(err)));
+      TEST_ASSERT_EQUAL_INT(-1, map_ops_check_name("abcde.ds1", small, sizeof(small), err, sizeof(err)));
+   }
 }
 
 void test_sizes_have_limits(void)

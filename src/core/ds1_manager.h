@@ -19,6 +19,9 @@ int  ds1_manager_create_empty(int group_idx, int def, const char * file_name,
 int  ds1_manager_clone(int src_ds1_idx, int group_idx, int def, const char * file_name,
                        char * error, int cap);
 int  ds1_manager_name_in_use(int group_idx, const char * file_name);
+/* 1 if the project's table, or the editor's own if the project has none, has a
+ * free File slot on this Def's row. 0 if its six are used or the Def isn't there. */
+int  ds1_manager_def_has_free_slot(int def);
 
 /* Smart filename generation — finds gap in numbering sequence */
 void ds1_manager_suggest_name(const char * base_ds1_path,
