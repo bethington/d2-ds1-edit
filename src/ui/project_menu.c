@@ -150,6 +150,16 @@ static int refuse_game_folder(const char *path)
    return 1;
 }
 
+/* With a project open, changing project closes its maps, so that a map from the
+ * old project can't save over the new one's copy. Unsaved edits are settled
+ * first, before anything else is asked. With no project open (the first-save
+ * flow) the maps stay loaded and the save's replace prompt protects them. */
+static int resolve_unsaved_for_project_change(void)
+{
+   return !glb_project.is_open || map_save_ui_resolve_unsaved(
+      "\nChanging project closes the open maps, and they have unsaved edits.");
+}
+
 static int action_new_project(void)
 {
    char path[PROJECT_PATH_MAX];
@@ -157,6 +167,10 @@ static int action_new_project(void)
    const char *install;
    const char *name;
    FILE *fp;
+   int had_project = glb_project.is_open; // project_load() overwrites glb_project
+
+   if (!resolve_unsaved_for_project_change())
+      return 0;
 
    if (!pick_folder(
          "New Project — click \"New folder\" to create one, then Select",
@@ -208,6 +222,9 @@ static int action_new_project(void)
       return 0;
    }
 
+   if (had_project)
+      area_browser_unload_all();
+
    project_apply_to_config();
    reload_area_browser();
    record_and_persist(path);
@@ -222,19 +239,14 @@ static int action_open_project(void)
    char ini[PROJECT_PATH_MAX];
    const char *initial;
    FILE *fp;
-   int had_project;
+   int had_project = glb_project.is_open; // project_load() overwrites glb_project
 
    // Prefer the most recent project dir as the starting location.
    initial = (glb_prefs.recent_count > 0)
            ? glb_prefs.recent_projects[0]
            : NULL;
 
-   /* Read before project_load() overwrites glb_project. Only a change from
-    * one project to another can lose maps; the first-save flow has none open. */
-   had_project = glb_project.is_open;
-
-   if (had_project && !map_save_ui_resolve_unsaved(
-          "\nSave the open maps before changing project ?"))
+   if (!resolve_unsaved_for_project_change())
       return 0;
 
    if (!pick_folder("Open Project — pick the project folder",
@@ -266,7 +278,7 @@ static int action_open_project(void)
       return 0;
    }
 
-   if (had_project && map_any_dirty())
+   if (had_project)
       area_browser_unload_all();
 
    project_apply_to_config();

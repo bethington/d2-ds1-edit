@@ -27,19 +27,19 @@ static int require_project(void)
    }
 }
 
-int map_save_ui_save(int ds1_idx, int is_tmp_file)
+/* Write one map, with no project question and no browser refresh. A real save
+ * that would replace the project's own copy asks first. */
+static int save_one(int ds1_idx, int is_tmp_file)
 {
    char error[768];
 
-   if (!is_tmp_file && glb_ds1[ds1_idx].name[0] != 0 && !require_project())
+   if (!is_tmp_file && project_save_would_replace(glb_ds1[ds1_idx].name) &&
+       msg_replace_project_copy_main() != 0)
       return -1;
 
    if (ds1_save_checked(ds1_idx, is_tmp_file, error, sizeof(error)) == 0)
-   {
-      if (!is_tmp_file)
-         area_browser_refresh_states();
       return 0;
-   }
+
    al_show_native_message_box(a5_display, "DS1Edit",
       is_tmp_file ? "The autosave (.tmp) was not written"
                   : "The map was not saved",
@@ -47,13 +47,38 @@ int map_save_ui_save(int ds1_idx, int is_tmp_file)
    return -1;
 }
 
+int map_save_ui_save(int ds1_idx, int is_tmp_file)
+{
+   if (!is_tmp_file && glb_ds1[ds1_idx].name[0] != 0 && !require_project())
+      return -1;
+
+   if (save_one(ds1_idx, is_tmp_file) != 0)
+      return -1;
+   if (!is_tmp_file)
+      area_browser_refresh_states();
+   return 0;
+}
+
 int map_save_ui_save_dirty(void)
 {
-   int i, rc = 0;
+   int i, rc = 0, saved = 0;
+
+   if (!map_any_dirty())
+      return 0;
+   if (!require_project())
+      return -1;
 
    for (i = 0; i < DS1_MAX; i++)
-      if (map_is_dirty(i) && map_save_ui_save(i, FALSE) != 0)
+   {
+      if (!map_is_dirty(i))
+         continue;
+      if (save_one(i, FALSE) == 0)
+         saved = 1;
+      else
          rc = -1;
+   }
+   if (saved)
+      area_browser_refresh_states();
    return rc;
 }
 

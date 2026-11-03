@@ -248,31 +248,24 @@ int wmsg_main(WMSG_S * wmsg)
 }
 
 
-// A warning window with three buttons, styled like the quit window.
+// A warning window styled like the quit window, with `count` buttons (at most 3).
 // return value : -1 : error, otherwise the index of the chosen button
-static int msg_three_buttons(char *title, char *text,
-                             char *label0, int key0,
-                             char *label1, int key1)
+static int msg_buttons(char *title, char *text, char **labels, const int *keys,
+                       int count)
 {
-   WMSG_BUT_S buttons[4]; // 4th button is NULL, needed
+   WMSG_BUT_S buttons[4]; // the last button is NULL, needed
    WMSG_S     wmsg;
    int        col_black    = makecol(0, 0, 0),
               col_midgreen = makecol(0, 128, 0),
               col_white    = makecol(255, 255, 255),
               col_green    = makecol(0, 255, 0);
    int        i;
-   char      *labels[3];
-   int        keys[3];
-
-   labels[0] = label0;           keys[0] = key0;
-   labels[1] = label1;           keys[1] = key1;
-   labels[2] = " (Esc) CANCEL "; keys[2] = KEY_ESC;
 
    memset(buttons, 0, sizeof(buttons));
-   for (i = 0; i < 3; i++)
+   for (i = 0; i < count; i++)
    {
       buttons[i].text               = labels[i];
-      buttons[i].right_spaces       = (i < 2) ? 3 : 0;
+      buttons[i].right_spaces       = (i < count - 1) ? 3 : 0;
       buttons[i].on.fg              = col_black;
       buttons[i].on.bg              = col_midgreen;
       buttons[i].on.border          = col_white;
@@ -297,6 +290,31 @@ static int msg_three_buttons(char *title, char *text,
    return wmsg_main( & wmsg);
 }
 
+static int msg_three_buttons(char *title, char *text,
+                             char *label0, int key0,
+                             char *label1, int key1)
+{
+   char *labels[3];
+   int   keys[3];
+
+   labels[0] = label0;           keys[0] = key0;
+   labels[1] = label1;           keys[1] = key1;
+   labels[2] = " (Esc) CANCEL "; keys[2] = KEY_ESC;
+
+   return msg_buttons(title, text, labels, keys, 3);
+}
+
+static int msg_two_buttons(char *title, char *text, char *label0, int key0)
+{
+   char *labels[2];
+   int   keys[2];
+
+   labels[0] = label0;           keys[0] = key0;
+   labels[1] = " (Esc) CANCEL "; keys[1] = KEY_ESC;
+
+   return msg_buttons(title, text, labels, keys, 2);
+}
+
 int msg_unsaved_main(const char *text)
 {
    return msg_three_buttons("WARNING", (char *) text,
@@ -310,6 +328,14 @@ int msg_project_required_main(void)
       "\nSaved maps live in a project folder. Choose one to continue.",
       "(N) NEW PROJECT", KEY_N,
       "(O) OPEN PROJECT", KEY_O);
+}
+
+int msg_replace_project_copy_main(void)
+{
+   return msg_two_buttons("WARNING",
+      "\nThe project already has its own copy of this map."
+      "\nReplacing it keeps the old one as a numbered backup.",
+      "(R) REPLACE", KEY_R);
 }
 
 

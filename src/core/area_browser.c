@@ -275,6 +275,8 @@ void area_browser_build(void)
 
    /* clear any previous data */
    area_browser_destroy();
+   ab->loaded_group = -1;
+   ab->loaded_entry = -1;
    ab->lvltypes_act_mismatch_count = area_browser_audit_lvltypes_rows(
       lvltypes,
       glb_ds1edit.cmd_line.debug_mode == TRUE ? stdout : NULL);
@@ -768,6 +770,8 @@ int area_browser_open_by_file(const char * ds1_path)
             }
             area_browser_apply_folder_act(ds1_idx, g);
          }
+         ab->loaded_group = i;
+         ab->loaded_entry = j;
          return 0;
       }
    }
@@ -805,18 +809,30 @@ void area_browser_unload_all(void)
    glb_ds1edit.has_loaded_ds1 = FALSE;
    glb_ds1edit.area_browser.loaded_group = -1;
    glb_ds1edit.area_browser.loaded_entry = -1;
+
+   /* Pending values must not apply to whichever map opens next. */
+   glb_ds1edit.props_panel.pending_count = 0;
+   glb_ds1edit.props_panel.editing = FALSE;
+   glb_ds1edit.props_panel.ds1_idx = 0;
 }
 
 /* Returns TRUE if the open maps may go. Otherwise it puts the highlight back
- * on the map that stays open, since navigation moves it before switching. */
+ * on the map that stays open, since navigation moves it before switching. With
+ * no browser map loaded it has nothing to go back to and leaves it alone.
+ *
+ * The guard can Save All and open a project, which rebuilds the group table, so
+ * a caller's indexes are only good if ab->reload_generation is unchanged. */
 static int area_browser_may_unload(void)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
 
    if (s_unload_guard == NULL || s_unload_guard())
       return TRUE;
-   ab->selected_group = ab->loaded_group;
-   ab->selected_entry = ab->loaded_entry;
+   if (ab->loaded_group >= 0)
+   {
+      ab->selected_group = ab->loaded_group;
+      ab->selected_entry = ab->loaded_entry;
+   }
    return FALSE;
 }
 
@@ -881,6 +897,8 @@ int area_browser_reload(void)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
    int rc;
+
+   ab->reload_generation++;
 
    if (glb_ds1edit.lvlprest_buff != NULL)
       glb_ds1edit.lvlprest_buff = txt_destroy(glb_ds1edit.lvlprest_buff);
@@ -1030,15 +1048,18 @@ static void area_browser_finish_load(int group_idx, int active_ds1_idx, int open
 int area_browser_switch_area(int group_idx)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
-   int opened;
+   int opened, generation;
 
    if (group_idx < 0 || group_idx >= ab->group_count)
       return -1;
    if (ab->groups[group_idx].entry_count == 0)
       return -1;
 
+   generation = ab->reload_generation;
    if (!area_browser_may_unload())
       return -1;
+   if (ab->reload_generation != generation)
+      return -1; /* the indexes are stale; the maps stay loaded */
 
    printf("Switching to area: ");
    fflush(stdout);
@@ -1103,14 +1124,18 @@ int area_browser_switch_single(int group_idx, int entry_idx)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
    double switch_start_ms;
+   int generation;
 
    if (group_idx < 0 || group_idx >= ab->group_count)
       return -1;
    if (entry_idx < 0 || entry_idx >= ab->groups[group_idx].entry_count)
       return -1;
 
+   generation = ab->reload_generation;
    if (!area_browser_may_unload())
       return -1;
+   if (ab->reload_generation != generation)
+      return -1; /* the indexes are stale; the maps stay loaded */
 
    printf("Switching to DS1 entry %d in group %d\n", entry_idx, group_idx);
    fflush(stdout);
@@ -1192,7 +1217,7 @@ int area_browser_nav_down(void)
    int gi = ab->selected_group;
    int ei = ab->selected_entry;
 
-   if (ab->group_count == 0) return -1;
+   if (gi < 0 || gi >= ab->group_count) return -1;
 
    if (ei == -1)
    {
@@ -1808,6 +1833,7 @@ void area_browser_destroy(void)
    ab->group_count = 0;
    ab->group_max = 0;
    ab->selected_group = -1;
+   ab->selected_entry = -1;
    ab->scroll_offset = 0;
    ab->is_active = FALSE;
 }
@@ -1954,6 +1980,11 @@ int area_browser_open_group(int group_idx)
              total - acc, total > 0 ? 100.0 * (total - acc) / total : 0.0);
    }
    fflush(stdout);
+   if (opened > 0)
+   {
+      ab->loaded_group = group_idx;
+      ab->loaded_entry = 0;
+   }
    return opened;
 }
 
