@@ -288,13 +288,34 @@ The bar across the top holds **File**, **Edit**, **Map**, **View** and **Build**
 
 | Key | Command |
 |---|---|
-| **Ctrl+N** | New map beside the open one |
-| **Ctrl+D** | Clone the open map (copies its saved file) |
-| **Ctrl+Del** | Delete the open map, after asking |
+| **Ctrl+N** | New map: opens a dialog for the name, area, tileset and size |
+| **Ctrl+D** | Clone the open map: the same dialog without the size. The copy includes unsaved edits |
+| **Ctrl+Del** | Delete, Revert or Remove the open map by its state, after asking (see "Deleting maps") |
 | **Ctrl+Shift+N** / **O** / **W** | New, Open or Close Project |
 | **Ctrl+Shift+P** | Open a preset |
 | **Ctrl+Shift+A** | Export assets |
 | **Ctrl+Shift+S** | Save every map with unsaved edits |
+
+#### Creating maps
+
+**Map > New** and **Map > Clone** open a dialog with the map's name, area and tileset. New also asks for the width and height, each 1 to 1000 (it starts at 20, or at the open map's size). A clone keeps the size of the map it copies. Clone copies the map as it is in memory, so it includes unsaved edits, and it works on maps that exist only in an MPQ. The original stays as it was, still marked unsaved if it had edits. With no project open, the editor asks for one first.
+
+The dialog stays up, with a message, if the name is empty, uses anything but letters, digits, `_`, `-` and `.`, starts or ends with a dot, is a Windows reserved name such as `CON`, is too long, or is already used in that area, or if the chosen tileset has no free File slot in `LvlPrest.txt`. If the table can't be written, the new map is removed again and nothing changes. A new map shows `N` in the area browser.
+
+#### Deleting maps
+
+What a map's delete command does depends on its mark in the area browser:
+
+| Map's mark | Command | What happens | Undo by |
+|---|---|---|---|
+| `N` | Delete Map | The file moves to the project's `backup` folder and its slot is cleared | Restore from Backup |
+| `M` | Revert to Game Version | The project's copy moves to the `backup` folder | Restore from Backup |
+| none | Remove from Project | Its slot is cleared in the project's `LvlPrest.txt` | Restore Slot |
+| struck through | Restore Slot | The game's value goes back in the slot | Remove from Project |
+
+These act on the open map. Right-click a row in the area browser to do the same for any row. A struck-through row can't be opened until its slot is restored. Each command asks first, and nothing is ever written to the Diablo II folder. **Ctrl+Del** runs Delete, Revert or Remove for the open map; Restore Slot has no hotkey, so use the Map menu or a right-click, and Clone is dimmed on a struck-through map.
+
+Backups now live in `<project>/backup`. A second backup of the same map on the same day gets its own folder (`_2`, `_3`, ...) instead of replacing the first. Backups made by older versions in the editor's own `backup` folder stay listed, and move into the project when restored.
 
 * * *
 
@@ -763,9 +784,11 @@ Cut'n paste. Almost the same as **Ctrl** \+ **C** , except that this time you're
 Select some tiles, even in different layers, then press **DEL** to delete them.
 
 > **Current editor.** **DEL** only affects the selected tiles or objects. To delete
-> a whole map from a mod folder, press **Ctrl+Del** (the open map) or right-click its
-> row in the area browser and choose **Delete map...**. Either asks for confirmation
-> and keeps a copy in the backup folder.
+> a whole map, press **Ctrl+Del** (the open map) or right-click its row in the area
+> browser. What happens depends on the map's state: a new map is deleted, a modified
+> one is reverted to the game's version, and a game map is removed from the project's
+> table. Each asks for confirmation and can be undone; see "Deleting maps" under Menus.
+> Files that move go to `<project>/backup`.
 
 After a Copy, a Deletion or a modification of the Selection, if you want to cancel your actions and come to a precedent state, don't forget to use the **Ctrl** \+ **U** (Undo) feature.
 

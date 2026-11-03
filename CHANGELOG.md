@@ -11,6 +11,18 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
 
 - **Hotkeys for maps.** **Ctrl+N** creates a map, **Ctrl+D** clones the open one, and **Ctrl+Del** deletes the open one after asking. These replace **Insert** and **Shift+Insert**, and **Insert** keeps its object-mode role.
 
+- **Map > New and Clone open a dialog** for the name, area, tileset and size.
+  Clone copies the map as it is in memory, so it includes unsaved edits and works
+  on maps that exist only in an MPQ. A failed table write removes the new map.
+
+- **Deleting follows the map's state.** A map new to the project is deleted, a
+  modified one is reverted to the game's version, and a game map is removed from
+  the project's table, where it stays listed, struck through, until its slot is
+  restored. Each one asks first and can be undone.
+
+- **Backups now live in the project's `backup` folder**, and a second backup of a
+  map on the same day no longer replaces the first.
+
 ### Changed
 
 - **The release gate is workable.** It still fails closed, but it can now be

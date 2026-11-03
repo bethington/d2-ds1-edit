@@ -317,13 +317,13 @@ runs, set `use_pd2 = no`. The command-line equivalents are `--pd2-dir=` and `--u
 | **Ctrl+Z** | Undo the last map edit. While a properties-panel field is being edited, the panel owns Ctrl+Z |
 | **Ctrl+U** | Undo tile edits; acts once per key press |
 | **Delete** | Delete the selected tiles or objects. It never deletes a map |
-| Right-click a map in the area browser, or **Ctrl+Del** | **Delete map...** (**Ctrl+Del** acts on the open map): asks first, then backs the map up and removes it from the project or mod folder |
+| Right-click a map in the area browser, or **Ctrl+Del** | Delete, Revert or Remove the map, by its state (**Ctrl+Del** acts on the open map): a new map is deleted, a modified one is reverted to the game's version, and a game map is removed from the project's table. Each asks first, keeps a copy in `<project>/backup` where files move, and can be undone |
 | **Alt+I** | Select strictly identical tiles |
 | **Alt**-drag | Box-select objects |
 | **Ctrl+S** | Save the current map into the project, asking for a project first if none is open |
 | **Ctrl+Shift+S** | Save every map with unsaved edits |
 | **Ctrl+Shift+N / O / W** | New, Open or Close Project |
-| **Ctrl+N** / **Ctrl+D** | New map / clone the open map (copies its saved file) |
+| **Ctrl+N** / **Ctrl+D** | New map / clone the open map. Each opens a dialog for the name, area and tileset (New also asks for the size). Clone copies the map as it is in memory, unsaved edits included, and works on maps that exist only in an MPQ |
 | **Ctrl+Shift+P** / **Ctrl+Shift+A** | Open a preset / export assets |
 | **Alt+F, E, M, V, B** | Open the File, Edit, Map, View or Build menu. Arrow keys move, **Enter** runs and **Esc** closes |
 

@@ -186,7 +186,15 @@ Use act 1 Town and at least two other maps from different acts.
   doesn't answer the dialog it opens. Check **File > Save** and the Edit rows,
   **Insert** in object mode, and two HUD rows toggled with **~**. On Windows,
   check **Alt**+letter. On macOS, repeat with **Cmd**, and confirm **Cmd+W** and
-  **Cmd+C** don't stick.
+  **Cmd+C** don't stick. Map lifecycle: **Map > New** with no project asks for
+  one. New creates a map that opens and shows `N`. A bad, duplicate or too-long
+  name keeps the dialog up with a message, and a full Def row says so. Clone of a
+  map with unsaved edits keeps those edits in the copy and leaves the original
+  unsaved, and Clone of an MPQ-only map works. **Ctrl+Del** on `N`, `M` and
+  unmarked rows offers Delete, Revert and Remove. A Removed row is struck through
+  and won't open, and **Restore Slot** brings it back. **Restore from Backup**
+  round trips. `<project>/backup` holds the backups, and nothing changes in the
+  game folder.
 
 Total items: 15.
 
