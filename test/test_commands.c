@@ -65,7 +65,40 @@ void test_every_command_is_in_exactly_one_menu(void)
       for (i = 0; i < commands_menu_item_count(m); i++)
          seen[commands_menu_item(m, i)]++;
    for (i = CMD_NONE + 1; i < CMD_COUNT; i++)
+   {
+      TEST_ASSERT_NOT_NULL(commands_get((CMD_ID) i));
       TEST_ASSERT_EQUAL_INT_MESSAGE(1, seen[i], commands_get((CMD_ID) i)->label);
+   }
+}
+
+void test_shortcut_text_matches_the_binding(void)
+{
+   int m, i;
+
+   for (m = 0; m < MENU_COUNT; m++)
+      for (i = 0; i < commands_menu_item_count(m); i++)
+      {
+         const CMD_DEF *d = commands_get(commands_menu_item(m, i));
+         char expect[32], name[8];
+
+         TEST_ASSERT_NOT_NULL(d);
+         if (d->key == 0)
+            continue;
+         if (d->key >= ALLEGRO_KEY_A && d->key <= ALLEGRO_KEY_Z)
+         {
+            name[0] = (char) ('A' + (d->key - ALLEGRO_KEY_A));
+            name[1] = '\0';
+         }
+         else if (d->key == ALLEGRO_KEY_DELETE)
+            strcpy(name, "Del");
+         else
+            TEST_FAIL_MESSAGE(d->label);
+         strcpy(expect, "Ctrl+");
+         if (d->mods & CMD_MOD_SHIFT)
+            strcat(expect, "Shift+");
+         strcat(expect, name);
+         TEST_ASSERT_EQUAL_STRING_MESSAGE(expect, d->shortcut, d->label);
+      }
 }
 
 void test_menus_follow_the_spec_order(void)
@@ -194,6 +227,7 @@ int main(void)
    RUN_TEST(test_spec_bindings);
    RUN_TEST(test_keys_the_polled_code_owns_are_not_dispatched);
    RUN_TEST(test_every_command_is_in_exactly_one_menu);
+   RUN_TEST(test_shortcut_text_matches_the_binding);
    RUN_TEST(test_menus_follow_the_spec_order);
    RUN_TEST(test_availability_follows_map_mode_and_paste);
    RUN_TEST(test_later_steps_stay_dimmed);
