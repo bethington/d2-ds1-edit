@@ -1,6 +1,9 @@
 #ifndef _MAP_SAVE_UI_H_
 #define _MAP_SAVE_UI_H_
 
+// Ask for a project if none is open. 1 once one is open, 0 if the user declined.
+int map_save_ui_require_project(void);
+
 // Save one map. A real save with no project open asks for one first, a real save
 // that would replace the project's own copy of the map asks before doing so, and
 // a failure shows why. Returns 0 if saved, -1 if not. Edits stay in memory.

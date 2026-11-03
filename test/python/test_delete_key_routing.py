@@ -37,11 +37,10 @@ class MapDeleteRouteTests(unittest.TestCase):
 
     def test_map_delete_asks_first_and_stops_unless_the_answer_is_yes(self):
         body = function_body(INTERFACE, "interface_delete_map")
-        asked = body.index("ALLEGRO_MESSAGEBOX_YES_NO")
-        declined = body.index("!= 1")
+        asked = body.index("interface_confirm_map_op(")
         deleted = body.index("ds1_manager_delete(")
-        self.assertLess(asked, declined)
-        self.assertLess(declined, deleted)
+        self.assertLess(asked, deleted)
+        self.assertIn("return;", body[asked:deleted])
 
     def test_permanent_backup_delete_asks_first_too(self):
         body = function_body(INTERFACE, "interface_delete_backup")

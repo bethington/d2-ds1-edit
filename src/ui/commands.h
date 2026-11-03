@@ -77,12 +77,6 @@ int commands_is_available(CMD_ID id, const CMD_CTX *ctx);
 /* Ctrl+Del has one key, and three commands by state. */
 CMD_ID commands_ctrl_del_target(const CMD_CTX *ctx);
 
-/* Where the open map's browser row is once row (deleted_group, deleted_entry)
- * has been deleted and the group's entries have shifted up. The map stays open
- * in memory; if its own row went, it no longer has one (-1, -1). */
-void commands_loaded_after_delete(int *loaded_group, int *loaded_entry,
-                                  int deleted_group, int deleted_entry);
-
 /* Pairs of table entries that dispatch the same key and modifiers. */
 int commands_conflict_count(void);
 

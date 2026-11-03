@@ -31,56 +31,146 @@
 #include "ui/selftest_verdict.h"
 #include "core/ds1_save_io.h"
 #include "ui/map_save_ui.h"
+#include "ui/map_dialog.h"
 #include "core/map_state.h"
 #include <allegro5/allegro_native_dialog.h>
 
-/* Delete a map from the mod folder, once the user has said yes to that map by
- * name. Undo can't bring it back: this is a file operation, not a map edit. So
- * it takes Ctrl+Del, which no polled key shares, or the browser's context menu.
- */
+/* Ask, naming the map and what will happen. */
+static int interface_confirm_map_op(const char *title, const char *heading_fmt,
+                                    const char *path, const char *text, int warn_unsaved)
+{
+   char heading[600], body[1024];
+   int rc, k, dirty = 0;
+
+   for (k = 0; k < DS1_MAX && warn_unsaved && !dirty; k++)
+      dirty = glb_ds1[k].name[0] != 0 && map_is_dirty(k) &&
+              map_state_path_matches(glb_ds1[k].name, path);
+
+   snprintf(heading, sizeof(heading), heading_fmt, path);
+   snprintf(body, sizeof(body), "%s%s", text,
+            dirty ? "\n\nThis map has unsaved edits, which won't be saved." : "");
+   rc = al_show_native_message_box(a5_display, title, heading, body, NULL,
+                                   ALLEGRO_MESSAGEBOX_YES_NO | ALLEGRO_MESSAGEBOX_WARN);
+   input_suppress_held();
+   input_discard_pending();
+   return rc == 1;
+}
+
+static void interface_map_op_failed(const char *title, const char *heading, const char *error)
+{
+   al_show_native_message_box(a5_display, title, heading, error, NULL, ALLEGRO_MESSAGEBOX_ERROR);
+   input_suppress_held();
+   input_discard_pending();
+}
+
+/* Delete a New map from the project. Undo can't bring it back: this is a file
+ * operation, not a map edit, so it takes a confirmation, and Restore from Backup. */
 static void interface_delete_map(int gi, int ei)
 {
    AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
-   char heading[600];
-   int rc;
+   char error[512] = "", path[256];
 
-   /* Without a mod folder there's no LvlPrest.txt to change and the map stays
-      in the game data, so the row would only vanish until the next start. */
-   if (glb_config.mod_dir[0] == NULL)
+   snprintf(path, sizeof(path), "%s", ab->groups[gi].entries[ei].ds1_path);
+   if (!interface_confirm_map_op("Delete Map", "Delete %s?", path,
+         "This moves the map's file to the project's backup folder and clears its "
+         "slot in LvlPrest.txt. Map > Restore from Backup brings it back.", TRUE))
+      return;
+
+   /* ds1_manager_delete removes the row, then finds the open map's row again by
+      path. If this was the open map, it has none now and stays in memory. */
+   if (ds1_manager_delete(gi, ei, error, sizeof(error)) != 0)
+      interface_map_op_failed("Delete Map", "The map wasn't deleted.", error);
+}
+
+static void interface_revert_map(int gi, int ei)
+{
+   AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
+   char error[512] = "", path[256];
+   int was_open = ab->loaded_group == gi && ab->loaded_entry == ei;
+   int def = ab->groups[gi].entries[ei].lvlprest_def;
+
+   snprintf(path, sizeof(path), "%s", ab->groups[gi].entries[ei].ds1_path);
+   if (!interface_confirm_map_op("Revert to Game Version", "Revert %s to the game's version?", path,
+         "This moves the project's copy to the project's backup folder. The game's "
+         "version is used from now on. Map > Restore from Backup brings the copy back.", TRUE))
+      return;
+
+   if (ds1_manager_revert(gi, ei, error, sizeof(error)) != 0)
    {
-      al_show_native_message_box(a5_display, "Delete Map",
-         "No project or mod folder is open.",
-         "Maps can only be deleted from a project or mod folder. Nothing was changed.",
-         NULL, ALLEGRO_MESSAGEBOX_WARN);
-      input_suppress_held();
-      input_discard_pending();
+      interface_map_op_failed("Revert to Game Version", "The map wasn't reverted.", error);
       return;
    }
 
-   snprintf(heading, sizeof(heading), "Delete %s?", ab->groups[gi].entries[ei].ds1_path);
-   rc = al_show_native_message_box(a5_display, "Delete Map", heading,
-      "This removes the map's file from the mod folder and clears its slot in "
-      "LvlPrest.txt. Undo can't bring it back.\n\n"
-      "A copy goes to the backup folder. After a restart it's listed in the "
-      "area browser's Backup group, where it can be restored.",
-      NULL, ALLEGRO_MESSAGEBOX_YES_NO | ALLEGRO_MESSAGEBOX_WARN);
-   input_suppress_held();
-   input_discard_pending();
-   if (rc != 1)
+   /* Show what was just reverted to. Other open maps with unsaved edits prompt here,
+      and a cancel leaves this one showing until it's reopened. */
+   if (was_open && area_browser_find_row(path, def, &gi, &ei))
+   {
+      int k;
+      for (k = 0; k < DS1_MAX; k++)
+         if (glb_ds1[k].name[0] != 0 && map_state_path_matches(glb_ds1[k].name, path))
+            map_dirty_mark_saved(k);
+      area_browser_switch_single(gi, ei);
+   }
+}
+
+static void interface_remove_map(int gi, int ei)
+{
+   AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
+   char error[512] = "", path[256];
+
+   if (!map_save_ui_require_project())
+      return;
+   snprintf(path, sizeof(path), "%s", ab->groups[gi].entries[ei].ds1_path);
+   if (!interface_confirm_map_op("Remove from Project", "Remove %s from the project?", path,
+         "This clears its slot in the project's LvlPrest.txt, so the game won't use "
+         "this map with your mod. The game's files don't change. Map > Restore Slot "
+         "puts it back.", FALSE))
       return;
 
-   {
-      char error[512] = "";
-      if (ds1_manager_delete(gi, ei, error, sizeof(error)) != 0)
-      {
-         al_show_native_message_box(a5_display, "Delete Map",
-            "The map wasn't deleted.", error, NULL, ALLEGRO_MESSAGEBOX_ERROR);
-         input_suppress_held();
-         input_discard_pending();
-         return;
-      }
-   }
-   /* ds1_manager_delete moved the selection and the open map's row itself. */
+   if (ds1_manager_remove_slot(gi, ei, error, sizeof(error)) != 0)
+      interface_map_op_failed("Remove from Project", "The slot wasn't cleared.", error);
+}
+
+static void interface_restore_slot(int gi, int ei)
+{
+   AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
+   char error[512] = "", path[256];
+
+   snprintf(path, sizeof(path), "%s", ab->groups[gi].entries[ei].ds1_path);
+   if (!interface_confirm_map_op("Restore Slot", "Restore %s's slot?", path,
+         "This puts the game's value back in the project's LvlPrest.txt.", FALSE))
+      return;
+   if (ds1_manager_restore_slot(gi, ei, error, sizeof(error)) != 0)
+      interface_map_op_failed("Restore Slot", "The slot wasn't restored.", error);
+}
+
+static void interface_restore_backup(int gi, int ei)
+{
+   AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
+   char error[512] = "", path[256];
+   int i, j, found = 0;
+
+   snprintf(path, sizeof(path), "%s", ab->groups[gi].entries[ei].ds1_path);
+   if (!map_save_ui_require_project())
+      return;
+
+   /* Opening a project rebuilds the rows, so find this one again. */
+   for (i = 0; i < ab->group_count && !found; i++)
+      for (j = 0; ab->groups[i].is_backup && j < ab->groups[i].entry_count && !found; j++)
+         if (strcmp(ab->groups[i].entries[j].ds1_path, path) == 0)
+         {
+            gi = i;
+            ei = j;
+            found = 1;
+         }
+   if (!found)
+      return;
+
+   if (!interface_confirm_map_op("Restore from Backup", "Restore the backup %s?", path,
+         "This moves it back to the project and registers it in LvlPrest.txt if needed.", FALSE))
+      return;
+   if (ds1_manager_restore(gi, ei, error, sizeof(error)) != 0)
+      interface_map_op_failed("Restore from Backup", "The backup wasn't restored.", error);
 }
 
 /* Delete a backup for good. It may be the only copy of a deleted map. */
@@ -442,71 +532,69 @@ static int interface_loaded_row_is_open_map(int ds1_idx)
              ab->groups[ab->loaded_group].entries[ab->loaded_entry].ds1_path);
 }
 
-/* Create a map beside the open one, or clone it. Clone acts on the open map's
- * row. New uses it too, and otherwise the browser's selected row. */
+/* Create a map, or clone the open one, through the dialog. "The first save or
+ * new map asks the user" for a project. */
 static void interface_new_map(int ds1_idx, int clone)
 {
    AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
    int use_loaded = interface_loaded_row_is_open_map(ds1_idx);
-   int gi, ei;
-   AREA_GROUP_S *g;
+   MAP_DIALOG_S d;
+   char suggested[128], error[512] = "";
+   int gi, ei, rc, i;
 
    if (clone && !use_loaded)
       return;
+   if (!map_save_ui_require_project())
+      return;
+
+   /* A project just opened rebuilds the rows. */
+   use_loaded = interface_loaded_row_is_open_map(ds1_idx);
    gi = use_loaded ? ab->loaded_group : ab->selected_group;
    ei = use_loaded ? ab->loaded_entry : ab->selected_entry;
+   if (gi < 0 || gi >= ab->group_count || ab->groups[gi].is_backup ||
+       ab->groups[gi].entry_count == 0)
+   {
+      gi = -1;
+      for (i = 0; i < ab->group_count && gi < 0; i++)
+         if (!ab->groups[i].is_backup && ab->groups[i].entry_count > 0)
+            gi = i;
+      ei = 0;
+      if (gi < 0)
+         return;
+   }
+   if (ei < 0 || ei >= ab->groups[gi].entry_count)
+      ei = 0;
 
-   if (gi < 0 || gi >= ab->group_count)
-      return;
-   g = &ab->groups[gi];
-   if (g->entry_count <= 0)
+   memset(&d, 0, sizeof(d));
+   d.is_clone = clone;
+   d.group_idx = gi;
+   d.def = ab->groups[gi].entries[ei].lvlprest_def;
+   d.width = 20;
+   d.height = 20;
+   if (glb_ds1edit.has_loaded_ds1 && glb_ds1[ds1_idx].name[0] != '\0')
+   {
+      d.width = (int) glb_ds1[ds1_idx].width;
+      d.height = (int) glb_ds1[ds1_idx].height;
+   }
+   ds1_manager_suggest_name(ab->groups[gi].entries[ei].ds1_path, &ab->groups[gi],
+                            suggested, sizeof(suggested));
+   snprintf(d.file_name, sizeof(d.file_name), "%s", suggested);
+
+   if (!map_dialog_show(&d))
       return;
 
    if (clone)
-   {
-      char file[128], error[512] = "";
-      int base = ei >= 0 ? ei : 0;
-
-      ds1_manager_suggest_name(g->entries[base].ds1_path, g, file, sizeof(file));
-      if (ds1_manager_clone(ds1_idx, gi, g->entries[base].lvlprest_def, file,
-                            error, sizeof(error)) == 0)
-         printf("Map: cloned DS1 successfully\n");
-      else
-      {
-         al_show_native_message_box(a5_display, "Clone Map",
-            "The map couldn't be cloned.",
-            error,
-            NULL, ALLEGRO_MESSAGEBOX_WARN);
-         input_suppress_held();
-      }
-   }
+      rc = ds1_manager_clone(ds1_idx, d.group_idx, d.def, d.file_name, error, sizeof(error));
    else
+      rc = ds1_manager_create_empty(d.group_idx, d.def, d.file_name, d.width, d.height,
+                                    error, sizeof(error));
+   if (rc != 0)
    {
-      int new_w = 20, new_h = 20;
-      char file[128], error[512] = "";
-      int base = ei >= 0 ? ei : 0;
-
-      /* Copy dimensions from the open DS1 if there is one */
-      if (glb_ds1edit.has_loaded_ds1 && ds1_idx >= 0 && ds1_idx < DS1_MAX &&
-          glb_ds1[ds1_idx].name[0] != '\0')
-      {
-         new_w = (int)glb_ds1[ds1_idx].width;
-         new_h = (int)glb_ds1[ds1_idx].height;
-      }
-      ds1_manager_suggest_name(g->entries[base].ds1_path, g, file, sizeof(file));
-      if (ds1_manager_create_empty(gi, g->entries[base].lvlprest_def, file, new_w, new_h,
-                                   error, sizeof(error)) == 0)
-         printf("Map: created new empty DS1 (%dx%d)\n", new_w, new_h);
-      else
-      {
-         al_show_native_message_box(a5_display, "New Map",
-            "The map couldn't be created.",
-            error,
-            NULL, ALLEGRO_MESSAGEBOX_WARN);
-         input_suppress_held();
-      }
+      al_show_native_message_box(a5_display, clone ? "Clone Map" : "New Map",
+         "The map wasn't created. Nothing was changed.", error, NULL,
+         ALLEGRO_MESSAGEBOX_WARN);
+      input_suppress_held();
    }
-   fflush(stdout);
 }
 
 static CMD_CTX interface_command_context(int ds1_idx, const PASTE_POS_S *paste)
@@ -591,9 +679,33 @@ static void interface_run_command(CMD_ID cmd, int ds1_idx, int cx, int cy,
    case CMD_MAP_DELETE:
       interface_delete_map(ab->loaded_group, ab->loaded_entry);
       break;
+   case CMD_MAP_REVERT:
+      interface_revert_map(ab->loaded_group, ab->loaded_entry);
+      break;
+   case CMD_MAP_REMOVE:
+      interface_remove_map(ab->loaded_group, ab->loaded_entry);
+      break;
+   case CMD_MAP_RESTORE_SLOT:
+      interface_restore_slot(ab->loaded_group, ab->loaded_entry);
+      break;
+   case CMD_MAP_RESTORE_BACKUP:
+      interface_restore_backup(ab->loaded_group, ab->loaded_entry);
+      break;
 
    default:
       break;
+   }
+}
+
+/* The command a right click on this row offers, by its state. */
+static const char *interface_row_action(int state, int *cmd)
+{
+   switch (state)
+   {
+   case MAP_STATE_NEW:      *cmd = CMD_MAP_DELETE;       return "Delete map...";
+   case MAP_STATE_MODIFIED: *cmd = CMD_MAP_REVERT;       return "Revert to game version...";
+   case MAP_STATE_REMOVED:  *cmd = CMD_MAP_RESTORE_SLOT; return "Restore slot...";
+   default:                 *cmd = CMD_MAP_REMOVE;       return "Remove from project...";
    }
 }
 
@@ -749,6 +861,7 @@ void interfac_user_handler(int start_ds1_idx)
          case CMD_NEW_PROJECT: case CMD_OPEN_PROJECT: case CMD_CLOSE_PROJECT:
          case CMD_OPEN_PRESET: case CMD_EXPORT_ASSETS: case CMD_SAVE:
          case CMD_SAVE_ALL: case CMD_QUIT:
+         case CMD_MAP_NEW: case CMD_MAP_CLONE:
             input_pump();
             input_suppress_held();
             break;
@@ -892,7 +1005,10 @@ void interfac_user_handler(int start_ds1_idx)
                int rc_is_backup = rc_ab->groups[rc_gi].is_backup;
                int menu_x = a5_mouse_x;
                int menu_y = a5_mouse_y;
-               int menu_w = 140;
+               int row_cmd0;
+               const char *row_label = interface_row_action(
+                  rc_ab->groups[rc_gi].entries[rc_ei].state, &row_cmd0);
+               int menu_w = 170;
                int menu_h = rc_is_backup ? 28 : 14;
                int menu_sel = -1;
                int menu_done = 0;
@@ -950,7 +1066,7 @@ void interfac_user_handler(int start_ds1_idx)
                      al_draw_filled_rectangle((float)menu_x, (float)menu_y,
                                               (float)(menu_x + menu_w), (float)(menu_y + 14), mc_hover);
                   al_draw_textf(a5_font, mc_text, (float)(menu_x + 6), (float)(menu_y + 3), 0,
-                                rc_is_backup ? "Restore" : "Delete map...");
+                                rc_is_backup ? "Restore" : row_label);
 
                   /* Item 1: Delete permanently */
                   if (rc_is_backup)
@@ -972,22 +1088,18 @@ void interfac_user_handler(int start_ds1_idx)
                      {
                         if (!rc_is_backup)
                         {
-                           interface_delete_map(rc_gi, rc_ei);
-                        }
-                        else if (menu_sel == 0)
-                        {
-                           char error[512] = "";
-                           if (ds1_manager_restore(rc_gi, rc_ei, error, sizeof(error)) == 0)
-                              printf("Backup restored successfully\n");
-                           else
+                           int row_cmd;
+                           interface_row_action(rc_ab->groups[rc_gi].entries[rc_ei].state, &row_cmd);
+                           switch (row_cmd)
                            {
-                              al_show_native_message_box(a5_display, "Restore Map",
-                                 "The map wasn't restored.", error, NULL,
-                                 ALLEGRO_MESSAGEBOX_ERROR);
-                              input_suppress_held();
-                              input_discard_pending();
+                           case CMD_MAP_DELETE:       interface_delete_map(rc_gi, rc_ei);   break;
+                           case CMD_MAP_REVERT:       interface_revert_map(rc_gi, rc_ei);   break;
+                           case CMD_MAP_RESTORE_SLOT: interface_restore_slot(rc_gi, rc_ei); break;
+                           default:                   interface_remove_map(rc_gi, rc_ei);   break;
                            }
                         }
+                        else if (menu_sel == 0)
+                           interface_restore_backup(rc_gi, rc_ei);
                         else
                         {
                            interface_delete_backup(rc_gi, rc_ei);

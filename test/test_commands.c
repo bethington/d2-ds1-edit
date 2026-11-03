@@ -227,41 +227,6 @@ void test_mouse_geometry(void)
    TEST_ASSERT_EQUAL_INT(-1, menu_item_at(MENU_MAP, x + 1, bar_h + 400, bar_h));
 }
 
-void test_loaded_row_after_a_delete(void)
-{
-   int g, e;
-
-   /* the open map's own row: nothing is open there any more */
-   g = 2; e = 5;
-   commands_loaded_after_delete(&g, &e, 2, 5);
-   TEST_ASSERT_EQUAL_INT(-1, g);
-   TEST_ASSERT_EQUAL_INT(-1, e);
-
-   /* an earlier row in the same group shifts the open row up */
-   g = 2; e = 5;
-   commands_loaded_after_delete(&g, &e, 2, 3);
-   TEST_ASSERT_EQUAL_INT(2, g);
-   TEST_ASSERT_EQUAL_INT(4, e);
-
-   /* a later row leaves it alone */
-   g = 2; e = 5;
-   commands_loaded_after_delete(&g, &e, 2, 6);
-   TEST_ASSERT_EQUAL_INT(2, g);
-   TEST_ASSERT_EQUAL_INT(5, e);
-
-   /* another group leaves it alone */
-   g = 2; e = 5;
-   commands_loaded_after_delete(&g, &e, 1, 0);
-   TEST_ASSERT_EQUAL_INT(2, g);
-   TEST_ASSERT_EQUAL_INT(5, e);
-
-   /* nothing open stays nothing open */
-   g = -1; e = -1;
-   commands_loaded_after_delete(&g, &e, 0, 0);
-   TEST_ASSERT_EQUAL_INT(-1, g);
-   TEST_ASSERT_EQUAL_INT(-1, e);
-}
-
 void test_map_commands_follow_the_open_rows_state(void)
 {
    CMD_CTX game = ctx_with_state(MAP_STATE_GAME);
@@ -328,7 +293,6 @@ int main(void)
    RUN_TEST(test_enter_runs_available_commands_only);
    RUN_TEST(test_escape_closes_without_a_command);
    RUN_TEST(test_mouse_geometry);
-   RUN_TEST(test_loaded_row_after_a_delete);
    RUN_TEST(test_map_commands_follow_the_open_rows_state);
    RUN_TEST(test_restore_from_backup_needs_an_open_backup_row);
    RUN_TEST(test_ctrl_del_runs_what_applies_to_the_state);

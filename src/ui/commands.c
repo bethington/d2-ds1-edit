@@ -275,17 +275,3 @@ int menu_item_at(int menu, int mx, int my, int bar_h)
    row = (my - bar_h) / MENU_ITEM_H;
    return row < commands_menu_item_count(menu) ? row : -1;
 }
-
-void commands_loaded_after_delete(int *loaded_group, int *loaded_entry,
-                                  int deleted_group, int deleted_entry)
-{
-   if (*loaded_group < 0 || *loaded_group != deleted_group)
-      return;
-   if (*loaded_entry == deleted_entry)
-   {
-      *loaded_group = -1;
-      *loaded_entry = -1;
-   }
-   else if (deleted_entry < *loaded_entry)
-      (*loaded_entry)--;
-}

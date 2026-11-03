@@ -14,7 +14,7 @@
 #include "core/map_state.h"
 #include "core/project.h"
 
-static int require_project(void)
+int map_save_ui_require_project(void)
 {
    if (glb_project.is_open)
       return 1;
@@ -49,7 +49,7 @@ static int save_one(int ds1_idx, int is_tmp_file)
 
 int map_save_ui_save(int ds1_idx, int is_tmp_file)
 {
-   if (!is_tmp_file && glb_ds1[ds1_idx].name[0] != 0 && !require_project())
+   if (!is_tmp_file && glb_ds1[ds1_idx].name[0] != 0 && !map_save_ui_require_project())
       return -1;
 
    if (save_one(ds1_idx, is_tmp_file) != 0)
@@ -65,7 +65,7 @@ int map_save_ui_save_dirty(void)
 
    if (!map_any_dirty())
       return 0;
-   if (!require_project())
+   if (!map_save_ui_require_project())
       return -1;
 
    for (i = 0; i < DS1_MAX; i++)
