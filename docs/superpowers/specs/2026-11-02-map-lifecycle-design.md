@@ -67,6 +67,11 @@ defaults to the open map's area, size and tileset.
   at the end and raises `Files`. If the row is full, chooses its maps by its own rules, or
   the Def is not found, the dialog says so and writes nothing. Create is all-or-nothing: on a failed table write, the new `.ds1` is
   removed.
+- A row with `SizeX` and `SizeY` both 0 is a whole level, and its maps join the game's random
+  pick for that level. New is refused there, since an empty map would be chosen. Clone is
+  allowed.
+- Width and height default to the row's `SizeX` and `SizeY` plus one, where it has them.
+  They stay editable.
 
 **Map > Clone** works the same way and copies the map as it is in memory, so it
 includes unsaved edits and works on maps from an MPQ.

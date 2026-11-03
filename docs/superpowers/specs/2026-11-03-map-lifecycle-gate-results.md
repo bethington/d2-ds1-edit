@@ -25,6 +25,8 @@ There is no supported way to load an extra MPQ of an arbitrary name, so the spec
 
 **Step 3 as first merged didn't match this, and the plan `2026-11-03-map-lifecycle-3b-files-column` fixes it.** As merged, Create filled an empty cell and left `Files` alone, and Remove and Delete wrote `0` into a cell and left `Files` alone. Now Create adds the map at the end and raises `Files`, and Remove and Delete move later cells back and lower `Files`.
 
+**Released mods may hold unsafe tables.** 2.2.0 wrote both unsafe kinds: a `0` below `Files`, from Remove and Delete, and a map past `Files`, from Create. The editor now refuses to change a row with a hole, says which cell, and leaves the fix to the author. The game's own table has one such row too: Def 915, Act 5 Barricade 1, has `Files` of 3 and two maps. That row hasn't been tested.
+
 Tested on 1.13c with `-direct -txt`, using the four Act 1 Wild Border rows (Defs 4-7), which are `Files=3` with five filled cells. Each run used the same character, so the same map seed.
 
 | Table change | What Step 3 does | Result |
@@ -45,11 +47,13 @@ So a map added at the end with `Files` raised is reachable, and doesn't disturb 
 
 **Tables the fixed editor writes.** A table from the editor's Create, with `BarW5` added to Def 168 and `Files` at 5, compiled and entered the game. The Barracks rooms weren't generated in that run, so the new map itself wasn't drawn. Remove's edit, first map out, the rest moved up and `Files` lowered, applied to all 400 rows with two or more maps, ran from town into Blood Moor with no crash.
 
+**What `SizeX` and `SizeY` hold.** They are the numbers a DS1 header stores, the map's width and height minus one. `barW.ds1` stores 10 and 14, and its row, Def 168, has `SizeX` 10 and `SizeY` 14, so the editor shows it as 11 by 15. All 1,821 filled cells below `Files` in rows with a size name a map that matches its row this way, in 1.13c's table and the map files, read on 2026-11-03. So New defaults to `SizeX` plus one and `SizeY` plus one. This says what the columns hold, not what the game does with a map of another size.
+
 From the binaries, a row with `Files` of 0 takes index -1 and the generator chooses the cell itself: town rows and transitions work this way. Otherwise the game picks a random index, and the row's other cells are not random choices. Of the 1,088 rows with any cell filled, 1,007 have `Files` equal to their filled cells, 34 have `Files` of 0, and 47 differ, like Wild Border.
 
 So:
 
-- **Create:** a map in an empty cell is never chosen by the random pick. Reaching it means raising `Files`, which is only plausible where `Files` already equals the filled cells, and is not yet tested on such a row. It's unsafe on rows like Wild Border, and meaningless on `Files=0` rows.
+- **Create:** a map in an empty cell is never chosen by the random pick. Reaching it means raising `Files`, which works where `Files` already equals the filled cells, as the table above shows. It's unsafe on rows like Wild Border, and meaningless on `Files=0` rows.
 - **Remove and Delete:** clearing a counted cell can crash the game for anyone who enters that level. They must instead move the later cells down and lower `Files`. Removing a row's only map leaves `Files=0`, whose generator was not traced, so it needs its own rule.
 - **Restore Slot:** must restore `Files` too. It's the same state change in reverse.
 - **Build MPQ:** carries this table to players, so the same crash would ship.
@@ -70,7 +74,7 @@ The crash test ran with every counted cell cleared. A single cleared cell should
 These must be checked before step 4 ships, in the end-to-end test the spec requires.
 
 - **A changed map seen in the game.** The edited table was compiled and the game entered town, but the loose map was an unchanged copy of `TownN1`, so the screen doesn't prove which file drew it. The file's last-access time supports it, weakly.
-- **A new map of a different size in a row.** The test maps below were copies of the row's own. `LvlPrest.txt` has `SizeX` and `SizeY`, so a new map may have to match them. Task 5 of the fix plan should show this on screen.
+- **A new map of a different size in a row.** This blocks step 4. Every map tested was a copy of the row's own, and Task 5's run didn't generate the Barracks rooms, so it showed nothing about size. Every sized row's maps match its `SizeX` and `SizeY`, so a new map may have to as well. New defaults to the row's size but lets the author change it, with no warning, until this is known.
 - **File cell length.** Static reading infers a stack buffer limit of 41 characters, and `MAP_OPS_TABLE_PATH_MAX` is now 41. The limit itself is not yet tried in the game.
 - **A rebuilt `patch_d2.mpq` mounted at startup.** A fleet launch rewrites its slot first, so this test mounted the archive from inside the running game, through the same Storm export `D2Win` uses.
 - **Read-only excel folder.** Static reading says a failed write is silent.
