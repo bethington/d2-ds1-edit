@@ -12,6 +12,9 @@
 #include "core/ds1_manager.h"
 #include "core/file_copy.h"
 #include "core/lvlprest_text.h"
+#include "core/map_ops.h"
+#include "core/project.h"
+#include "core/ds1_save_io.h"
 
 #ifdef WIN32
 #include <direct.h>
@@ -24,728 +27,360 @@
 #define RMDIR(path) rmdir(path)
 #endif
 
-#define LVLPREST_MAX_LINE   4096
-#define LVLPREST_MAX_COLS   30
+/* ---- Helpers shared by the project map operations ---- */
 
-/* ---- LvlPrest.txt raw file manipulation ---- */
-
-/* Read the raw LvlPrest.txt from mod_dir (or assets/excel/ fallback).
- * Returns malloc'd buffer with file contents, sets *out_len. NULL on error. */
-static char * lvlprest_read_raw(long * out_len)
+/* What a project without its own table starts from: what the editor reads now,
+ * overlays included. Caller frees. */
+static char * manager_seed(void)
 {
-   char path[512];
-   FILE * in;
-   long len;
-   char * buf;
-
-   /* Try mod_dir first */
-   if (glb_config.mod_dir[0] != NULL)
-   {
-      sprintf(path, "%s\\Global\\Excel\\LvlPrest.txt", glb_config.mod_dir[0]);
-      ds1_path_normalize(path);
-      in = fopen(path, "rb");
-      if (in != NULL)
-      {
-         fseek(in, 0, SEEK_END);
-         len = ftell(in);
-         fseek(in, 0, SEEK_SET);
-         buf = (char *)malloc(len + 1);
-         if (buf != NULL)
-         {
-            fread(buf, 1, len, in);
-            buf[len] = '\0';
-         }
-         fclose(in);
-         *out_len = len;
-         return buf;
-      }
-   }
-
-   /* Fallback to local assets */
-   sprintf(path, "assets/excel/LvlPrest.txt");
-   in = fopen(path, "rb");
-   if (in == NULL)
-   {
-      printf("ds1_manager: can't open LvlPrest.txt\n");
-      return NULL;
-   }
-   fseek(in, 0, SEEK_END);
-   len = ftell(in);
-   fseek(in, 0, SEEK_SET);
-   buf = (char *)malloc(len + 1);
-   if (buf != NULL)
-   {
-      fread(buf, 1, len, in);
-      buf[len] = '\0';
-   }
-   fclose(in);
-   *out_len = len;
-   return buf;
+   char name[] = "Data\\Global\\Excel\\LvlPrest.txt";
+   return (char *) txt_read_in_mem(name);
 }
 
-/* Write the raw LvlPrest.txt content to mod_dir. Creates directories if needed. */
-static int lvlprest_write_raw(const char * buf, long len)
+static void manager_tables_changed(void)
 {
-   char path[512], dir[512];
-   FILE * out;
+   if (glb_ds1edit.lvlprest_buff != NULL)
+      glb_ds1edit.lvlprest_buff = txt_destroy(glb_ds1edit.lvlprest_buff);
+}
 
-   if (glb_config.mod_dir[0] == NULL)
-   {
-      printf("ds1_manager: no mod_dir configured, can't write LvlPrest.txt\n");
-      return -1;
-   }
-
-   /* Ensure directory exists */
-   sprintf(dir, "%s\\Global", glb_config.mod_dir[0]);
-   ds1_path_normalize(dir);
-   MKDIR(dir);
-   sprintf(dir, "%s\\Global\\Excel", glb_config.mod_dir[0]);
-   ds1_path_normalize(dir);
-   MKDIR(dir);
-
-   sprintf(path, "%s\\Global\\Excel\\LvlPrest.txt", glb_config.mod_dir[0]);
-   ds1_path_normalize(path);
-   out = fopen(path, "wb");
-   if (out == NULL)
-   {
-      printf("ds1_manager: can't write %s\n", path);
-      return -1;
-   }
-   if (fwrite(buf, 1, len, out) != (size_t)len)
-   {
-      printf("ds1_manager: can't write %s\n", path);
-      fclose(out);
-      return -1;
-   }
-   if (fclose(out) != 0)
-   {
-      printf("ds1_manager: can't write %s\n", path);
-      return -1;
-   }
-   printf("ds1_manager: wrote %s (%ld bytes)\n", path, len);
+static int manager_need_project(char * error, int cap)
+{
+   if (glb_project.is_open)
+      return 1;
+   snprintf(error, cap, "No project is open.");
    return 0;
 }
 
-/* Set a File column value in LvlPrest.txt for a given Def.
- * file_slot: 1-6 (maps to File1-File6 columns).
- * Returns 0 on success. */
-int ds1_manager_lvlprest_set_file(int def, int file_slot, const char * ds1_path)
+static void manager_remove_row(AREA_GROUP_S * g, int entry_idx)
 {
-   char * buf, * row, * row_end;
-   long len;
-   int def_col, file_col;
-   char col_name[16];
-   char * header_end;
-   char new_buf[256 * 1024]; /* 256KB should be enough */
-   int new_len;
-
-   if (file_slot < 1 || file_slot > 6) return -1;
-
-   buf = lvlprest_read_raw(&len);
-   if (buf == NULL) return -1;
-
-   /* Find column indices from header */
-   def_col = lvlprest_find_col(buf, "Def");
-   sprintf(col_name, "File%d", file_slot);
-   file_col = lvlprest_find_col(buf, col_name);
-
-   if (def_col < 0 || file_col < 0)
-   {
-      printf("ds1_manager: can't find Def or %s column in LvlPrest.txt\n", col_name);
-      free(buf);
-      return -1;
-   }
-
-   /* Find the header end */
-   header_end = buf;
-   while (*header_end != '\0' && *header_end != '\n' && *header_end != '\r')
-      header_end++;
-   while (*header_end == '\n' || *header_end == '\r') header_end++;
-
-   /* Find the target row */
-   row = lvlprest_find_row(buf, def_col, def, &row_end);
-   if (row == NULL)
-   {
-      printf("ds1_manager: Def %d not found in LvlPrest.txt\n", def);
-      free(buf);
-      return -1;
-   }
-
-   /* Rebuild the row with the modified File column */
-   {
-      char new_row[LVLPREST_MAX_LINE];
-      char * src = row;
-      int col = 0, pos = 0;
-
-      while (src < row_end && *src != '\n' && *src != '\r' && *src != '\0')
-      {
-         if (col == file_col)
-         {
-            /* Replace this column's value */
-            int path_len = (int)strlen(ds1_path);
-            memcpy(new_row + pos, ds1_path, path_len);
-            pos += path_len;
-            /* Skip old value */
-            while (src < row_end && *src != '\t' && *src != '\n' && *src != '\r' && *src != '\0')
-               src++;
-         }
-         else
-         {
-            /* Copy column as-is */
-            while (src < row_end && *src != '\t' && *src != '\n' && *src != '\r' && *src != '\0')
-            {
-               new_row[pos++] = *src++;
-            }
-         }
-
-         if (*src == '\t')
-         {
-            new_row[pos++] = '\t';
-            src++;
-            col++;
-         }
-      }
-      new_row[pos] = '\0';
-
-      /* Reconstruct the full file: before_row + new_row + newline + after_row */
-      new_len = 0;
-      memcpy(new_buf, buf, row - buf);
-      new_len = (int)(row - buf);
-      memcpy(new_buf + new_len, new_row, pos);
-      new_len += pos;
-      new_buf[new_len++] = '\r';
-      new_buf[new_len++] = '\n';
-      memcpy(new_buf + new_len, row_end, len - (row_end - buf));
-      new_len += (int)(len - (row_end - buf));
-   }
-
-   free(buf);
-   return lvlprest_write_raw(new_buf, new_len);
+   memmove(&g->entries[entry_idx], &g->entries[entry_idx + 1],
+           sizeof(AREA_DS1_ENTRY_S) * (g->entry_count - entry_idx - 1));
+   g->entry_count--;
 }
 
-/* Clear a File column in LvlPrest.txt (set to "0"). */
-int ds1_manager_lvlprest_clear_file(int def, int file_slot)
+/* "<date>" and "Act1-Town" for a backup folder, and the metadata that goes
+ * with it. */
+static void manager_backup_details(const AREA_GROUP_S * g, const AREA_DS1_ENTRY_S * e,
+                                   char * date, int date_cap, char * label, int label_cap,
+                                   char * json, int json_cap)
 {
-   return ds1_manager_lvlprest_set_file(def, file_slot, "0");
+   time_t now;
+   char stamp[64];
+
+   time(&now);
+   strftime(date, date_cap, "%Y-%m-%d", localtime(&now));
+   strftime(stamp, sizeof(stamp), "%Y-%m-%dT%H:%M:%S", localtime(&now));
+   if (g->act > 0)
+      snprintf(label, label_cap, "Act%d-%s", g->act, g->name);
+   else
+      snprintf(label, label_cap, "%s", g->name);
+   snprintf(json, json_cap,
+            "{\n"
+            "  \"backup_date\": \"%s\",\n"
+            "  \"original_path\": \"%s\",\n"
+            "  \"lvlprest\": {\n"
+            "    \"def\": %d,\n"
+            "    \"lvltype_id\": %d,\n"
+            "    \"area\": \"%s\"\n"
+            "  }\n"
+            "}\n",
+            stamp, e->ds1_path, e->lvlprest_def, e->lvltype_id, label);
 }
 
-/* Find the first empty File slot (1-6) for a given Def. Returns slot number or -1. */
-int ds1_manager_lvlprest_find_empty_slot(int def)
+/* The folder part of a table path, slash included, or "" for none. */
+static void manager_dir_of(const char * path, char * out, int cap)
 {
-   TXT_S * txt = glb_ds1edit.lvlprest_buff;
-   int i, f;
-   int def_col, file_cols[6];
-   char col_name[16];
+   const char * a = strrchr(path, '/');
+   const char * b = strrchr(path, '\\');
+   const char * end = (a != NULL && (b == NULL || a > b)) ? a : b;
 
-   if (txt == NULL) return -1;
+   if (end == NULL)
+      out[0] = '\0';
+   else
+      snprintf(out, cap, "%.*s", (int)(end - path) + 1, path);
+}
 
-   def_col = misc_get_txt_column_num(RQ_LVLPREST, "Def");
-   for (f = 0; f < 6; f++)
+/* The table path for a new map in this Def: beside the Def's other files. */
+static int manager_new_path(const AREA_GROUP_S * g, int def, const char * file_name,
+                            char * out, int cap, char * error, int error_cap)
+{
+   char dir[256];
+   int j;
+
+   dir[0] = '\0';
+   for (j = 0; j < g->entry_count; j++)
    {
-      sprintf(col_name, "File%d", f + 1);
-      file_cols[f] = misc_get_txt_column_num(RQ_LVLPREST, col_name);
-   }
-
-   for (i = 0; i < txt->line_num; i++)
-   {
-      long * def_ptr = (long *)(txt->data + (i * txt->line_size) + txt->col[def_col].offset);
-      if (*def_ptr == def)
+      if (g->entries[j].lvlprest_def == def)
       {
-         for (f = 0; f < 6; f++)
-         {
-            char * path = txt->data + (i * txt->line_size) + txt->col[file_cols[f]].offset;
-            if (path[0] == '\0' || path[0] == '0')
-               return f + 1;
-         }
-         return -1; /* All slots full */
+         manager_dir_of(g->entries[j].ds1_path, dir, sizeof(dir));
+         break;
       }
    }
-   return -1; /* Def not found */
+   if (dir[0] == '\0' && g->entry_count > 0)
+      manager_dir_of(g->entries[0].ds1_path, dir, sizeof(dir));
+   if (dir[0] == '\0')
+   {
+      snprintf(error, error_cap, "Couldn't tell which folder %s goes in.", g->name);
+      return -1;
+   }
+   if (snprintf(out, cap, "%s%s", dir, file_name) >= cap)
+   {
+      snprintf(error, error_cap, "The path for %s is too long.", file_name);
+      return -1;
+   }
+   return 0;
 }
 
-/* Full delete operation: backup, update LvlPrest.txt, remove file. */
-int ds1_manager_delete(int group_idx, int entry_idx)
+int ds1_manager_name_in_use(int group_idx, const char * file_name)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
    AREA_GROUP_S * g;
-   AREA_DS1_ENTRY_S * e;
-   char * table;
-   long table_len;
-   int file_slot;
-   char src_path[512];
+   int j;
 
-   if (group_idx < 0 || group_idx >= ab->group_count) return -1;
+   if (group_idx < 0 || group_idx >= ab->group_count)
+      return 0;
    g = &ab->groups[group_idx];
-   if (entry_idx < 0 || entry_idx >= g->entry_count) return -1;
-   e = &g->entries[entry_idx];
+   for (j = 0; j < g->entry_count; j++)
+   {
+      const char * p = g->entries[j].ds1_path;
+      const char * a = strrchr(p, '/');
+      const char * b = strrchr(p, '\\');
+      const char * base = (a != NULL && (b == NULL || a > b)) ? a + 1 : (b != NULL ? b + 1 : p);
 
-   /* 1. Find the file slot in LvlPrest.txt, before anything changes */
-   table = lvlprest_read_raw(&table_len);
+      if (stricmp(base, file_name) == 0)
+         return 1;
+   }
+   return 0;
+}
+
+/* A New map: to the project's backup folder, and out of the table. */
+int ds1_manager_delete(int group_idx, int entry_idx, char * error, int cap)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   AREA_GROUP_S * g;
+   AREA_DS1_ENTRY_S e;
+   char date[32], label[128], json[1024], backup[512], path[768];
+   char * table, * seed;
+   long len;
+   int rc;
+
+   if (group_idx < 0 || group_idx >= ab->group_count || !manager_need_project(error, cap))
+      return -1;
+   g = &ab->groups[group_idx];
+   if (entry_idx < 0 || entry_idx >= g->entry_count)
+      return -1;
+   e = g->entries[entry_idx];
+
+   /* A table that can't be read stops this before the file moves. */
+   if (map_ops_table_path(glb_project.path, path, sizeof(path)) != 0)
+      return -1;
+   table = map_ops_read_file(path, &len);
    if (table == NULL)
    {
-      printf("ds1_manager_delete: can't read LvlPrest.txt, aborting delete\n");
-      return DS1_DELETE_ERR_TABLE;
+      snprintf(error, cap, "The project's LvlPrest.txt can't be read.");
+      return -1;
    }
-   file_slot = lvlprest_find_file_slot(table, e->lvlprest_def, e->ds1_path);
+   rc = lvlprest_find_file_slot(table, e.lvlprest_def, e.ds1_path);
    free(table);
-   if (file_slot == LVLPREST_TABLE_UNUSABLE)
+   if (rc == LVLPREST_TABLE_UNUSABLE)
    {
-      printf("ds1_manager_delete: LvlPrest.txt has no Def or File columns, aborting delete\n");
-      return DS1_DELETE_ERR_TABLE;
+      snprintf(error, cap, "The project's LvlPrest.txt has no Def or File columns.");
+      return -1;
    }
 
-   /* 2. Create backup */
-   if (ds1_manager_backup(group_idx, entry_idx) != 0)
+   manager_backup_details(g, &e, date, sizeof(date), label, sizeof(label), json, sizeof(json));
+   if (map_ops_backup_file(glb_project.path, e.ds1_path, label, date, json,
+                           backup, sizeof(backup), error, cap) != 0)
+      return -1;
+
+   seed = manager_seed();
+   rc = map_ops_unregister(glb_project.path, seed, e.lvlprest_def, e.ds1_path, error, cap);
+   free(seed);
+   if (rc != 0)
    {
-      printf("ds1_manager_delete: backup failed, aborting delete\n");
-      return DS1_DELETE_ERR_BACKUP;
+      /* The table still names it, so the file goes back. */
+      char ignored[8];
+      map_ops_restore_file(glb_project.path, backup, e.ds1_path, ignored, sizeof(ignored));
+      return -1;
    }
 
-   /* 3. Clear the File slot in LvlPrest.txt. A map the table doesn't list has
-         none to clear. */
-   if (file_slot > 0)
+   manager_tables_changed();
+
+   /* Find the open map's row again by path, before this row goes. A deleted open
+      map then has no row, and the rescan's lookup finds none. */
    {
-      if (ds1_manager_lvlprest_clear_file(e->lvlprest_def, file_slot) != 0)
+      char open_path[256] = "";
+      int open_def = 0, was_this = ab->loaded_group == group_idx && ab->loaded_entry == entry_idx;
+
+      if (!was_this && ab->loaded_group >= 0 && ab->loaded_group < ab->group_count &&
+          ab->loaded_entry >= 0 && ab->loaded_entry < ab->groups[ab->loaded_group].entry_count)
       {
-         printf("ds1_manager_delete: can't update LvlPrest.txt, aborting delete\n");
-         return DS1_DELETE_ERR_TABLE;
+         snprintf(open_path, sizeof(open_path), "%s",
+                  ab->groups[ab->loaded_group].entries[ab->loaded_entry].ds1_path);
+         open_def = ab->groups[ab->loaded_group].entries[ab->loaded_entry].lvlprest_def;
       }
-      printf("ds1_manager_delete: cleared File%d for Def %d in LvlPrest.txt\n",
-             file_slot, e->lvlprest_def);
+      manager_remove_row(g, entry_idx);
+      ab->loaded_group = -1;
+      ab->loaded_entry = -1;
+      if (open_path[0] != '\0')
+         area_browser_find_row(open_path, open_def, &ab->loaded_group, &ab->loaded_entry);
    }
-
-   /* 4. Delete the DS1 file from disk */
-   if (glb_config.mod_dir[0] != NULL)
-      sprintf(src_path, "%s\\Global\\Tiles\\%s", glb_config.mod_dir[0], e->ds1_path);
-   else
-      sprintf(src_path, "assets/tiles/%s", e->ds1_path);
-   ds1_path_normalize(src_path);
-
-   if (remove(src_path) == 0)
-      printf("ds1_manager_delete: removed %s\n", src_path);
-   else
-      printf("ds1_manager_delete: warning, couldn't remove %s (may not exist on disk)\n", src_path);
-
-   /* 5. Invalidate cached LvlPrest buffer so next load re-reads from disk */
-   if (glb_ds1edit.lvlprest_buff != NULL)
-   {
-      glb_ds1edit.lvlprest_buff = txt_destroy(glb_ds1edit.lvlprest_buff);
-      printf("ds1_manager_delete: invalidated LvlPrest cache\n");
-   }
-
-   /* 6. Remove entry from the in-memory area browser */
-   {
-      int j;
-      for (j = entry_idx; j < g->entry_count - 1; j++)
-         g->entries[j] = g->entries[j + 1];
-      g->entry_count--;
-   }
-
-   printf("ds1_manager_delete: complete\n");
-   fflush(stdout);
+   area_browser_rescan_backups();
    return 0;
 }
 
-
-/* ---- Backup System ---- */
-
-/* Write JSON metadata for a backed-up DS1 file. */
-int ds1_manager_write_backup_json(const char * json_path, int group_idx,
-                                   int entry_idx, int ds1_idx)
+/* A Modified map: the project's copy goes to the backup folder. */
+int ds1_manager_revert(int group_idx, int entry_idx, char * error, int cap)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
    AREA_GROUP_S * g;
+   char date[32], label[128], json[1024], backup[512];
+
+   if (group_idx < 0 || group_idx >= ab->group_count || !manager_need_project(error, cap))
+      return -1;
+   g = &ab->groups[group_idx];
+   if (entry_idx < 0 || entry_idx >= g->entry_count)
+      return -1;
+
+   manager_backup_details(g, &g->entries[entry_idx], date, sizeof(date), label, sizeof(label),
+                          json, sizeof(json));
+   if (map_ops_backup_file(glb_project.path, g->entries[entry_idx].ds1_path, label, date, json,
+                           backup, sizeof(backup), error, cap) != 0)
+      return -1;
+   area_browser_rescan_backups();
+   area_browser_refresh_states();
+   return 0;
+}
+
+/* A Game map: its slot is cleared in the project's table. The file isn't touched. */
+int ds1_manager_remove_slot(int group_idx, int entry_idx, char * error, int cap)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
    AREA_DS1_ENTRY_S * e;
-   FILE * out;
-   time_t now;
-   struct tm * t;
-   char time_str[64];
+   char * seed;
+   int rc;
 
-   if (group_idx < 0 || group_idx >= ab->group_count) return -1;
-   g = &ab->groups[group_idx];
-   if (entry_idx < 0 || entry_idx >= g->entry_count) return -1;
-   e = &g->entries[entry_idx];
+   if (group_idx < 0 || group_idx >= ab->group_count || !manager_need_project(error, cap))
+      return -1;
+   if (entry_idx < 0 || entry_idx >= ab->groups[group_idx].entry_count)
+      return -1;
+   e = &ab->groups[group_idx].entries[entry_idx];
 
-   out = fopen(json_path, "wt");
-   if (out == NULL) return -1;
+   seed = manager_seed();
+   rc = map_ops_unregister(glb_project.path, seed, e->lvlprest_def, e->ds1_path, error, cap);
+   free(seed);
+   if (rc != 0)
+      return -1;
 
-   time(&now);
-   t = localtime(&now);
-   strftime(time_str, sizeof(time_str), "%Y-%m-%dT%H:%M:%S", t);
-
-   fprintf(out, "{\n");
-   fprintf(out, "  \"backup_date\": \"%s\",\n", time_str);
-   fprintf(out, "  \"original_path\": \"%s\",\n", e->ds1_path);
-   fprintf(out, "  \"lvlprest\": {\n");
-   fprintf(out, "    \"def\": %d,\n", e->lvlprest_def);
-   fprintf(out, "    \"lvltype_id\": %d,\n", e->lvltype_id);
-
-   if (g->act > 0)
-      fprintf(out, "    \"area\": \"Act %d - %s\"\n", g->act, g->name);
-   else
-      fprintf(out, "    \"area\": \"%s\"\n", g->name);
-
-   fprintf(out, "  },\n");
-
-   /* DS1 metadata if loaded */
-   if (ds1_idx >= 0 && ds1_idx < DS1_MAX && glb_ds1[ds1_idx].name[0] != '\0')
-   {
-      fprintf(out, "  \"ds1_metadata\": {\n");
-      fprintf(out, "    \"version\": %ld,\n", glb_ds1[ds1_idx].version);
-      fprintf(out, "    \"width\": %ld,\n", glb_ds1[ds1_idx].width);
-      fprintf(out, "    \"height\": %ld,\n", glb_ds1[ds1_idx].height);
-      fprintf(out, "    \"act\": %ld,\n", glb_ds1[ds1_idx].act);
-      fprintf(out, "    \"object_count\": %ld,\n", glb_ds1[ds1_idx].obj_num);
-      fprintf(out, "    \"floor_layers\": %ld,\n", (long)glb_ds1[ds1_idx].floor_num);
-      fprintf(out, "    \"wall_layers\": %ld\n", (long)glb_ds1[ds1_idx].wall_num);
-      fprintf(out, "  }\n");
-   }
-   else
-   {
-      fprintf(out, "  \"ds1_metadata\": null\n");
-   }
-
-   fprintf(out, "}\n");
-   fclose(out);
+   manager_tables_changed();
+   e->slot_cleared = 1;
+   area_browser_refresh_states();
    return 0;
 }
 
-/* Backup a DS1 file: move it to backup/ folder with JSON metadata. */
-int ds1_manager_backup(int group_idx, int entry_idx)
+/* A Removed map: the game's value goes back in the project's table. */
+int ds1_manager_restore_slot(int group_idx, int entry_idx, char * error, int cap)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
-   AREA_GROUP_S * g;
    AREA_DS1_ENTRY_S * e;
-   char backup_dir[512], backup_subdir[512];
-   char src_path[512], dst_ds1[512], dst_json[512];
-   const char * fname;
-   time_t now;
-   struct tm * t;
-   char date_str[32];
+   char name[] = "Data\\Global\\Excel\\LvlPrest.txt";
+   char * game, * seed;
+   int rc;
 
-   if (group_idx < 0 || group_idx >= ab->group_count) return -1;
-   g = &ab->groups[group_idx];
-   if (entry_idx < 0 || entry_idx >= g->entry_count) return -1;
-   e = &g->entries[entry_idx];
+   if (group_idx < 0 || group_idx >= ab->group_count || !manager_need_project(error, cap))
+      return -1;
+   if (entry_idx < 0 || entry_idx >= ab->groups[group_idx].entry_count)
+      return -1;
+   e = &ab->groups[group_idx].entries[entry_idx];
 
-   /* Extract filename */
-   fname = strrchr(e->ds1_path, '/');
-   if (fname == NULL) fname = strrchr(e->ds1_path, '\\');
-   if (fname != NULL) fname++; else fname = e->ds1_path;
-
-   /* Create backup directory */
-   time(&now);
-   t = localtime(&now);
-   strftime(date_str, sizeof(date_str), "%Y-%m-%d", t);
-
-   sprintf(backup_dir, "backup");
-   MKDIR(backup_dir);
-
-   if (g->act > 0)
-      sprintf(backup_subdir, "backup/%s_Act%d-%s_%.*s",
-              date_str, g->act, g->name,
-              (int)(strlen(fname) - 4), fname); /* strip .ds1 */
-   else
-      sprintf(backup_subdir, "backup/%s_%s_%.*s",
-              date_str, g->name,
-              (int)(strlen(fname) - 4), fname);
-   MKDIR(backup_subdir);
-
-   /* Source path */
-   if (glb_config.mod_dir[0] != NULL)
-      sprintf(src_path, "%s\\Global\\Tiles\\%s", glb_config.mod_dir[0], e->ds1_path);
-   else
-      sprintf(src_path, "assets/tiles/%s", e->ds1_path);
-   ds1_path_normalize(src_path);
-
-   /* Copy DS1 to backup */
-   sprintf(dst_ds1, "%s/%s", backup_subdir, fname);
-   switch (file_copy_checked(src_path, dst_ds1))
+   game = (char *) txt_read_in_mem_mpq_only(name);
+   if (game == NULL)
    {
-      case FILE_COPY_OK:
-         printf("ds1_manager: backed up %s\n", dst_ds1);
-         break;
-      case FILE_COPY_NO_SOURCE:
-         /* A map that exists only in an MPQ has no file for delete to remove. */
-         printf("ds1_manager: warning, can't read %s for backup\n", src_path);
-         break;
-      default:
-         printf("ds1_manager: couldn't copy %s to %s\n", src_path, dst_ds1);
-         return -1;
+      snprintf(error, cap, "The game's LvlPrest.txt can't be read.");
+      return -1;
    }
+   seed = manager_seed();
+   rc = map_ops_restore_slot(glb_project.path, seed, game, e->lvlprest_def, e->ds1_path,
+                             error, cap);
+   free(seed);
+   free(game);
+   if (rc != 0)
+      return -1;
 
-   /* Write JSON metadata */
-   {
-      char json_name[256];
-      sprintf(json_name, "%.*s.json", (int)(strlen(fname) - 4), fname);
-      sprintf(dst_json, "%s/%s", backup_subdir, json_name);
-      if (ds1_manager_write_backup_json(dst_json, group_idx, entry_idx,
-                                        ab->loaded_group == group_idx ? entry_idx : -1) != 0)
-      {
-         printf("ds1_manager: couldn't write %s\n", dst_json);
-         return -1;
-      }
-   }
-
+   manager_tables_changed();
+   e->slot_cleared = 0;
+   area_browser_refresh_states();
    return 0;
 }
 
-/* Write a minimal empty DS1 file to disk. Returns 0 on success. */
-static int write_empty_ds1(const char * path, int width, int height, int act)
-{
-   FILE * out;
-   long val;
-   int x, y;
-
-   out = fopen(path, "wb");
-   if (out == NULL) return -1;
-
-   /* Version 18 */
-   val = 18; fwrite(&val, 4, 1, out);
-
-   /* Width - 1 */
-   val = width - 1; fwrite(&val, 4, 1, out);
-
-   /* Height - 1 */
-   val = height - 1; fwrite(&val, 4, 1, out);
-
-   /* Act - 1 */
-   val = act - 1; fwrite(&val, 4, 1, out);
-
-   /* Tag type = 0 */
-   val = 0; fwrite(&val, 4, 1, out);
-
-   /* File count = 0 (no embedded filenames) */
-   val = 0; fwrite(&val, 4, 1, out);
-
-   /* Wall layers = 1, Floor layers = 1 */
-   val = 1; fwrite(&val, 4, 1, out); /* wall_num */
-   val = 1; fwrite(&val, 4, 1, out); /* floor_num */
-
-   /* Walls: props layer (4 bytes per cell) + orientation layer (4 bytes per cell) */
-   for (y = 0; y < height; y++)
-      for (x = 0; x < width; x++)
-      { val = 0; fwrite(&val, 4, 1, out); }
-   for (y = 0; y < height; y++)
-      for (x = 0; x < width; x++)
-      { val = 0; fwrite(&val, 4, 1, out); }
-
-   /* Floors: props layer */
-   for (y = 0; y < height; y++)
-      for (x = 0; x < width; x++)
-      { val = 0; fwrite(&val, 4, 1, out); }
-
-   /* Shadows: props layer */
-   for (y = 0; y < height; y++)
-      for (x = 0; x < width; x++)
-      { val = 0; fwrite(&val, 4, 1, out); }
-
-   /* Objects: count = 0 */
-   val = 0; fwrite(&val, 4, 1, out);
-
-   /* NPC paths: count = 0 */
-   val = 0; fwrite(&val, 4, 1, out);
-
-   fclose(out);
-   return 0;
-}
-
-/* Create an empty DS1 file and add it to the given area group.
- * Uses smart name suggestion based on the selected entry.
- * Saves to mod_dir and updates LvlPrest.txt. Returns 0 on success. */
-int ds1_manager_create_empty(int group_idx, int entry_idx, int width, int height, int act)
+int ds1_manager_create_empty(int group_idx, int def, const char * file_name,
+                             int width, int height, char * error, int cap)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
    AREA_GROUP_S * g;
-   char filename[128], rel_path[256], full_path[512], dir_path[512];
-   int def, file_slot;
-   int base_entry;
+   char rel[256];
+   char * seed;
+   int rc;
 
-   if (group_idx < 0 || group_idx >= ab->group_count) return -1;
+   if (group_idx < 0 || group_idx >= ab->group_count || !manager_need_project(error, cap))
+      return -1;
    g = &ab->groups[group_idx];
-   if (g->entry_count == 0) return -1;
-   if (glb_config.mod_dir[0] == NULL)
-   {
-      printf("ds1_manager_create_empty: no mod_dir configured\n");
+   if (manager_new_path(g, def, file_name, rel, sizeof(rel), error, cap) != 0)
       return -1;
-   }
 
-   /* Use selected entry (or first entry) as template for naming and Def */
-   base_entry = (entry_idx >= 0 && entry_idx < g->entry_count) ? entry_idx : 0;
-   def = g->entries[base_entry].lvlprest_def;
-
-   /* Find an empty file slot */
-   file_slot = ds1_manager_lvlprest_find_empty_slot(def);
-   if (file_slot < 0)
-   {
-      printf("ds1_manager_create_empty: no empty File slot for Def %d\n", def);
+   seed = manager_seed();
+   rc = map_ops_create_empty(glb_project.path, seed, def, rel, width, height,
+                             g->act > 0 ? g->act : 1, error, cap);
+   free(seed);
+   if (rc != 0)
       return -1;
-   }
 
-   /* Generate smart filename based on selected entry */
-   ds1_manager_suggest_name(g->entries[base_entry].ds1_path, g, filename, sizeof(filename));
-
-   /* Build full path */
-   {
-      const char * first_path = g->entries[base_entry].ds1_path;
-      const char * last_slash = strrchr(first_path, '/');
-      int dir_len;
-
-      if (last_slash == NULL) last_slash = strrchr(first_path, '\\');
-      if (last_slash == NULL)
-      {
-         printf("ds1_manager_create_empty: can't determine directory from %s\n", first_path);
-         return -1;
-      }
-      dir_len = (int)(last_slash - first_path);
-      sprintf(rel_path, "%.*s/%s", dir_len, first_path, filename);
-      sprintf(full_path, "%s\\Global\\Tiles\\%.*s\\%s",
-              glb_config.mod_dir[0], dir_len, first_path, filename);
-      ds1_path_normalize(full_path);
-   }
-
-   /* Ensure directory exists */
-   {
-      const char * last_slash = strrchr(full_path, '\\');
-      if (last_slash == NULL) last_slash = strrchr(full_path, '/');
-      if (last_slash != NULL)
-      {
-         int dlen = (int)(last_slash - full_path);
-         strncpy(dir_path, full_path, dlen);
-         dir_path[dlen] = '\0';
-         MKDIR(dir_path);
-      }
-   }
-
-   /* Write the empty DS1 */
-   if (write_empty_ds1(full_path, width, height, act) != 0)
-   {
-      printf("ds1_manager_create_empty: failed to write %s\n", full_path);
-      return -1;
-   }
-   printf("ds1_manager_create_empty: created %s (%dx%d, act %d)\n",
-          full_path, width, height, act);
-
-   /* Update LvlPrest.txt */
-   if (ds1_manager_lvlprest_set_file(def, file_slot, rel_path) == 0)
-      printf("ds1_manager_create_empty: added to LvlPrest.txt File%d for Def %d\n",
-             file_slot, def);
-
-   /* Invalidate cached LvlPrest buffer */
-   if (glb_ds1edit.lvlprest_buff != NULL)
-      glb_ds1edit.lvlprest_buff = txt_destroy(glb_ds1edit.lvlprest_buff);
-
-   /* Add to in-memory area browser */
-   {
-      AREA_DS1_ENTRY_S new_entry;
-      new_entry.lvltype_id = g->lvltype_id;
-      new_entry.lvlprest_def = def;
-      strncpy(new_entry.ds1_path, rel_path, sizeof(new_entry.ds1_path) - 1);
-      new_entry.ds1_path[sizeof(new_entry.ds1_path) - 1] = '\0';
-      area_group_add_entry(g, g->lvltype_id, def, rel_path);
-   }
-
-   printf("ds1_manager_create_empty: complete\n");
-   fflush(stdout);
+   manager_tables_changed();
+   area_group_add_entry(g, g->lvltype_id, def, rel);
+   g->is_expanded = TRUE;
+   area_browser_refresh_states();
    return 0;
 }
 
-/* Clone the current DS1 and add it to the given area group.
- * Uses smart name suggestion based on the selected entry. */
-int ds1_manager_clone(int src_ds1_idx, int group_idx, int entry_idx)
+/* The map as it is in memory, so unsaved edits come along and a map that exists
+ * only in an MPQ can be cloned. */
+int ds1_manager_clone(int src_ds1_idx, int group_idx, int def, const char * file_name,
+                      char * error, int cap)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
    AREA_GROUP_S * g;
-   char src_path[512], dst_path[512], rel_path[256], filename[128];
-   int def, file_slot, counter = 1;
-   const char * first_path;
-   const char * last_slash;
-   int dir_len;
+   char rel[256], dest[768];
+   char * seed;
+   int rc;
 
-   if (group_idx < 0 || group_idx >= ab->group_count) return -1;
+   if (group_idx < 0 || group_idx >= ab->group_count || !manager_need_project(error, cap))
+      return -1;
    g = &ab->groups[group_idx];
-   if (g->entry_count == 0) return -1;
-   if (glb_config.mod_dir[0] == NULL) return -1;
-   if (src_ds1_idx < 0 || src_ds1_idx >= DS1_MAX) return -1;
-   if (glb_ds1[src_ds1_idx].name[0] == '\0') return -1;
-
+   if (manager_new_path(g, def, file_name, rel, sizeof(rel), error, cap) != 0)
+      return -1;
+   if (map_ops_tile_path(glb_project.path, rel, dest, sizeof(dest)) != 0)
    {
-      int base_entry = (entry_idx >= 0 && entry_idx < g->entry_count) ? entry_idx : 0;
-      def = g->entries[base_entry].lvlprest_def;
+      snprintf(error, cap, "The path for %s is too long.", file_name);
+      return -1;
    }
-   file_slot = ds1_manager_lvlprest_find_empty_slot(def);
-   if (file_slot < 0)
+   if (ds1_save_copy_checked(src_ds1_idx, dest, error, (size_t) cap) != 0)
+      return -1;
+
+   seed = manager_seed();
+   rc = map_ops_register(glb_project.path, seed, def, rel, error, cap);
+   free(seed);
+   if (rc != 0)
    {
-      printf("ds1_manager_clone: no empty File slot for Def %d\n", def);
+      remove(dest);
       return -1;
    }
 
-   /* Build source path */
-   strcpy(src_path, glb_ds1[src_ds1_idx].name);
-
-   /* Generate smart destination filename */
-   {
-      int base_entry = (entry_idx >= 0 && entry_idx < g->entry_count) ? entry_idx : 0;
-      ds1_manager_suggest_name(g->entries[base_entry].ds1_path, g, filename, sizeof(filename));
-
-      first_path = g->entries[base_entry].ds1_path;
-      last_slash = strrchr(first_path, '/');
-      if (last_slash == NULL) last_slash = strrchr(first_path, '\\');
-      if (last_slash == NULL) return -1;
-      dir_len = (int)(last_slash - first_path);
-
-      sprintf(rel_path, "%.*s/%s", dir_len, first_path, filename);
-      sprintf(dst_path, "%s\\Global\\Tiles\\%.*s\\%s",
-              glb_config.mod_dir[0], dir_len, first_path, filename);
-      ds1_path_normalize(dst_path);
-   }
-
-   /* Copy the file */
-   {
-      FILE * in = fopen(src_path, "rb");
-      if (in == NULL)
-      {
-         printf("ds1_manager_clone: can't read %s\n", src_path);
-         return -1;
-      }
-      {
-         FILE * out = fopen(dst_path, "wb");
-         if (out != NULL)
-         {
-            char copy_buf[8192];
-            int n;
-            while ((n = (int)fread(copy_buf, 1, sizeof(copy_buf), in)) > 0)
-               fwrite(copy_buf, 1, n, out);
-            fclose(out);
-         }
-         else
-         {
-            fclose(in);
-            printf("ds1_manager_clone: can't write %s\n", dst_path);
-            return -1;
-         }
-      }
-      fclose(in);
-   }
-   printf("ds1_manager_clone: copied %s -> %s\n", src_path, dst_path);
-
-   /* Update LvlPrest.txt */
-   if (ds1_manager_lvlprest_set_file(def, file_slot, rel_path) == 0)
-      printf("ds1_manager_clone: added to LvlPrest.txt File%d for Def %d\n",
-             file_slot, def);
-
-   /* Invalidate cached LvlPrest buffer */
-   if (glb_ds1edit.lvlprest_buff != NULL)
-      glb_ds1edit.lvlprest_buff = txt_destroy(glb_ds1edit.lvlprest_buff);
-
-   /* Add to in-memory area browser */
-   area_group_add_entry(g, g->lvltype_id, def, rel_path);
-
-   printf("ds1_manager_clone: complete\n");
-   fflush(stdout);
+   manager_tables_changed();
+   area_group_add_entry(g, g->lvltype_id, def, rel);
+   g->is_expanded = TRUE;
+   area_browser_refresh_states();
    return 0;
 }
-
 
 /* ---- Generic TXT file cell editor ---- */
 
@@ -958,24 +593,27 @@ int ds1_manager_txt_set_cell(RQ_ENUM txt_type, const char * key_col, int key_val
 
 
 /* ---- Restore and permanent delete ---- */
-
-/* Restore a backup DS1 to its original location and re-add to LvlPrest.txt.
- * Returns 0 on success, -1 on error. */
-int ds1_manager_restore(int group_idx, int entry_idx)
+/* Restore a backup DS1 to its original place in the project, and list it in the
+ * project's LvlPrest.txt if the table doesn't already. Returns 0, or -1 with a
+ * sentence in error. */
+int ds1_manager_restore(int group_idx, int entry_idx, char * error, int cap)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
    AREA_GROUP_S * g;
    AREA_DS1_ENTRY_S * e;
    char backup_ds1_path[512], backup_json_path[512];
-   char dst_path[512], original_path[256];
-   int def, lvltype_id, file_slot;
+   char original_path[256];
+   int def, lvltype_id;
    FILE * jf;
    char backup_dir[512];
 
-   if (group_idx < 0 || group_idx >= ab->group_count) return -1;
+   if (group_idx < 0 || group_idx >= ab->group_count)
+      return -1;
    g = &ab->groups[group_idx];
-   if (!g->is_backup) return -1;
-   if (entry_idx < 0 || entry_idx >= g->entry_count) return -1;
+   if (!g->is_backup)
+      return -1;
+   if (entry_idx < 0 || entry_idx >= g->entry_count)
+      return -1;
    e = &g->entries[entry_idx];
 
    /* The entry ds1_path is like "backup/2026-04-06_Act1-Town_TownN1/TownN1.ds1" */
@@ -992,7 +630,7 @@ int ds1_manager_restore(int group_idx, int entry_idx)
       }
       else
       {
-         printf("ds1_manager_restore: unexpected path format: %s\n", backup_ds1_path);
+         snprintf(error, cap, "%s isn't a map backup.", backup_ds1_path);
          return -1;
       }
    }
@@ -1055,102 +693,74 @@ int ds1_manager_restore(int group_idx, int entry_idx)
    }
    else
    {
-      printf("ds1_manager_restore: can't read JSON %s\n", backup_json_path);
+      snprintf(error, cap, "The backup's details file %s can't be read.", backup_json_path);
       return -1;
    }
 
    if (original_path[0] == '\0')
    {
-      printf("ds1_manager_restore: no original_path in JSON\n");
+      snprintf(error, cap, "The backup's details file doesn't say where the map came from.");
       return -1;
    }
 
-   /* Build destination path */
-   if (glb_config.mod_dir[0] != NULL)
-      sprintf(dst_path, "%s\\Global\\Tiles\\%s", glb_config.mod_dir[0], original_path);
-   else
-      sprintf(dst_path, "assets/tiles/%s", original_path);
-   ds1_path_normalize(dst_path);
+   if (!manager_need_project(error, cap))
+      return -1;
+   if (map_ops_restore_file(glb_project.path, backup_ds1_path, original_path, error, cap) != 0)
+      return -1;
 
-   /* Copy DS1 back to original location */
+   /* A New map's slot was cleared when it was deleted. A Modified map's never
+      was, and map_ops_register would then list it twice. */
    {
-      FILE * in = fopen(backup_ds1_path, "rb");
-      if (in != NULL)
+      char * seed = manager_seed();
+      char path[768];
+      long len;
+      char * table;
+      int listed = 0;
+
+      if (map_ops_table_path(glb_project.path, path, sizeof(path)) == 0)
       {
-         FILE * out = fopen(dst_path, "wb");
-         if (out != NULL)
+         table = map_ops_read_file(path, &len);
+         if (table != NULL)
          {
-            char copy_buf[8192];
-            int n;
-            while ((n = (int)fread(copy_buf, 1, sizeof(copy_buf), in)) > 0)
-               fwrite(copy_buf, 1, n, out);
-            fclose(out);
-            printf("ds1_manager_restore: restored %s -> %s\n", backup_ds1_path, dst_path);
+            listed = lvlprest_find_file_slot(table, def, original_path) > 0;
+            free(table);
          }
-         else
-         {
-            printf("ds1_manager_restore: can't write %s\n", dst_path);
-            fclose(in);
-            return -1;
-         }
-         fclose(in);
       }
-      else
+      if (!listed && def > 0 &&
+          map_ops_register(glb_project.path, seed, def, original_path, error, cap) != 0)
       {
-         printf("ds1_manager_restore: can't read %s\n", backup_ds1_path);
+         free(seed);
          return -1;
       }
+      free(seed);
    }
 
-   /* Re-add to LvlPrest.txt */
-   if (def > 0)
-   {
-      file_slot = ds1_manager_lvlprest_find_empty_slot(def);
-      if (file_slot > 0)
-      {
-         if (ds1_manager_lvlprest_set_file(def, file_slot, original_path) == 0)
-            printf("ds1_manager_restore: added to LvlPrest.txt File%d for Def %d\n",
-                   file_slot, def);
-      }
-      else
-      {
-         printf("ds1_manager_restore: no empty File slot for Def %d\n", def);
-      }
-   }
+   manager_tables_changed();
 
-   /* Invalidate cached LvlPrest buffer so next load re-reads from disk */
-   if (glb_ds1edit.lvlprest_buff != NULL)
+   /* Add a row to the matching regular group, unless the map already has one */
    {
-      glb_ds1edit.lvlprest_buff = txt_destroy(glb_ds1edit.lvlprest_buff);
-      printf("ds1_manager_restore: invalidated LvlPrest cache\n");
-   }
-
-   /* Find the matching regular group and add the entry */
-   {
-      int gi;
-      for (gi = 0; gi < ab->group_count; gi++)
+      int gi, ei;
+      if (!area_browser_find_row(original_path, def, &gi, &ei))
       {
-         if (!ab->groups[gi].is_backup && ab->groups[gi].lvltype_id == lvltype_id)
+         for (gi = 0; gi < ab->group_count; gi++)
          {
-            area_group_add_entry(&ab->groups[gi], lvltype_id, def, original_path);
-            printf("ds1_manager_restore: added to group '%s'\n", ab->groups[gi].name);
-            break;
+            if (!ab->groups[gi].is_backup && ab->groups[gi].lvltype_id == lvltype_id)
+            {
+               area_group_add_entry(&ab->groups[gi], lvltype_id, def, original_path);
+               printf("ds1_manager_restore: added to group '%s'\n", ab->groups[gi].name);
+               break;
+            }
          }
       }
    }
 
-   /* Remove the backup entry from the backup group */
-   if (entry_idx < g->entry_count - 1)
-   {
-      memmove(&g->entries[entry_idx], &g->entries[entry_idx + 1],
-              sizeof(AREA_DS1_ENTRY_S) * (g->entry_count - entry_idx - 1));
-   }
-   g->entry_count--;
-
-   /* Clean up backup files */
-   remove(backup_ds1_path);
+   /* Remove the backup entry from the backup group. map_ops_restore_file moved
+      the .ds1, so only the JSON and the folder are left. */
+   manager_remove_row(g, entry_idx);
    remove(backup_json_path);
    RMDIR(backup_dir);  /* Will only succeed if empty */
+
+   area_browser_refresh_states();
 
    printf("ds1_manager_restore: complete\n");
    fflush(stdout);

@@ -69,32 +69,18 @@ static void interface_delete_map(int gi, int ei)
    if (rc != 1)
       return;
 
-   rc = ds1_manager_delete(gi, ei);
-   if (rc != 0)
    {
-      al_show_native_message_box(a5_display, "Delete Map",
-         rc == DS1_DELETE_ERR_TABLE ?
-            "LvlPrest.txt couldn't be read or updated, so the map wasn't deleted." :
-            "The map couldn't be backed up, so it wasn't deleted.",
-         rc == DS1_DELETE_ERR_TABLE ?
-            "The map's file is still there. The mod folder needs a writable copy "
-            "of the table at Global\\Excel\\LvlPrest.txt." :
-            "Nothing was changed. Check that the backup folder next to the editor "
-            "is writable and the disk isn't full.",
-         NULL, ALLEGRO_MESSAGEBOX_ERROR);
-      input_suppress_held();
-      input_discard_pending();
-      return;
+      char error[512] = "";
+      if (ds1_manager_delete(gi, ei, error, sizeof(error)) != 0)
+      {
+         al_show_native_message_box(a5_display, "Delete Map",
+            "The map wasn't deleted.", error, NULL, ALLEGRO_MESSAGEBOX_ERROR);
+         input_suppress_held();
+         input_discard_pending();
+         return;
+      }
    }
-
-   /* Adjust selection after deletion */
-   if (ei >= ab->groups[gi].entry_count)
-      ab->selected_entry = ab->groups[gi].entry_count - 1;
-   if (ab->selected_entry < 0)
-      ab->selected_entry = -1;
-
-   /* The entries shifted up; keep the open map's row pointing at its own. */
-   commands_loaded_after_delete(&ab->loaded_group, &ab->loaded_entry, gi, ei);
+   /* ds1_manager_delete moved the selection and the open map's row itself. */
 }
 
 /* Delete a backup for good. It may be the only copy of a deleted map. */
@@ -478,22 +464,27 @@ static void interface_new_map(int ds1_idx, int clone)
 
    if (clone)
    {
-      if (ds1_manager_clone(ds1_idx, gi, ei) == 0)
+      char file[128], error[512] = "";
+      int base = ei >= 0 ? ei : 0;
+
+      ds1_manager_suggest_name(g->entries[base].ds1_path, g, file, sizeof(file));
+      if (ds1_manager_clone(ds1_idx, gi, g->entries[base].lvlprest_def, file,
+                            error, sizeof(error)) == 0)
          printf("Map: cloned DS1 successfully\n");
       else
       {
          al_show_native_message_box(a5_display, "Clone Map",
             "The map couldn't be cloned.",
-            "Clone needs a project or mod folder, a saved file for this map, "
-            "and a free map slot in LvlPrest.txt. Nothing was changed.",
+            error,
             NULL, ALLEGRO_MESSAGEBOX_WARN);
          input_suppress_held();
       }
    }
    else
    {
-      int new_act = g->act > 0 ? g->act : 1;
       int new_w = 20, new_h = 20;
+      char file[128], error[512] = "";
+      int base = ei >= 0 ? ei : 0;
 
       /* Copy dimensions from the open DS1 if there is one */
       if (glb_ds1edit.has_loaded_ds1 && ds1_idx >= 0 && ds1_idx < DS1_MAX &&
@@ -501,16 +492,16 @@ static void interface_new_map(int ds1_idx, int clone)
       {
          new_w = (int)glb_ds1[ds1_idx].width;
          new_h = (int)glb_ds1[ds1_idx].height;
-         new_act = (int)glb_ds1[ds1_idx].act;
       }
-      if (ds1_manager_create_empty(gi, ei, new_w, new_h, new_act) == 0)
+      ds1_manager_suggest_name(g->entries[base].ds1_path, g, file, sizeof(file));
+      if (ds1_manager_create_empty(gi, g->entries[base].lvlprest_def, file, new_w, new_h,
+                                   error, sizeof(error)) == 0)
          printf("Map: created new empty DS1 (%dx%d)\n", new_w, new_h);
       else
       {
          al_show_native_message_box(a5_display, "New Map",
             "The map couldn't be created.",
-            "New needs a project or mod folder and a free map slot in "
-            "LvlPrest.txt. Nothing was changed.",
+            error,
             NULL, ALLEGRO_MESSAGEBOX_WARN);
          input_suppress_held();
       }
@@ -976,8 +967,17 @@ void interfac_user_handler(int start_ds1_idx)
                         }
                         else if (menu_sel == 0)
                         {
-                           if (ds1_manager_restore(rc_gi, rc_ei) == 0)
+                           char error[512] = "";
+                           if (ds1_manager_restore(rc_gi, rc_ei, error, sizeof(error)) == 0)
                               printf("Backup restored successfully\n");
+                           else
+                           {
+                              al_show_native_message_box(a5_display, "Restore Map",
+                                 "The map wasn't restored.", error, NULL,
+                                 ALLEGRO_MESSAGEBOX_ERROR);
+                              input_suppress_held();
+                              input_discard_pending();
+                           }
                         }
                         else
                         {

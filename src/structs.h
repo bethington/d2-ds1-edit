@@ -584,6 +584,7 @@ typedef struct AREA_DS1_ENTRY_S
    int  lvlprest_def;   /* LvlPrest.txt Def                      */
    char ds1_path[256];  /* DS1 file path from LvlPrest File1-6   */
    int  state;          /* MAP_STATE_E, set by area_browser_refresh_states */
+   int  slot_cleared;   /* in the game's table, but cleared in the project's */
 } AREA_DS1_ENTRY_S;
 
 typedef struct AREA_GROUP_S

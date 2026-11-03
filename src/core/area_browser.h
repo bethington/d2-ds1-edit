@@ -12,6 +12,8 @@ int  area_browser_run           (void);
 void area_group_add_entry       (AREA_GROUP_S * grp, int lvltype_id,
                                   int def, const char * ds1_path);
 void area_browser_scan_backups  (void);
+void area_browser_rescan_backups(void);
+int  area_browser_find_row(const char * ds1_path, int def, int * group_idx, int * entry_idx);
 void area_browser_scan_unlisted (void);
 void area_browser_list          (void);
 void area_browser_list_ext      (void);
