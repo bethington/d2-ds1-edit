@@ -136,6 +136,11 @@ int input_escape_may_quit(int panel_editing, int panel_has_focus);
  * values waiting in the panel. */
 int input_quit_needs_prompt(int any_map_dirty, int panel_pending_count);
 
+/* Delete (either key) removes the selected tiles, once per press: in tile mode,
+ * and not while a paste preview follows the mouse. Object mode handles the key
+ * itself. It never removes a map; that's the area browser's context menu. */
+int input_delete_hits_tiles(int tile_mode, int paste_preview_active);
+
 /* Did this key go down since the last pump? */
 #define key_hit(k)     (a5_key_hit[(k)] != 0)
 

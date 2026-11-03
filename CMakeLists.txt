@@ -194,6 +194,7 @@ set(SOURCES
     src/core/ds1.c
     src/core/ds1_save_io.c
     src/core/ds1_manager.c
+    src/core/file_copy.c
     src/core/asset_export.c
     src/core/upscale.c
     src/core/dt1.c

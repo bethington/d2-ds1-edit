@@ -121,6 +121,43 @@ void test_quit_asks_for_unsaved_maps_or_pending_panel_values(void)
    TEST_ASSERT_TRUE(input_quit_needs_prompt(1, 2));
 }
 
+/* ---- Delete: the selected tiles, and nothing else ---------------------- */
+
+void test_delete_key_hits_tiles_once_per_press_on_either_key(void)
+{
+   ALLEGRO_EVENT del = key_down_event(ALLEGRO_KEY_DELETE);
+   ALLEGRO_EVENT pad = key_down_event(ALLEGRO_KEY_PAD_DELETE);
+
+   input_begin_frame();
+   TEST_ASSERT_FALSE(input_delete_hits_tiles(1, 0));
+
+   input_begin_frame();
+   input_note_event(&del);
+   hold_key(ALLEGRO_KEY_DELETE);
+   TEST_ASSERT_TRUE(input_delete_hits_tiles(1, 0));
+
+   /* Still held: each frame's delete would push another undo buffer, and the
+      first Ctrl+Z would then undo a delete that removed nothing. */
+   input_begin_frame();
+   TEST_ASSERT_FALSE(input_delete_hits_tiles(1, 0));
+
+   release_key(ALLEGRO_KEY_DELETE);
+   input_begin_frame();
+   input_note_event(&pad);
+   TEST_ASSERT_TRUE(input_delete_hits_tiles(1, 0));
+}
+
+void test_delete_key_leaves_tiles_alone_outside_tile_mode_and_during_paste(void)
+{
+   ALLEGRO_EVENT del = key_down_event(ALLEGRO_KEY_DELETE);
+
+   input_begin_frame();
+   input_note_event(&del);
+
+   TEST_ASSERT_FALSE(input_delete_hits_tiles(0, 0));
+   TEST_ASSERT_FALSE(input_delete_hits_tiles(1, 1));
+}
+
 /* ---- key_hit: once per press, not once per frame ---------------------- */
 
 void test_key_hit_fires_on_the_frame_the_key_goes_down(void)
@@ -294,6 +331,8 @@ int main(void)
    RUN_TEST(test_editor_undo_shortcuts_fire_once_and_respect_active_property_edits);
    RUN_TEST(test_escape_only_asks_to_quit_when_the_panel_does_not_own_it);
    RUN_TEST(test_quit_asks_for_unsaved_maps_or_pending_panel_values);
+   RUN_TEST(test_delete_key_hits_tiles_once_per_press_on_either_key);
+   RUN_TEST(test_delete_key_leaves_tiles_alone_outside_tile_mode_and_during_paste);
    RUN_TEST(test_key_hit_fires_on_the_frame_the_key_goes_down);
    RUN_TEST(test_key_hit_is_clear_on_later_frames_while_still_held);
    RUN_TEST(test_key_hit_fires_again_after_release_and_repress);

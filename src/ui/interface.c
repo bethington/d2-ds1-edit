@@ -31,6 +31,81 @@
 #include "core/map_state.h"
 #include <allegro5/allegro_native_dialog.h>
 
+/* Delete a map from the mod folder, once the user has said yes to that map by
+ * name. Undo can't bring it back: this is a file operation, not a map edit. So
+ * it has no keyboard shortcut, and the browser's context menu is its one route.
+ */
+static void interface_delete_map(int gi, int ei)
+{
+   AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
+   char heading[600];
+   int rc;
+
+   /* Without a mod folder there's no LvlPrest.txt to change and the map stays
+      in the game data, so the row would only vanish until the next start. */
+   if (glb_config.mod_dir[0] == NULL)
+   {
+      al_show_native_message_box(a5_display, "Delete Map",
+         "No project or mod folder is open.",
+         "Maps can only be deleted from a project or mod folder. Nothing was changed.",
+         NULL, ALLEGRO_MESSAGEBOX_WARN);
+      input_suppress_held();
+      input_discard_pending();
+      return;
+   }
+
+   snprintf(heading, sizeof(heading), "Delete %s?", ab->groups[gi].entries[ei].ds1_path);
+   rc = al_show_native_message_box(a5_display, "Delete Map", heading,
+      "This removes the map's file from the mod folder and clears its slot in "
+      "LvlPrest.txt. Undo can't bring it back.\n\n"
+      "A copy goes to the backup folder. After a restart it's listed in the "
+      "area browser's Backup group, where it can be restored.",
+      NULL, ALLEGRO_MESSAGEBOX_YES_NO | ALLEGRO_MESSAGEBOX_WARN);
+   input_suppress_held();
+   input_discard_pending();
+   if (rc != 1)
+      return;
+
+   if (ds1_manager_delete(gi, ei) != 0)
+   {
+      al_show_native_message_box(a5_display, "Delete Map",
+         "The map couldn't be backed up, so it wasn't deleted.",
+         "Nothing was changed. Check that the backup folder next to the editor "
+         "is writable and the disk isn't full.",
+         NULL, ALLEGRO_MESSAGEBOX_ERROR);
+      input_suppress_held();
+      input_discard_pending();
+      return;
+   }
+
+   /* Adjust selection after deletion */
+   if (ei >= ab->groups[gi].entry_count)
+      ab->selected_entry = ab->groups[gi].entry_count - 1;
+   if (ab->selected_entry < 0)
+      ab->selected_entry = -1;
+}
+
+/* Delete a backup for good. It may be the only copy of a deleted map. */
+static void interface_delete_backup(int gi, int ei)
+{
+   AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
+   char heading[600];
+   int rc;
+
+   snprintf(heading, sizeof(heading), "Permanently delete the backup %s?",
+            ab->groups[gi].entries[ei].ds1_path);
+   rc = al_show_native_message_box(a5_display, "Delete Backup", heading,
+      "This can't be undone or restored.",
+      NULL, ALLEGRO_MESSAGEBOX_YES_NO | ALLEGRO_MESSAGEBOX_WARN);
+   input_suppress_held();
+   input_discard_pending();
+   if (rc != 1)
+      return;
+
+   if (ds1_manager_delete_permanent(gi, ei) == 0)
+      printf("Backup deleted permanently\n");
+}
+
 typedef struct
 {
    double event_ms_total;
@@ -579,7 +654,7 @@ void interfac_user_handler(int start_ds1_idx)
 
          }
 
-         /* Right-click in sidebar — context menu for backup entries */
+         /* Right-click in sidebar — context menu for map and backup entries */
          if (mouse_hit(2))
          {
             AREA_BROWSER_S *rc_ab = &glb_ds1edit.area_browser;
@@ -588,16 +663,17 @@ void interfac_user_handler(int start_ds1_idx)
 
             /* Wait for button release */
 
-            /* Show context menu if right-clicked on a backup entry */
+            /* Show context menu if right-clicked on a map or backup entry */
             if (rc_gi >= 0 && rc_gi < rc_ab->group_count &&
-                rc_ab->groups[rc_gi].is_backup && rc_ei >= 0 &&
+                rc_ei >= 0 &&
                 rc_ei < rc_ab->groups[rc_gi].entry_count)
             {
-               /* Simple 2-item popup menu */
+               /* Simple popup menu: 2 items for a backup, 1 for a map */
+               int rc_is_backup = rc_ab->groups[rc_gi].is_backup;
                int menu_x = a5_mouse_x;
                int menu_y = a5_mouse_y;
                int menu_w = 140;
-               int menu_h = 28;
+               int menu_h = rc_is_backup ? 28 : 14;
                int menu_sel = -1;
                int menu_done = 0;
                int disp_w = al_get_display_width(a5_display);
@@ -636,8 +712,8 @@ void interfac_user_handler(int start_ds1_idx)
                   if (mx >= menu_x && mx < menu_x + menu_w)
                   {
                      if (my >= menu_y && my < menu_y + 14)
-                        menu_sel = 0; /* Restore */
-                     else if (my >= menu_y + 14 && my < menu_y + 28)
+                        menu_sel = 0; /* Restore, or Delete map */
+                     else if (rc_is_backup && my >= menu_y + 14 && my < menu_y + 28)
                         menu_sel = 1; /* Delete permanently */
                   }
 
@@ -649,19 +725,22 @@ void interfac_user_handler(int start_ds1_idx)
                                     (float)(menu_x + menu_w) - 0.5f, (float)(menu_y + menu_h) - 0.5f,
                                     mc_border, 1.0f);
 
-                  /* Item 0: Restore */
+                  /* Item 0: Restore, or Delete map */
                   if (menu_sel == 0)
                      al_draw_filled_rectangle((float)menu_x, (float)menu_y,
                                               (float)(menu_x + menu_w), (float)(menu_y + 14), mc_hover);
                   al_draw_textf(a5_font, mc_text, (float)(menu_x + 6), (float)(menu_y + 3), 0,
-                                "Restore");
+                                rc_is_backup ? "Restore" : "Delete map...");
 
                   /* Item 1: Delete permanently */
-                  if (menu_sel == 1)
-                     al_draw_filled_rectangle((float)menu_x, (float)(menu_y + 14),
-                                              (float)(menu_x + menu_w), (float)(menu_y + 28), mc_hover);
-                  al_draw_textf(a5_font, mc_text, (float)(menu_x + 6), (float)(menu_y + 17), 0,
-                                "Delete permanently");
+                  if (rc_is_backup)
+                  {
+                     if (menu_sel == 1)
+                        al_draw_filled_rectangle((float)menu_x, (float)(menu_y + 14),
+                                                 (float)(menu_x + menu_w), (float)(menu_y + 28), mc_hover);
+                     al_draw_textf(a5_font, mc_text, (float)(menu_x + 6), (float)(menu_y + 17), 0,
+                                   "Delete permanently");
+                  }
 
                   al_flip_display();
                   al_rest(0.02);
@@ -671,15 +750,18 @@ void interfac_user_handler(int start_ds1_idx)
                   {
                      if (menu_sel >= 0)
                      {
-                        if (menu_sel == 0)
+                        if (!rc_is_backup)
+                        {
+                           interface_delete_map(rc_gi, rc_ei);
+                        }
+                        else if (menu_sel == 0)
                         {
                            if (ds1_manager_restore(rc_gi, rc_ei) == 0)
                               printf("Backup restored successfully\n");
                         }
                         else
                         {
-                           if (ds1_manager_delete_permanent(rc_gi, rc_ei) == 0)
-                              printf("Backup deleted permanently\n");
+                           interface_delete_backup(rc_gi, rc_ei);
                         }
                         fflush(stdout);
                      }
@@ -1194,27 +1276,6 @@ void interfac_user_handler(int start_ds1_idx)
             ds1_idx = nav_idx;
       }
 
-      // Delete key — backup and remove current DS1 file
-      if (key_hit(KEY_DEL) && glb_ds1edit.has_loaded_ds1 &&
-          glb_ds1edit.area_browser.selected_group >= 0 &&
-          glb_ds1edit.area_browser.selected_entry >= 0)
-      {
-
-         {
-            int gi = glb_ds1edit.area_browser.selected_group;
-            int ei = glb_ds1edit.area_browser.selected_entry;
-
-            if (ds1_manager_delete(gi, ei) == 0)
-            {
-               /* Adjust selection after deletion */
-               if (ei >= glb_ds1edit.area_browser.groups[gi].entry_count)
-                  glb_ds1edit.area_browser.selected_entry = glb_ds1edit.area_browser.groups[gi].entry_count - 1;
-               if (glb_ds1edit.area_browser.selected_entry < 0)
-                  glb_ds1edit.area_browser.selected_entry = -1;
-            }
-         }
-      }
-
       // Insert key — create new DS1 or clone current
       if (key_hit(KEY_INSERT) &&
           glb_ds1edit.area_browser.selected_group >= 0)
@@ -1664,15 +1725,9 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       // DEL key (regular or keypad) : delete all selected layers of all tiles
-      if (key_pressed(KEY_DEL) || key_pressed(KEY_DEL_PAD))
+      if (input_delete_hits_tiles(glb_ds1edit.mode == MOD_T, paste_pos.start != FALSE))
       {
-         if (glb_ds1edit.mode == MOD_T)
-         {
-            if (paste_pos.start == FALSE)
-            {
-               edittile_delete_selected_tiles(ds1_idx);
-            }
-         }
+         edittile_delete_selected_tiles(ds1_idx);
       }
 
       // Ctrl+Z / Ctrl+U: undo tiles modification

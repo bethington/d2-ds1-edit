@@ -10,6 +10,7 @@
 #include "core/txtread.h"
 #include "core/area_browser.h"
 #include "core/ds1_manager.h"
+#include "core/file_copy.h"
 
 #ifdef WIN32
 #include <direct.h>
@@ -564,26 +565,18 @@ int ds1_manager_backup(int group_idx, int entry_idx)
 
    /* Copy DS1 to backup */
    sprintf(dst_ds1, "%s/%s", backup_subdir, fname);
+   switch (file_copy_checked(src_path, dst_ds1))
    {
-      FILE * in = fopen(src_path, "rb");
-      if (in != NULL)
-      {
-         FILE * out = fopen(dst_ds1, "wb");
-         if (out != NULL)
-         {
-            char copy_buf[8192];
-            int n;
-            while ((n = (int)fread(copy_buf, 1, sizeof(copy_buf), in)) > 0)
-               fwrite(copy_buf, 1, n, out);
-            fclose(out);
-            printf("ds1_manager: backed up %s\n", dst_ds1);
-         }
-         fclose(in);
-      }
-      else
-      {
+      case FILE_COPY_OK:
+         printf("ds1_manager: backed up %s\n", dst_ds1);
+         break;
+      case FILE_COPY_NO_SOURCE:
+         /* A map that exists only in an MPQ has no file for delete to remove. */
          printf("ds1_manager: warning, can't read %s for backup\n", src_path);
-      }
+         break;
+      default:
+         printf("ds1_manager: couldn't copy %s to %s\n", src_path, dst_ds1);
+         return -1;
    }
 
    /* Write JSON metadata */
@@ -591,8 +584,12 @@ int ds1_manager_backup(int group_idx, int entry_idx)
       char json_name[256];
       sprintf(json_name, "%.*s.json", (int)(strlen(fname) - 4), fname);
       sprintf(dst_json, "%s/%s", backup_subdir, json_name);
-      ds1_manager_write_backup_json(dst_json, group_idx, entry_idx,
-                                     ab->loaded_group == group_idx ? entry_idx : -1);
+      if (ds1_manager_write_backup_json(dst_json, group_idx, entry_idx,
+                                        ab->loaded_group == group_idx ? entry_idx : -1) != 0)
+      {
+         printf("ds1_manager: couldn't write %s\n", dst_json);
+         return -1;
+      }
    }
 
    return 0;

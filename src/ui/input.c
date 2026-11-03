@@ -42,6 +42,12 @@ int input_quit_needs_prompt(int any_map_dirty, int panel_pending_count)
    return any_map_dirty || panel_pending_count > 0;
 }
 
+int input_delete_hits_tiles(int tile_mode, int paste_preview_active)
+{
+   return tile_mode && !paste_preview_active &&
+          (key_hit(KEY_DEL) || key_hit(KEY_DEL_PAD));
+}
+
 void input_init(void)
 {
    memset(a5_key_hit, 0, sizeof(a5_key_hit));

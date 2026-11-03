@@ -39,6 +39,22 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
 
 ### Fixed
 
+- **The Delete key no longer deletes the map.** One press in the map view also
+  ran the area browser's map delete on the last row the mouse had hovered, in
+  tile and object mode alike, with no confirmation: under a mod folder that
+  removed the map's file and cleared its `LvlPrest.txt` slot, and Ctrl+Z could not
+  bring it back. Delete now acts only on the selected tiles or objects. To delete
+  a map, right-click its row in the area browser and choose **Delete map...**,
+  which asks first and names the file. **Delete permanently** on a backup asks
+  too, and without a mod folder the editor says so instead of hiding the row
+  until the next start.
+- **A map is no longer deleted when its backup fails.** A backup that could not
+  be written still counted as a success, so the delete went on to remove the
+  original. Every write is now checked, a failure stops the delete, and the
+  editor reports it.
+- **One Delete press makes one undo step in tile mode.** It ran once per frame
+  while the key was down, stacking empty undo steps, so the first Ctrl+Z could
+  appear to do nothing.
 - **Native dialogs no longer crash the Linux build on Wayland.** Allegro's GTK dialogs wrap the editor's X11 window, and segfaulted when GTK chose its Wayland backend, so an error box such as "The map was not saved" took the editor and any unsaved work with it. The editor now sets `GDK_BACKEND=x11` at startup.
 - **Reading `.txt` tables no longer returns freed memory.** `txt_read_in_mem` returned its old pointer after `realloc`, so `LvlTypes`, `LvlPrest` and `Objects` were parsed from a freed block whenever `realloc` moved it.
 - **DCC frames too large for the direction box are refused in the frame header.** A width of `0xFFFFFFFF` wrapped a 32-bit `long` to an empty frame box and got past the direction box check on the Windows build; huge widths, heights and offsets at the end of the 32-bit range now fail there.
