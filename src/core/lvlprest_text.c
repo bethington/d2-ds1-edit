@@ -135,14 +135,13 @@ static int cell_is_empty(const char * start, const char * end)
    return start == end || (end - start == 1 && *start == '0');
 }
 
-int lvlprest_find_file_slot(char * buf, int def, const char * ds1_path)
+/* LVLPREST_TABLE_UNUSABLE if the Def or a File column is missing, else 0. */
+static int check_columns(char * buf)
 {
-   int def_col = lvlprest_find_col(buf, "Def");
    char col_name[16];
-   char * row, * row_end;
    int f;
 
-   if (def_col < 0)
+   if (lvlprest_find_col(buf, "Def") < 0)
       return LVLPREST_TABLE_UNUSABLE;
    for (f = 0; f < 6; f++)
    {
@@ -150,20 +149,10 @@ int lvlprest_find_file_slot(char * buf, int def, const char * ds1_path)
       if (lvlprest_find_col(buf, col_name) < 0)
          return LVLPREST_TABLE_UNUSABLE;
    }
-
-   row = lvlprest_find_row(buf, def_col, def, &row_end);
-   if (row == NULL)
-      return 0;
-
-   for (f = 0; f < 6; f++)
-   {
-      if (lvlprest_slot_names_file(buf, def, f + 1, ds1_path))
-         return f + 1;
-   }
    return 0;
 }
 
-int lvlprest_slot_names_file(char * buf, int def, int slot, const char * ds1_path)
+static int slot_names_file(char * buf, int def, int slot, const char * ds1_path)
 {
    const char * name = lvlprest_base_name(ds1_path);
    int name_len = (int)strlen(name);
@@ -178,30 +167,51 @@ int lvlprest_slot_names_file(char * buf, int def, int slot, const char * ds1_pat
    return (int)(cell_end - base) == name_len && strncasecmp(base, name, name_len) == 0;
 }
 
-int lvlprest_lists_path(char * buf, int def, const char * ds1_path)
+int lvlprest_find_file_slot(char * buf, int def, const char * ds1_path)
 {
-   size_t len = strlen(ds1_path);
    int f;
 
+   if (check_columns(buf) != 0)
+      return LVLPREST_TABLE_UNUSABLE;
    for (f = 1; f <= 6; f++)
-   {
-      char * cell, * cell_end;
-      size_t i;
-
-      if (!find_cell(buf, def, f, &cell, &cell_end) || (size_t)(cell_end - cell) != len)
-         continue;
-      for (i = 0; i < len; i++)
-      {
-         char a = cell[i] == '\\' ? '/' : cell[i];
-         char b = ds1_path[i] == '\\' ? '/' : ds1_path[i];
-
-         if (a != b && tolower((unsigned char) a) != tolower((unsigned char) b))
-            break;
-      }
-      if (i == len)
-         return 1;
-   }
+      if (slot_names_file(buf, def, f, ds1_path))
+         return f;
    return 0;
+}
+
+int lvlprest_slot_holds_path(char * buf, int def, int slot, const char * ds1_path)
+{
+   size_t len = strlen(ds1_path), i;
+   char * cell, * cell_end;
+
+   if (!find_cell(buf, def, slot, &cell, &cell_end) || (size_t)(cell_end - cell) != len)
+      return 0;
+   for (i = 0; i < len; i++)
+   {
+      char a = cell[i] == '\\' ? '/' : cell[i];
+      char b = ds1_path[i] == '\\' ? '/' : ds1_path[i];
+
+      if (tolower((unsigned char) a) != tolower((unsigned char) b))
+         return 0;
+   }
+   return 1;
+}
+
+int lvlprest_find_path_slot(char * buf, int def, const char * ds1_path)
+{
+   int f;
+
+   if (check_columns(buf) != 0)
+      return LVLPREST_TABLE_UNUSABLE;
+   for (f = 1; f <= 6; f++)
+      if (lvlprest_slot_holds_path(buf, def, f, ds1_path))
+         return f;
+   return 0;
+}
+
+int lvlprest_lists_path(char * buf, int def, const char * ds1_path)
+{
+   return lvlprest_find_path_slot(buf, def, ds1_path) > 0;
 }
 
 int lvlprest_empty_slot(char * buf, int def)
@@ -340,7 +350,7 @@ void lvlprest_each_cleared(char * game, char * project, LVLPREST_ROW_CB cb,
                   if (!lvlprest_get_cell(game, def, f, path, sizeof(path)) ||
                       path[0] == '\0' || strcmp(path, "0") == 0)
                      continue;
-                  if (lvlprest_find_file_slot(project, def, path) == 0)
+                  if (lvlprest_find_path_slot(project, def, path) == 0)
                      cb(def, path, ctx);
                }
             }

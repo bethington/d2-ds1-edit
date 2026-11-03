@@ -415,7 +415,7 @@ int map_ops_unregister(const char * project_dir, const char * seed, int def,
    table = table_for_edit(project_dir, seed, &len, error, cap);
    if (table == NULL)
       return -1;
-   slot = lvlprest_find_file_slot(table, def, ds1_path);
+   slot = lvlprest_find_path_slot(table, def, ds1_path);
    if (slot == LVLPREST_TABLE_UNUSABLE)
       rc = fail(error, cap, "The project's LvlPrest.txt has no Def or File columns.");
    while (rc == 0 && slot > 0)
@@ -423,7 +423,7 @@ int map_ops_unregister(const char * project_dir, const char * seed, int def,
       rc = table_with_cell(&table, &len, def, slot, "0", error, cap);
       changed = 1;
       if (rc == 0)
-         slot = lvlprest_find_file_slot(table, def, ds1_path);
+         slot = lvlprest_find_path_slot(table, def, ds1_path);
    }
    if (rc == 0 && changed)
       rc = save_table(project_dir, table, len, error, cap);
@@ -443,7 +443,7 @@ int map_ops_restore_slot(const char * project_dir, const char * seed, char * gam
    if (check_not_in_game(project_dir, error, cap) != 0)
       return -1;
    for (f = 1; f <= 6; f++)
-      if (lvlprest_slot_names_file(game_table, def, f, ds1_path))
+      if (lvlprest_slot_holds_path(game_table, def, f, ds1_path))
          game_slots[game_count++] = f;
    if (game_count == 0)
       return fail(error, cap, "The game's LvlPrest.txt doesn't list %s under Def %d.",
@@ -456,7 +456,7 @@ int map_ops_restore_slot(const char * project_dir, const char * seed, char * gam
    /* Listed as often as the game lists it: there's nothing to put back, and
       another copy would be ambiguous. */
    for (f = 1; f <= 6; f++)
-      if (lvlprest_slot_names_file(table, def, f, ds1_path))
+      if (lvlprest_slot_holds_path(table, def, f, ds1_path))
          have++;
    if (have >= game_count)
    {
@@ -468,7 +468,7 @@ int map_ops_restore_slot(const char * project_dir, const char * seed, char * gam
    {
       int slot = game_slots[i];
 
-      if (lvlprest_slot_names_file(table, def, slot, ds1_path))
+      if (lvlprest_slot_holds_path(table, def, slot, ds1_path))
          continue;
       if (!lvlprest_get_cell(game_table, def, slot, cell, sizeof(cell)))
       {

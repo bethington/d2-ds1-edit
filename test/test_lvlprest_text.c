@@ -146,11 +146,21 @@ void test_lists_path_wants_the_whole_path_in_this_row(void)
    TEST_ASSERT_FALSE(lvlprest_lists_path(table, 999, "Act1/Town/TownN1.ds1"));
 }
 
-void test_slot_names_file_looks_at_one_cell(void)
+void test_slot_holds_path_looks_at_one_cell(void)
 {
-   TEST_ASSERT_TRUE(lvlprest_slot_names_file(table, 1, 2, "x/TOWNE1.ds1"));
-   TEST_ASSERT_FALSE(lvlprest_slot_names_file(table, 1, 1, "x/TOWNE1.ds1"));
-   TEST_ASSERT_FALSE(lvlprest_slot_names_file(table, 999, 1, "TownN1.ds1"));
+   TEST_ASSERT_TRUE(lvlprest_slot_holds_path(table, 1, 2, "act1/town/TOWNE1.ds1"));
+   TEST_ASSERT_FALSE(lvlprest_slot_holds_path(table, 1, 1, "act1/town/TOWNE1.ds1"));
+   TEST_ASSERT_FALSE(lvlprest_slot_holds_path(table, 1, 2, "x/TOWNE1.ds1"));
+   TEST_ASSERT_FALSE(lvlprest_slot_holds_path(table, 999, 1, "Act1/Town/TownN1.ds1"));
+}
+
+void test_find_path_slot_says_when_the_table_is_unusable(void)
+{
+   char empty[] = "";
+
+   TEST_ASSERT_EQUAL_INT(2, lvlprest_find_path_slot(table, 1, "Act1/Town/townE1.ds1"));
+   TEST_ASSERT_EQUAL_INT(0, lvlprest_find_path_slot(table, 1, "x/townE1.ds1"));
+   TEST_ASSERT_EQUAL_INT(LVLPREST_TABLE_UNUSABLE, lvlprest_find_path_slot(empty, 1, "a.ds1"));
 }
 
 typedef struct { int count; int last_def; char last[64]; } EACH_SEEN;
@@ -162,6 +172,20 @@ static void note_each(int def, const char * path, void * ctx)
    seen->count++;
    seen->last_def = def;
    snprintf(seen->last, sizeof(seen->last), "%s", path);
+}
+
+void test_each_cleared_tells_namesakes_apart(void)
+{
+   char game[] = "Name\tDef\tFile1\tFile2\tFile3\tFile4\tFile5\tFile6\r\n"
+                 "Bar\t50\tA\\Bar.ds1\tB\\Bar.ds1\t0\t0\t0\t0\r\n";
+   char project[] = "Name\tDef\tFile1\tFile2\tFile3\tFile4\tFile5\tFile6\r\n"
+                    "Bar\t50\t0\tb/bar.DS1\t0\t0\t0\t0\r\n";
+   EACH_SEEN seen;
+
+   memset(&seen, 0, sizeof(seen));
+   lvlprest_each_cleared(game, project, note_each, &seen);
+   TEST_ASSERT_EQUAL_INT(1, seen.count);
+   TEST_ASSERT_EQUAL_STRING("A\\Bar.ds1", seen.last);
 }
 
 void test_each_file_visits_every_listed_cell(void)
@@ -189,7 +213,9 @@ int main(void)
    RUN_TEST(test_a_map_the_table_does_not_list_has_no_slot_to_clear);
    RUN_TEST(test_a_table_without_the_expected_columns_is_an_error_not_a_miss);
    RUN_TEST(test_lists_path_wants_the_whole_path_in_this_row);
-   RUN_TEST(test_slot_names_file_looks_at_one_cell);
+   RUN_TEST(test_slot_holds_path_looks_at_one_cell);
+   RUN_TEST(test_find_path_slot_says_when_the_table_is_unusable);
    RUN_TEST(test_each_file_visits_every_listed_cell);
+   RUN_TEST(test_each_cleared_tells_namesakes_apart);
    return UNITY_END();
 }

@@ -861,7 +861,7 @@ int ds1_manager_restore(int group_idx, int entry_idx, int * row_group, int * row
 
       if (table != NULL)
       {
-         listed = lvlprest_find_file_slot(table, def, original_path) > 0;
+         listed = lvlprest_lists_path(table, def, original_path);
          free(table);
       }
       if (!listed && def > 0 &&

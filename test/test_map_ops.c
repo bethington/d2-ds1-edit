@@ -522,6 +522,54 @@ void test_restore_puts_back_only_the_copies_that_are_missing(void)
    free(t);
 }
 
+static const char NAMESAKES[] =
+   "Name\tDef\tFile1\tFile2\tFile3\tFile4\tFile5\tFile6\r\n"
+   "Bar\t50\tA\\Bar.ds1\tB\\Bar.ds1\t0\t0\t0\t0\r\n";
+
+void test_unregister_leaves_a_namesake_in_another_folder(void)
+{
+   char *t;
+
+   TEST_ASSERT_EQUAL_INT(0, map_ops_unregister(dir, NAMESAKES, 50, "a/BAR.ds1", err, sizeof(err)));
+   t = table();
+   TEST_ASSERT_NOT_NULL(t);
+   TEST_ASSERT_FALSE(lvlprest_lists_path(t, 50, "A/Bar.ds1"));
+   TEST_ASSERT_TRUE(lvlprest_lists_path(t, 50, "B/Bar.ds1"));
+   free(t);
+}
+
+void test_namesakes_round_trip_one_at_a_time(void)
+{
+   char game[sizeof(NAMESAKES)];
+   char *t;
+
+   memcpy(game, NAMESAKES, sizeof(NAMESAKES));
+   TEST_ASSERT_EQUAL_INT(0, map_ops_unregister(dir, NAMESAKES, 50, "A/Bar.ds1", err, sizeof(err)));
+   /* The other one still listed mustn't count as this one already listed. */
+   TEST_ASSERT_EQUAL_INT(0, map_ops_restore_slot(dir, NAMESAKES, game, 50, "A/Bar.ds1", err, sizeof(err)));
+   t = table();
+   TEST_ASSERT_EQUAL_STRING(NAMESAKES, t);
+   free(t);
+
+   TEST_ASSERT_EQUAL_INT(0, map_ops_unregister(dir, NAMESAKES, 50, "B/Bar.ds1", err, sizeof(err)));
+   TEST_ASSERT_EQUAL_INT(0, map_ops_unregister(dir, NAMESAKES, 50, "A/Bar.ds1", err, sizeof(err)));
+   TEST_ASSERT_EQUAL_INT(0, map_ops_restore_slot(dir, NAMESAKES, game, 50, "B/Bar.ds1", err, sizeof(err)));
+   TEST_ASSERT_EQUAL_INT(0, map_ops_restore_slot(dir, NAMESAKES, game, 50, "A/Bar.ds1", err, sizeof(err)));
+   t = table();
+   TEST_ASSERT_EQUAL_STRING(NAMESAKES, t);
+   free(t);
+}
+
+void test_restore_slot_wants_the_game_to_list_the_whole_path(void)
+{
+   char game[sizeof(NAMESAKES)];
+
+   memcpy(game, NAMESAKES, sizeof(NAMESAKES));
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_restore_slot(dir, NAMESAKES, game, 50, "C/Bar.ds1", err, sizeof(err)));
+   TEST_ASSERT_NOT_NULL(strstr(err, "doesn't list"));
+   TEST_ASSERT_FALSE(exists("Global/Excel/LvlPrest.txt"));
+}
+
 void test_a_backup_that_cant_be_removed_is_only_a_warning(void)
 {
    char out[512], lock[768];
@@ -588,5 +636,8 @@ int main(void)
    RUN_TEST(test_the_same_file_twice_in_a_row_round_trips);
    RUN_TEST(test_restore_puts_back_only_the_copies_that_are_missing);
    RUN_TEST(test_a_backup_that_cant_be_removed_is_only_a_warning);
+   RUN_TEST(test_unregister_leaves_a_namesake_in_another_folder);
+   RUN_TEST(test_namesakes_round_trip_one_at_a_time);
+   RUN_TEST(test_restore_slot_wants_the_game_to_list_the_whole_path);
    return UNITY_END();
 }

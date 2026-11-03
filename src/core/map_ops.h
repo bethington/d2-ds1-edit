@@ -48,12 +48,12 @@ int map_ops_write_empty_ds1(const char * path, int width, int height, int act);
 /* Put ds1_path in this Def's first empty File column. */
 int map_ops_register(const char * project_dir, const char * seed, int def,
                      const char * ds1_path, char * error, int cap);
-/* Clear every column of the row naming ds1_path. A map the row doesn't list is not
- * an error. */
+/* Clear every column of the row holding ds1_path's whole path, not another folder's
+ * map of the same name. A map the row doesn't list is not an error. */
 int map_ops_unregister(const char * project_dir, const char * seed, int def,
                        const char * ds1_path, char * error, int cap);
-/* Put the game's cells for ds1_path back: each in its own column, or the first
- * empty one if that was taken. */
+/* Put the game's cells holding ds1_path's whole path back: each in its own column,
+ * or the first empty one if that was taken. */
 int map_ops_restore_slot(const char * project_dir, const char * seed, char * game_table,
                          int def, const char * ds1_path, char * error, int cap);
 
