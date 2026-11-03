@@ -65,6 +65,9 @@ const PRESET_ENTRY_S * mpq_index_find_by_ds1_name_in(const PRESET_ENTRY_S *arr,
                                                      int count,
                                                      const char *ds1_basename,
                                                      int *out_file_slot);
+// Does a LvlPrest File cell name this map? A name with a folder must match the
+// whole path; only a bare filename may match in any folder.
+int mpq_index_row_names_ds1(const char *row_file, const char *ds1_name);
 const PRESET_ENTRY_S * mpq_index_find_by_ds1_path_in(const PRESET_ENTRY_S *arr,
                                                      int count,
                                                      const char *ds1_path,

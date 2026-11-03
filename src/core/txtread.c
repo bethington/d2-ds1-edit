@@ -8,6 +8,7 @@
 #include "core/dt1.h"
 #include "mpq/MpqView.h"
 #include "core/txtread.h"
+#include "core/mpq_index.h"
 
 // ==========================================================================
 // prepare the reading of a col value
@@ -880,8 +881,7 @@ int read_lvlprest_txt(int ds1_idx, int def)
    int i, b;
    long *lptr;
    char *sptr, tmp[150], *found_ptr = NULL;
-   int mask, filename_colidx[6], filename_idx, length, c, found_nb, last_found = 0,
-                                                                    last_slash, found_col = 0;
+   int mask, filename_colidx[6], filename_idx, found_nb, last_found = 0, found_col = 0;
 
    // load the file in mem
    if (glb_ds1edit.lvlprest_buff == NULL)
@@ -924,33 +924,15 @@ int read_lvlprest_txt(int ds1_idx, int def)
          for (filename_idx = 0; filename_idx < 6; filename_idx++)
          {
             sptr = txt->data + (i * txt->line_size) + txt->col[filename_colidx[filename_idx]].offset;
-            if (sptr != NULL)
+            // a namesake in another folder is another map, and its Dt1Mask
+            // would hide this one's tiles
+            if (mpq_index_row_names_ds1(sptr, glb_ds1[ds1_idx].name))
             {
-               length = strlen(sptr);
-               if (length > 0)
-               {
-                  // search last '/' or last '\'
-                  last_slash = 0;
-                  for (c = 0; c < length; c++)
-                  {
-                     if ((sptr[c] == '/') || (sptr[c] == '\\'))
-                        last_slash = c;
-                  }
-
-                  // compare this filename with our ds1 filename
-                  if (last_slash)
-                     last_slash++;
-                  if (last_slash >= length)
-                     last_slash = length - 1;
-                  if (stricmp(sptr + last_slash, glb_ds1[ds1_idx].filename) == 0)
-                  {
-                     // found one
-                     found_nb++;
-                     last_found = i;
-                     found_ptr = sptr;
-                     found_col = filename_idx;
-                  }
-               }
+               // found one
+               found_nb++;
+               last_found = i;
+               found_ptr = sptr;
+               found_col = filename_idx;
             }
          }
       }
@@ -994,21 +976,15 @@ int read_lvlprest_txt(int ds1_idx, int def)
       }
       else
       {
-         if (found_nb >= 2)
+         if (def == -1)
          {
-            sprintf(tmp, "couldn't found ds1 filename \"%s\" in LvlPrest.txt for sure : present %i times\n",
-                    glb_ds1[ds1_idx].filename,
-                    found_nb);
-            ds1edit_error(tmp);
-         }
-         else if (def == -1)
-         {
-            /* No LvlPrest row means no authoritative mask. Enable all slots
-             * of any valid LvlTypes row; if there is none, misc_open_1_ds1()
-             * loads the DS1's embedded tile references as a fallback. */
+            /* No single LvlPrest row means no authoritative mask. Enable all
+             * slots of any valid LvlTypes row; if there is none,
+             * misc_open_1_ds1() loads the DS1's embedded tile references as a
+             * fallback. Opening a map is not worth closing the editor over. */
             int b;
-            printf("no LvlPrest row for \"%s\"; enabling all LvlTypes DT1 slots\n",
-                   glb_ds1[ds1_idx].filename);
+            printf("%i LvlPrest rows for \"%s\"; enabling all LvlTypes DT1 slots\n",
+                   found_nb, glb_ds1[ds1_idx].filename);
             fflush(stdout);
             for (b = 0; b < 33; b++)
                glb_ds1[ds1_idx].dt1_mask[b] = TRUE;

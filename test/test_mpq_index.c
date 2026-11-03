@@ -183,6 +183,25 @@ void test_full_path_never_falls_back_to_a_namesake(void)
 }
 
 
+void test_row_names_ds1_never_crosses_folders_for_a_full_path(void)
+{
+   TEST_ASSERT_TRUE(mpq_index_row_names_ds1("Act4/Lava/LavaE.ds1", "ACT4\\lava\\lavae.ds1"));
+   TEST_ASSERT_TRUE(mpq_index_row_names_ds1("Act4/Lava/LavaE.ds1", "assets/tiles/Act4\\Lava\\LavaE.ds1"));
+   TEST_ASSERT_FALSE(mpq_index_row_names_ds1("Act4/Lava/LavaE.ds1", "expansion\\lavaE.ds1"));
+   TEST_ASSERT_FALSE(mpq_index_row_names_ds1("Act4/Lava/LavaX.ds1", "assets/tiles/expansion\\lavaX.ds1"));
+}
+
+
+void test_row_names_ds1_matches_a_bare_filename_in_any_folder(void)
+{
+   TEST_ASSERT_TRUE(mpq_index_row_names_ds1("Act4/Lava/LavaE.ds1", "lavae.ds1"));
+   TEST_ASSERT_FALSE(mpq_index_row_names_ds1("Act4/Lava/LavaE.ds1", "lavaW.ds1"));
+   TEST_ASSERT_FALSE(mpq_index_row_names_ds1("0", "lavaE.ds1"));
+   TEST_ASSERT_FALSE(mpq_index_row_names_ds1(NULL, "lavaE.ds1"));
+   TEST_ASSERT_FALSE(mpq_index_row_names_ds1("Act4/Lava/LavaE.ds1", NULL));
+}
+
+
 int main(void)
 {
    UNITY_BEGIN();
@@ -197,5 +216,7 @@ int main(void)
    RUN_TEST(test_full_path_of_a_project_copy_finds_its_preset);
    RUN_TEST(test_full_path_never_falls_back_to_a_namesake);
 
+   RUN_TEST(test_row_names_ds1_never_crosses_folders_for_a_full_path);
+   RUN_TEST(test_row_names_ds1_matches_a_bare_filename_in_any_folder);
    return UNITY_END();
 }

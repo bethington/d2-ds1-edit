@@ -72,6 +72,25 @@ static int path_equal(const char *a, const char *b)
    return *a == 0 && *b == 0;
 }
 
+int mpq_index_row_names_ds1(const char *row_file, const char *ds1_name)
+{
+   const char *p, *base;
+
+   if (row_file == NULL || ds1_name == NULL) return 0;
+   if (strchr(ds1_name, '/') != NULL || strchr(ds1_name, '\\') != NULL)
+      return path_equal(row_file, ds1_name);
+
+   base = row_file;
+   for (p = row_file; *p; p++)
+      if (path_char(*p) == '\\') base = p + 1;
+   while (*base && *ds1_name && path_char(*base) == path_char(*ds1_name))
+   {
+      base++;
+      ds1_name++;
+   }
+   return *base == 0 && *ds1_name == 0;
+}
+
 const PRESET_ENTRY_S *mpq_index_find_by_ds1_path_in(const PRESET_ENTRY_S *arr,
                                                      int count,
                                                      const char *ds1_path,
