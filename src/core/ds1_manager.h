@@ -6,6 +6,7 @@
  * hold a group_idx across ds1_manager_delete or ds1_manager_revert. */
 int  ds1_manager_delete(int group_idx, int entry_idx, char * error, int cap);        /* New */
 int  ds1_manager_revert(int group_idx, int entry_idx, char * error, int cap);        /* Modified */
+int  ds1_manager_remove_check(int group_idx, int entry_idx, char * error, int cap);
 int  ds1_manager_remove_slot(int group_idx, int entry_idx, char * error, int cap);   /* Game */
 int  ds1_manager_restore_slot(int group_idx, int entry_idx, char * error, int cap);  /* Removed */
 
@@ -30,7 +31,7 @@ int  ds1_manager_new_row_path(int group_idx, int def, const char * file_name,
 int  ds1_manager_name_in_use(int group_idx, int def, const char * file_name);
 /* 1 if the project's table, or the editor's own if the project has none, has a
  * free File slot on this Def's row. 0 if its six are used or the Def isn't there. */
-int  ds1_manager_def_has_free_slot(int def);
+int  ds1_manager_def_can_take_map(int def, char * error, int cap);
 
 /* Smart filename generation — finds gap in numbering sequence */
 void ds1_manager_suggest_name(const char * base_ds1_path,

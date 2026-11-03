@@ -158,8 +158,13 @@ static void interface_remove_map(int gi, int ei)
          "In this project the map isn't a plain game map any more. Check its row.");
       return;
    }
+   if (ds1_manager_remove_check(gi, ei, error, sizeof(error)) != 0)
+   {
+      interface_map_op_failed("Remove from Project", "This map can't be removed.", error);
+      return;
+   }
    if (!interface_confirm_map_op("Remove from Project", "Remove %s from the project?", path,
-         "This clears its slot in the project's LvlPrest.txt, so the game won't use "
+         "This takes it out of the project's LvlPrest.txt, so the game won't use "
          "this map with your mod. The game's files don't change. Map > Restore Slot "
          "puts it back.", FALSE))
       return;

@@ -149,10 +149,12 @@ static int try_accept(DLG * m)
       snprintf(m->status, sizeof(m->status), "This folder already has a map named %s.", file);
       return 0;
    }
-   if (!ds1_manager_def_has_free_slot(m->d->def))
+   if (!ds1_manager_def_can_take_map(m->d->def, m->status, sizeof(m->status)))
    {
-      snprintf(m->status, sizeof(m->status),
-               "Def %d has no free File slot. Pick another tileset.", m->d->def);
+      /* The panel fits about 62 glyphs; the full sentence is for the message box. */
+      if (strlen(m->status) > 62)
+         snprintf(m->status, sizeof(m->status),
+                  "Def %d can't take another map. Pick another tileset.", m->d->def);
       return 0;
    }
    if (!m->d->is_clone)
