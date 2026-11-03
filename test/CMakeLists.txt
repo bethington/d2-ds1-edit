@@ -142,6 +142,14 @@ target_include_directories(test_platform_dialogs PRIVATE
     ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/test)
 add_test(NAME platform_dialogs COMMAND test_platform_dialogs)
 
+# Command table: bindings, conflicts, availability, menu navigation
+add_executable(test_commands test_commands.c ../src/ui/commands.c)
+target_link_libraries(test_commands PRIVATE unity ds1edit_allegro)
+target_include_directories(test_commands PRIVATE
+    ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/test)
+add_test(NAME commands COMMAND test_commands)
+set_tests_properties(commands PROPERTIES LABELS "portable")
+
 # Compose RGBA blit primitive (pure pixel ops)
 add_executable(test_compose_blit test_compose_blit.c ../src/core/compose_blit.c)
 target_link_libraries(test_compose_blit PRIVATE unity)
@@ -326,7 +334,7 @@ set_tests_properties(selftest_verdict PROPERTIES LABELS "portable")
 # Allegro appends its target names to DS1EDIT_ALLEGRO_TESTS so the DLL copy
 # below covers it.
 set(DS1EDIT_ALLEGRO_TESTS test_rgba_cache test_asset_export_smoke test_project
-    test_input_edges test_editor_selection test_blend_convention)
+    test_input_edges test_editor_selection test_blend_convention test_commands)
 find_package(Python3 COMPONENTS Interpreter)
 # CTest cuts the output it keeps for a passed test at 1 KiB. The CI evidence
 # (scripts/equivalence/ci_evidence.py) reads per-test lines (Unity PASS lines,
