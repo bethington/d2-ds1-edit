@@ -117,6 +117,48 @@ void test_register_refuses_a_full_row_and_a_missing_def(void)
    TEST_ASSERT_NOT_NULL(strstr(err, "slot"));
    TEST_ASSERT_EQUAL_INT(-1, map_ops_register(dir, GAME, 999, "x.ds1", err, sizeof(err)));
    TEST_ASSERT_NOT_NULL(strstr(err, "999"));
+   TEST_ASSERT_FALSE(exists("Global/Excel/LvlPrest.txt"));
+}
+
+void test_unregistering_an_unlisted_map_leaves_no_table(void)
+{
+   TEST_ASSERT_EQUAL_INT(0, map_ops_unregister(dir, GAME, 1, "Nope.ds1", err, sizeof(err)));
+   TEST_ASSERT_FALSE(exists("Global/Excel/LvlPrest.txt"));
+}
+
+void test_overwriting_the_table_leaves_no_side_files(void)
+{
+   TEST_ASSERT_EQUAL_INT(0, map_ops_register(dir, GAME, 1, "A.ds1", err, sizeof(err)));
+   TEST_ASSERT_EQUAL_INT(0, map_ops_register(dir, GAME, 1, "B.ds1", err, sizeof(err)));
+   TEST_ASSERT_FALSE(exists("Global/Excel/LvlPrest.txt.old"));
+   TEST_ASSERT_FALSE(exists("Global/Excel/LvlPrest.txt.staging"));
+   {
+      char *t = table();
+      TEST_ASSERT_NOT_NULL(t);
+      TEST_ASSERT_EQUAL_INT(2, lvlprest_find_file_slot(t, 1, "A.ds1"));
+      TEST_ASSERT_EQUAL_INT(3, lvlprest_find_file_slot(t, 1, "B.ds1"));
+      free(t);
+   }
+}
+
+void test_nothing_is_written_to_a_project_inside_the_game_install(void)
+{
+   char out[512], game[sizeof(GAME)];
+
+   memcpy(game, GAME, sizeof(GAME));
+   glb_config.d2_install = dir;
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_register(dir, GAME, 1, "x.ds1", err, sizeof(err)));
+   TEST_ASSERT_NOT_NULL(strstr(err, "game install"));
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_unregister(dir, GAME, 1, "Act1/Town/TownN1.ds1", err, sizeof(err)));
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_restore_slot(dir, GAME, game, 1, "Act1/Town/TownN1.ds1", err, sizeof(err)));
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_create_empty(dir, GAME, 1, "x.ds1", 5, 5, 1, err, sizeof(err)));
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_backup_file(dir, "x.ds1", "A", "2026-11-02", "{}\n",
+                                                 out, sizeof(out), err, sizeof(err)));
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_restore_file(dir, "nothing.ds1", "x.ds1", err, sizeof(err)));
+   TEST_ASSERT_FALSE(exists("Global/Excel/LvlPrest.txt"));
+   TEST_ASSERT_FALSE(exists("Global/Tiles/x.ds1"));
+   TEST_ASSERT_FALSE(exists("backup"));
+   glb_config.d2_install = NULL;
 }
 
 void test_unregister_then_restore_returns_the_table_to_the_original(void)
@@ -259,6 +301,9 @@ int main(void)
    RUN_TEST(test_register_seeds_the_table_then_fills_a_slot);
    RUN_TEST(test_register_with_no_table_and_no_seed_says_so);
    RUN_TEST(test_register_refuses_a_full_row_and_a_missing_def);
+   RUN_TEST(test_unregistering_an_unlisted_map_leaves_no_table);
+   RUN_TEST(test_overwriting_the_table_leaves_no_side_files);
+   RUN_TEST(test_nothing_is_written_to_a_project_inside_the_game_install);
    RUN_TEST(test_unregister_then_restore_returns_the_table_to_the_original);
    RUN_TEST(test_restore_uses_another_slot_when_its_own_was_taken);
    RUN_TEST(test_create_writes_the_map_and_registers_it);

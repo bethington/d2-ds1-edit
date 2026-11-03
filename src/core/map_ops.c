@@ -135,10 +135,12 @@ char * map_ops_read_file(const char * path, long * out_len)
 /* Replace a file only once the new bytes are safely beside it. */
 static int write_whole_file(const char * path, const char * data, long len)
 {
-   char staging[PATH_CAP];
+   char staging[PATH_CAP], old[PATH_CAP];
    FILE * f;
+   int had_old;
 
-   if (snprintf(staging, sizeof(staging), "%s.staging", path) >= (int) sizeof(staging))
+   if (snprintf(staging, sizeof(staging), "%s.staging", path) >= (int) sizeof(staging) ||
+       snprintf(old, sizeof(old), "%s.old", path) >= (int) sizeof(old))
       return -1;
    if (!project_ensure_parent_dirs(path))
       return -1;
@@ -156,16 +158,40 @@ static int write_whole_file(const char * path, const char * data, long len)
       remove(staging);
       return -1;
    }
-   remove(path);
+   /* Keep the old file until the new one is in place. */
+   had_old = file_exists(path);
+   if (had_old)
+   {
+      remove(old);
+      if (rename(path, old) != 0)
+      {
+         remove(staging);
+         return -1;
+      }
+   }
    if (rename(staging, path) != 0)
    {
+      if (had_old)
+         rename(old, path);
       remove(staging);
       return -1;
    }
+   if (had_old)
+      remove(old);
    return 0;
 }
 
-/* The project's table, seeding it first if there isn't one. */
+/* Refuse a project folder that is inside the game install. */
+static int check_not_in_game(const char * project_dir, char * error, int cap)
+{
+   if (project_path_in_game_install(project_dir))
+      return fail(error, cap, "%s is inside the game install, which the editor never writes to.",
+                  project_dir);
+   return 0;
+}
+
+/* The project's table, or a copy of the seed in memory if there isn't one.
+ * Nothing is written until save_table. */
 static char * table_for_edit(const char * project_dir, const char * seed,
                              long * out_len, char * error, int cap)
 {
@@ -185,12 +211,15 @@ static char * table_for_edit(const char * project_dir, const char * seed,
       fail(error, cap, "The project has no LvlPrest.txt, and the game's couldn't be read.");
       return NULL;
    }
-   if (write_whole_file(path, seed, (long) strlen(seed)) != 0)
+   *out_len = (long) strlen(seed);
+   text = (char *) malloc((size_t) *out_len + 1);
+   if (text == NULL)
    {
-      fail(error, cap, "Couldn't write %s.", path);
+      fail(error, cap, "Out of memory reading LvlPrest.txt.");
       return NULL;
    }
-   return map_ops_read_file(path, out_len);
+   memcpy(text, seed, (size_t) *out_len + 1);
+   return text;
 }
 
 static int save_table(const char * project_dir, const char * text, long len,
@@ -226,6 +255,8 @@ int map_ops_register(const char * project_dir, const char * seed, int def,
    int slot, rc, def_col;
    char * row_end;
 
+   if (check_not_in_game(project_dir, error, cap) != 0)
+      return -1;
    if ((int) strlen(ds1_path) > MAP_OPS_TABLE_PATH_MAX)
       return fail(error, cap, "%s is longer than the %d characters LvlPrest.txt allows.",
                   ds1_path, MAP_OPS_TABLE_PATH_MAX);
@@ -255,9 +286,12 @@ int map_ops_unregister(const char * project_dir, const char * seed, int def,
                        const char * ds1_path, char * error, int cap)
 {
    long len;
-   char * table = table_for_edit(project_dir, seed, &len, error, cap);
+   char * table;
    int slot, rc = 0;
 
+   if (check_not_in_game(project_dir, error, cap) != 0)
+      return -1;
+   table = table_for_edit(project_dir, seed, &len, error, cap);
    if (table == NULL)
       return -1;
    slot = lvlprest_find_file_slot(table, def, ds1_path);
@@ -277,6 +311,8 @@ int map_ops_restore_slot(const char * project_dir, const char * seed, char * gam
    char cell[256], current[256];
    int game_slot, slot, rc;
 
+   if (check_not_in_game(project_dir, error, cap) != 0)
+      return -1;
    game_slot = lvlprest_find_file_slot(game_table, def, ds1_path);
    if (game_slot <= 0 || !lvlprest_get_cell(game_table, def, game_slot, cell, sizeof(cell)))
       return fail(error, cap, "The game's LvlPrest.txt doesn't list %s under Def %d.",
@@ -354,6 +390,8 @@ int map_ops_create_empty(const char * project_dir, const char * seed, int def,
 {
    char path[PATH_CAP];
 
+   if (check_not_in_game(project_dir, error, cap) != 0)
+      return -1;
    if (map_ops_check_size(width, height, error, cap) != 0)
       return -1;
    if (map_ops_tile_path(project_dir, ds1_path, path, sizeof(path)) != 0)
@@ -404,6 +442,8 @@ int map_ops_backup_file(const char * project_dir, const char * ds1_path,
    const char * dot = strrchr(file, '.');
    size_t stem_len = dot != NULL ? (size_t)(dot - file) : strlen(file);
 
+   if (check_not_in_game(project_dir, error, cap) != 0)
+      return -1;
    if (stem_len >= sizeof(stem))
       return fail(error, cap, "The name %s is too long to back up.", file);
    memcpy(stem, file, stem_len);
@@ -446,6 +486,8 @@ int map_ops_restore_file(const char * project_dir, const char * backup_ds1,
 {
    char dst[PATH_CAP];
 
+   if (check_not_in_game(project_dir, error, cap) != 0)
+      return -1;
    if (map_ops_tile_path(project_dir, ds1_path, dst, sizeof(dst)) != 0)
       return fail(error, cap, "The path for %s is too long.", ds1_path);
    if (file_exists(dst))
