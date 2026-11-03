@@ -364,7 +364,7 @@ int text_input_modal_show(const char *title, const char *prompt,
                m.cursor = m.length;
                continue;
             }
-            if (kc == ALLEGRO_KEY_V && (mods & ALLEGRO_KEYMOD_CTRL))
+            if (kc == ALLEGRO_KEY_V && (mods & DS1_KEYMOD_PRIMARY))
             {
                paste_clipboard(&m);
                continue;

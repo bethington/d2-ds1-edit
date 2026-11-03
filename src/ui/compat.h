@@ -451,10 +451,24 @@ extern ALLEGRO_KEYBOARD_STATE a5_kb_state;
 
 /* key_pressed(k): is key k held down right now? For one-shot commands use
    key_hit(k) from ui/input.h instead -- see the note there. */
+/* The keymod that means "Ctrl" in a KEY_CHAR event. */
+#ifdef __APPLE__
+   #define DS1_KEYMOD_PRIMARY (ALLEGRO_KEYMOD_CTRL | ALLEGRO_KEYMOD_COMMAND)
+#else
+   #define DS1_KEYMOD_PRIMARY ALLEGRO_KEYMOD_CTRL
+#endif
+
 static inline bool ds1_key_is_down(int k)
 {
    if (k <= 0 || k >= ALLEGRO_KEY_MAX)
       return false;
+#ifdef __APPLE__
+   /* Cmd works wherever Ctrl does. */
+   if ((k == ALLEGRO_KEY_LCTRL || k == ALLEGRO_KEY_RCTRL) &&
+       al_key_down(&a5_kb_state, ALLEGRO_KEY_COMMAND) &&
+       !a5_key_suppressed[ALLEGRO_KEY_COMMAND])
+      return true;
+#endif
    return al_key_down(&a5_kb_state, k) && !a5_key_suppressed[k];
 }
 #define key_pressed(k) ds1_key_is_down(k)

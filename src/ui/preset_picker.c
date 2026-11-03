@@ -392,19 +392,12 @@ static int run_modal(PICKER_S *s)
 
 /* ---- public entry ---- */
 
-void preset_picker_handle_shortcut(void)
+void preset_picker_open(void)
 {
-   int ctrl, shift;
    PICKER_S s;
    int preset_idx;
 
-   ctrl  = key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL);
-   shift = key_pressed(KEY_LSHIFT)   || key_pressed(KEY_RSHIFT);
-
-   if (!ctrl || !shift || !key_hit(KEY_P)) return;
    if (!mpq_index_is_ready()) return;
-
-   /* debounce */
 
    memset(&s, 0, sizeof(s));
    s.filtered_cap = mpq_index_preset_count();

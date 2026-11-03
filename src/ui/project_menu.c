@@ -42,17 +42,6 @@
 #include "core/upscale.h"
 #include "platform.h"
 
-// Shortcut debounce helper: wait until all given keys are released.
-static void wait_release(int k1, int k2, int k3)
-{
-   int pressed;
-   do {
-      al_rest(0.01);
-      al_get_keyboard_state(&a5_kb_state);
-      pressed = key_pressed(k1) || key_pressed(k2) || key_pressed(k3);
-   } while (pressed);
-}
-
 // Basename extraction: returns pointer into `path` at the last path element.
 static const char *basename_of(const char *path)
 {
@@ -1408,34 +1397,6 @@ static void action_export_unified(void)
 int project_menu_new_project(void)  { return action_new_project(); }
 int project_menu_open_project(void) { return action_open_project(); }
 
-void project_menu_handle_shortcuts(void)
-{
-   int ctrl, shift;
-
-   ctrl  = key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL);
-   shift = key_pressed(KEY_LSHIFT)   || key_pressed(KEY_RSHIFT);
-
-   if (!ctrl || !shift) return;
-
-   if (key_pressed(KEY_N))
-   {
-      wait_release(KEY_N, KEY_LCONTROL, KEY_LSHIFT);
-      action_new_project();
-   }
-   else if (key_pressed(KEY_O))
-   {
-      wait_release(KEY_O, KEY_LCONTROL, KEY_LSHIFT);
-      action_open_project();
-   }
-   else if (key_pressed(KEY_W))
-   {
-      wait_release(KEY_W, KEY_LCONTROL, KEY_LSHIFT);
-      action_close_project();
-   }
-   else if (key_pressed(ALLEGRO_KEY_A))
-   {
-      wait_release(ALLEGRO_KEY_A, KEY_LCONTROL, KEY_LSHIFT);
-      action_export_unified();
-   }
-}
+void project_menu_close_project(void) { action_close_project(); }
+void project_menu_export(void)        { action_export_unified(); }
 

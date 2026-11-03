@@ -23,6 +23,8 @@
 #include "ui/tile_picker.h"
 #include "ui/project_menu.h"
 #include "ui/preset_picker.h"
+#include "ui/commands.h"
+#include "ui/menu_bar.h"
 #include "core/export_common.h"
 #include "core/palette.h"
 #include "ui/input.h"
@@ -402,16 +404,156 @@ static int interface_confirm_quit(void)
    }
 }
 
+/* Start a copy or cut: the selection follows the mouse until a click pastes it. */
+static void interface_begin_paste(int ds1_idx, int cx, int cy, PASTE_POS_S *paste, int is_cut)
+{
+   int i;
+
+   if (paste->start != FALSE)
+      return;
+   for (i = 0; i < DS1_MAX; i++)
+   {
+      if (strlen(glb_ds1[i].name))
+         edittile_paste_prepare(i);
+   }
+   paste->src_ds1_idx = ds1_idx;
+   paste->old_ds1_idx = ds1_idx;
+   paste->start = TRUE;
+   paste->is_cut = is_cut;
+   paste->cut_saved = FALSE;
+   paste->old_x = cx;
+   paste->old_y = cy;
+   edittile_middle_select(ds1_idx, &paste->start_x, &paste->start_y);
+   edittile_paste_preview(ds1_idx, cx - paste->start_x, cy - paste->start_y, paste);
+}
+
+/* Create a map beside the open one, or clone it. The browser's selected row
+ * follows the mouse, so these act on the open map's row. */
+static void interface_new_map(int ds1_idx, int clone)
+{
+   AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
+   int gi = ab->loaded_group >= 0 ? ab->loaded_group : ab->selected_group;
+   int ei = ab->loaded_group >= 0 ? ab->loaded_entry : ab->selected_entry;
+   AREA_GROUP_S *g;
+
+   if (gi < 0 || gi >= ab->group_count)
+      return;
+   g = &ab->groups[gi];
+   if (g->entry_count <= 0)
+      return;
+
+   if (clone)
+   {
+      if (glb_ds1edit.has_loaded_ds1 && ds1_manager_clone(ds1_idx, gi, ei) == 0)
+         printf("Map: cloned DS1 successfully\n");
+   }
+   else
+   {
+      int new_act = g->act > 0 ? g->act : 1;
+      int new_w = 20, new_h = 20;
+
+      /* Copy dimensions from the open DS1 if there is one */
+      if (glb_ds1edit.has_loaded_ds1 && ds1_idx >= 0 && ds1_idx < DS1_MAX &&
+          glb_ds1[ds1_idx].name[0] != '\0')
+      {
+         new_w = (int)glb_ds1[ds1_idx].width;
+         new_h = (int)glb_ds1[ds1_idx].height;
+         new_act = (int)glb_ds1[ds1_idx].act;
+      }
+      if (ds1_manager_create_empty(gi, ei, new_w, new_h, new_act) == 0)
+         printf("Map: created new empty DS1 (%dx%d)\n", new_w, new_h);
+   }
+   fflush(stdout);
+}
+
+static CMD_CTX interface_command_context(int ds1_idx, const PASTE_POS_S *paste)
+{
+   AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
+   CMD_CTX c;
+
+   memset(&c, 0, sizeof(c));
+   c.tile_mode = glb_ds1edit.mode == MOD_T;
+   c.object_mode = glb_ds1edit.mode == MOD_O;
+   c.has_map = glb_ds1edit.has_loaded_ds1 && glb_ds1[ds1_idx].name[0] != 0;
+   c.has_open_entry = c.has_map && ab->loaded_group >= 0 && ab->loaded_entry >= 0 &&
+                      ab->loaded_group < ab->group_count &&
+                      ab->loaded_entry < ab->groups[ab->loaded_group].entry_count;
+   c.any_dirty = map_any_dirty();
+   c.paste_active = paste->start != FALSE;
+   c.can_undo_object = c.has_map && glb_ds1[ds1_idx].can_undo_obj != FALSE;
+   return c;
+}
+
+/* Run a command chosen from a menu or a hotkey. Commands the polled code owns
+ * mark their key as hit, so it runs them later in this frame. */
+static void interface_run_command(CMD_ID cmd, int ds1_idx, int cx, int cy,
+                                  PASTE_POS_S *paste, int *done)
+{
+   AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
+   const CMD_DEF *def = commands_get(cmd);
+
+   if (def != NULL && def->inject_key != 0)
+   {
+      a5_key_hit[def->inject_key] = 1;
+      return;
+   }
+
+   switch (cmd)
+   {
+   case CMD_NEW_PROJECT:   project_menu_new_project();   break;
+   case CMD_OPEN_PROJECT:  project_menu_open_project();  break;
+   case CMD_CLOSE_PROJECT: project_menu_close_project(); break;
+   case CMD_OPEN_PRESET:   preset_picker_open();         break;
+   case CMD_EXPORT_ASSETS: project_menu_export();        break;
+
+   case CMD_SAVE:
+      /* The "saved" message only after a save that actually happened. A window
+         close while it's up stays pending for the quit check. */
+      if (map_save_ui_save(ds1_idx, FALSE) == 0)
+         msg_save_main();
+      break;
+
+   case CMD_SAVE_ALL:
+      if (map_save_ui_save_dirty() == 0)
+         msg_save_main();
+      break;
+
+   case CMD_QUIT:
+      *done = interface_confirm_quit();
+      break;
+
+   case CMD_UNDO:
+      if (glb_ds1edit.mode == MOD_T)
+         undo_apply_tile_buffer(ds1_idx);
+      else if (glb_ds1edit.mode == MOD_O)
+         editobj_undo(ds1_idx);
+      break;
+
+   case CMD_CUT:  interface_begin_paste(ds1_idx, cx, cy, paste, TRUE);  break;
+   case CMD_COPY: interface_begin_paste(ds1_idx, cx, cy, paste, FALSE); break;
+
+   case CMD_MAP_NEW:   interface_new_map(ds1_idx, FALSE); break;
+   case CMD_MAP_CLONE: interface_new_map(ds1_idx, TRUE);  break;
+
+   case CMD_MAP_DELETE:
+      interface_delete_map(ab->loaded_group, ab->loaded_entry);
+      break;
+
+   default:
+      break;
+   }
+}
+
 // ==========================================================================
 // MAIN loop
 void interfac_user_handler(int start_ds1_idx)
 {
-   int ds1_idx, done, cx, cy, n, i, dx, dy, old_ds1_idx = 0;
+   int ds1_idx, done, cx = 0, cy = 0, n, i, dx, dy, old_ds1_idx = 0;
    int old_mouse_x = a5_mouse_x, old_mouse_y = a5_mouse_y, old_mouse_b = 0;
    int cur_mouse_z = 0, old_mouse_z = 0;
    int old_cell_x = -1, old_cell_y = -1;
    int old_identical_x = -1, old_identical_y = -1;
-   int ticks_elapsed, ret;
+   int ticks_elapsed;
    int can_swich_mode, key_func_code[7] = {KEY_F1, KEY_F2,
                                            KEY_F5, KEY_F6, KEY_F7, KEY_F8, KEY_F11};
    TMP_SEL_S tmp_sel;
@@ -475,7 +617,7 @@ void interfac_user_handler(int start_ds1_idx)
                /* Ctrl+Enter applies pending properties; Ctrl+Z discards an
                 * active property edit and otherwise undoes a map edit. */
                if (glb_ds1edit.props_panel_visible &&
-                   (event.keyboard.modifiers & ALLEGRO_KEYMOD_CTRL))
+                   (event.keyboard.modifiers & DS1_KEYMOD_PRIMARY))
                {
                   if (event.keyboard.keycode == ALLEGRO_KEY_ENTER ||
                       event.keyboard.keycode == ALLEGRO_KEY_PAD_ENTER)
@@ -537,13 +679,17 @@ void interfac_user_handler(int start_ds1_idx)
 
       cur_mouse_z = a5_mouse_z;
 
-      /* Project workflow: Ctrl+Shift+{N,O,W} */
-      project_menu_handle_shortcuts();
+      /* Menus and table-driven hotkeys. This runs before the polled keys below,
+         so a command that marks a key as hit reaches them this frame. */
+      {
+         CMD_CTX cmd_ctx = interface_command_context(ds1_idx, &paste_pos);
+         CMD_ID cmd = menu_bar_poll(&cmd_ctx, !glb_ds1edit.props_panel.editing);
+
+         if (cmd != CMD_NONE)
+            interface_run_command(cmd, ds1_idx, cx, cy, &paste_pos, &done);
+      }
       if (!glb_ds1edit.has_loaded_ds1)
          ds1_idx = 0;  /* closing a project can discard the open maps */
-
-      /* Preset picker: Ctrl+Shift+P */
-      preset_picker_handle_shortcut();
 
       /* Sidebar toggle: [ (left bracket) key */
       if (key_hit(KEY_LBRACKET))
@@ -1277,50 +1423,6 @@ void interfac_user_handler(int start_ds1_idx)
             ds1_idx = nav_idx;
       }
 
-      // Insert key — create new DS1 or clone current
-      if (key_hit(KEY_INSERT) &&
-          glb_ds1edit.area_browser.selected_group >= 0)
-      {
-         int gi = glb_ds1edit.area_browser.selected_group;
-         AREA_GROUP_S *ins_g = &glb_ds1edit.area_browser.groups[gi];
-
-
-         if (ins_g->entry_count > 0)
-         {
-            int ei = glb_ds1edit.area_browser.selected_entry;
-
-            /* Shift+Insert = clone current, Insert alone = new empty */
-            if (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT))
-            {
-               /* Clone current DS1 (full copy including tiles/objects) */
-               if (glb_ds1edit.has_loaded_ds1)
-               {
-                  if (ds1_manager_clone(ds1_idx, gi, ei) == 0)
-                     printf("Insert: cloned DS1 successfully\n");
-               }
-            }
-            else
-            {
-               /* Create new empty DS1 (same size as selected, same act) */
-               int new_act = ins_g->act > 0 ? ins_g->act : 1;
-               int new_w = 20, new_h = 20;
-
-               /* Copy dimensions from selected DS1 if loaded */
-               if (glb_ds1edit.has_loaded_ds1 && ds1_idx >= 0 && ds1_idx < DS1_MAX &&
-                   glb_ds1[ds1_idx].name[0] != '\0')
-               {
-                  new_w = (int)glb_ds1[ds1_idx].width;
-                  new_h = (int)glb_ds1[ds1_idx].height;
-                  new_act = (int)glb_ds1[ds1_idx].act;
-               }
-
-               if (ds1_manager_create_empty(gi, ei, new_w, new_h, new_act) == 0)
-                  printf("Insert: created new empty DS1 (%dx%d)\n", new_w, new_h);
-            }
-            fflush(stdout);
-         }
-      }
-
       // layers toggle
       if (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT))
       {
@@ -1572,35 +1674,6 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       // S
-      if (key_hit(KEY_S) && (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)) &&
-          (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT)))
-      {
-         // CTRL + SHIFT + S : save every map with unsaved edits. A window close
-         // while the message is up stays pending for the quit check.
-         if (map_any_dirty() && map_save_ui_save_dirty() == 0)
-            msg_save_main();
-      }
-      else if (key_hit(KEY_S) && (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)) &&
-               glb_ds1[ds1_idx].name[0] != 0)
-      {
-         // CTRL + S : save the ds1, in the current state, incremental save
-         // (the "saved" message only after a save that actually happened)
-         if (map_save_ui_save(ds1_idx, FALSE) == 0)
-         {
-            ret = msg_save_main();
-            switch (ret)
-            {
-            case -1:
-               // error
-               done = TRUE;
-               break;
-
-            case 0:
-               // ok
-               break;
-            }
-         }
-      }
       if (key_hit(KEY_S) && (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT)) &&
           !key_pressed(KEY_LCONTROL) && !key_pressed(KEY_RCONTROL) && glb_ds1edit.mode == MOD_T)
       {
@@ -1617,30 +1690,7 @@ void interfac_user_handler(int start_ds1_idx)
             if (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
             {
                // CTRL + C : copy selected layers (copy / paste)
-               if (paste_pos.start == FALSE)
-               {
-                  for (i = 0; i < DS1_MAX; i++)
-                  {
-                     if (strlen(glb_ds1[i].name))
-                        edittile_paste_prepare(i);
-                  }
-                  paste_pos.src_ds1_idx = ds1_idx;
-                  paste_pos.old_ds1_idx = ds1_idx;
-                  paste_pos.start = TRUE;
-                  paste_pos.is_cut = FALSE; // just a 'COPY'
-                  paste_pos.cut_saved = FALSE;
-                  paste_pos.old_x = cx;
-                  paste_pos.old_y = cy;
-                  edittile_middle_select(
-                      ds1_idx,
-                      &paste_pos.start_x,
-                      &paste_pos.start_y);
-                  edittile_paste_preview(ds1_idx,
-                                         cx - paste_pos.start_x,
-                                         cy - paste_pos.start_y,
-                                         &paste_pos);
-
-               }
+               interface_begin_paste(ds1_idx, cx, cy, &paste_pos, FALSE);
             }
             else
             {
@@ -1699,29 +1749,7 @@ void interfac_user_handler(int start_ds1_idx)
          if (glb_ds1edit.mode == MOD_T)
          {
             // TILE mode
-            if (paste_pos.start == FALSE)
-            {
-               for (i = 0; i < DS1_MAX; i++)
-               {
-                  if (strlen(glb_ds1[i].name))
-                     edittile_paste_prepare(i);
-               }
-               paste_pos.src_ds1_idx = ds1_idx;
-               paste_pos.old_ds1_idx = ds1_idx;
-               paste_pos.start = TRUE;
-               paste_pos.is_cut = TRUE; // copy with 'CUT'
-               paste_pos.cut_saved = FALSE;
-               paste_pos.old_x = cx;
-               paste_pos.old_y = cy;
-               edittile_middle_select(
-                   ds1_idx,
-                   &paste_pos.start_x,
-                   &paste_pos.start_y);
-               edittile_paste_preview(ds1_idx,
-                                      cx - paste_pos.start_x,
-                                      cy - paste_pos.start_y,
-                                      &paste_pos);
-            }
+            interface_begin_paste(ds1_idx, cx, cy, &paste_pos, TRUE);
          }
       }
 
