@@ -1089,12 +1089,15 @@ void test_undo_cleanup_leaves_the_tmp_autosave_alone(void)
 
 void test_save_copy_writes_memory_and_leaves_the_map_alone(void)
 {
-   FX_SPEC s;
+   FX_SPEC s, dec;
    char src[512], dest[512], name_before[sizeof(glb_ds1[0].name)];
    UDWORD count_before;
+   size_t len;
+   unsigned char *buf;
 
    load_fixture(&s, 18, "copysrc.ds1", 0, src, sizeof(src));
    root_path(dest, sizeof(dest), "copy.ds1");
+   glb_ds1[0].floor_buff[0].prop1 = 0x42;   /* an unsaved edit */
    map_dirty_mark(0);
    snprintf(name_before, sizeof(name_before), "%s", glb_ds1[0].name);
    count_before = glb_ds1[0].save_count;
@@ -1105,6 +1108,18 @@ void test_save_copy_writes_memory_and_leaves_the_map_alone(void)
    TEST_ASSERT_EQUAL_UINT32(count_before, glb_ds1[0].save_count);
    TEST_ASSERT_TRUE(map_is_dirty(0));
    TEST_ASSERT_TRUE(tt_file_exists(dest));
+
+   /* the copy carries the edit from memory; the source on disk does not */
+   buf = tt_read_file(dest, &len);
+   TEST_ASSERT_NOT_NULL(buf);
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, fx_decode_v18(buf, len, &dec), "decode the copy");
+   TEST_ASSERT_EQUAL_UINT8(0x42, dec.floor[0][0][0][0]);
+   free(buf);
+   buf = tt_read_file(src, &len);
+   TEST_ASSERT_NOT_NULL(buf);
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, fx_decode_v18(buf, len, &dec), "decode the source");
+   TEST_ASSERT_TRUE(dec.floor[0][0][0][0] != 0x42);
+   free(buf);
 }
 
 void test_save_copy_refuses_to_replace_a_file(void)
@@ -1116,6 +1131,22 @@ void test_save_copy_refuses_to_replace_a_file(void)
    root_path(dest, sizeof(dest), "copy.ds1");
    TEST_ASSERT_EQUAL_INT_MESSAGE(0, ds1_save_copy_checked(0, dest, err, sizeof(err)), err);
    TEST_ASSERT_EQUAL_INT(-1, ds1_save_copy_checked(0, dest, err, sizeof(err)));
+}
+
+void test_save_copy_refuses_a_dest_inside_the_install(void)
+{
+   FX_SPEC s;
+   char file[512], dest[512], staging[600];
+
+   load_map_in_install(&s, "loose.ds1", file, sizeof(file));
+   snprintf(dest, sizeof(dest), "%s%snewcopy.ds1", install_dir, DS1_SEP_STR);
+   snprintf(staging, sizeof(staging), "%s%s", dest, DS1_SAVE_STAGING_SUFFIX);
+
+   TEST_ASSERT_EQUAL_INT(-1, ds1_save_copy_checked(0, dest, err, sizeof(err)));
+   TEST_ASSERT_NOT_NULL_MESSAGE(strstr(err, "Diablo II install"), err);
+   TEST_ASSERT_FALSE(tt_file_exists(dest));
+   TEST_ASSERT_FALSE(tt_file_exists(staging));
+   glb_config.d2_install = NULL;
 }
 
 int main(int argc, char **argv)
@@ -1177,5 +1208,6 @@ int main(int argc, char **argv)
    PKGC_RUN(test_undo_cleanup_leaves_the_tmp_autosave_alone);
    PKGC_RUN(test_save_copy_writes_memory_and_leaves_the_map_alone);
    PKGC_RUN(test_save_copy_refuses_to_replace_a_file);
+   PKGC_RUN(test_save_copy_refuses_a_dest_inside_the_install);
    return UNITY_END();
 }
