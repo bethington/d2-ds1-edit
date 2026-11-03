@@ -232,6 +232,8 @@ CMD_ID menu_bar_poll(const CMD_CTX *ctx, int keys_enabled)
                doesn't scroll. */
             a5_key_hit[key] = 0;
             a5_key_suppressed[key] = 1;
+            if (id == CMD_MAP_DELETE)
+               return commands_ctrl_del_target(ctx);
             return commands_is_available(id, ctx) ? id : CMD_NONE;
          }
       }

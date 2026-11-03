@@ -1,6 +1,7 @@
 #include <string.h>
 #include <allegro5/keycodes.h>
 
+#include "core/map_state.h"
 #include "ui/commands.h"
 
 #define CS (CMD_MOD_CTRL | CMD_MOD_SHIFT)
@@ -115,14 +116,19 @@ int commands_is_available(CMD_ID id, const CMD_CTX *c)
       return c->has_map && !c->paste_active && (c->tile_mode || c->object_mode);
 
    case CMD_MAP_CLONE:
+      return c->has_map && c->has_open_entry && c->open_state != MAP_STATE_REMOVED;
    case CMD_MAP_DELETE:
-      return c->has_map && c->has_open_entry;
-
-   /* Step 3 and step 4 implement these. */
+      return c->has_map && c->has_open_entry && c->open_state == MAP_STATE_NEW;
    case CMD_MAP_REVERT:
+      return c->has_map && c->has_open_entry && c->open_state == MAP_STATE_MODIFIED;
    case CMD_MAP_REMOVE:
+      return c->has_map && c->has_open_entry && c->open_state == MAP_STATE_GAME;
    case CMD_MAP_RESTORE_SLOT:
+      return c->has_map && c->has_open_entry && c->open_state == MAP_STATE_REMOVED;
    case CMD_MAP_RESTORE_BACKUP:
+      return c->has_map && c->open_is_backup;
+
+   /* Step 4 implements these. */
    case CMD_PROJECT_SETTINGS:
    case CMD_BUILD_MPQ:
    case CMD_BUILD_AND_TEST:
@@ -132,6 +138,19 @@ int commands_is_available(CMD_ID id, const CMD_CTX *c)
    /* Save and the rest of View need a map on screen. */
    default:
       return c->has_map;
+   }
+}
+
+CMD_ID commands_ctrl_del_target(const CMD_CTX *c)
+{
+   if (!c->has_map || !c->has_open_entry)
+      return CMD_NONE;
+   switch (c->open_state)
+   {
+   case MAP_STATE_NEW:      return CMD_MAP_DELETE;
+   case MAP_STATE_MODIFIED: return CMD_MAP_REVERT;
+   case MAP_STATE_GAME:     return CMD_MAP_REMOVE;
+   default:                 return CMD_NONE;
    }
 }
 

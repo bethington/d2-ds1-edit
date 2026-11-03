@@ -52,7 +52,9 @@ typedef struct CMD_CTX
    int tile_mode;
    int object_mode;
    int has_map;
-   int has_open_entry;   /* the open map has a row in the area browser */
+   int has_open_entry;   /* the open map has a regular row in the area browser */
+   int open_state;       /* MAP_STATE_E of the open map's row */
+   int open_is_backup;   /* that row is in a Backup group */
    int any_dirty;
    int paste_active;
    int can_undo_object;
@@ -71,6 +73,9 @@ CMD_ID commands_find_key(int keycode, int mods);
 
 const CMD_DEF *commands_get(CMD_ID id);
 int commands_is_available(CMD_ID id, const CMD_CTX *ctx);
+
+/* Ctrl+Del has one key, and three commands by state. */
+CMD_ID commands_ctrl_del_target(const CMD_CTX *ctx);
 
 /* Where the open map's browser row is once row (deleted_group, deleted_entry)
  * has been deleted and the group's entries have shifted up. The map stays open

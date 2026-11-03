@@ -511,6 +511,7 @@ static void interface_new_map(int ds1_idx, int clone)
 
 static CMD_CTX interface_command_context(int ds1_idx, const PASTE_POS_S *paste)
 {
+   AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
    CMD_CTX c;
 
    memset(&c, 0, sizeof(c));
@@ -518,6 +519,14 @@ static CMD_CTX interface_command_context(int ds1_idx, const PASTE_POS_S *paste)
    c.object_mode = glb_ds1edit.mode == MOD_O;
    c.has_map = glb_ds1edit.has_loaded_ds1 && glb_ds1[ds1_idx].name[0] != 0;
    c.has_open_entry = c.has_map && interface_loaded_row_is_open_map(ds1_idx);
+   if (c.has_open_entry)
+      c.open_state = ab->groups[ab->loaded_group].entries[ab->loaded_entry].state;
+   /* interface_loaded_row_is_open_map rejects backup rows, so test them here. */
+   c.open_is_backup = c.has_map && ab->loaded_group >= 0 &&
+                      ab->loaded_group < ab->group_count &&
+                      ab->groups[ab->loaded_group].is_backup &&
+                      ab->loaded_entry >= 0 &&
+                      ab->loaded_entry < ab->groups[ab->loaded_group].entry_count;
    c.any_dirty = map_any_dirty();
    c.paste_active = paste->start != FALSE;
    c.can_undo_object = c.has_map && glb_ds1[ds1_idx].can_undo_obj != FALSE;

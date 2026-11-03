@@ -4,10 +4,21 @@
 #include <allegro5/keycodes.h>
 
 #include "unity/unity.h"
+#include "core/map_state.h"
 #include "ui/commands.h"
 
 void setUp(void) {}
 void tearDown(void) {}
+
+static CMD_CTX ctx_with_state(int state)
+{
+   CMD_CTX c;
+   memset(&c, 0, sizeof(c));
+   c.has_map = 1;
+   c.has_open_entry = 1;
+   c.open_state = state;
+   return c;
+}
 
 static CMD_CTX tile_ctx(void)
 {
@@ -16,6 +27,7 @@ static CMD_CTX tile_ctx(void)
    c.tile_mode = 1;
    c.has_map = 1;
    c.has_open_entry = 1;
+   c.open_state = MAP_STATE_NEW;
    return c;
 }
 
@@ -149,10 +161,6 @@ void test_later_steps_stay_dimmed(void)
 {
    CMD_CTX c = tile_ctx();
 
-   TEST_ASSERT_FALSE(commands_is_available(CMD_MAP_REVERT, &c));
-   TEST_ASSERT_FALSE(commands_is_available(CMD_MAP_REMOVE, &c));
-   TEST_ASSERT_FALSE(commands_is_available(CMD_MAP_RESTORE_SLOT, &c));
-   TEST_ASSERT_FALSE(commands_is_available(CMD_MAP_RESTORE_BACKUP, &c));
    TEST_ASSERT_FALSE(commands_is_available(CMD_PROJECT_SETTINGS, &c));
    TEST_ASSERT_FALSE(commands_is_available(CMD_BUILD_MPQ, &c));
    TEST_ASSERT_FALSE(commands_is_available(CMD_BUILD_AND_TEST, &c));
@@ -254,6 +262,56 @@ void test_loaded_row_after_a_delete(void)
    TEST_ASSERT_EQUAL_INT(-1, e);
 }
 
+void test_map_commands_follow_the_open_rows_state(void)
+{
+   CMD_CTX game = ctx_with_state(MAP_STATE_GAME);
+   CMD_CTX mod = ctx_with_state(MAP_STATE_MODIFIED);
+   CMD_CTX fresh = ctx_with_state(MAP_STATE_NEW);
+   CMD_CTX gone = ctx_with_state(MAP_STATE_REMOVED);
+
+   TEST_ASSERT_TRUE(commands_is_available(CMD_MAP_REMOVE, &game));
+   TEST_ASSERT_FALSE(commands_is_available(CMD_MAP_REVERT, &game));
+   TEST_ASSERT_FALSE(commands_is_available(CMD_MAP_DELETE, &game));
+
+   TEST_ASSERT_TRUE(commands_is_available(CMD_MAP_REVERT, &mod));
+   TEST_ASSERT_FALSE(commands_is_available(CMD_MAP_REMOVE, &mod));
+   TEST_ASSERT_FALSE(commands_is_available(CMD_MAP_DELETE, &mod));
+
+   TEST_ASSERT_TRUE(commands_is_available(CMD_MAP_DELETE, &fresh));
+   TEST_ASSERT_FALSE(commands_is_available(CMD_MAP_REVERT, &fresh));
+
+   TEST_ASSERT_TRUE(commands_is_available(CMD_MAP_RESTORE_SLOT, &gone));
+   TEST_ASSERT_FALSE(commands_is_available(CMD_MAP_DELETE, &gone));
+   TEST_ASSERT_FALSE(commands_is_available(CMD_MAP_CLONE, &gone));
+}
+
+void test_restore_from_backup_needs_an_open_backup_row(void)
+{
+   CMD_CTX c;
+   memset(&c, 0, sizeof(c));
+   c.has_map = 1;
+   c.open_is_backup = 1;
+   TEST_ASSERT_TRUE(commands_is_available(CMD_MAP_RESTORE_BACKUP, &c));
+   TEST_ASSERT_FALSE(commands_is_available(CMD_MAP_CLONE, &c));
+   c.open_is_backup = 0;
+   TEST_ASSERT_FALSE(commands_is_available(CMD_MAP_RESTORE_BACKUP, &c));
+}
+
+void test_ctrl_del_runs_what_applies_to_the_state(void)
+{
+   CMD_CTX c;
+   c = ctx_with_state(MAP_STATE_NEW);
+   TEST_ASSERT_EQUAL_INT(CMD_MAP_DELETE, commands_ctrl_del_target(&c));
+   c = ctx_with_state(MAP_STATE_MODIFIED);
+   TEST_ASSERT_EQUAL_INT(CMD_MAP_REVERT, commands_ctrl_del_target(&c));
+   c = ctx_with_state(MAP_STATE_GAME);
+   TEST_ASSERT_EQUAL_INT(CMD_MAP_REMOVE, commands_ctrl_del_target(&c));
+   c = ctx_with_state(MAP_STATE_REMOVED);
+   TEST_ASSERT_EQUAL_INT(CMD_NONE, commands_ctrl_del_target(&c));
+   memset(&c, 0, sizeof(c));
+   TEST_ASSERT_EQUAL_INT(CMD_NONE, commands_ctrl_del_target(&c));
+}
+
 int main(void)
 {
    UNITY_BEGIN();
@@ -271,5 +329,8 @@ int main(void)
    RUN_TEST(test_escape_closes_without_a_command);
    RUN_TEST(test_mouse_geometry);
    RUN_TEST(test_loaded_row_after_a_delete);
+   RUN_TEST(test_map_commands_follow_the_open_rows_state);
+   RUN_TEST(test_restore_from_backup_needs_an_open_backup_row);
+   RUN_TEST(test_ctrl_del_runs_what_applies_to_the_state);
    return UNITY_END();
 }
