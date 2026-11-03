@@ -196,6 +196,7 @@ set(SOURCES
     src/core/ds1_manager.c
     src/core/file_copy.c
     src/core/lvlprest_text.c
+    src/core/game_launch.c
     src/core/map_ops.c
     src/core/mpq_crypt.c
     src/core/mpq_write.c

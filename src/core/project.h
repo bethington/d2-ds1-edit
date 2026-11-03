@@ -9,6 +9,7 @@
 #define PROJECT_PATH_MAX          512
 #define PROJECT_NAME_MAX          128
 #define PROJECT_EXTRA_MPQ_MAX       8
+#define PROJECT_DEFAULT_TEST_ARGS   "-w -direct -txt"
 
 typedef struct PROJECT_S
 {
@@ -18,6 +19,12 @@ typedef struct PROJECT_S
    char d2_install [PROJECT_PATH_MAX];  // project's bound D2 install
    char extra_mod_mpqs[PROJECT_EXTRA_MPQ_MAX][PROJECT_PATH_MAX];
    int  extra_count;
+   // The launch profile: a separate test copy of the game that runs this
+   // project's map. Never the install the project is bound to.
+   char test_game_dir[PROJECT_PATH_MAX];
+   char test_exe     [128];                 // default "Game.exe"
+   char test_args    [256];                 // default PROJECT_DEFAULT_TEST_ARGS
+   char test_wrapper [PROJECT_PATH_MAX];    // default "" on Windows, "wine" elsewhere
 } PROJECT_S;
 
 extern PROJECT_S glb_project;

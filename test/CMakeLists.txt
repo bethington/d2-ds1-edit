@@ -155,6 +155,18 @@ target_compile_definitions(test_map_ops PRIVATE DS1EDIT_VERSION_STR="${PROJECT_V
 add_test(NAME map_ops COMMAND test_map_ops)
 set_tests_properties(map_ops PROPERTIES LABELS "portable")
 
+# The launch profile and the check of whether it is usable
+add_executable(test_game_launch test_game_launch.c
+    support/test_tmp.c
+    ../src/core/game_launch.c ../src/core/project.c ../src/core/preferences.c
+    ../src/platform.c)
+target_link_libraries(test_game_launch PRIVATE unity ds1edit_allegro)
+target_include_directories(test_game_launch PRIVATE
+    ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/test)
+target_compile_definitions(test_game_launch PRIVATE DS1EDIT_VERSION_STR="${PROJECT_VERSION}")
+add_test(NAME game_launch COMMAND test_game_launch)
+set_tests_properties(game_launch PROPERTIES LABELS "portable")
+
 # The editor's own MPQ writer, read back through the editor's own reader
 add_executable(test_mpq_write test_mpq_write.c support/test_tmp.c
     ../src/core/mpq_crypt.c ../src/core/mpq_write.c ../src/core/file_copy.c
@@ -366,7 +378,7 @@ set_tests_properties(selftest_verdict PROPERTIES LABELS "portable")
 # below covers it.
 set(DS1EDIT_ALLEGRO_TESTS test_rgba_cache test_asset_export_smoke test_project
     test_input_edges test_editor_selection test_blend_convention test_commands
-    test_map_ops)
+    test_map_ops test_game_launch)
 find_package(Python3 COMPONENTS Interpreter)
 # CTest cuts the output it keeps for a passed test at 1 KiB. The CI evidence
 # (scripts/equivalence/ci_evidence.py) reads per-test lines (Unity PASS lines,
