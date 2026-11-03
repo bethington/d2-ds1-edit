@@ -60,7 +60,7 @@ So:
 
 The crash test ran with every counted cell cleared. A single cleared cell should crash only when that index is picked, so it may pass a short test and fail later.
 
-**A map of a different size in a row.** Eight single-row runs and two mass runs on 1.13c, read from `task-1b-report.md`. `size-control` (182 sized Act 1 rows, every counted cell a missing file) crashed at load with `Error opening file` and an access violation at `D2Common+0xA57C`, so those rows are picked. Two separate things then halt the game, and an empty map has neither.
+**A map of a different size in a row.** Four mass runs (`size-control`, `size-swap`, `size-same`, and 1b's R0 over 209 rows) and seven single-row runs (1b's R1 to R7) on 1.13c, the 1b ones read from `task-1b-report.md`. `size-control` (182 sized Act 1 rows, every counted cell a missing file) crashed at load with `Error opening file` and an access violation at `D2Common+0xA57C`, so those rows are picked. Two separate things then halt the game, and an empty map has neither.
 
 - **A map whose size differs from its row, on a row with `Scan` or `Pops` set, halts at load.** `D2Common+0xC664` (`6fd5c664`), line 2239 for width and 2240 for height. Proved by code and by a single-row run (Def 52, `Scan` 1, with `CaveW.ds1`, 24 by 24 into an 8 by 8 row). It is the halt `size-swap` hit. In 1.13c's table 279 of the 1,054 sized rows have `Scan` or `Pops`.
 - **On a `Scan` 0 row a map of another size doesn't halt on the way to the room, and draws wrongly** (Def 46 with `Swamp5.ds1`, 16 by 16: bands of black). Proved by a run only. A map smaller than the row may read past its buffer. That is inferred, not run.
