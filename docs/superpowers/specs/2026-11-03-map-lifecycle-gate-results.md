@@ -33,6 +33,16 @@ Tested on 1.13c with `-direct -txt`, using the four Act 1 Wild Border rows (Defs
 | The three counted cells set to `0`, `Files` stays 3 | Remove, Delete | **Game crash** when those rooms generate: access violation at `D2Common+0xA57C`, the unchecked pointer in `LoadAndParsePresetArchive`. A level can load first, so the crash comes later, while walking |
 | Sixth cell filled, `Files` raised to 6, with a real map or a missing one | Not done today | **Game crash** while loading, at `D2Common+0x3C97C`, a different site. These rows' extra cells have their own meaning |
 
+**Raising `Files` on ordinary rows works.** Tested on the 995 rows where `Files` equals the filled cells and is 5 or less:
+
+| Table change | Result |
+|---|---|
+| New last cell is a copy of the row's first map, `Files` raised by one | No crash, entering town and walking about 100 subtiles through Blood Moor |
+| New last cell names a missing map, `Files` raised by one | No crash on the same walk, so no new cell was picked on that route. This run alone proves nothing |
+| `Files` set to 6, first map kept, cells 2 to 6 missing | **Crash while loading,** at `D2Common+0xA57C`. The random pick does read cells past the original count |
+
+So a map added at the end with `Files` raised is reachable, and doesn't disturb the row's loading.
+
 From the binaries, a row with `Files` of 0 takes index -1 and the generator chooses the cell itself: town rows and transitions work this way. Otherwise the game picks a random index, and the row's other cells are not random choices. Of the 1,088 rows with any cell filled, 1,007 have `Files` equal to their filled cells, 34 have `Files` of 0, and 47 differ, like Wild Border.
 
 So:
@@ -58,7 +68,7 @@ The crash test ran with every counted cell cleared. A single cleared cell should
 These must be checked before step 4 ships, in the end-to-end test the spec requires.
 
 - **A changed map seen in the game.** The edited table was compiled and the game entered town, but the loose map was an unchanged copy of `TownN1`, so the screen doesn't prove which file drew it. The file's last-access time supports it, weakly.
-- **Raising `Files` on an ordinary row.** See "How the Game Uses File Cells". This is the case Create would rely on, and it needs a level with ordinary rows, such as Blood Moor, to be generated.
+- **A new map of a different size in a row.** The test maps below were copies of the row's own. `LvlPrest.txt` has `SizeX` and `SizeY`, so a new map may have to match them. Task 5 of the fix plan should show this on screen.
 - **File cell length.** Static reading infers a stack buffer limit of 41 characters. `MAP_OPS_TABLE_PATH_MAX` allows 59.
 - **A rebuilt `patch_d2.mpq` mounted at startup.** A fleet launch rewrites its slot first, so this test mounted the archive from inside the running game, through the same Storm export `D2Win` uses.
 - **Read-only excel folder.** Static reading says a failed write is silent.
