@@ -23,7 +23,7 @@ There is no supported way to load an extra MPQ of an arbitrary name, so the spec
 
 ## How the Game Uses File Cells
 
-**Step 3 as merged doesn't match this.** Create fills an empty cell and leaves `Files` alone, and Remove and Delete write `0` into a cell and leave `Files` alone.
+**Step 3 as first merged didn't match this, and the plan `2026-11-03-map-lifecycle-3b-files-column` fixes it.** As merged, Create filled an empty cell and left `Files` alone, and Remove and Delete wrote `0` into a cell and left `Files` alone. Now Create adds the map at the end and raises `Files`, and Remove and Delete move later cells back and lower `Files`.
 
 Tested on 1.13c with `-direct -txt`, using the four Act 1 Wild Border rows (Defs 4-7), which are `Files=3` with five filled cells. Each run used the same character, so the same map seed.
 
@@ -69,7 +69,7 @@ These must be checked before step 4 ships, in the end-to-end test the spec requi
 
 - **A changed map seen in the game.** The edited table was compiled and the game entered town, but the loose map was an unchanged copy of `TownN1`, so the screen doesn't prove which file drew it. The file's last-access time supports it, weakly.
 - **A new map of a different size in a row.** The test maps below were copies of the row's own. `LvlPrest.txt` has `SizeX` and `SizeY`, so a new map may have to match them. Task 5 of the fix plan should show this on screen.
-- **File cell length.** Static reading infers a stack buffer limit of 41 characters. `MAP_OPS_TABLE_PATH_MAX` allows 59.
+- **File cell length.** Static reading infers a stack buffer limit of 41 characters, and `MAP_OPS_TABLE_PATH_MAX` is now 41. The limit itself is not yet tried in the game.
 - **A rebuilt `patch_d2.mpq` mounted at startup.** A fleet launch rewrites its slot first, so this test mounted the archive from inside the running game, through the same Storm export `D2Win` uses.
 - **Read-only excel folder.** Static reading says a failed write is silent.
 - **`wine` on Linux and macOS.** Case handling of `DATA\GLOBAL\...` wasn't run.

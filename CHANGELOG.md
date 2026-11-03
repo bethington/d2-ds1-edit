@@ -20,7 +20,13 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
   modified one is reverted to the game's version, and a game map is removed from
   the project's table, where it stays listed, struck through, until its slot is
   restored. Each one asks first and can be undone. An open map whose file has gone
-  this way can't be saved until it's reopened or restored. A game map the game's own
+  this way can't be saved until it's reopened or restored. Remove and Delete move
+  the row's later maps back and lower its `Files` column, so the game never meets a
+  blank map below `Files`, and Restore Slot raises it again. A row's only map, and a
+  map in a row that picks its maps by its own rules, can't be removed: Remove
+  says so before it asks to confirm and changes nothing. New adds a map to the end of a row
+  whose `Files` matches its maps and raises `Files`; a town or other special area
+  can't take one. A map's whole path can be at most 41 characters. A game map the game's own
   table doesn't list has no slot to clear, so Remove stops with a message. In a
   project over a mod overlay, game files the overlay replaced show struck through
   after the project's first table write.

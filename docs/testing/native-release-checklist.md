@@ -197,7 +197,10 @@ Use act 1 Town and at least two other maps from different acts.
   game folder. Repeat on an Unlisted map: clone it, reopen the project, and the new
   row is still there; remove it, reopen, and it's still struck through. Saving a
   deleted map that's still open is refused with a message, and quitting still lets
-  you discard it.
+  you discard it. New on a town row is refused in the dialog. Remove on a row's only
+  map is refused before any confirmation. After Remove, the row in `LvlPrest.txt` has
+  `Files` lowered and no `0` before the last map, and restore returns the table byte
+  for byte.
 
 Total items: 15.
 
