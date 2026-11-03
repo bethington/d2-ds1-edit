@@ -897,6 +897,19 @@ void test_size_defaults_are_the_map_s_width_not_the_stored_value(void)
    TEST_ASSERT_EQUAL_INT(30, h);
 }
 
+void test_a_row_takes_only_its_own_size(void)
+{
+   char err[256] = "";
+
+   fresh_rows();
+   TEST_ASSERT_EQUAL_INT(0, map_ops_check_row_size(rows, 168, 11, 15, err, sizeof(err)));
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_check_row_size(rows, 168, 12, 15, err, sizeof(err)));
+   TEST_ASSERT_NOT_NULL(strstr(err, "11 by 15"));
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_check_row_size(rows, 168, 11, 16, err, sizeof(err)));
+   TEST_ASSERT_EQUAL_INT(0, map_ops_check_row_size(rows, 300, 7, 9, err, sizeof(err)));  /* no size */
+   TEST_ASSERT_EQUAL_INT(0, map_ops_check_row_size(rows, 999, 7, 9, err, sizeof(err)));  /* no row */
+}
+
 void test_the_shared_refusal_doesnt_mention_a_tileset(void)
 {
    char game[sizeof(GAME)];
@@ -1078,6 +1091,7 @@ int main(void)
    RUN_TEST(test_create_refuses_a_whole_level_and_writes_nothing);
    RUN_TEST(test_a_table_with_no_size_columns_doesnt_call_a_row_a_whole_level);
    RUN_TEST(test_size_defaults_are_the_map_s_width_not_the_stored_value);
+   RUN_TEST(test_a_row_takes_only_its_own_size);
    RUN_TEST(test_the_shared_refusal_doesnt_mention_a_tileset);
    RUN_TEST(test_a_table_with_no_files_column_says_so_first);
    RUN_TEST(test_a_path_past_the_limit_says_to_rename_it);

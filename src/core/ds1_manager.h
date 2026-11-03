@@ -40,6 +40,10 @@ int  ds1_manager_def_can_take_map(int def, int empty_map, char * error, int cap)
 /* Sets *width and *height to a new map's size for this Def where its row says. See
  * map_ops_default_size. */
 void ds1_manager_def_default_size(int def, int * width, int * height);
+/* 1 if a map of this size may go in this Def's row, else 0 with a sentence. 1 if the
+ * table can't be read, since creating the map will then say why. See
+ * map_ops_check_row_size. */
+int  ds1_manager_def_takes_size(int def, int width, int height, char * error, int cap);
 
 /* Smart filename generation — finds gap in numbering sequence */
 void ds1_manager_suggest_name(const char * base_ds1_path,

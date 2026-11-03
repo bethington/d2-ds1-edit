@@ -500,6 +500,18 @@ void ds1_manager_def_default_size(int def, int * width, int * height)
    free(table);
 }
 
+int ds1_manager_def_takes_size(int def, int width, int height, char * error, int cap)
+{
+   char * table = manager_current_table();
+   int rc;
+
+   if (table == NULL)
+      return 1;
+   rc = map_ops_check_row_size(table, def, width, height, error, cap);
+   free(table);
+   return rc == 0;
+}
+
 /* An Unlisted group's id isn't a LvlType, so the row takes its Def's: otherwise the
  * map opens without its tileset, and comes back differently after a reload. */
 static void manager_add_new_row(int group_idx, int def, const char * rel)
@@ -554,6 +566,9 @@ int ds1_manager_clone(int src_ds1_idx, int group_idx, int def, const char * file
       return -1;
    g = &ab->groups[group_idx];
    if (manager_new_path(g, def, file_name, rel, sizeof(rel), error, cap) != 0)
+      return -1;
+   if (!ds1_manager_def_takes_size(def, (int) glb_ds1[src_ds1_idx].width,
+                                   (int) glb_ds1[src_ds1_idx].height, error, cap))
       return -1;
    if (map_ops_tile_path(glb_project.path, rel, dest, sizeof(dest)) != 0)
    {

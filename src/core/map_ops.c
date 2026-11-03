@@ -447,6 +447,17 @@ void map_ops_default_size(char * table, int def, int * width, int * height)
       *height = y + 1;
 }
 
+int map_ops_check_row_size(char * table, int def, int width, int height, char * error, int cap)
+{
+   int want_w = 0, want_h = 0;
+
+   map_ops_default_size(table, def, &want_w, &want_h);
+   if ((want_w == 0 || width == want_w) && (want_h == 0 || height == want_h))
+      return 0;
+   return fail(error, cap, "Def %d's maps are %d by %d, and the game can't use another size here.",
+               def, want_w, want_h);
+}
+
 /* How many of the row's cells hold this whole path. */
 static int count_copies(char * table, int def, const char * ds1_path)
 {
