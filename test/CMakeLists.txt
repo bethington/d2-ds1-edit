@@ -127,6 +127,14 @@ target_include_directories(test_blend_convention PRIVATE
     ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/mpq)
 add_test(NAME blend_convention COMMAND test_blend_convention)
 
+# The copy that map deletion relies on before removing the original
+add_executable(test_file_copy test_file_copy.c ../src/core/file_copy.c)
+target_link_libraries(test_file_copy PRIVATE unity)
+target_include_directories(test_file_copy PRIVATE
+    ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/test)
+add_test(NAME file_copy COMMAND test_file_copy)
+set_tests_properties(file_copy PROPERTIES LABELS "portable")
+
 # GTK backend choice for Allegro's native dialogs
 add_executable(test_platform_dialogs test_platform_dialogs.c)
 target_link_libraries(test_platform_dialogs PRIVATE unity)

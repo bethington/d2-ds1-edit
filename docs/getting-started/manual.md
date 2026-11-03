@@ -737,6 +737,10 @@ Cut'n paste. Almost the same as **Ctrl** \+ **C** , except that this time you're
 
 Select some tiles, even in different layers, then press **DEL** to delete them.
 
+> **Current editor.** **DEL** only affects the selected tiles or objects. To delete
+> a whole map from a mod folder, right-click its row in the area browser and choose
+> **Delete map...**, which asks for confirmation and keeps a copy in the backup folder.
+
 After a Copy, a Deletion or a modification of the Selection, if you want to cancel your actions and come to a precedent state, don't forget to use the **Ctrl** \+ **U** (Undo) feature.
 
 As an exercice that combine both Copy and Deletion, let's increase the size of the Baal Throne Room :

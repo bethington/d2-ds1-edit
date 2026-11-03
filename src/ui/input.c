@@ -32,6 +32,12 @@ int input_undo_shortcut_hit(int properties_panel_owns_undo)
            (!properties_panel_owns_undo && key_hit(ALLEGRO_KEY_Z)));
 }
 
+int input_delete_hits_tiles(int tile_mode, int paste_preview_active)
+{
+   return tile_mode && !paste_preview_active &&
+          (key_hit(KEY_DEL) || key_hit(KEY_DEL_PAD));
+}
+
 void input_init(void)
 {
    memset(a5_key_hit, 0, sizeof(a5_key_hit));

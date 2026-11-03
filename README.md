@@ -316,6 +316,8 @@ runs, set `use_pd2 = no`. The command-line equivalents are `--pd2-dir=` and `--u
 | Mouse at the window edge | Scroll, only with `mouse_edge_scroll = YES` (default `NO`) |
 | **Ctrl+Z** | Undo the last map edit. While a properties-panel field is being edited, the panel owns Ctrl+Z |
 | **Ctrl+U** | Undo tile edits; acts once per key press |
+| **Delete** | Delete the selected tiles or objects. It never deletes a map |
+| Right-click a map in the area browser | **Delete map...**: asks first, then backs the map up and removes it from the mod folder |
 | **Alt+I** | Select strictly identical tiles |
 | **Alt**-drag | Box-select objects |
 | **Ctrl+S** | Save the map (see below) |
