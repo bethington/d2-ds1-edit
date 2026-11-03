@@ -894,7 +894,13 @@ void interfac_user_handler(int start_ds1_idx)
       if (glb_ds1edit.has_loaded_ds1)
          wpreview_draw_tiles(ds1_idx);
       else
+      {
+         /* No map: wpreview_draw_tiles() is not clearing the frame buffer, so
+          * the last map, dialog and status text would stay on screen. Clear it
+          * the same way wpreview_draw_tiles() does, before the sidebar goes on. */
+         a5_clear(glb_ds1edit.screen_buff);
          misc_draw_screen(a5_mouse_x, a5_mouse_y);
+      }
       glb_ds1edit.fps++;
       if (glb_ds1edit.cmd_line.selftest_frames > 0)
       {
