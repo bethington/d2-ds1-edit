@@ -23,6 +23,8 @@ int  ds1_manager_delete_permanent(int group_idx, int entry_idx);
 /* DS1 creation */
 int  ds1_manager_create_empty(int group_idx, int def, const char * file_name,
                               int width, int height, char * error, int cap);
+/* Refuses with a sentence a map with a warp cell (map_ops_wall_cell_is_row_warp) cloned
+ * to a Def other than its own row's, or whose own row isn't known. */
 int  ds1_manager_clone(int src_ds1_idx, int group_idx, int def, const char * file_name,
                        char * error, int cap);
 /* The table path a new map in this area and Def would have. -1 with a sentence if

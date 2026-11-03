@@ -447,6 +447,14 @@ void map_ops_default_size(char * table, int def, int * width, int * height)
       *height = y + 1;
 }
 
+int map_ops_wall_cell_is_row_warp(unsigned char prop3, unsigned char prop4,
+                                  unsigned char orientation)
+{
+   int main_index = (prop3 >> 4) + ((prop4 & 0x03) << 4);
+
+   return (orientation == 10 || orientation == 11) && main_index < 8 && (prop4 & 0x80) == 0;
+}
+
 int map_ops_check_row_size(char * table, int def, int width, int height, char * error, int cap)
 {
    int want_w = 0, want_h = 0;

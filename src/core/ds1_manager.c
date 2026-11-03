@@ -551,6 +551,37 @@ int ds1_manager_create_empty(int group_idx, int def, const char * file_name,
    return 0;
 }
 
+/* The Def of the row the browser has loaded, if it names the map in slot ds1_idx.
+ * -1 if not, which makes every Def a different one. */
+static int manager_own_def(int ds1_idx)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   AREA_GROUP_S * g;
+
+   if (ab->loaded_group < 0 || ab->loaded_group >= ab->group_count)
+      return -1;
+   g = &ab->groups[ab->loaded_group];
+   if (g->is_backup || ab->loaded_entry < 0 || ab->loaded_entry >= g->entry_count)
+      return -1;
+   if (!map_state_path_matches(glb_ds1[ds1_idx].name, g->entries[ab->loaded_entry].ds1_path))
+      return -1;
+   return g->entries[ab->loaded_entry].lvlprest_def;
+}
+
+/* 1 if the map in slot ds1_idx has a wall cell only its own row can carry. */
+static int manager_has_row_warp(int ds1_idx)
+{
+   const CELL_W_S * c = glb_ds1[ds1_idx].wall_buff;
+   int i;
+
+   if (c == NULL)
+      return 0;
+   for (i = 0; i < glb_ds1[ds1_idx].wall_len; i++)
+      if (map_ops_wall_cell_is_row_warp(c[i].prop3, c[i].prop4, c[i].orientation))
+         return 1;
+   return 0;
+}
+
 /* The map as it is in memory, so unsaved edits come along and a map that exists
  * only in an MPQ can be cloned. */
 int ds1_manager_clone(int src_ds1_idx, int group_idx, int def, const char * file_name,
@@ -570,6 +601,12 @@ int ds1_manager_clone(int src_ds1_idx, int group_idx, int def, const char * file
    if (!ds1_manager_def_takes_size(def, (int) glb_ds1[src_ds1_idx].width,
                                    (int) glb_ds1[src_ds1_idx].height, error, cap))
       return -1;
+   if (manager_own_def(src_ds1_idx) != def && manager_has_row_warp(src_ds1_idx))
+   {
+      snprintf(error, cap, "%s has a warp cell another row can't use. Clone it within its own row.",
+               file_name);
+      return -1;
+   }
    if (map_ops_tile_path(glb_project.path, rel, dest, sizeof(dest)) != 0)
    {
       snprintf(error, cap, "The path for %s is too long.", file_name);

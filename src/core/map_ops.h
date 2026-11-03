@@ -68,6 +68,14 @@ void map_ops_dialog_status(char * table, int def, char * sentence, int cap);
  * or a row that isn't there, leaves its value alone. */
 void map_ops_default_size(char * table, int def, int * width, int * height);
 
+/* 1 if a wall cell is a warp cell that only its own row can carry: orientation 10 or
+ * 11, main index below 8, top bit clear. The game halts while building a room's tiles
+ * when its row has no link for such a cell. The arguments are CELL_W_S's prop3, prop4
+ * and orientation; the packed cell is prop1 to prop4 as bytes 0 to 3, the main index is
+ * bits 20 to 25 and the top bit is bit 31, as ds1.c reads them. */
+int map_ops_wall_cell_is_row_warp(unsigned char prop3, unsigned char prop4,
+                                  unsigned char orientation);
+
 /* Must a map of this size fit this row? 0, or -1 with a sentence under 62 characters
  * that names the row's size. A swap test halted the game with every cell of 182 rows
  * replaced by another row's map of another size; whether size was the cause isn't
