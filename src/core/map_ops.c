@@ -341,30 +341,48 @@ static int save_table(const char * project_dir, const char * text, long len,
    return 0;
 }
 
-static int set_cell_and_save(const char * project_dir, char * table, int def, int slot,
-                             const char * value, char * error, int cap)
+/* Replace *table with an edited copy. `edited` is NULL if the edit couldn't be made. */
+static int take_edit(char ** table, char * edited, int def, char * error, int cap)
 {
-   long len = 0;
-   char * edited = lvlprest_with_cell(table, def, slot, value, &len);
-   int rc;
-
-   if (edited == NULL)
-      return fail(error, cap, "Couldn't edit Def %d's row in LvlPrest.txt.", def);
-   rc = save_table(project_dir, edited, len, error, cap);
-   free(edited);
-   return rc;
-}
-
-/* Replace *table with a copy that has this cell changed. */
-static int table_with_cell(char ** table, long * len, int def, int slot, const char * value,
-                           char * error, int cap)
-{
-   char * edited = lvlprest_with_cell(*table, def, slot, value, len);
-
    if (edited == NULL)
       return fail(error, cap, "Couldn't edit Def %d's row in LvlPrest.txt.", def);
    free(*table);
    *table = edited;
+   return 0;
+}
+
+int map_ops_check_register(char * table, int def, char * error, int cap)
+{
+   int def_col = lvlprest_find_col(table, "Def");
+   char * row_end;
+
+   if (def_col < 0 || lvlprest_find_row(table, def_col, def, &row_end) == NULL)
+      return fail(error, cap, "Def %d isn't in LvlPrest.txt.", def);
+   if (!lvlprest_row_is_simple(table, def))
+      return fail(error, cap, "Def %d's row chooses its maps by its own rules, so the game "
+                  "would never use a map added to it. Pick another tileset.", def);
+   if (lvlprest_files_value(table, def) >= 6)
+      return fail(error, cap, "Def %d has no free File slot in LvlPrest.txt.", def);
+   return 0;
+}
+
+int map_ops_check_unregister(char * table, int def, const char * ds1_path, char * error, int cap)
+{
+   int copies = 0, f;
+
+   if (lvlprest_find_path_slot(table, def, ds1_path) == LVLPREST_TABLE_UNUSABLE)
+      return fail(error, cap, "The project's LvlPrest.txt has no Def or File columns.");
+   for (f = 1; f <= 6; f++)
+      if (lvlprest_slot_holds_path(table, def, f, ds1_path))
+         copies++;
+   if (copies == 0)
+      return 0;
+   if (!lvlprest_row_is_simple(table, def))
+      return fail(error, cap, "Def %d's row chooses its maps by its own rules, and taking "
+                  "one out can crash the game. Edit the map instead.", def);
+   if (copies >= lvlprest_files_value(table, def))
+      return fail(error, cap, "%s is the only map in Def %d's row, so its level would have "
+                  "nothing to load. Edit the map instead.", ds1_path, def);
    return 0;
 }
 
@@ -373,8 +391,7 @@ int map_ops_register(const char * project_dir, const char * seed, int def,
 {
    long len;
    char * table;
-   int slot, rc, def_col;
-   char * row_end;
+   int rc;
 
    if (check_not_in_game(project_dir, error, cap) != 0)
       return -1;
@@ -386,19 +403,19 @@ int map_ops_register(const char * project_dir, const char * seed, int def,
    if (table == NULL)
       return -1;
 
-   def_col = lvlprest_find_col(table, "Def");
-   if (def_col < 0 || lvlprest_find_row(table, def_col, def, &row_end) == NULL)
+   rc = map_ops_check_register(table, def, error, cap);
+   if (rc == 0)
    {
-      free(table);
-      return fail(error, cap, "Def %d isn't in LvlPrest.txt.", def);
+      char * edited = lvlprest_with_map_inserted(table, def, 6, ds1_path, &len);
+
+      if (edited == NULL)
+         rc = fail(error, cap, "Couldn't edit Def %d's row in LvlPrest.txt.", def);
+      else
+      {
+         rc = save_table(project_dir, edited, len, error, cap);
+         free(edited);
+      }
    }
-   slot = lvlprest_empty_slot(table, def);
-   if (slot <= 0)
-   {
-      free(table);
-      return fail(error, cap, "Def %d has no free File slot in LvlPrest.txt.", def);
-   }
-   rc = set_cell_and_save(project_dir, table, def, slot, ds1_path, error, cap);
    free(table);
    return rc;
 }
@@ -408,19 +425,19 @@ int map_ops_unregister(const char * project_dir, const char * seed, int def,
 {
    long len;
    char * table;
-   int slot, rc = 0, changed = 0;
+   int slot, rc, changed = 0;
 
    if (check_not_in_game(project_dir, error, cap) != 0)
       return -1;
    table = table_for_edit(project_dir, seed, &len, error, cap);
    if (table == NULL)
       return -1;
-   slot = lvlprest_find_path_slot(table, def, ds1_path);
-   if (slot == LVLPREST_TABLE_UNUSABLE)
-      rc = fail(error, cap, "The project's LvlPrest.txt has no Def or File columns.");
+
+   rc = map_ops_check_unregister(table, def, ds1_path, error, cap);
+   slot = rc == 0 ? lvlprest_find_path_slot(table, def, ds1_path) : 0;
    while (rc == 0 && slot > 0)
    {
-      rc = table_with_cell(&table, &len, def, slot, "0", error, cap);
+      rc = take_edit(&table, lvlprest_with_map_removed(table, def, slot, &len), def, error, cap);
       changed = 1;
       if (rc == 0)
          slot = lvlprest_find_path_slot(table, def, ds1_path);
@@ -436,7 +453,7 @@ int map_ops_restore_slot(const char * project_dir, const char * seed, char * gam
 {
    long len;
    char * table;
-   char cell[256], current[256];
+   char cell[256];
    int game_slots[6];
    int game_count = 0, have = 0, f, i, rc = 0;
 
@@ -476,13 +493,10 @@ int map_ops_restore_slot(const char * project_dir, const char * seed, char * gam
                    ds1_path, def);
          break;
       }
-      if (!lvlprest_get_cell(table, def, slot, current, sizeof(current)) ||
-          (current[0] != '\0' && strcmp(current, "0") != 0))
-         slot = lvlprest_empty_slot(table, def);
-      if (slot <= 0)
-         rc = fail(error, cap, "Def %d has no free File slot in LvlPrest.txt.", def);
-      else
-         rc = table_with_cell(&table, &len, def, slot, cell, error, cap);
+      rc = map_ops_check_register(table, def, error, cap);
+      if (rc == 0)
+         rc = take_edit(&table, lvlprest_with_map_inserted(table, def, slot, cell, &len),
+                        def, error, cap);
       have++;
    }
    if (rc == 0)

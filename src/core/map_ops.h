@@ -8,8 +8,9 @@
 #ifndef DS1EDIT_MAP_OPS_H
 #define DS1EDIT_MAP_OPS_H
 
-/* The longest table path that fits the game's File columns. */
-#define MAP_OPS_TABLE_PATH_MAX 59
+/* The longest table path the game takes. It builds "DATA\GLOBAL\TILES\<cell>" with
+ * wsprintf in a 60-byte stack buffer. */
+#define MAP_OPS_TABLE_PATH_MAX 41
 #define MAP_OPS_SIZE_MAX 1000
 
 int map_ops_check_name(const char * name, char * out_file, int out_cap,
@@ -45,15 +46,22 @@ char * map_ops_read_table(const char * project_dir, long * out_len);
 
 int map_ops_write_empty_ds1(const char * path, int width, int height, int act);
 
-/* Put ds1_path in this Def's first empty File column. */
+/* May a map be added to, or taken from, this row of this table? 0, or -1 with a
+ * sentence. Rows whose Files doesn't match their cells choose maps by their own rules,
+ * and the game crashes on some edits to them. */
+int map_ops_check_register(char * table, int def, char * error, int cap);
+int map_ops_check_unregister(char * table, int def, const char * ds1_path, char * error, int cap);
+
+/* Add ds1_path to this Def's row as its last map and raise Files. */
 int map_ops_register(const char * project_dir, const char * seed, int def,
                      const char * ds1_path, char * error, int cap);
-/* Clear every column of the row holding ds1_path's whole path, not another folder's
- * map of the same name. A map the row doesn't list is not an error. */
+/* Take out every copy of ds1_path's whole path from the row, not another folder's map
+ * of the same name, closing the gap and lowering Files. A map the row doesn't list is
+ * not an error. */
 int map_ops_unregister(const char * project_dir, const char * seed, int def,
                        const char * ds1_path, char * error, int cap);
-/* Put the game's cells holding ds1_path's whole path back: each in its own column,
- * or the first empty one if that was taken. */
+/* Put back the copies of ds1_path's whole path the game lists, each at its own File
+ * column or at the end if the row is shorter, raising Files. */
 int map_ops_restore_slot(const char * project_dir, const char * seed, char * game_table,
                          int def, const char * ds1_path, char * error, int cap);
 
