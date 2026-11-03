@@ -280,7 +280,7 @@ This editor is using essentially the keyboard and the mouse together. There's no
 
 ### ESC
 
-Quit the Editor. For confirmation, a window will appear to ask you to save or not the current ds1 you're editing.
+Quit the Editor. If you have unsaved edits, a window appears to ask whether to save them first. With nothing unsaved, the editor just closes.
 
 * * *
 
@@ -656,6 +656,11 @@ only the Tree, not its Floor Tile.
 > the old one is kept as the backup described below, and everything is rolled back
 > if a step fails. A failed save shows an error and leaves the editor open with
 > your edits intact.
+>
+> Saves go to the project. The first save asks you to create or open one, and a map
+> opened from the game is saved as the project's own copy. If the project already
+> has a copy of that map, the editor asks before replacing it, and the old copy
+> becomes a numbered backup. Nothing is ever written to the Diablo II folder.
 
 **S** ave the map (the .DS1), in its current state. Incremental backups. First, it rename the current .DS1 to the first free name with numbers it found, then it save the current map.
 

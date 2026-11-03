@@ -149,8 +149,10 @@ Use act 1 Town and at least two other maps from different acts.
 - [ ] **E11 Unsaved-change handling.** With no unsaved edits, quitting asks
   nothing. With an unsaved edit, quit: the WARNING dialog offers (S) Save all and
   quit, (Q) Quit, (Esc) Cancel. Esc returns to the editor with the edit intact. Q
-  quits and leaves a `.tmp` autosave and does not overwrite the map. S saves and
-  quits. Opening another map from the browser with an unsaved edit asks first, and
+  quits and leaves a `.tmp` autosave and does not overwrite the map: next to a
+  map opened from a file, in the project's `Global/Tiles` tree for a map from the
+  area browser, and in the editor's `tmp` folder when no project is open or the
+  map is inside the Diablo II install. S saves and quits. Opening another map from the browser with an unsaved edit asks first, and
   (Esc) keeps the map open with the edit intact.
 - [ ] **E12 Failed save is non-fatal.** Make the target unwritable (read-only
   file, or a folder you cannot write), edit, press **Ctrl+S**. An error box

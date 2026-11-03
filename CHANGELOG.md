@@ -31,8 +31,10 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
   autosave still works. Among the vanilla maps this is one file:
   `act1\court\court1b.ds1`.
 
-- **Saved maps go into a project.** The first save asks you to create or open one, and maps opened from the game's archives now save into it, instead of failing or writing to a relative path. `mod_dir` still works as a read overlay. Closing a project restores it.
-- **Unsaved edits are tracked.** Opening a map from the area browser used to discard every open map's edits with no warning; it now asks first. So do closing a project and quitting, and only when something is unsaved. The browser marks unsaved maps with `*`, project copies of game maps with `M`, and project-only maps with `N`.
+- **Saved maps go into a project.** The first save asks you to create or open one, and maps opened from the game's archives now save into it, instead of failing or writing to a relative path. If the project already has its own copy of the map, the save asks before replacing it, and the old copy becomes a numbered backup. A project can't be created inside the game's folder, and a map opened from inside that folder is refused rather than saved over the game's files. `mod_dir` still works as a read overlay behind the project. Closing a project restores it.
+
+- **Unsaved edits are tracked.** Opening a map from the area browser used to discard every open map's edits with no warning; it now asks first. So do closing a project, changing project (which now closes the old project's maps) and quitting, and only when something is unsaved. The browser marks unsaved maps with `*`, project copies of game maps with `M`, and project-only maps with `N`.
+
 - **Ctrl+Shift+S saves every map with unsaved edits, and Ctrl+S with no map open does nothing,** instead of reporting a save that never happened.
 
 ### Fixed
