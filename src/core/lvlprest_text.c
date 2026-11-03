@@ -221,19 +221,6 @@ int lvlprest_lists_path(char * buf, int def, const char * ds1_path)
    return lvlprest_find_path_slot(buf, def, ds1_path) > 0;
 }
 
-int lvlprest_empty_slot(char * buf, int def)
-{
-   char * start, * end;
-   int f;
-
-   if (lvlprest_find_col(buf, "Def") < 0 || lvlprest_find_col(buf, "File1") < 0)
-      return LVLPREST_TABLE_UNUSABLE;
-   for (f = 1; f <= 6; f++)
-      if (find_cell(buf, def, f, &start, &end) && cell_is_empty(start, end))
-         return f;
-   return 0;
-}
-
 int lvlprest_get_cell(char * buf, int def, int slot, char * out, int cap)
 {
    char * start, * end;
@@ -372,13 +359,14 @@ void lvlprest_each_cleared(char * game, char * project, LVLPREST_ROW_CB cb,
 
 #define ROW_CELL_CAP 256
 
-int lvlprest_files_value(char * buf, int def)
+/* A named column of this row as a number. -1 if there's no such row or column. */
+static int named_cell_value(char * buf, int def, const char * col_name)
 {
    char * start, * end;
    char num[16];
    int n;
 
-   if (!find_named_cell(buf, def, "Files", &start, &end))
+   if (!find_named_cell(buf, def, col_name, &start, &end))
       return -1;
    n = (int)(end - start);
    if (n >= (int) sizeof(num))
@@ -386,6 +374,42 @@ int lvlprest_files_value(char * buf, int def)
    memcpy(num, start, n);
    num[n] = '\0';
    return atoi(num);
+}
+
+int lvlprest_files_value(char * buf, int def)
+{
+   return named_cell_value(buf, def, "Files");
+}
+
+int lvlprest_files_hole(char * buf, int def)
+{
+   int files = lvlprest_files_value(buf, def);
+   char * start, * end;
+   int f;
+
+   for (f = 1; f <= 6 && f <= files; f++)
+      if (!find_cell(buf, def, f, &start, &end) || cell_is_empty(start, end))
+         return f;
+   return 0;
+}
+
+int lvlprest_row_size(char * buf, int def, int * size_x, int * size_y)
+{
+   int x = named_cell_value(buf, def, "SizeX");
+   int y = named_cell_value(buf, def, "SizeY");
+
+   if (x < 0 || y < 0)
+      return 0;
+   *size_x = x;
+   *size_y = y;
+   return 1;
+}
+
+int lvlprest_row_has_size(char * buf, int def)
+{
+   int x, y;
+
+   return !lvlprest_row_size(buf, def, &x, &y) || x != 0 || y != 0;
 }
 
 int lvlprest_row_is_simple(char * buf, int def)

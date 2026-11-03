@@ -351,30 +351,133 @@ static int take_edit(char ** table, char * edited, int def, char * error, int ca
    return 0;
 }
 
+/* The first of Files and File1-6 the header doesn't have, or NULL. */
+static const char * missing_map_column(char * table)
+{
+   static const char * const cols[] = {
+      "Files", "File1", "File2", "File3", "File4", "File5", "File6"
+   };
+   size_t i;
+
+   for (i = 0; i < sizeof(cols) / sizeof(cols[0]); i++)
+      if (lvlprest_find_col(table, cols[i]) < 0)
+         return cols[i];
+   return NULL;
+}
+
+static int check_map_columns(char * table, char * error, int cap)
+{
+   const char * col = missing_map_column(table);
+
+   if (col != NULL)
+      return fail(error, cap, "The project's LvlPrest.txt has no %s column, so maps can't be "
+                  "added to or removed from it.", col);
+   return 0;
+}
+
+static int check_no_hole(char * table, int def, char * error, int cap)
+{
+   int hole = lvlprest_files_hole(table, def);
+
+   if (hole > 0)
+      return fail(error, cap, "Def %d's File%d is empty, but Files counts it, which can crash "
+                  "the game. Fix that row in LvlPrest.txt by hand.", def, hole);
+   return 0;
+}
+
 int map_ops_check_register(char * table, int def, char * error, int cap)
 {
    int def_col = lvlprest_find_col(table, "Def");
    char * row_end;
 
+   if (check_map_columns(table, error, cap) != 0)
+      return -1;
    if (def_col < 0 || lvlprest_find_row(table, def_col, def, &row_end) == NULL)
       return fail(error, cap, "Def %d isn't in LvlPrest.txt.", def);
+   if (check_no_hole(table, def, error, cap) != 0)
+      return -1;
    if (!lvlprest_row_is_simple(table, def))
       return fail(error, cap, "Def %d's row chooses its maps by its own rules, so the game "
-                  "would never use a map added to it. Pick another tileset.", def);
+                  "would never use a map added to it.", def);
    if (lvlprest_files_value(table, def) >= 6)
       return fail(error, cap, "Def %d has no free File slot in LvlPrest.txt.", def);
    return 0;
 }
 
-int map_ops_check_unregister(char * table, int def, const char * ds1_path, char * error, int cap)
+int map_ops_check_new_empty(char * table, int def, char * error, int cap)
+{
+   if (map_ops_check_register(table, def, error, cap) != 0)
+      return -1;
+   if (!lvlprest_row_has_size(table, def))
+      return fail(error, cap, "Def %d's row is a whole level, and an empty map would join the "
+                  "game's random pick for it. Clone a working map instead.", def);
+   return 0;
+}
+
+#define DIALOG_STATUS_MAX 62
+
+void map_ops_dialog_status(char * table, int def, char * sentence, int cap)
+{
+   const char * col = missing_map_column(table);
+   int hole;
+
+   if ((int) strlen(sentence) <= DIALOG_STATUS_MAX)
+      return;
+   hole = lvlprest_files_hole(table, def);
+   if (col != NULL)
+      snprintf(sentence, (size_t) cap, "LvlPrest.txt has no %s column, so it can't take maps.", col);
+   else if (hole > 0)
+      snprintf(sentence, (size_t) cap, "Def %d's File%d is empty but counted. Fix it by hand.",
+               def, hole);
+   else if (lvlprest_row_is_simple(table, def) && !lvlprest_row_has_size(table, def))
+      snprintf(sentence, (size_t) cap, "Def %d is a whole level. Use Clone, not New.", def);
+   else
+      snprintf(sentence, (size_t) cap, "Def %d can't take another map. Pick another tileset.", def);
+}
+
+void map_ops_default_size(char * table, int def, int * width, int * height)
+{
+   int x, y;
+
+   if (!lvlprest_row_size(table, def, &x, &y))
+      return;
+   if (x > 0 && x < MAP_OPS_SIZE_MAX)
+      *width = x + 1;
+   if (y > 0 && y < MAP_OPS_SIZE_MAX)
+      *height = y + 1;
+}
+
+/* How many of the row's cells hold this whole path. */
+static int count_copies(char * table, int def, const char * ds1_path)
 {
    int copies = 0, f;
 
-   if (lvlprest_find_path_slot(table, def, ds1_path) == LVLPREST_TABLE_UNUSABLE)
-      return fail(error, cap, "The project's LvlPrest.txt has no Def or File columns.");
    for (f = 1; f <= 6; f++)
       if (lvlprest_slot_holds_path(table, def, f, ds1_path))
          copies++;
+   return copies;
+}
+
+/* What both unregister checks ask first. 0 with *copies set if they can go on. */
+static int check_unregister_common(char * table, int def, const char * ds1_path, int * copies,
+                                   char * error, int cap)
+{
+   if (check_map_columns(table, error, cap) != 0)
+      return -1;
+   if (lvlprest_find_path_slot(table, def, ds1_path) == LVLPREST_TABLE_UNUSABLE)
+      return fail(error, cap, "The project's LvlPrest.txt has no Def column.");
+   *copies = count_copies(table, def, ds1_path);
+   if (*copies > 0)
+      return check_no_hole(table, def, error, cap);
+   return 0;
+}
+
+int map_ops_check_unregister(char * table, int def, const char * ds1_path, char * error, int cap)
+{
+   int copies;
+
+   if (check_unregister_common(table, def, ds1_path, &copies, error, cap) != 0)
+      return -1;
    if (copies == 0)
       return 0;
    if (!lvlprest_row_is_simple(table, def))
@@ -383,6 +486,34 @@ int map_ops_check_unregister(char * table, int def, const char * ds1_path, char 
    if (copies >= lvlprest_files_value(table, def))
       return fail(error, cap, "%s is the only map in Def %d's row, so its level would have "
                   "nothing to load. Edit the map instead.", ds1_path, def);
+   return 0;
+}
+
+int map_ops_check_unregister_new(char * table, int def, const char * ds1_path, char * error, int cap)
+{
+   int copies, counted = 0, files, f;
+
+   if (check_unregister_common(table, def, ds1_path, &copies, error, cap) != 0)
+      return -1;
+   if (copies == 0)
+      return 0;
+   files = lvlprest_files_value(table, def);
+   for (f = 1; f <= 6 && f <= files; f++)
+      if (lvlprest_slot_holds_path(table, def, f, ds1_path))
+         counted++;
+
+   /* With Files 0 the generator reads the cells itself, so past Files isn't safe. */
+   if (files >= 1 && counted == 0)
+      return 0;
+   if (!lvlprest_row_is_simple(table, def))
+      return fail(error, cap, "Def %d's row chooses its maps by its own rules, and taking "
+                  "%s out can crash the game. Edit the row in LvlPrest.txt by hand.",
+                  def, ds1_path);
+   if (counted >= files)
+      return fail(error, cap, "%s is the only map in Def %d's row that the game counts, so "
+                  "its level would have nothing to load. If you took another map out of this "
+                  "row, use Restore Slot on it first. Otherwise edit the row by hand.",
+                  ds1_path, def);
    return 0;
 }
 
@@ -396,8 +527,8 @@ int map_ops_register(const char * project_dir, const char * seed, int def,
    if (check_not_in_game(project_dir, error, cap) != 0)
       return -1;
    if ((int) strlen(ds1_path) > MAP_OPS_TABLE_PATH_MAX)
-      return fail(error, cap, "%s is longer than the %d characters LvlPrest.txt allows.",
-                  ds1_path, MAP_OPS_TABLE_PATH_MAX);
+      return fail(error, cap, "%s is longer than the %d characters LvlPrest.txt allows, so "
+                  "the file must be renamed by hand.", ds1_path, MAP_OPS_TABLE_PATH_MAX);
 
    table = table_for_edit(project_dir, seed, &len, error, cap);
    if (table == NULL)
@@ -420,8 +551,11 @@ int map_ops_register(const char * project_dir, const char * seed, int def,
    return rc;
 }
 
-int map_ops_unregister(const char * project_dir, const char * seed, int def,
-                       const char * ds1_path, char * error, int cap)
+/* Clear the copies past Files, then take out the rest. The caller's check has said
+ * the row allows whichever of these it holds. */
+static int take_out_copies(const char * project_dir, const char * seed, int def,
+                           const char * ds1_path, int past_files_too,
+                           char * error, int cap)
 {
    long len;
    char * table;
@@ -433,7 +567,19 @@ int map_ops_unregister(const char * project_dir, const char * seed, int def,
    if (table == NULL)
       return -1;
 
-   rc = map_ops_check_unregister(table, def, ds1_path, error, cap);
+   rc = past_files_too ? map_ops_check_unregister_new(table, def, ds1_path, error, cap)
+                       : map_ops_check_unregister(table, def, ds1_path, error, cap);
+   if (rc == 0 && past_files_too)
+   {
+      int files = lvlprest_files_value(table, def);
+
+      for (slot = files + 1; rc == 0 && slot <= 6; slot++)
+         if (slot >= 1 && lvlprest_slot_holds_path(table, def, slot, ds1_path))
+         {
+            rc = take_edit(&table, lvlprest_with_cell(table, def, slot, "0", &len), def, error, cap);
+            changed = 1;
+         }
+   }
    slot = rc == 0 ? lvlprest_find_path_slot(table, def, ds1_path) : 0;
    while (rc == 0 && slot > 0)
    {
@@ -446,6 +592,33 @@ int map_ops_unregister(const char * project_dir, const char * seed, int def,
       rc = save_table(project_dir, table, len, error, cap);
    free(table);
    return rc;
+}
+
+int map_ops_unregister(const char * project_dir, const char * seed, int def,
+                       const char * ds1_path, char * error, int cap)
+{
+   return take_out_copies(project_dir, seed, def, ds1_path, 0, error, cap);
+}
+
+int map_ops_unregister_new(const char * project_dir, const char * seed, int def,
+                           const char * ds1_path, char * error, int cap)
+{
+   return take_out_copies(project_dir, seed, def, ds1_path, 1, error, cap);
+}
+
+int map_ops_lists_map(const char * project_dir, const char * seed, int def,
+                      const char * ds1_path)
+{
+   long len;
+   char ignored[8];
+   char * table = table_for_edit(project_dir, seed, &len, ignored, sizeof(ignored));
+   int listed;
+
+   if (table == NULL)
+      return 0;
+   listed = lvlprest_lists_path(table, def, ds1_path);
+   free(table);
+   return listed;
 }
 
 int map_ops_restore_slot(const char * project_dir, const char * seed, char * game_table,
@@ -567,6 +740,18 @@ int map_ops_create_empty(const char * project_dir, const char * seed, int def,
       return fail(error, cap, BAD_TILE_PATH, ds1_path);
    if (map_ops_find_tile(project_dir, ds1_path, found, sizeof(found)))
       return fail(error, cap, "%s already exists in the project.", ds1_path);
+   {
+      long len;
+      char * table = table_for_edit(project_dir, seed, &len, error, cap);
+      int rc;
+
+      if (table == NULL)
+         return -1;
+      rc = map_ops_check_new_empty(table, def, error, cap);
+      free(table);
+      if (rc != 0)
+         return -1;
+   }
    if (map_ops_write_empty_ds1(path, width, height, act) != 0)
       return fail(error, cap, "Couldn't write %s.", path);
    if (map_ops_register(project_dir, seed, def, ds1_path, error, cap) != 0)

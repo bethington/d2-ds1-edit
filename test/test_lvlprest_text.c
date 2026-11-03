@@ -59,20 +59,6 @@ void test_a_table_without_the_expected_columns_is_an_error_not_a_miss(void)
                          lvlprest_find_file_slot(no_files, 1, "TownN1.ds1"));
 }
 
-void test_empty_slot_is_the_first_blank_or_zero_cell(void)
-{
-   TEST_ASSERT_EQUAL_INT(3, lvlprest_empty_slot(table, 1));
-   TEST_ASSERT_EQUAL_INT(2, lvlprest_empty_slot(table, 167));
-   TEST_ASSERT_EQUAL_INT(0, lvlprest_empty_slot(table, 999));
-}
-
-void test_empty_slot_is_none_when_all_six_are_used(void)
-{
-   char full[] = "Name\tDef\tFile1\tFile2\tFile3\tFile4\tFile5\tFile6\r\n"
-                 "F\t5\ta.ds1\tb.ds1\tc.ds1\td.ds1\te.ds1\tf.ds1\r\n";
-   TEST_ASSERT_EQUAL_INT(0, lvlprest_empty_slot(full, 5));
-}
-
 void test_get_cell_copies_one_cell(void)
 {
    char out[64];
@@ -330,11 +316,56 @@ void test_inserting_refuses_a_value_that_would_break_the_row(void)
    TEST_ASSERT_NULL(lvlprest_with_map_inserted(rows, 1, 1, "a\nb.ds1", &len));
 }
 
+void test_a_hole_is_a_blank_or_zero_cell_below_files(void)
+{
+   char holes[] =
+      "Name\tDef\tFiles\tFile1\tFile2\tFile3\tFile4\tFile5\tFile6\r\n"
+      "Zero\t1\t3\ta.ds1\t0\tc.ds1\t0\t0\t0\r\n"
+      "Blank\t2\t2\t\tb.ds1\t0\t0\t0\t0\r\n"
+      "Past\t3\t1\ta.ds1\t0\tc.ds1\t0\t0\t0\r\n"
+      "Own\t4\t0\t0\t0\t0\t0\t0\t0\r\n"
+      "Over\t5\t9\ta.ds1\tb.ds1\tc.ds1\td.ds1\te.ds1\tf.ds1\r\n"
+      "Short\t6\t2\ta.ds1\r\n";
+
+   TEST_ASSERT_EQUAL_INT(2, lvlprest_files_hole(holes, 1));
+   TEST_ASSERT_EQUAL_INT(1, lvlprest_files_hole(holes, 2));
+   TEST_ASSERT_EQUAL_INT(0, lvlprest_files_hole(holes, 3));   /* past Files is no hole */
+   TEST_ASSERT_EQUAL_INT(0, lvlprest_files_hole(holes, 4));   /* Files 0 counts nothing */
+   TEST_ASSERT_EQUAL_INT(0, lvlprest_files_hole(holes, 5));
+   TEST_ASSERT_EQUAL_INT(2, lvlprest_files_hole(holes, 6));   /* a row cut short */
+   TEST_ASSERT_EQUAL_INT(0, lvlprest_files_hole(holes, 99));
+}
+
+void test_a_row_has_a_size_unless_both_are_zero(void)
+{
+   char sized[] =
+      "Name\tDef\tSizeX\tSizeY\tFiles\r\n"
+      "Room\t168\t10\t14\t4\r\n"
+      "Tri\t300\t0\t0\t1\r\n"
+      "Wide\t4\t8\t0\t1\r\n"
+      "Tall\t5\t0\t8\t1\r\n"
+      "Blank\t6\t\t\t1\r\n";
+   int x = -1, y = -1;
+
+   TEST_ASSERT_TRUE(lvlprest_row_has_size(sized, 168));
+   TEST_ASSERT_FALSE(lvlprest_row_has_size(sized, 300));
+   TEST_ASSERT_TRUE(lvlprest_row_has_size(sized, 4));
+   TEST_ASSERT_TRUE(lvlprest_row_has_size(sized, 5));
+   TEST_ASSERT_FALSE(lvlprest_row_has_size(sized, 6));
+
+   TEST_ASSERT_TRUE(lvlprest_row_size(sized, 168, &x, &y));
+   TEST_ASSERT_EQUAL_INT(10, x);
+   TEST_ASSERT_EQUAL_INT(14, y);
+   TEST_ASSERT_FALSE(lvlprest_row_size(sized, 99, &x, &y));
+
+   /* A table that doesn't say isn't saying 0. */
+   TEST_ASSERT_TRUE(lvlprest_row_has_size(table, 1));
+   TEST_ASSERT_FALSE(lvlprest_row_size(table, 1, &x, &y));
+}
+
 int main(void)
 {
    UNITY_BEGIN();
-   RUN_TEST(test_empty_slot_is_the_first_blank_or_zero_cell);
-   RUN_TEST(test_empty_slot_is_none_when_all_six_are_used);
    RUN_TEST(test_get_cell_copies_one_cell);
    RUN_TEST(test_with_cell_changes_only_that_cell);
    RUN_TEST(test_with_cell_replaces_the_last_cell_of_a_file_with_no_newline);
@@ -359,5 +390,7 @@ int main(void)
    RUN_TEST(test_removing_is_refused_for_an_only_map_and_unusual_rows);
    RUN_TEST(test_remove_then_insert_at_the_same_slot_is_byte_identical);
    RUN_TEST(test_inserting_refuses_a_value_that_would_break_the_row);
+   RUN_TEST(test_a_hole_is_a_blank_or_zero_cell_below_files);
+   RUN_TEST(test_a_row_has_a_size_unless_both_are_zero);
    return UNITY_END();
 }

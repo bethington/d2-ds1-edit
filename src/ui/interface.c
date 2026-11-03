@@ -94,9 +94,14 @@ static void interface_delete_map(int gi, int ei)
    char error[512] = "", path[256];
 
    snprintf(path, sizeof(path), "%s", ab->groups[gi].entries[ei].ds1_path);
+   if (ds1_manager_delete_check(gi, ei, error, sizeof(error)) != 0)
+   {
+      interface_map_op_failed("Delete Map", "This map can't be deleted.", error);
+      return;
+   }
    if (!interface_confirm_map_op("Delete Map", "Delete %s?", path,
-         "This moves the map's file to the project's backup folder and clears its "
-         "slot in LvlPrest.txt. Map > Restore from Backup brings it back.", TRUE))
+         "This moves the map's file to the project's backup folder and takes it out of "
+         "its row in LvlPrest.txt. Map > Restore from Backup brings it back.", TRUE))
       return;
 
    /* ds1_manager_delete removes the row, then finds the open map's row again by
@@ -170,7 +175,7 @@ static void interface_remove_map(int gi, int ei)
       return;
 
    if (ds1_manager_remove_slot(gi, ei, error, sizeof(error)) != 0)
-      interface_map_op_failed("Remove from Project", "The slot wasn't cleared.", error);
+      interface_map_op_failed("Remove from Project", "The map wasn't taken out of the row.", error);
 }
 
 static void interface_restore_slot(int gi, int ei)

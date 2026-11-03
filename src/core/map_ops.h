@@ -48,9 +48,31 @@ int map_ops_write_empty_ds1(const char * path, int width, int height, int act);
 
 /* May a map be added to, or taken from, this row of this table? 0, or -1 with a
  * sentence. Rows whose Files doesn't match their cells choose maps by their own rules,
- * and the game crashes on some edits to them. */
+ * and the game crashes on some edits to them. A table with no Files or File column,
+ * or a row with an empty cell below Files, is refused with a sentence saying so. */
 int map_ops_check_register(char * table, int def, char * error, int cap);
 int map_ops_check_unregister(char * table, int def, const char * ds1_path, char * error, int cap);
+/* As map_ops_check_register, and refuses an empty map on a whole level: a row with no
+ * size, whose every map must work as the level. Clone uses map_ops_check_register. */
+int map_ops_check_new_empty(char * table, int def, char * error, int cap);
+/* As map_ops_check_unregister, for Delete of a New map: a map in a cell past Files is
+ * allowed too, as long as Files is 1 or more, since the random pick never reads it. */
+int map_ops_check_unregister_new(char * table, int def, const char * ds1_path, char * error, int cap);
+
+/* The New and Clone dialog's status row fits about 62 glyphs. Replaces a refusal from
+ * the checks above with a form that fits, unless it already does. */
+void map_ops_dialog_status(char * table, int def, char * sentence, int cap);
+
+/* Sets *width and *height from the row's SizeX and SizeY, each plus one since the
+ * table has the same numbers as a DS1 header. One that is 0 or past the size limit,
+ * or a row that isn't there, leaves its value alone. */
+void map_ops_default_size(char * table, int def, int * width, int * height);
+
+/* 1 if the project's table, or the seed if the project has none, lists this whole path
+ * under this Def. Such a map needs no register. 0 if not or if neither can be read, and
+ * registering then says why. */
+int map_ops_lists_map(const char * project_dir, const char * seed, int def,
+                      const char * ds1_path);
 
 /* Add ds1_path to this Def's row as its last map and raise Files. */
 int map_ops_register(const char * project_dir, const char * seed, int def,
@@ -60,6 +82,11 @@ int map_ops_register(const char * project_dir, const char * seed, int def,
  * not an error. */
 int map_ops_unregister(const char * project_dir, const char * seed, int def,
                        const char * ds1_path, char * error, int cap);
+/* As map_ops_unregister, for Delete of a New map only: a copy in a cell past Files is
+ * cleared without moving anything or changing Files. Remove keeps refusing those: a
+ * game map there can be used by the row's own rules, as a Wild Border's are. */
+int map_ops_unregister_new(const char * project_dir, const char * seed, int def,
+                           const char * ds1_path, char * error, int cap);
 /* Put back the copies of ds1_path's whole path the game lists, each at its own File
  * column or at the end if the row is shorter, raising Files. */
 int map_ops_restore_slot(const char * project_dir, const char * seed, char * game_table,
