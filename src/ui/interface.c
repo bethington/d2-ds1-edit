@@ -781,19 +781,54 @@ typedef struct PROFILE_FORM
    char wrapper[PROJECT_PATH_MAX];
 } PROFILE_FORM;
 
+#define PROFILE_INSTALLS_MAX (2 + MAX_MPQ_FILE)
+
+/* What a test folder can't overlap: both d2_install values, and the folder of each
+ * archive, since archives can be listed by hand from elsewhere. An archive in a root
+ * folder adds nothing, or every folder on that disk would be refused. The count. */
+static int interface_profile_installs(const char **installs)
+{
+   static char folders[MAX_MPQ_FILE][PROJECT_PATH_MAX];
+   int i, n = 0;
+
+   installs[n++] = glb_config.d2_install;
+   installs[n++] = glb_project.d2_install;
+   for (i = 0; i < MAX_MPQ_FILE; i++)
+   {
+      const char *file = glb_config.mpq_file[i];
+      const char *end, *back;
+      size_t len;
+
+      if (file == NULL)
+         continue;
+      end = strrchr(file, '/');
+      back = strrchr(file, '\\');
+      if (back != NULL && (end == NULL || back > end))
+         end = back;
+      if (end == NULL)
+         continue;
+      len = (size_t) (end - file);
+      if (len == 0 || (len == 2 && file[1] == ':') || len >= sizeof(folders[i]))
+         continue;
+      memcpy(folders[i], file, len);
+      folders[i][len] = '\0';
+      installs[n++] = folders[i];
+   }
+   return n;
+}
+
 static int interface_profile_check(char *status, int cap, void *ctx)
 {
    const PROFILE_FORM *f = (const PROFILE_FORM *) ctx;
    GAME_PROFILE_S p;
-   const char *installs[2];
+   const char *installs[PROFILE_INSTALLS_MAX];
+   int count = interface_profile_installs(installs);
 
    p.game_dir = f->dir;
    p.exe = f->exe;
    p.args = f->args;
    p.wrapper = f->wrapper;
-   installs[0] = glb_config.d2_install;
-   installs[1] = glb_project.d2_install;
-   return game_profile_check(&p, installs, 2, status, cap);
+   return game_profile_check(&p, glb_project.path, installs, count, status, cap);
 }
 
 /* Edit the test copy of the game and how it starts. 1 if the profile was stored,
@@ -905,9 +940,9 @@ static void interface_project_settings(void)
 static void interface_build_and_test(void)
 {
    GAME_PROFILE_S p;
-   const char *installs[2];
+   const char *installs[PROFILE_INSTALLS_MAX];
    char error[2048];
-   int files = 0;
+   int count, files = 0;
 
    if (!glb_project.is_open)
       return;
@@ -918,10 +953,9 @@ static void interface_build_and_test(void)
    p.exe = glb_project.test_exe;
    p.args = glb_project.test_args;
    p.wrapper = glb_project.test_wrapper;
-   installs[0] = glb_config.d2_install;
-   installs[1] = glb_project.d2_install;
+   count = interface_profile_installs(installs);
    error[0] = '\0';
-   if (game_profile_check(&p, installs, 2, error, (int) sizeof(error)) != 0)
+   if (game_profile_check(&p, glb_project.path, installs, count, error, (int) sizeof(error)) != 0)
    {
       /* The dialog says what's wrong. A cancel there stops the test. */
       if (!interface_launch_profile())

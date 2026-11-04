@@ -30,6 +30,9 @@
 
 CONFIG_S glb_config;
 
+#define PROJECT_REFUSAL \
+   "The test folder can't be your project folder, or contain it or sit inside it. " \
+   "Make a separate copy of the game and choose that."
 #define ARGS_REFUSAL \
    "The test arguments need -direct and -txt, or the game ignores the project."
 
@@ -76,7 +79,13 @@ static GAME_PROFILE_S profile(const char *dir, const char *exe, const char *args
 static int check(const GAME_PROFILE_S *p, const char *const *installs, int n)
 {
    err[0] = 0;
-   return game_profile_check(p, installs, n, err, sizeof(err));
+   return game_profile_check(p, NULL, installs, n, err, sizeof(err));
+}
+
+static int check_project(const GAME_PROFILE_S *p, const char *project_dir)
+{
+   err[0] = 0;
+   return game_profile_check(p, project_dir, NULL, 0, err, sizeof(err));
 }
 
 void test_a_complete_profile_is_accepted(void)
@@ -196,30 +205,33 @@ void test_a_relative_folder_or_one_with_a_parent_reference_is_refused(void)
    TEST_ASSERT_EQUAL_INT(1, tt_count_entries(game));
 }
 
+/* A junction on Windows, a symlink elsewhere. 0 if this system can't make one here. */
+static int make_link(const char *link, const char *target)
+{
+   char cmd[3000];
+#ifdef WIN32
+   size_t i;
+   char a[1300], b[1300];
+
+   snprintf(a, sizeof(a), "%s", link);
+   snprintf(b, sizeof(b), "%s", target);
+   for (i = 0; a[i]; i++) if (a[i] == '/') a[i] = '\\';
+   for (i = 0; b[i]; i++) if (b[i] == '/') b[i] = '\\';
+   snprintf(cmd, sizeof(cmd), "cmd /c mklink /J \"%s\" \"%s\" >nul 2>nul", a, b);
+#else
+   snprintf(cmd, sizeof(cmd), "ln -s \"%s\" \"%s\"", target, link);
+#endif
+   return system(cmd) == 0;
+}
+
 void test_a_link_to_an_install_is_refused(void)
 {
    GAME_PROFILE_S p;
-   char link[1300], cmd[2800];
    const char *installs[1];
-   int rc;
+   char link[1300];
 
    snprintf(link, sizeof(link), "%s/link", abs_root);
-#ifdef WIN32
-   {
-      size_t i;
-      char a[1300], b[1300];
-
-      snprintf(a, sizeof(a), "%s", link);
-      snprintf(b, sizeof(b), "%s", game);
-      for (i = 0; a[i]; i++) if (a[i] == '/') a[i] = '\\';
-      for (i = 0; b[i]; i++) if (b[i] == '/') b[i] = '\\';
-      snprintf(cmd, sizeof(cmd), "cmd /c mklink /J \"%s\" \"%s\" >nul 2>nul", a, b);
-   }
-#else
-   snprintf(cmd, sizeof(cmd), "ln -s \"%s\" \"%s\"", game, link);
-#endif
-   rc = system(cmd);
-   if (rc != 0) TEST_IGNORE_MESSAGE("this system can't make a link here");
+   if (!make_link(link, game)) TEST_IGNORE_MESSAGE("this system can't make a link here");
 
    p = profile(link, "Game.exe", "-direct -txt");
    installs[0] = game;
@@ -321,6 +333,103 @@ void test_the_write_check_leaves_nothing_behind(void)
 
    TEST_ASSERT_EQUAL_INT(0, check(&p, NULL, 0));
    TEST_ASSERT_EQUAL_INT(1, tt_count_entries(game));   /* only Game.exe */
+}
+
+void test_the_test_folder_may_not_be_the_project(void)
+{
+   GAME_PROFILE_S p = profile(game, "Game.exe", "-direct -txt");
+   char spelled[1300];
+
+   TEST_ASSERT_EQUAL_INT(-1, check_project(&p, game));
+   TEST_ASSERT_EQUAL_STRING(PROJECT_REFUSAL, err);
+   snprintf(spelled, sizeof(spelled), "%s/", game);
+   TEST_ASSERT_EQUAL_INT(-1, check_project(&p, spelled));
+   TEST_ASSERT_EQUAL_STRING(PROJECT_REFUSAL, err);
+
+   /* No project open: nothing to compare. */
+   TEST_ASSERT_EQUAL_INT(0, check_project(&p, NULL));
+   TEST_ASSERT_EQUAL_INT(0, check_project(&p, ""));
+}
+
+void test_a_test_folder_inside_the_project_is_refused(void)
+{
+   GAME_PROFILE_S p = profile(game, "Game.exe", "-direct -txt");
+
+   TEST_ASSERT_EQUAL_INT(-1, check_project(&p, abs_root));
+   TEST_ASSERT_EQUAL_STRING(PROJECT_REFUSAL, err);
+}
+
+void test_a_project_inside_the_test_folder_is_refused(void)
+{
+   GAME_PROFILE_S p = profile(game, "Game.exe", "-direct -txt");
+   char inner[1300];
+
+   snprintf(inner, sizeof(inner), "%s/Mod", game);
+   TEST_ASSERT_TRUE(tt_mkdir(inner));
+   TEST_ASSERT_EQUAL_INT(-1, check_project(&p, inner));
+   TEST_ASSERT_EQUAL_STRING(PROJECT_REFUSAL, err);
+}
+
+void test_a_sibling_project_with_the_same_prefix_is_accepted(void)
+{
+   GAME_PROFILE_S p = profile(game, "Game.exe", "-direct -txt");
+   char sibling[1300];
+
+   snprintf(sibling, sizeof(sibling), "%s-mod", game);
+   TEST_ASSERT_TRUE(tt_mkdir(sibling));
+   TEST_ASSERT_EQUAL_INT(0, check_project(&p, sibling));
+}
+
+void test_links_between_the_test_folder_and_the_project_are_refused(void)
+{
+   GAME_PROFILE_S p = profile(game, "Game.exe", "-direct -txt");
+   char link[1300], inner[1300];
+
+   /* The project is a link to the test folder. */
+   snprintf(link, sizeof(link), "%s/link", abs_root);
+   if (!make_link(link, game)) TEST_IGNORE_MESSAGE("this system can't make a link here");
+   TEST_ASSERT_EQUAL_INT(-1, check_project(&p, link));
+   TEST_ASSERT_EQUAL_STRING(PROJECT_REFUSAL, err);
+
+   /* The test folder is a link to the project. */
+   p.game_dir = link;
+   TEST_ASSERT_EQUAL_INT(-1, check_project(&p, game));
+   TEST_ASSERT_EQUAL_STRING(PROJECT_REFUSAL, err);
+
+   /* The project, by a link, sits inside the test folder. */
+   p.game_dir = game;
+   snprintf(inner, sizeof(inner), "%s/Mod", game);
+   TEST_ASSERT_TRUE(tt_mkdir(inner));
+   snprintf(link, sizeof(link), "%s/link-in", abs_root);
+   TEST_ASSERT_TRUE(make_link(link, inner));
+   TEST_ASSERT_EQUAL_INT(-1, check_project(&p, link));
+   TEST_ASSERT_EQUAL_STRING(PROJECT_REFUSAL, err);
+
+   /* The test folder, by a link, sits inside the project. */
+   p.game_dir = link;
+   TEST_ASSERT_EQUAL_INT(-1, check_project(&p, game));
+   TEST_ASSERT_EQUAL_STRING(PROJECT_REFUSAL, err);
+}
+
+void test_a_data_folder_linked_elsewhere_is_seen_through(void)
+{
+   GAME_PROFILE_S p = profile(game, "Game.exe", "-direct -txt");
+   const char *installs[1];
+   char other[1300], other_data[1400], link[1300];
+
+   snprintf(other, sizeof(other), "%s/other", abs_root);
+   snprintf(other_data, sizeof(other_data), "%s/Data", other);
+   TEST_ASSERT_TRUE(tt_mkdir(other));
+   TEST_ASSERT_TRUE(tt_mkdir(other_data));
+   snprintf(link, sizeof(link), "%s/DATA", game);
+   if (!make_link(link, other_data)) TEST_IGNORE_MESSAGE("this system can't make a link here");
+
+   TEST_ASSERT_EQUAL_INT(-1, check_project(&p, other));
+   TEST_ASSERT_EQUAL_STRING(PROJECT_REFUSAL, err);
+
+   installs[0] = other;
+   TEST_ASSERT_EQUAL_INT(-1, check(&p, installs, 1));
+   TEST_ASSERT_NOT_NULL(strstr(err, "install"));
 }
 
 /* ---- game_install ----------------------------------------------------- */
@@ -763,6 +872,218 @@ void test_manifest_lines_that_win32_would_normalise_or_that_name_no_file_are_ign
    expect_game_text("DATA/GLOBAL/TILES/A.ds1", "a");
 }
 
+static void expect_text_at(const char *path, const char *text)
+{
+   char *got = read_text(path);
+
+   TEST_ASSERT_NOT_NULL_MESSAGE(got, path);
+   TEST_ASSERT_EQUAL_STRING(text, got);
+   free(got);
+}
+
+/* The project's maps with a manifest naming them, as a last install into the project
+   itself would have left it. */
+#define OWN_MANIFEST "DATA/GLOBAL/TILES/a.ds1\nDATA/GLOBAL/EXCEL/LvlPrest.txt\n"
+
+static void make_project_with_own_manifest(void)
+{
+   make_project();
+   put("DATA/GLOBAL/TILES/a.ds1", "mine");
+   put("DATA/GLOBAL/EXCEL/LvlPrest.txt", "my table");
+   put("ds1edit-installed.txt", OWN_MANIFEST);
+}
+
+static void expect_project_untouched(void)
+{
+   char path[1400];
+
+   snprintf(path, sizeof(path), "%s/DATA/GLOBAL/TILES/a.ds1", proj);
+   expect_text_at(path, "mine");
+   snprintf(path, sizeof(path), "%s/DATA/GLOBAL/TILES", proj);
+   TEST_ASSERT_EQUAL_INT(1, tt_count_entries(path));
+   snprintf(path, sizeof(path), "%s/DATA/GLOBAL/EXCEL/LvlPrest.txt", proj);
+   expect_text_at(path, "my table");
+   snprintf(path, sizeof(path), "%s/DATA/GLOBAL/EXCEL", proj);
+   TEST_ASSERT_EQUAL_INT(1, tt_count_entries(path));
+   snprintf(path, sizeof(path), "%s/ds1edit-installed.txt", proj);
+   expect_text_at(path, OWN_MANIFEST);
+}
+
+static void expect_install_refused(const char *project_dir, const char *game_dir)
+{
+   err[0] = 0;
+   TEST_ASSERT_EQUAL_INT(-1, game_install(project_dir, game_dir, &installed, err, sizeof(err)));
+   TEST_ASSERT_EQUAL_STRING(PROJECT_REFUSAL, err);
+}
+
+void test_an_install_into_the_project_itself_is_refused_and_keeps_the_maps(void)
+{
+   make_project_with_own_manifest();
+   expect_install_refused(proj, proj);
+   expect_project_untouched();
+}
+
+void test_an_install_into_a_folder_inside_the_project_is_refused(void)
+{
+   char inner[1400];
+
+   make_project_with_own_manifest();
+   snprintf(inner, sizeof(inner), "%s/copy", proj);
+   TEST_ASSERT_TRUE(tt_mkdir(inner));
+   expect_install_refused(proj, inner);
+   TEST_ASSERT_EQUAL_INT(0, tt_count_entries(inner));
+   expect_project_untouched();
+}
+
+void test_an_install_from_a_project_inside_the_test_folder_is_refused(void)
+{
+   char inner[1100];
+
+   snprintf(inner, sizeof(inner), "%s/Mod", game);
+   TEST_ASSERT_TRUE(tt_mkdir(inner));
+   snprintf(proj, sizeof(proj), "%s", inner);
+   put("Global/Tiles/a.ds1", "mine");
+   expect_install_refused(inner, game);
+   TEST_ASSERT_EQUAL_INT(2, tt_count_entries(game));   /* Game.exe and Mod */
+}
+
+void test_an_install_through_a_link_to_the_project_is_refused(void)
+{
+   char link[1200];
+
+   make_project_with_own_manifest();
+   snprintf(link, sizeof(link), "%s/link", abs_root);
+   if (!make_link(link, proj)) TEST_IGNORE_MESSAGE("this system can't make a link here");
+   expect_install_refused(proj, link);
+   expect_project_untouched();
+   expect_install_refused(link, proj);
+   expect_project_untouched();
+}
+
+void test_an_install_from_a_project_spelled_relative_is_refused(void)
+{
+   char relative[1300];
+
+   make_project_with_own_manifest();
+   snprintf(relative, sizeof(relative), "%s/proj", root);
+   expect_install_refused(relative, proj);
+   expect_project_untouched();
+}
+
+void test_an_install_through_a_data_link_into_the_project_is_refused(void)
+{
+   char link[1400], target[1400];
+
+   make_project_with_own_manifest();
+   snprintf(link, sizeof(link), "%s/DATA", game);
+   snprintf(target, sizeof(target), "%s/DATA", proj);
+   if (!make_link(link, target)) TEST_IGNORE_MESSAGE("this system can't make a link here");
+   put_game("ds1edit-installed.txt", OWN_MANIFEST);
+   expect_install_refused(proj, game);
+   expect_project_untouched();
+}
+
+void test_an_install_into_a_missing_test_folder_makes_nothing(void)
+{
+   char missing[1200];
+
+   make_project();
+   put("Global/Tiles/a.ds1", "mine");
+   snprintf(missing, sizeof(missing), "%s/nope", abs_root);
+   TEST_ASSERT_EQUAL_INT(-1, game_install(proj, missing, &installed, err, sizeof(err)));
+   TEST_ASSERT_NOT_NULL_MESSAGE(strstr(err, "nope"), err);
+   TEST_ASSERT_FALSE(tt_file_exists(missing));
+}
+
+/* ---- names in any case ------------------------------------------------ */
+
+static int game_entries(const char *rel)
+{
+   char path[1400];
+
+   snprintf(path, sizeof(path), "%s/%s", game, rel);
+   return tt_count_entries(path);
+}
+
+void test_a_copy_with_lowercase_folders_gets_no_second_data_folder(void)
+{
+   make_project();
+   put("Global/Tiles/Act1/A.ds1", "a");
+   put("Global/Excel/LvlPrest.txt", "t");
+   put_game("data/global/tiles/Act1/Theirs.dt1", "theirs");
+   put_game("data/global/excel/Armor.txt", "the game's");
+
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, install(), err);
+   expect_game_text("data/global/tiles/Act1/A.ds1", "a");
+   expect_game_text("data/global/excel/LvlPrest.txt", "t");
+   TEST_ASSERT_EQUAL_INT(3, tt_count_entries(game));   /* Game.exe, data, manifest */
+   TEST_ASSERT_EQUAL_INT(1, game_entries("data"));
+   TEST_ASSERT_EQUAL_INT(2, game_entries("data/global"));
+   TEST_ASSERT_EQUAL_INT(1, game_entries("data/global/tiles"));
+   TEST_ASSERT_EQUAL_INT(2, game_entries("data/global/tiles/Act1"));
+   TEST_ASSERT_EQUAL_INT(2, game_entries("data/global/excel"));
+}
+
+void test_an_empty_project_in_a_lowercase_copy_makes_no_second_data_folder(void)
+{
+   make_project();
+   put_game("data/x.txt", "theirs");
+
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, install(), err);
+   TEST_ASSERT_EQUAL_INT(3, tt_count_entries(game));
+   TEST_ASSERT_TRUE(game_has("data/GLOBAL/TILES"));
+   TEST_ASSERT_TRUE(game_has("data/GLOBAL/EXCEL"));
+}
+
+void test_a_second_install_in_a_lowercase_copy_removes_what_the_first_made(void)
+{
+   char path[1400];
+
+   make_project();
+   put("Global/Tiles/Keep.ds1", "keep");
+   put("Global/Tiles/Gone.ds1", "gone");
+   put_game("data/global/tiles/Theirs.dt1", "theirs");
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, install(), err);
+   TEST_ASSERT_TRUE(game_has("data/global/tiles/Gone.ds1"));
+
+   snprintf(path, sizeof(path), "%s/Global/Tiles/Gone.ds1", proj);
+   TEST_ASSERT_EQUAL_INT(0, remove(path));
+   put("Global/Tiles/Keep.ds1", "changed");
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, install(), err);
+   TEST_ASSERT_FALSE(game_has("data/global/tiles/Gone.ds1"));
+   expect_game_text("data/global/tiles/Keep.ds1", "changed");
+   expect_game_text("data/global/tiles/Theirs.dt1", "theirs");
+   TEST_ASSERT_EQUAL_INT(2, game_entries("data/global/tiles"));
+}
+
+void test_a_tables_bin_of_any_case_is_removed(void)
+{
+   make_project();
+   put("Global/Excel/LvlPrest.txt", "t");
+   put_game("DATA/GLOBAL/EXCEL/lvlprest.bin", "the game's name for it");
+   put_game("DATA/GLOBAL/EXCEL/LVLPREST.BIN", "another spelling");
+   put_game("DATA/GLOBAL/EXCEL/armor.bin", "not this one");
+
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, install(), err);
+   TEST_ASSERT_FALSE(game_has("DATA/GLOBAL/EXCEL/lvlprest.bin"));
+   TEST_ASSERT_FALSE(game_has("DATA/GLOBAL/EXCEL/LVLPREST.BIN"));
+   expect_game_text("DATA/GLOBAL/EXCEL/armor.bin", "not this one");
+   TEST_ASSERT_EQUAL_INT(2, game_entries("DATA/GLOBAL/EXCEL"));
+}
+
+void test_a_table_of_another_case_is_replaced_not_doubled(void)
+{
+   make_project();
+   put("Global/Excel/LvlPrest.txt", "mine");
+   put_game("data/global/excel/lvlprest.txt", "the old one");
+
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, install(), err);
+   TEST_ASSERT_EQUAL_INT(1, game_entries("data/global/excel"));
+#ifndef WIN32
+   expect_game_text("data/global/excel/lvlprest.txt", "mine");
+#endif
+}
+
 /* ---- game_start ------------------------------------------------------- */
 
 static void make_executable(const char *path)
@@ -937,6 +1258,12 @@ int main(void)
    RUN_TEST(test_args_need_direct_and_txt_as_whole_words_in_any_case);
    RUN_TEST(test_a_folder_that_cant_be_written_is_refused);
    RUN_TEST(test_the_write_check_leaves_nothing_behind);
+   RUN_TEST(test_the_test_folder_may_not_be_the_project);
+   RUN_TEST(test_a_test_folder_inside_the_project_is_refused);
+   RUN_TEST(test_a_project_inside_the_test_folder_is_refused);
+   RUN_TEST(test_a_sibling_project_with_the_same_prefix_is_accepted);
+   RUN_TEST(test_links_between_the_test_folder_and_the_project_are_refused);
+   RUN_TEST(test_a_data_folder_linked_elsewhere_is_seen_through);
    RUN_TEST(test_tiles_and_tables_land_in_their_folders);
    RUN_TEST(test_both_folders_are_made_for_a_project_with_no_tables);
    RUN_TEST(test_an_empty_project_still_installs_and_makes_the_folders);
@@ -952,6 +1279,18 @@ int main(void)
    RUN_TEST(test_a_folder_in_a_files_place_before_any_change_is_not_called_partial);
    RUN_TEST(test_a_stale_staging_file_is_replaced_not_written_through);
    RUN_TEST(test_manifest_lines_that_win32_would_normalise_or_that_name_no_file_are_ignored);
+   RUN_TEST(test_an_install_into_the_project_itself_is_refused_and_keeps_the_maps);
+   RUN_TEST(test_an_install_into_a_folder_inside_the_project_is_refused);
+   RUN_TEST(test_an_install_from_a_project_inside_the_test_folder_is_refused);
+   RUN_TEST(test_an_install_through_a_link_to_the_project_is_refused);
+   RUN_TEST(test_an_install_from_a_project_spelled_relative_is_refused);
+   RUN_TEST(test_an_install_through_a_data_link_into_the_project_is_refused);
+   RUN_TEST(test_an_install_into_a_missing_test_folder_makes_nothing);
+   RUN_TEST(test_a_copy_with_lowercase_folders_gets_no_second_data_folder);
+   RUN_TEST(test_an_empty_project_in_a_lowercase_copy_makes_no_second_data_folder);
+   RUN_TEST(test_a_second_install_in_a_lowercase_copy_removes_what_the_first_made);
+   RUN_TEST(test_a_tables_bin_of_any_case_is_removed);
+   RUN_TEST(test_a_table_of_another_case_is_replaced_not_doubled);
    RUN_TEST(test_the_game_gets_its_folder_and_every_argument);
    RUN_TEST(test_a_wrapper_runs_first_and_gets_the_exe_then_the_arguments);
    RUN_TEST(test_a_missing_executable_is_refused_with_the_command_line);

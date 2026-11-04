@@ -1,7 +1,13 @@
 #ifndef WIN32
-   /* fork, setsid and realpath, under -std=c99 as well as the GNU modes. */
-   #if !defined(_GNU_SOURCE) && !defined(_POSIX_C_SOURCE)
-      #define _POSIX_C_SOURCE 200809L
+   /* fork and setsid, and realpath, which glibc declares only for X/Open or GNU, under
+      -std=c99 as well as the GNU modes. */
+   #ifndef _GNU_SOURCE
+      #ifndef _POSIX_C_SOURCE
+         #define _POSIX_C_SOURCE 200809L
+      #endif
+      #ifndef _XOPEN_SOURCE
+         #define _XOPEN_SOURCE 700
+      #endif
    #endif
 #endif
 
@@ -24,12 +30,19 @@
    #include <sys/wait.h>
 #endif
 
+#include "platform.h"
 #include "core/file_copy.h"
 #include "core/game_launch.h"
 #include "core/mpq_build.h"
 #include "core/project.h"
 
 #define WRITE_TEST_NAME "ds1edit-write-test.tmp"
+#define TILES_DIR       "DATA/GLOBAL/TILES"
+#define EXCEL_DIR       "DATA/GLOBAL/EXCEL"
+#define PATH_CAP        1100
+#define PROJECT_OVERLAP "The test folder can't be your project folder, or contain it " \
+                        "or sit inside it. Make a separate copy of the game and " \
+                        "choose that."
 
 static int fail(char *error, int cap, const char *fmt, const char *a)
 {
@@ -77,6 +90,60 @@ static int overlaps(const char *a, const char *b)
    return project_path_is_inside(a, b) || project_path_is_inside(b, a);
 }
 
+// dir/rel+tail into out. 0 when it doesn't fit.
+static int join_path(char *out, int cap, const char *dir, const char *rel, const char *tail)
+{
+   return snprintf(out, (size_t) cap, "%s/%s%s", dir, rel, tail) < cap;
+}
+
+// game_dir/rel+tail, with each part of rel that exists already spelled as it is on disk,
+// so a copy holding data/global doesn't get a second DATA/GLOBAL on a case-sensitive
+// disk. A part that isn't there keeps rel's spelling, and so does the last part unless
+// name_too is set. 0 when it doesn't fit.
+static int disk_path(const char *game_dir, const char *rel, int name_too, const char *tail,
+                     char *out, int cap)
+{
+   char cur[PATH_CAP], next[PATH_CAP], part[PATH_CAP];
+   const char *p = rel;
+   int found = 1;
+
+   if (snprintf(cur, sizeof(cur), "%s", game_dir) >= (int) sizeof(cur)) return 0;
+   for (;;)
+   {
+      size_t n = strcspn(p, "/");
+      int last = p[n] == 0;
+
+      if (n >= sizeof(part)) return 0;
+      memcpy(part, p, n);
+      part[n] = 0;
+      if (!join_path(next, sizeof(next), cur, part, "")) return 0;
+      if (found && (!last || name_too))
+         found = ds1_path_resolve_nocase(cur, part, next, sizeof(next));
+      strcpy(cur, next);
+      if (last) break;
+      p += n + 1;
+   }
+   return snprintf(out, (size_t) cap, "%s%s", cur, tail) < cap;
+}
+
+// Does the test folder overlap this folder? By spelling, by real location, and through
+// a link on the way to any folder an install writes in.
+static int test_folder_overlaps(const char *game_dir, const char *other)
+{
+   static const char * const written[] = { "DATA", "DATA/GLOBAL", TILES_DIR, EXCEL_DIR };
+   char real_other[PATH_CAP], real[PATH_CAP], place[PATH_CAP];
+   int i;
+
+   if (overlaps(game_dir, other)) return 1;
+   if (!resolve_dir(other, real_other, sizeof(real_other))) return 0;
+   if (resolve_dir(game_dir, real, sizeof(real)) && overlaps(real, real_other)) return 1;
+   for (i = 0; i < 4; i++)
+      if (disk_path(game_dir, written[i], 1, "", place, sizeof(place)) &&
+          resolve_dir(place, real, sizeof(real)) && overlaps(real, real_other))
+         return 1;
+   return 0;
+}
+
 // Does `args` hold `word` as a whole, space-separated word, in any case?
 static int args_have_word(const char *args, const char *word)
 {
@@ -101,12 +168,11 @@ static int args_have_word(const char *args, const char *word)
    return 0;
 }
 
-int game_profile_check(const GAME_PROFILE_S * p, const char * const * installs, int install_count,
+int game_profile_check(const GAME_PROFILE_S * p, const char * project_dir,
+                       const char * const * installs, int install_count,
                        char * error, int cap)
 {
-   char path[1100];
-   char real_game[1100], real_install[1100];
-   int game_resolved;
+   char path[PATH_CAP];
    FILE *fp;
    int i;
 
@@ -123,15 +189,15 @@ int game_profile_check(const GAME_PROFILE_S * p, const char * const * installs, 
                   "The game program must be a file name inside the test folder, "
                   "such as Game.exe.");
 
-   // Compare the spelling, and the real locations too, so a link or junction
-   // to an install is caught.
-   game_resolved = resolve_dir(p->game_dir, real_game, sizeof(real_game));
+   // An install into the project would list the author's maps as its own files, and
+   // the next one would delete them.
+   if (has_text(project_dir) && test_folder_overlaps(p->game_dir, project_dir))
+      return fail(error, cap, "%s", PROJECT_OVERLAP);
+
    for (i = 0; installs != NULL && i < install_count; i++)
    {
       if (!has_text(installs[i])) continue;
-      if (overlaps(p->game_dir, installs[i]) ||
-          (game_resolved && resolve_dir(installs[i], real_install, sizeof(real_install)) &&
-           overlaps(real_game, real_install)))
+      if (test_folder_overlaps(p->game_dir, installs[i]))
          return fail(error, cap, "%s",
                      "The test folder can't be your Diablo II install, or contain "
                      "it or sit inside it. Make a separate copy of the game and "
@@ -169,11 +235,8 @@ int game_profile_check(const GAME_PROFILE_S * p, const char * const * installs, 
 
 /* ---- install ---------------------------------------------------------- */
 
-#define TILES_DIR     "DATA/GLOBAL/TILES"
-#define EXCEL_DIR     "DATA/GLOBAL/EXCEL"
 #define MANIFEST_NAME "ds1edit-installed.txt"
 #define STAGE_EXT     ".ds1edit-new"
-#define PATH_CAP      1100
 #define RUNNING_HINT  "The game may be running. Close it and try again."
 #define PARTLY_HINT_HEAD "The test copy is only partly installed."
 #define PARTLY_HINT   PARTLY_HINT_HEAD " Close the game, then run Build & Test again."
@@ -258,12 +321,6 @@ static void install_list_free(INSTALL_LIST_S *l)
    free(l->items);
 }
 
-// dir/rel+tail into out. 0 when it doesn't fit.
-static int join_path(char *out, int cap, const char *dir, const char *rel, const char *tail)
-{
-   return snprintf(out, (size_t) cap, "%s/%s%s", dir, rel, tail) < cap;
-}
-
 static int starts_with_nocase(const char *s, const char *prefix)
 {
    for (; *prefix != 0; s++, prefix++)
@@ -331,7 +388,7 @@ static void remove_staged(const char *game_dir, const INSTALL_LIST_S *l, int fro
    int i;
 
    for (i = from; i < l->count; i++)
-      if (join_path(path, sizeof(path), game_dir, l->items[i].rel, STAGE_EXT))
+      if (disk_path(game_dir, l->items[i].rel, 0, STAGE_EXT, path, sizeof(path)))
          remove(path);
 }
 
@@ -472,13 +529,18 @@ int game_install(const char * project_dir, const char * game_dir, int * out_file
    INSTALL_LIST_S list;
    NAMES_S old;
    char stage[PATH_CAP], dst[PATH_CAP], bin[PATH_CAP];
-   int i, rc, removed = 0;
+   int i, rc, gone, removed = 0;
    FILE *fp;
 
    if (error != NULL && cap > 0) error[0] = 0;
    if (out_files != NULL) *out_files = 0;
    if (!has_text(project_dir) || !has_text(game_dir))
       return failf(error, cap, "Set the project and the test folder first.");
+   if (test_folder_overlaps(game_dir, project_dir))
+      return failf(error, cap, "%s", PROJECT_OVERLAP);
+   // A folder that isn't there can't be compared, and a game can't start from it.
+   if (!resolve_dir(game_dir, stage, sizeof(stage)))
+      return failf(error, cap, "Can't find the test folder %s.", game_dir);
 
    memset(&list, 0, sizeof(list));
    mpq_build_each_file(project_dir, install_collect, &list);
@@ -507,9 +569,9 @@ int game_install(const char * project_dir, const char * game_dir, int * out_file
    }
 
    // The two folders, even when the project has nothing for one of them.
-   if (!join_path(stage, sizeof(stage), game_dir, TILES_DIR "/x", "") ||
+   if (!disk_path(game_dir, TILES_DIR "/x", 0, "", stage, sizeof(stage)) ||
        !project_ensure_parent_dirs(stage) ||
-       !join_path(stage, sizeof(stage), game_dir, EXCEL_DIR "/x", "") ||
+       !disk_path(game_dir, EXCEL_DIR "/x", 0, "", stage, sizeof(stage)) ||
        !project_ensure_parent_dirs(stage))
    {
       install_list_free(&list);
@@ -520,7 +582,7 @@ int game_install(const char * project_dir, const char * game_dir, int * out_file
    // file left by a crash goes first: it could be a link to a file of the game's.
    for (i = 0; i < list.count; i++)
    {
-      join_path(stage, sizeof(stage), game_dir, list.items[i].rel, STAGE_EXT);
+      disk_path(game_dir, list.items[i].rel, 0, STAGE_EXT, stage, sizeof(stage));
       remove(stage);
       if (!project_ensure_parent_dirs(stage) ||
           file_copy_checked(list.items[i].source, stage) != FILE_COPY_OK)
@@ -545,7 +607,7 @@ int game_install(const char * project_dir, const char * game_dir, int * out_file
    // The last install's files go, and the compiled form of each table.
    for (i = 0; i < old.n; i++)
    {
-      join_path(dst, sizeof(dst), game_dir, old.v[i], "");
+      if (!disk_path(game_dir, old.v[i], 1, "", dst, sizeof(dst))) continue;
       if (is_directory(dst)) continue;   // only files were ever listed
       rc = remove_file(dst, &removed);
       if (rc != RM_OK)
@@ -560,20 +622,26 @@ int game_install(const char * project_dir, const char * game_dir, int * out_file
    for (i = 0; i < list.count; i++)
    {
       if (!list.items[i].is_table || !bin_rel(list.items[i].rel, bin, sizeof(bin))) continue;
-      join_path(dst, sizeof(dst), game_dir, bin, "");
-      rc = remove_file(dst, &removed);
-      if (rc != RM_OK)
+      // Every spelling: the game writes lvlprest.bin for LvlPrest.txt.
+      do
       {
-         remove_staged(game_dir, &list, 0);
-         install_list_free(&list);
-         return fail_removal(error, cap, rc, dst, removed);
-      }
+         gone = 0;
+         disk_path(game_dir, bin, 1, "", dst, sizeof(dst));
+         rc = remove_file(dst, &gone);
+         if (rc != RM_OK)
+         {
+            remove_staged(game_dir, &list, 0);
+            install_list_free(&list);
+            return fail_removal(error, cap, rc, dst, removed);
+         }
+         removed |= gone;
+      } while (gone);
    }
 
    for (i = 0; i < list.count; i++)
    {
-      join_path(stage, sizeof(stage), game_dir, list.items[i].rel, STAGE_EXT);
-      join_path(dst, sizeof(dst), game_dir, list.items[i].rel, "");
+      disk_path(game_dir, list.items[i].rel, 0, STAGE_EXT, stage, sizeof(stage));
+      disk_path(game_dir, list.items[i].rel, 1, "", dst, sizeof(dst));
       rc = put_in_place(stage, dst);
       if (rc != RM_OK)
       {
