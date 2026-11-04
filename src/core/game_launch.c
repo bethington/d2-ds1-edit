@@ -11,6 +11,7 @@
 #include <stdarg.h>
 #include <errno.h>
 #include <ctype.h>
+#include <sys/stat.h>
 
 #ifdef WIN32
    #define WIN32_LEAN_AND_MEAN
@@ -174,6 +175,8 @@ int game_profile_check(const GAME_PROFILE_S * p, const char * const * installs, 
 #define STAGE_EXT     ".ds1edit-new"
 #define PATH_CAP      1100
 #define RUNNING_HINT  "The game may be running. Close it and try again."
+#define PARTLY_HINT_HEAD "The test copy is only partly installed."
+#define PARTLY_HINT   PARTLY_HINT_HEAD " Close the game, then run Build & Test again."
 
 static int failf(char *error, int cap, const char *fmt, ...)
 {
@@ -269,26 +272,56 @@ static int starts_with_nocase(const char *s, const char *prefix)
    return 1;
 }
 
-// A manifest line may only name a file this install could have made.
+// A manifest line may only name a file this install could have made. Win32 drops
+// trailing dots and spaces from a name, so such a segment could name something else.
 static int manifest_line_ok(const char *line)
 {
+   const char *seg = line;
+
    if (project_path_is_rooted(line) || project_path_has_parent_ref(line))
       return 0;
    if (strchr(line, '\\') != NULL || strchr(line, ':') != NULL)
       return 0;
-   return starts_with_nocase(line, TILES_DIR "/") || starts_with_nocase(line, EXCEL_DIR "/");
+   if (!starts_with_nocase(line, TILES_DIR "/") && !starts_with_nocase(line, EXCEL_DIR "/"))
+      return 0;
+   for (;;)
+   {
+      size_t n = strcspn(seg, "/");
+
+      if (n == 0 || seg[n - 1] == '.' || seg[n - 1] == ' ')
+         return 0;   // an empty name, such as nothing after the folder
+      if (seg[n] == 0) return 1;
+      seg += n + 1;
+   }
 }
 
-// Delete a file. A file that isn't there is fine. 1 on success.
-static int remove_file(const char *path)
+#define RM_OK   0
+#define RM_BUSY 1   // would not go: probably in use
+#define RM_DIR  2   // a folder is where a file belongs
+
+static int is_directory(const char *path)
+{
+   struct stat st;
+
+   return stat(path, &st) == 0 && (st.st_mode & S_IFMT) == S_IFDIR;
+}
+
+// Delete a file. A file that isn't there is fine. A folder is never touched. *removed
+// is set to 1 when something was actually deleted.
+static int remove_file(const char *path, int *removed)
 {
    FILE *fp;
 
-   if (remove(path) == 0) return 1;
+   if (is_directory(path)) return RM_DIR;
+   if (remove(path) == 0)
+   {
+      if (removed != NULL) *removed = 1;
+      return RM_OK;
+   }
    fp = fopen(path, "rb");
-   if (fp == NULL) return errno == ENOENT;   // never was, or already gone
+   if (fp == NULL) return errno == ENOENT ? RM_OK : RM_BUSY;   // never was, or gone
    fclose(fp);
-   return 0;
+   return RM_BUSY;
 }
 
 // Remove the staging files of items [from, count).
@@ -313,17 +346,53 @@ static int bin_rel(const char *rel, char *out, int cap)
    return 1;
 }
 
-// Remove every file the last install listed. 0, or -1 when one wouldn't go.
-static int remove_listed(const char *game_dir)
+typedef struct NAMES_S
+{
+   char **v;
+   int n, cap;
+} NAMES_S;
+
+static int names_add(NAMES_S *s, const char *name)
+{
+   if (s->n == s->cap)
+   {
+      int cap = s->cap == 0 ? 32 : s->cap * 2;
+      char **v = (char **) realloc(s->v, sizeof(char *) * (size_t) cap);
+
+      if (v == NULL) return 0;
+      s->v = v;
+      s->cap = cap;
+   }
+   s->v[s->n] = dup_text(name);
+   if (s->v[s->n] == NULL) return 0;
+   s->n++;
+   return 1;
+}
+
+static void names_free(NAMES_S *s)
+{
+   int i;
+
+   for (i = 0; i < s->n; i++) free(s->v[i]);
+   free(s->v);
+}
+
+static int equal_nocase(const char *a, const char *b)
+{
+   return strlen(a) == strlen(b) && starts_with_nocase(a, b);
+}
+
+// The valid names of the last install's manifest. 0, or -1 when out of memory.
+static int read_manifest(const char *game_dir, NAMES_S *names)
 {
    char path[PATH_CAP], line[PATH_CAP];
    FILE *fp;
-   int ok = 1;
 
+   memset(names, 0, sizeof(*names));
    if (!join_path(path, sizeof(path), game_dir, MANIFEST_NAME, "")) return 0;
    fp = fopen(path, "rb");
    if (fp == NULL) return 0;
-   while (ok && fgets(line, sizeof(line), fp) != NULL)
+   while (fgets(line, sizeof(line), fp) != NULL)
    {
       size_t n = strlen(line);
 
@@ -337,26 +406,73 @@ static int remove_listed(const char *game_dir)
       }
       while (n > 0 && (line[n - 1] == '\n' || line[n - 1] == '\r')) line[--n] = 0;
       if (n == 0 || !manifest_line_ok(line)) continue;
-      if (!join_path(path, sizeof(path), game_dir, line, "")) continue;
-      ok = remove_file(path);
+      if (!names_add(names, line))
+      {
+         fclose(fp);
+         return -1;
+      }
    }
    fclose(fp);
-   return ok ? 0 : -1;
+   return 0;
 }
 
 // Replace dst with the finished staging file src. Never writes through dst: it is
-// removed first, so another name linked to the same bytes keeps them. 1 on success.
+// removed first, so another name linked to the same bytes keeps them.
 static int put_in_place(const char *src, const char *dst)
 {
-   return remove_file(dst) && rename(src, dst) == 0;
+   int rc = remove_file(dst, NULL);
+
+   if (rc != RM_OK) return rc;
+   return rename(src, dst) == 0 ? RM_OK : RM_BUSY;
+}
+
+// Write the manifest: the old names, then the new files not already among them (new
+// is NULL for just the old). Through a fresh staging file. 1 on success.
+static int write_manifest(const char *game_dir, const NAMES_S *old, const INSTALL_LIST_S *add)
+{
+   char stage[PATH_CAP], dst[PATH_CAP];
+   FILE *fp;
+   int i, j, ok;
+
+   join_path(stage, sizeof(stage), game_dir, MANIFEST_NAME, STAGE_EXT);
+   join_path(dst, sizeof(dst), game_dir, MANIFEST_NAME, "");
+   remove(stage);   // a leftover could be a link to something else
+   fp = fopen(stage, "wb");
+   if (fp == NULL) return 0;
+   for (i = 0; old != NULL && i < old->n; i++)
+      fprintf(fp, "%s\n", old->v[i]);
+   for (i = 0; add != NULL && i < add->count; i++)
+   {
+      int seen = 0;
+
+      for (j = 0; old != NULL && j < old->n && !seen; j++)
+         seen = equal_nocase(old->v[j], add->items[i].rel);
+      if (!seen) fprintf(fp, "%s\n", add->items[i].rel);
+   }
+   ok = fclose(fp) == 0 && put_in_place(stage, dst) == RM_OK;
+   if (!ok) remove(stage);
+   return ok;
+}
+
+// The error for a file that would not go. partly: the folder already changed.
+static int fail_removal(char *error, int cap, int code, const char *path, int partly)
+{
+   if (code == RM_DIR)
+      return partly
+         ? failf(error, cap, "%s %s is a folder where a file belongs: delete it, then run "
+                             "Build & Test again.", PARTLY_HINT_HEAD, path)
+         : failf(error, cap, "%s is a folder where a file belongs. Delete it and try again.",
+                 path);
+   return failf(error, cap, "%s", partly ? PARTLY_HINT : RUNNING_HINT);
 }
 
 int game_install(const char * project_dir, const char * game_dir, int * out_files,
                  char * error, int cap)
 {
    INSTALL_LIST_S list;
+   NAMES_S old;
    char stage[PATH_CAP], dst[PATH_CAP], bin[PATH_CAP];
-   int i;
+   int i, rc, removed = 0;
    FILE *fp;
 
    if (error != NULL && cap > 0) error[0] = 0;
@@ -400,10 +516,12 @@ int game_install(const char * project_dir, const char * game_dir, int * out_file
       return failf(error, cap, "Can't make the DATA/GLOBAL folders in %s.", game_dir);
    }
 
-   // Copy everything beside its target first; a failure here changes nothing.
+   // Copy everything beside its target first; a failure here changes nothing. A staging
+   // file left by a crash goes first: it could be a link to a file of the game's.
    for (i = 0; i < list.count; i++)
    {
       join_path(stage, sizeof(stage), game_dir, list.items[i].rel, STAGE_EXT);
+      remove(stage);
       if (!project_ensure_parent_dirs(stage) ||
           file_copy_checked(list.items[i].source, stage) != FILE_COPY_OK)
       {
@@ -414,21 +532,41 @@ int game_install(const char * project_dir, const char * game_dir, int * out_file
       }
    }
 
-   // The last install's files go, and the compiled form of each table.
-   if (remove_listed(game_dir) != 0)
+   // Before anything goes, the manifest lists the old files and the new ones, so a
+   // install that stops partway can still be cleaned up by the next one.
+   if (read_manifest(game_dir, &old) != 0 || !write_manifest(game_dir, &old, &list))
    {
+      names_free(&old);
       remove_staged(game_dir, &list, 0);
       install_list_free(&list);
-      return failf(error, cap, "%s", RUNNING_HINT);
+      return failf(error, cap, "Can't write the install list in %s.", game_dir);
    }
+
+   // The last install's files go, and the compiled form of each table.
+   for (i = 0; i < old.n; i++)
+   {
+      join_path(dst, sizeof(dst), game_dir, old.v[i], "");
+      if (is_directory(dst)) continue;   // only files were ever listed
+      rc = remove_file(dst, &removed);
+      if (rc != RM_OK)
+      {
+         remove_staged(game_dir, &list, 0);
+         names_free(&old);
+         install_list_free(&list);
+         return fail_removal(error, cap, rc, dst, removed);
+      }
+   }
+   names_free(&old);
    for (i = 0; i < list.count; i++)
    {
       if (!list.items[i].is_table || !bin_rel(list.items[i].rel, bin, sizeof(bin))) continue;
-      if (!join_path(dst, sizeof(dst), game_dir, bin, "") || !remove_file(dst))
+      join_path(dst, sizeof(dst), game_dir, bin, "");
+      rc = remove_file(dst, &removed);
+      if (rc != RM_OK)
       {
          remove_staged(game_dir, &list, 0);
          install_list_free(&list);
-         return failf(error, cap, "%s", RUNNING_HINT);
+         return fail_removal(error, cap, rc, dst, removed);
       }
    }
 
@@ -436,30 +574,20 @@ int game_install(const char * project_dir, const char * game_dir, int * out_file
    {
       join_path(stage, sizeof(stage), game_dir, list.items[i].rel, STAGE_EXT);
       join_path(dst, sizeof(dst), game_dir, list.items[i].rel, "");
-      if (!put_in_place(stage, dst))
+      rc = put_in_place(stage, dst);
+      if (rc != RM_OK)
       {
          remove_staged(game_dir, &list, i);   // the ones before it are in place
          install_list_free(&list);
-         return failf(error, cap, "%s", RUNNING_HINT);
+         return fail_removal(error, cap, rc, dst, removed || i > 0);
       }
    }
 
    // What this install made, for the next one to remove.
-   join_path(stage, sizeof(stage), game_dir, MANIFEST_NAME, STAGE_EXT);
-   join_path(dst, sizeof(dst), game_dir, MANIFEST_NAME, "");
-   fp = fopen(stage, "wb");
-   if (fp == NULL)
+   if (!write_manifest(game_dir, NULL, &list))
    {
       install_list_free(&list);
-      return failf(error, cap, "Can't write the install list in %s.", game_dir);
-   }
-   for (i = 0; i < list.count; i++)
-      fprintf(fp, "%s\n", list.items[i].rel);
-   if (fclose(fp) != 0 || !put_in_place(stage, dst))
-   {
-      remove(stage);
-      install_list_free(&list);
-      return failf(error, cap, "Can't write the install list in %s.", game_dir);
+      return failf(error, cap, "%s", PARTLY_HINT);
    }
 
    if (out_files != NULL) *out_files = list.count;

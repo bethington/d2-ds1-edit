@@ -660,6 +660,109 @@ void test_a_file_the_game_holds_open_says_the_game_may_be_running(void)
 #endif
 }
 
+void test_a_partial_install_is_cleaned_up_by_the_next_one(void)
+{
+   char blocker[1400];
+
+   make_project();
+   put("Global/Tiles/A.ds1", "new a");
+   put("Global/Tiles/B.ds1", "new b");
+   put_game("DATA/GLOBAL/TILES/Old.ds1", "old");
+   put_game("ds1edit-installed.txt", "DATA/GLOBAL/TILES/Old.ds1\n");
+   /* A folder where B.ds1 belongs: the rename for B fails after A is in place. */
+   snprintf(blocker, sizeof(blocker), "%s/DATA/GLOBAL/TILES/B.ds1", game);
+   TEST_ASSERT_TRUE(tt_mkdir(blocker));
+
+   TEST_ASSERT_EQUAL_INT(-1, install());
+   TEST_ASSERT_NOT_NULL_MESSAGE(strstr(err, "only partly installed"), err);
+   TEST_ASSERT_NOT_NULL_MESSAGE(strstr(err, "B.ds1"), err);
+   TEST_ASSERT_FALSE(game_has("DATA/GLOBAL/TILES/Old.ds1"));
+   expect_game_text("DATA/GLOBAL/TILES/A.ds1", "new a");
+   TEST_ASSERT_FALSE(game_has("DATA/GLOBAL/TILES/B.ds1.ds1edit-new"));
+
+   /* The next, good install removes everything the half one left. */
+   tt_remove_tree(blocker);
+   snprintf(blocker, sizeof(blocker), "%s/Global/Tiles/A.ds1", proj);
+   TEST_ASSERT_EQUAL_INT(0, remove(blocker));
+   snprintf(blocker, sizeof(blocker), "%s/Global/Tiles/B.ds1", proj);
+   TEST_ASSERT_EQUAL_INT(0, remove(blocker));
+   put("Global/Tiles/C.ds1", "c");
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, install(), err);
+   TEST_ASSERT_FALSE(game_has("DATA/GLOBAL/TILES/A.ds1"));
+   TEST_ASSERT_FALSE(game_has("DATA/GLOBAL/TILES/B.ds1"));
+   expect_game_text("DATA/GLOBAL/TILES/C.ds1", "c");
+}
+
+void test_a_folder_in_a_files_place_before_any_change_is_not_called_partial(void)
+{
+   char blocker[1400];
+
+   make_project();
+   put("Global/Tiles/A.ds1", "new a");
+   snprintf(blocker, sizeof(blocker), "%s/DATA/GLOBAL/TILES/A.ds1", game);
+   TEST_ASSERT_TRUE(project_ensure_parent_dirs(blocker));
+   TEST_ASSERT_TRUE(tt_mkdir(blocker));
+
+   TEST_ASSERT_EQUAL_INT(-1, install());
+   TEST_ASSERT_NULL_MESSAGE(strstr(err, "partly"), err);
+   TEST_ASSERT_NULL_MESSAGE(strstr(err, "may be running"), err);
+   TEST_ASSERT_NOT_NULL_MESSAGE(strstr(err, "folder"), err);
+}
+
+void test_a_stale_staging_file_is_replaced_not_written_through(void)
+{
+   make_project();
+   put("Global/Tiles/A.ds1", "new a");
+   put_game("DATA/GLOBAL/TILES/A.ds1.ds1edit-new", "stale");
+   put_game("ds1edit-installed.txt.ds1edit-new", "stale manifest");
+#ifndef WIN32
+   {
+      char stale[1400], other[1400], stale_m[1400], other_m[1400];
+
+      snprintf(stale, sizeof(stale), "%s/DATA/GLOBAL/TILES/A.ds1.ds1edit-new", game);
+      snprintf(other, sizeof(other), "%s/linked-stage", game);
+      snprintf(stale_m, sizeof(stale_m), "%s/ds1edit-installed.txt.ds1edit-new", game);
+      snprintf(other_m, sizeof(other_m), "%s/linked-manifest", game);
+      if (link(stale, other) != 0 || link(stale_m, other_m) != 0)
+         TEST_IGNORE_MESSAGE("this system can't hard-link here");
+   }
+#endif
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, install(), err);
+   expect_game_text("DATA/GLOBAL/TILES/A.ds1", "new a");
+   TEST_ASSERT_FALSE(game_has("DATA/GLOBAL/TILES/A.ds1.ds1edit-new"));
+   TEST_ASSERT_FALSE(game_has("ds1edit-installed.txt.ds1edit-new"));
+#ifndef WIN32
+   expect_game_text("linked-stage", "stale");
+   expect_game_text("linked-manifest", "stale manifest");
+#endif
+}
+
+void test_manifest_lines_that_win32_would_normalise_or_that_name_no_file_are_ignored(void)
+{
+   char dir[1400];
+
+   make_project();
+   put("Global/Tiles/A.ds1", "a");
+   put_game("DATA/GLOBAL/TILES/Keep.ds1", "keep");
+   snprintf(dir, sizeof(dir), "%s/DATA/GLOBAL/TILES/emptydir", game);
+   TEST_ASSERT_TRUE(tt_mkdir(dir));
+   put_game("ds1edit-installed.txt",
+            "DATA/GLOBAL/TILES/Keep.ds1.\n"
+            "DATA/GLOBAL/TILES/Keep.ds1 \n"
+            "DATA/GLOBAL/TILES/sub./x\n"
+            "DATA/GLOBAL/TILES/.\n"
+            "DATA/GLOBAL/TILES/\n"
+            "DATA/GLOBAL/TILES\n"
+            "DATA/GLOBAL/TILES//Keep.ds1\n"
+            "DATA/GLOBAL/TILES/emptydir\n");
+
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, install(), err);
+   expect_game_text("DATA/GLOBAL/TILES/Keep.ds1", "keep");
+   TEST_ASSERT_TRUE(game_has("DATA/GLOBAL/TILES/emptydir"));
+   TEST_ASSERT_TRUE(game_has("DATA/GLOBAL/TILES"));
+   expect_game_text("DATA/GLOBAL/TILES/A.ds1", "a");
+}
+
 /* ---- game_start ------------------------------------------------------- */
 
 static void make_executable(const char *path)
@@ -845,6 +948,10 @@ int main(void)
    RUN_TEST(test_a_project_file_that_cant_be_read_changes_nothing);
    RUN_TEST(test_an_install_never_writes_through_an_existing_file);
    RUN_TEST(test_a_file_the_game_holds_open_says_the_game_may_be_running);
+   RUN_TEST(test_a_partial_install_is_cleaned_up_by_the_next_one);
+   RUN_TEST(test_a_folder_in_a_files_place_before_any_change_is_not_called_partial);
+   RUN_TEST(test_a_stale_staging_file_is_replaced_not_written_through);
+   RUN_TEST(test_manifest_lines_that_win32_would_normalise_or_that_name_no_file_are_ignored);
    RUN_TEST(test_the_game_gets_its_folder_and_every_argument);
    RUN_TEST(test_a_wrapper_runs_first_and_gets_the_exe_then_the_arguments);
    RUN_TEST(test_a_missing_executable_is_refused_with_the_command_line);
