@@ -214,16 +214,18 @@ Use act 1 Town and at least two other maps from different acts.
   2. **List `DATA`.** Before each **Build & Test**, list every file under `DATA` in the
      test copy with its size and date, and list it again afterward. Only files under
      `DATA/GLOBAL/TILES` and `DATA/GLOBAL/EXCEL` change, and `ds1edit-installed.txt`
-     beside `DATA` appears or changes. Nothing changes in the install.
+     beside `DATA` appears or changes. Also list the install's `DATA` before step 3 and
+     after step 6, and nothing in it has changed.
   3. **Change a map.** Edit a map you can reach at once, such as `Act1/Town/TownN1.ds1`,
      save, and run **Build & Test**. The game starts windowed from the test copy.
      Start a game, and the change is in the town.
-  4. **Add a map and change the table.** With **Map > New** on a row that has a size,
-     create a map, and save. Run **Build & Test**. At the game's menu, before starting
+  4. **Add a map and change the table.** Close the game from step 3. With **Map > New**
+     on a row that has a size, create a map, and save. Run **Build & Test**. At the game's menu, before starting
      a game, run **Build MPQ**. It refuses and says the table has changed since the game
      last compiled it. A new map joins the row's random pick, so seeing it in the game
-     can't be forced, and it may take several new games with new characters. On a row
-     that has a size, the map must match that size.
+     can't be forced, and it may take several new games with new characters. Record the
+     new map as seen, or as "not seen after N games", and that the project's
+     `LvlPrest.txt` lists it. On a row that has a size, the map must match that size.
   5. **Build the MPQ.** Start a game in the test copy, so the game compiles the tables,
      then run **Build MPQ**. It succeeds and writes `<project>/build/patch_d2.mpq`.
   6. **Use the MPQ in a player's copy.** Replace `patch_d2.mpq` in the second copy with
