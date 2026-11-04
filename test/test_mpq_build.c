@@ -374,6 +374,34 @@ void test_a_numbered_backup_is_left_out_unless_a_table_lists_it(void)
                             "T:other/map-003.ds1@G;X:LvlPrest.txt@G;", s.log);
 }
 
+void test_a_stock_base_named_patch_d2_in_mixed_case_is_found_and_built_on(void)
+{
+   char folder[768], stock[768];
+
+   path_of(folder, "install");
+   path_of(stock, "install/Patch_D2.mpq");
+   if (strcmp(stock, base) != 0)
+      TEST_ASSERT_EQUAL_INT(0, rename(base, stock));
+   mpq_build_base_path(folder, base, sizeof(base));
+   TEST_ASSERT_TRUE_MESSAGE(tt_file_exists(base), base);
+
+   put("proj/Global/Tiles/Act1/Town/TownN1.ds1", "mine");
+   expect_ok();
+   expect_in_archive("data\\global\\tiles\\Act1\\Town\\TownN1.ds1", "mine");
+   expect_in_archive("data\\global\\excel\\base_only.txt", "only in the base");
+}
+
+void test_a_game_folder_with_no_patch_d2_is_reported_by_name(void)
+{
+   char folder[768];
+
+   path_of(folder, "empty");
+   TEST_ASSERT_TRUE(tt_mkdir(folder));
+   mpq_build_base_path(folder, base, sizeof(base));
+   put("proj/Global/Tiles/Act1/Town/TownN1.ds1", "mine");
+   expect_problem("The game folder has no patch_d2.mpq to build on.");
+}
+
 void test_archive_names_use_backslashes_and_keep_case(void)
 {
    char * listing;
@@ -968,6 +996,8 @@ int main(void)
    RUN_TEST(test_data_wins_over_global_for_the_same_path);
    RUN_TEST(test_left_out_files);
    RUN_TEST(test_a_numbered_backup_is_left_out_unless_a_table_lists_it);
+   RUN_TEST(test_a_stock_base_named_patch_d2_in_mixed_case_is_found_and_built_on);
+   RUN_TEST(test_a_game_folder_with_no_patch_d2_is_reported_by_name);
    RUN_TEST(test_archive_names_use_backslashes_and_keep_case);
    RUN_TEST(test_a_name_over_200_characters_or_not_plain_ascii_is_not_ok);
    RUN_TEST(test_a_file_whose_name_the_archive_cannot_take_is_a_problem);

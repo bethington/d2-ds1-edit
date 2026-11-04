@@ -736,11 +736,11 @@ static int interface_build_mpq(int quiet)
    if (table == NULL)
    {
       interface_map_op_failed("Build MPQ", "Nothing was built.",
-         "The game's LvlPrest.txt can't be read. Check the game folder in File > Project Settings.");
+         "The game's LvlPrest.txt can't be read. Set d2_install in Ds1edit.ini and restart.");
       return -1;
    }
 
-   snprintf(base, sizeof(base), "%s/patch_d2.mpq", interface_game_folder());
+   mpq_build_base_path(interface_game_folder(), base, (int) sizeof(base));
    snprintf(out, sizeof(out), "%s/build/patch_d2.mpq", glb_project.path);
    memset(&a, 0, sizeof(a));
    a.project_dir = glb_project.path;
@@ -766,7 +766,9 @@ static int interface_build_mpq(int quiet)
    {
       snprintf(report, sizeof(report),
          "%s\n\n%d files, %ld bytes, %.1f seconds.\n\n"
-         "Install it by replacing patch_d2.mpq in a copy of the game.",
+         "Install it by replacing patch_d2.mpq in a copy of the game. "
+         "Check it in the game before you share it: a built MPQ hasn't been tried "
+         "at game startup yet.",
          out, res.files, res.bytes, secs);
       interface_info_box("Build MPQ", "The MPQ was built.", report);
    }

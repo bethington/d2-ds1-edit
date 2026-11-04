@@ -666,6 +666,12 @@ static void free_names(char ** names, int count)
    free(names);
 }
 
+void mpq_build_base_path(const char * game_dir, char * out, int cap)
+{
+   if (!ds1_path_resolve_nocase(game_dir, "patch_d2.mpq", out, (size_t) cap))
+      snprintf(out, (size_t) cap, "%s/patch_d2.mpq", game_dir);
+}
+
 int mpq_build_run(const MPQ_BUILD_ARGS_S * a, MPQ_BUILD_RESULT_S * out, char * problems_buf,
                   int cap)
 {

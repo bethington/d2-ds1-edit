@@ -30,6 +30,12 @@ typedef struct MPQ_BUILD_RESULT_S
    and nothing written. */
 int mpq_build_run(const MPQ_BUILD_ARGS_S * a, MPQ_BUILD_RESULT_S * out, char * problems, int cap);
 
+/* The patch_d2.mpq of a game folder, in whatever case its name has on disk: a stock
+   install has Patch_D2.mpq, and a case-sensitive disk won't open that by another
+   spelling. With none there, out names the plain patch_d2.mpq, for mpq_build_run to
+   report. */
+void mpq_build_base_path(const char * game_dir, char * out, int cap);
+
 /* Calls cb for each project file that belongs in a build or a test install, by the
    "Files taken" and "Files left out" rules, in a fixed order. rel is relative to the
    Tiles or Excel folder, with forward slashes. is_table says which. Game_install uses
