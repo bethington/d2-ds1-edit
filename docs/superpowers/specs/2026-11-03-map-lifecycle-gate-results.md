@@ -100,6 +100,19 @@ An edit through the editor's UI removed the large canvas tent beside the banner 
 
 The first 14-cell edit to `TownN1` (game subtiles x 4520 to 4540, y 4635 to 4655) was to a map the game didn't use, which is why it showed nothing.
 
+### The `CmdLine` registry value
+
+Each launch writes its arguments to the registry value `CmdLine`, so the test's launches left values there. This is read from `Game.exe` 1.13c at `0x408000`, called from the entry path at `0x4082d8`. It wasn't run. Its thunks go to Storm ordinals 422, 423, 425 and 426, taken to be the registry load and save calls from their arguments.
+
+```
+args non-empty:  CmdLine := "<args> -skiptobnet"
+args empty:      if UseCmdLine != 0: read CmdLine and use it as the args
+                 else CmdLine := "-skiptobnet"
+then:            UseCmdLine := 0
+```
+
+`UseCmdLine` is 0 on this machine, so the next normal launch ignores the value and overwrites it, and the value only records the last launch. It is replayed only if `UseCmdLine` is nonzero. `D2Launch.dll` sets it to 1 on one path (`0x6fa4ef45`), trigger not traced, so a launch that sets it and then dies could replay the test's arguments once. The manual gives this one clause, in its warning that a test run uses real characters and shared settings.
+
 ## Not Proved Yet
 
 - **Which town map a game uses.** `TownE1` was in use for this character. Whether the pick depends on the seed or the character, and whether `TownS1` or `TownW1` ever come up, wasn't tried.
@@ -111,7 +124,7 @@ The first 14-cell edit to `TownN1` (game subtiles x 4520 to 4540, y 4635 to 4655
 - **File cell length.** Static reading infers a stack buffer limit of 41 characters, and `MAP_OPS_TABLE_PATH_MAX` is now 41. The limit itself is not yet tried in the game.
 - **Read-only excel folder.** Static reading says a failed write is silent.
 - **`wine` on Linux and macOS.** Case handling of `DATA\GLOBAL\...` wasn't run.
-- **1.14 installs.** `C:\Diablo2` is 1.14b, not 1.13c. Its list and priorities match statically, and its `-direct` and `-txt` behaviour wasn't read.
+- **1.14 installs.** `C:\Diablo2` is 1.14b, not 1.13c. Its list and priorities match statically, and its `-direct` and `-txt` behaviour wasn't read. Its `Game.exe` has the same `CmdLine` strings and that logic wasn't traced either, so "no effect on a normal game" is proved for 1.13c only.
 
 ## Corrections Found Along the Way
 

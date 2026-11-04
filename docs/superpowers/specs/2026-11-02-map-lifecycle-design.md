@@ -130,9 +130,10 @@ output only after the new file is complete. The name is fixed by the gate: `patc
 is the only top-priority archive the game loads with no code changes.
 
 - **Base:** it appends to a copy of `patch_d2.mpq` from the folder whose archives the
-  editor has open, so the output keeps the retail entries in place. That folder is
-  `d2_install` in `Ds1edit.ini` when set, otherwise the project's game folder. It never
-  writes over that `patch_d2.mpq`.
+  editor opened at start, so the output keeps the retail entries in place. That folder
+  is `d2_install` in `Ds1edit.ini`, or the install the editor found or remembered. A
+  project's game folder isn't used for this. The base's name is found in any case. It
+  never writes over that `patch_d2.mpq`.
 - **Contents:** the project's `.ds1` and `.dt1` files from `Data/Global/Tiles` and
   `Global/Tiles`, and the `.txt` tables from `Data/Global/Excel` and `Global/Excel`,
   stored under `data\global\tiles\` and `data\global\excel\`, with a `(listfile)`.
@@ -146,7 +147,8 @@ is the only top-priority archive the game loads with no code changes.
   A project with no table needs no `.bin`. The test copy's `patch_d2.mpq` must also be
   the same size as the base's, or the build stops, since compiled tables from another
   game version can't be used.
-- It refuses to run with unsaved maps, offering Save All and Build, or Cancel.
+- It asks first about unsaved maps, in a Yes or No box: "Save all maps and build?" Yes
+  saves them and builds. No stops.
 - **It validates first,** and failures list the map and the problem, and nothing is
   written:
   - every map named in the project's tables must resolve in the project or the game,
@@ -194,7 +196,9 @@ The launch profile is stored in `project.ini`:
 **Build > Launch Profile** edits these. Until the profile is complete, Build &
 Test opens that dialog. The editor refuses a `test_game_dir` that is not a full path,
 or that resolves to the same folder as, contains, or sits inside the configured
-`d2_install` or the project's game folder.
+`d2_install`, the project's game folder, the folder of an open archive, or the project
+itself. An install refuses the project overlap again itself, since its list would
+otherwise name the author's own files and the next install would delete them.
 
 - **First-use validation:** the folder must contain `test_exe`, the arguments must
   include `-direct` and `-txt`, and the folder must take a file.
@@ -203,7 +207,9 @@ or that resolves to the same folder as, contains, or sits inside the configured
 - **Launch failure:** a missing wrapper or executable shows the reason and the full
   command line.
 - **Linux and macOS** start the game through `wine`. That route hasn't been tested yet.
-- **End to end, partly shown on Windows, 2026-11-03:** a changed map seen in the game (a tent removed from `TownE1`, the town map that character's game used; the Act 1 town row has four maps and the game picks one), a new table compiled by the game, Build MPQ refusing and then succeeding, and the built archive mounting into a running game and serving the edited map. **Not shown:** the built MPQ mounting at startup in a player's copy. Linux and macOS are untouched. See the gate results.
+- **End to end, partly shown on Windows, 1.13c, 2026-11-03:** a changed map seen in a D2Fleet slot, with the install's tree copied in by hand (a tent removed from `TownE1`, the town map that character's game used), a new table compiled by the game, Build MPQ refusing and then, with the `.bin` files copied by hand, succeeding, and the built archive mounting into a running game and serving the edited map. **Not shown:** the built MPQ mounting at startup; a game entered from the editor's own launch; the manual's Build sequence as written. Linux and macOS are untouched. See the gate results.
+- **Town maps:** the Act 1 town row has four maps, and which one a game uses wasn't determined. Test all four and ship all four. Clearing every wall of a town map stopped the game at load, and the cause wasn't found.
+- **Not isolated:** a test run uses real characters through the registry's `Save Path`, and shared settings, including `CmdLine`. Use a throwaway character and back up the saves.
 
 ## Gate: how the game loads the output
 

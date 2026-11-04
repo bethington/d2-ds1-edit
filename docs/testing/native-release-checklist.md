@@ -209,17 +209,20 @@ Use act 1 Town and at least two other maps from different acts.
      editor reads: a test copy, and a second copy standing for a player's game. In each,
      `patch_d2.mpq` is the size of the install's. Open a project, open **Build >
      Launch Profile**, and set the test copy. The defaults are `-w -direct -txt`, and
-     choosing the install folder is refused. On Linux and macOS the wrapper is `wine`,
-     which hasn't been tested yet, so record what happened.
+     choosing the install folder or the project folder is refused. On Linux and macOS
+     the wrapper is `wine`, which hasn't been tested yet, so record what happened.
+     The test copy shares its save folder and settings with your normal game, so use a
+     throwaway character and back up your saves. On Linux and macOS the same applies
+     per wine prefix, which hasn't been verified.
   2. **List `DATA`.** Before each **Build & Test**, list every file under `DATA` in the
      test copy with its size and date, and list it again afterward. Only files under
      `DATA/GLOBAL/TILES` and `DATA/GLOBAL/EXCEL` change, and `ds1edit-installed.txt`
      beside `DATA` appears or changes. Also list the install's `DATA` before step 3 and
      after step 6, and nothing in it has changed.
   3. **Change a map.** Edit a map you can reach at once. The Act 1 town has four maps
-     (`TownN1`, `TownE1`, `TownS1`, `TownW1`) and a game uses one, so for the town edit
-     the one in use, or a map with a single version,
-     save, and run **Build & Test**. The game starts windowed from the test copy.
+     (`TownN1`, `TownE1`, `TownS1`, `TownW1`) and which one a game uses wasn't
+     determined, so for the town make the change in all four, or edit a map with a
+     single version. Save, and run **Build & Test**. The game starts windowed from the test copy.
      Start a game, and the change is in the town.
   4. **Add a map and change the table.** Close the game from step 3. With **Map > New**
      on a row that has a size, create a map, and save. Run **Build & Test**. At the game's menu, before starting
@@ -231,19 +234,21 @@ Use act 1 Town and at least two other maps from different acts.
   5. **Build the MPQ.** Start a game in the test copy, so the game compiles the tables,
      then run **Build MPQ**. It succeeds and writes `<project>/build/patch_d2.mpq`.
   6. **Use the MPQ in a player's copy.** Replace `patch_d2.mpq` in the second copy with
-     that file. Start the game from it with `-w` and without `-direct -txt`, and the
+     that file. On Linux, delete the old `Patch_D2.mpq` first, or the copy holds two
+     names differing only in case and wine picks either. Start the game from it with `-w` and without `-direct -txt`, and the
      change from step 3 is in the game. Record the platform, the game and the wrapper
      used, and whether each step passed.
 
   Windows, 1.13c, 2026-11-03, partly run, so the item stays unchecked on every
-  platform. A tent removed from `TownE1` was gone in the town (the Act 1 town has
-  four maps and the game uses one, so edit the one it uses; step 3's `TownN1` was
-  not in use). A new table was compiled by the game and entered town with no crash;
-  Build MPQ refused before a game had compiled it and succeeded after, and the
-  built archive holds the 209 retail entries and the project's. The built archive,
-  mounted into a running game, served the edited map. Not shown: the new map
-  drawn, and the built archive mounting at startup in a player's copy (step 6).
-  Linux and macOS are open.
+  platform. A tent removed from `TownE1` was seen gone in the town in a D2Fleet slot,
+  with the install's tree copied in by hand (step 3's `TownN1` was not the map in
+  use). A new table was compiled by the game in that slot and entered town with no
+  crash. Build MPQ refused before a game had compiled it, and succeeded once the
+  slot's `.bin` files were copied to the test copy by hand. The built archive holds
+  the 209 retail entries and the project's. Mounted into a running game, it served
+  the edited map. Not shown: the new map drawn, a game entered from the editor's own
+  launch, which reached the menu only, steps 4 and 5 as written, and the built archive
+  mounting at startup in a player's copy (step 6). Linux and macOS are open.
 
 Total items: 16.
 
