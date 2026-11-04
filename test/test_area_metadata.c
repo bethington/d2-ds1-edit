@@ -268,6 +268,64 @@ void test_area_dt1_names_score_counts_the_names_a_tileset_holds(void)
 }
 
 
+void test_area_preset_area_name_files_town_transitions_under_the_wilderness(void)
+{
+   /* Under their Dt1Mask these draw entirely from the wilderness tileset. */
+   TEST_ASSERT_EQUAL_STRING("Act 1 - Wilderness",
+                            area_preset_area_name("Act 1 - Town 1 Transition E"));
+   TEST_ASSERT_NULL(area_preset_area_name("Act 1 - Town 1"));
+}
+
+
+void test_area_palette_act_uses_the_pal_of_the_maps_own_level(void)
+{
+   /* Zhar Rivers: tileset 34 is Act 5 art for every other level, Pal 0 here */
+   TEST_ASSERT_EQUAL_INT(1, area_palette_act(34, 0, 34, 4, 5));
+}
+
+
+void test_area_palette_act_ignores_a_level_of_another_tileset(void)
+{
+   /* Opened under another tileset, the map's level says nothing about it. */
+   TEST_ASSERT_EQUAL_INT(5, area_palette_act(34, 0, 31, 4, 5));
+}
+
+
+void test_area_palette_act_falls_back_to_the_tilesets_levels(void)
+{
+   /* Act 5 - Lava: its levels use Pal 3 although LvlTypes.Act says 5 */
+   TEST_ASSERT_EQUAL_INT(4, area_palette_act(-1, -1, 35, 3, 5));
+}
+
+
+void test_area_palette_act_falls_back_to_lvltypes_when_no_level_uses_the_tileset(void)
+{
+   TEST_ASSERT_EQUAL_INT(2, area_palette_act(-1, -1, 19, -1, 2));
+   /* Pal outside the five acts is not a palette */
+   TEST_ASSERT_EQUAL_INT(2, area_palette_act(19, 9, 19, 7, 2));
+}
+
+
+void test_area_most_common_pal_takes_the_majority(void)
+{
+   const int baal[5] = { 1, 0, 0, 0, 7 };
+   const int none[5] = { 0, 0, 0, 0, 0 };
+
+   TEST_ASSERT_EQUAL_INT(4, area_most_common_pal(baal));
+   TEST_ASSERT_EQUAL_INT(-1, area_most_common_pal(none));
+}
+
+
+void test_area_merge_level_type_gives_up_when_levels_disagree(void)
+{
+   TEST_ASSERT_EQUAL_INT(2, area_merge_level_type(0, 2));
+   TEST_ASSERT_EQUAL_INT(2, area_merge_level_type(2, 2));
+   TEST_ASSERT_EQUAL_INT(-1, area_merge_level_type(2, 16));
+   /* once in conflict, it stays there */
+   TEST_ASSERT_EQUAL_INT(-1, area_merge_level_type(-1, 2));
+}
+
+
 void test_area_dt1_names_min_score_lets_a_pd2_map_take_its_nearest_tileset(void)
 {
    /* expansion\\map\\darktomb.ds1 names mostly PD2's own DT1s, yet only 37% of
@@ -324,5 +382,12 @@ int main(void)
    RUN_TEST(test_area_dt1_names_score_counts_the_names_a_tileset_holds);
    RUN_TEST(test_area_dt1_names_score_ignores_the_warp_tiles_every_map_carries);
    RUN_TEST(test_area_dt1_names_min_score_lets_a_pd2_map_take_its_nearest_tileset);
+   RUN_TEST(test_area_preset_area_name_files_town_transitions_under_the_wilderness);
+   RUN_TEST(test_area_palette_act_uses_the_pal_of_the_maps_own_level);
+   RUN_TEST(test_area_palette_act_ignores_a_level_of_another_tileset);
+   RUN_TEST(test_area_palette_act_falls_back_to_the_tilesets_levels);
+   RUN_TEST(test_area_palette_act_falls_back_to_lvltypes_when_no_level_uses_the_tileset);
+   RUN_TEST(test_area_most_common_pal_takes_the_majority);
+   RUN_TEST(test_area_merge_level_type_gives_up_when_levels_disagree);
    return UNITY_END();
 }

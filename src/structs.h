@@ -583,7 +583,6 @@ typedef struct AREA_DS1_ENTRY_S
    int  lvltype_id;     /* LvlTypes.txt Id (tileset id)          */
    int  lvlprest_def;   /* LvlPrest.txt Def                      */
    char ds1_path[256];  /* DS1 file path from LvlPrest File1-6   */
-   int  palette_act;    /* Act the file itself names over its tileset's, or 0 */
 } AREA_DS1_ENTRY_S;
 
 typedef struct AREA_GROUP_S
@@ -1282,6 +1281,7 @@ typedef enum RQ_ENUM
    RQ_OBJ,
    RQ_OBJECTS,
    RQ_LEVELS,
+   RQ_LVLSUB,
    RQ_MAX
 } RQ_ENUM;
 

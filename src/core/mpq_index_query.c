@@ -91,6 +91,16 @@ int mpq_index_row_names_ds1(const char *row_file, const char *ds1_name)
    return *base == 0 && *ds1_name == 0;
 }
 
+int mpq_index_sub_level_type_in(const SUB_ENTRY_S *arr, int count, const char *ds1_path)
+{
+   int i;
+   if (arr == NULL || ds1_path == NULL) return -1;
+   for (i = 0; i < count; i++)
+      if (path_equal(arr[i].file, ds1_path))
+         return arr[i].level_type > 0 ? arr[i].level_type : -1;
+   return -1;
+}
+
 const PRESET_ENTRY_S *mpq_index_find_by_ds1_path_in(const PRESET_ENTRY_S *arr,
                                                      int count,
                                                      const char *ds1_path,

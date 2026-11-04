@@ -47,9 +47,13 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
   with a fatal error if rows in other folders used its filename. Those rows are
   other maps, so they no longer count, and a map several rows really do name
   opens with all its tiles enabled.
-- **Expansion lava maps have the right colors.** A map with no tileset took its
-  palette from its folder's act even when the file named another. Now a file
-  naming Act 2 to 5 is believed, which fixes the green `expansion\\lavaX.ds1`.
+- **Maps use the palette the game uses.** The game loads a level's `Pal` column
+  from `Levels.txt`, but the editor used `LvlTypes.txt`'s `Act` and guessed from
+  folder names. Now the map's own level decides, then the levels sharing its
+  tileset. Vanilla maps look the same, and Project Diablo 2's Zhar Rivers, Djinns
+  Domain and guild maps get their real colors. A map with no tileset took its
+  palette from its folder's act even when the file named another; a file naming
+  Act 2 to 5 is now believed.
 - **Project Diablo 2 maps have their own section.** Maps only PD2 ships appear
   under "Project Diablo 2", named by their `LvlPrest` row, and open with the
   tileset `Levels.txt` gives them, so they draw in full. A map with no level uses

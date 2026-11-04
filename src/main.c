@@ -116,6 +116,12 @@ char *txt_def_lvlprest_req[] =
         NULL // DO NOT REMOVE !
 };
 
+char *txt_def_lvlsub_req[] =
+    {
+        ("Type"), ("File"),
+        NULL // DO NOT REMOVE !
+};
+
 char *txt_def_levels_req[] =
     {
         ("Name"), ("Id"), ("Act"), ("LevelType"),
@@ -273,7 +279,7 @@ char *txt_def_objects_req[] =
         NULL // DO NOT REMOVE !
 };
 
-char **glb_txt_req_ptr[RQ_MAX] = {NULL, NULL, NULL, NULL, NULL};
+char **glb_txt_req_ptr[RQ_MAX] = {NULL, NULL, NULL, NULL, NULL, NULL};
 
 CONFIG_S glb_config;                    // global configuration datas
 GLB_DS1EDIT_S glb_ds1edit;              // global datas of the editor
@@ -315,6 +321,7 @@ void ds1edit_init_txt_requirements(void)
    glb_txt_req_ptr[RQ_OBJ]      = txt_def_obj_req;
    glb_txt_req_ptr[RQ_OBJECTS]  = txt_def_objects_req;
    glb_txt_req_ptr[RQ_LEVELS]   = txt_def_levels_req;
+   glb_txt_req_ptr[RQ_LVLSUB]   = txt_def_lvlsub_req;
 }
 
 void ds1edit_init(void)

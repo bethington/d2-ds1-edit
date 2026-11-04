@@ -71,6 +71,50 @@ int area_tileless_palette_act(int ds1_act, int folder_act)
 }
 
 
+/* Palette act of a map opened under a LvlTypes row. The game loads Levels.Pal:
+ * D2Client reads it on every level change and hands it to D2Win. So the map's
+ * own level decides, then what the levels of that tileset use. LvlTypes.Act is
+ * not what the game looks at; it is what is left when no level uses the row. */
+int area_palette_act(int preset_level_type, int preset_pal, int type, int type_pal,
+                     int lvltypes_act)
+{
+   if (type > 0 && preset_level_type == type && preset_pal >= 0 && preset_pal <= 4)
+      return preset_pal + 1;
+   if (type_pal >= 0 && type_pal <= 4)
+      return type_pal + 1;
+
+   return lvltypes_act;
+}
+
+
+/* The Pal most of a tileset's levels use, or -1 when none do. */
+int area_most_common_pal(const int counts[5])
+{
+   int i, best = -1, best_count = 0;
+
+   for (i = 0; i < 5; i++)
+   {
+      if (counts[i] > best_count)
+      {
+         best = i;
+         best_count = counts[i];
+      }
+   }
+   return best;
+}
+
+
+/* Fold one more level's tileset into the answer: 0 = none yet, -1 = levels
+ * disagree, so nothing can be said. */
+int area_merge_level_type(int current, int level_type)
+{
+   if (current == 0)
+      return level_type;
+
+   return current == level_type ? current : -1;
+}
+
+
 const char * area_name_strip_prefix(const char * name)
 {
    if (area_name_parse_act(name) > 0)
@@ -103,6 +147,7 @@ static const struct { const char * prefix; const char * area; } AREA_PRESET_RULE
    { "Act 1 - River",     "Act 1 - Wilderness" },
    { "Act 1 - Ruin",      "Act 1 - Wilderness" },
    { "Act 1 - Stone",     "Act 1 - Wilderness" },
+   { "Act 1 - Town 1 Transition", "Act 1 - Wilderness" },
    { "Act 1 - Swamp",     "Act 1 - Wilderness" },
    { "Act 1 - Tower",     "Act 1 - Wilderness" },
    { "Act 1 - Tree",      "Act 1 - Wilderness" },

@@ -8,6 +8,10 @@ int area_name_has_act_mismatch(int txt_act, const char * name);
 int area_group_resolve_act(int txt_act, const char * name);
 int area_preset_resolve_act(int level_id, int levels_act, const char * preset_name);
 int area_tileless_palette_act(int ds1_act, int folder_act);
+int area_palette_act(int preset_level_type, int preset_pal, int type, int type_pal,
+                     int lvltypes_act);
+int area_most_common_pal(const int counts[5]);
+int area_merge_level_type(int current, int level_type);
 const char * area_name_strip_prefix(const char * name);
 
 /* Where a map that the area build did not place belongs in the browser. */
