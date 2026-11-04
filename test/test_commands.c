@@ -157,14 +157,28 @@ void test_availability_follows_map_mode_and_paste(void)
    TEST_ASSERT_TRUE(commands_is_available(CMD_QUIT, &c));
 }
 
-void test_later_steps_stay_dimmed(void)
+void test_build_commands_need_a_project(void)
 {
+   static const CMD_ID ids[] = { CMD_PROJECT_SETTINGS, CMD_BUILD_MPQ, CMD_BUILD_AND_TEST,
+                                 CMD_LAUNCH_PROFILE };
    CMD_CTX c = tile_ctx();
+   CMD_CTX none;
+   size_t i;
 
-   TEST_ASSERT_FALSE(commands_is_available(CMD_PROJECT_SETTINGS, &c));
-   TEST_ASSERT_FALSE(commands_is_available(CMD_BUILD_MPQ, &c));
-   TEST_ASSERT_FALSE(commands_is_available(CMD_BUILD_AND_TEST, &c));
-   TEST_ASSERT_FALSE(commands_is_available(CMD_LAUNCH_PROFILE, &c));
+   /* A map is open but there's no project. */
+   c.has_project = 0;
+   for (i = 0; i < sizeof(ids) / sizeof(ids[0]); i++)
+      TEST_ASSERT_FALSE(commands_is_available(ids[i], &c));
+
+   /* With one, and with no map open: Build MPQ doesn't need a map. */
+   memset(&none, 0, sizeof(none));
+   none.has_project = 1;
+   for (i = 0; i < sizeof(ids) / sizeof(ids[0]); i++)
+   {
+      TEST_ASSERT_TRUE(commands_is_available(ids[i], &none));
+      c.has_project = 1;
+      TEST_ASSERT_TRUE(commands_is_available(ids[i], &c));
+   }
 }
 
 void test_arrow_keys_move_and_wrap(void)
@@ -288,7 +302,7 @@ int main(void)
    RUN_TEST(test_shortcut_text_matches_the_binding);
    RUN_TEST(test_menus_follow_the_spec_order);
    RUN_TEST(test_availability_follows_map_mode_and_paste);
-   RUN_TEST(test_later_steps_stay_dimmed);
+   RUN_TEST(test_build_commands_need_a_project);
    RUN_TEST(test_arrow_keys_move_and_wrap);
    RUN_TEST(test_enter_runs_available_commands_only);
    RUN_TEST(test_escape_closes_without_a_command);

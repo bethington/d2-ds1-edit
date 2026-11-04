@@ -32,7 +32,7 @@ static GLB_MPQ_S mpq_struct;
 static char dir[512];
 static char proj[640];
 static char test_copy[640];
-static char base[640];
+static char base[768];   /* path_of() writes up to 768 */
 static char out[640];
 static char problems[4096];
 

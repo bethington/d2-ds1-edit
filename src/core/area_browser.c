@@ -893,7 +893,7 @@ static int project_has_map(const char * ds1_path)
 
 /* In the game's own archives, ignoring any overlay? Loads the file, so it is
  * only asked about maps the project also has. */
-static int game_has_map(const char * ds1_path)
+int area_browser_game_has_map(const char * ds1_path)
 {
    char  name[512];
    char *saved[MAX_MOD_DIR];
@@ -936,7 +936,7 @@ void area_browser_refresh_states(void)
          else if (!project_has_map(e->ds1_path))
             e->state = MAP_STATE_GAME;
          else
-            e->state = map_state_classify(game_has_map(e->ds1_path), 1, 0);
+            e->state = map_state_classify(area_browser_game_has_map(e->ds1_path), 1, 0);
       }
    }
 }
@@ -1991,11 +1991,18 @@ static void area_add_listed_row(int def, const char * ds1_path, void * ctx)
       area_add_unlisted_row(def, area_browser_lvltype_for_def(def, -1), ds1_path);
 }
 
+/* The game's own LvlPrest.txt, from its archives with no project overlay. */
+char * area_browser_game_table(void)
+{
+   char lvlprest[] = "Data\\Global\\Excel\\LvlPrest.txt";
+
+   return (char *) txt_read_in_mem_mpq_only(lvlprest);
+}
+
 /* The union the spec asks for: rows the project's table cleared stay visible, and
  * rows only it names appear. */
 static void area_add_project_rows(void)
 {
-   char lvlprest[] = "Data\\Global\\Excel\\LvlPrest.txt";
    long len;
    char * project, * game;
 
@@ -2004,7 +2011,7 @@ static void area_add_project_rows(void)
    project = map_ops_read_table(glb_project.path, &len);
    if (project == NULL)
       return;
-   game = (char *) txt_read_in_mem_mpq_only(lvlprest);
+   game = area_browser_game_table();
    if (game != NULL)
    {
       lvlprest_each_cleared(game, project, area_add_removed_row, NULL);

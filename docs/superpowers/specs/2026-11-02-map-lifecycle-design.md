@@ -139,8 +139,10 @@ new file is complete.
 
 ### Test
 
-**Build > Build & Test** builds, installs the result in the test copy and starts
-the game. The editor stays open while the game runs.
+**Build > Build & Test** saves the open maps, installs the project's loose files in
+the test copy and starts the game. The editor stays open while the game runs. It does
+not pack an MPQ: the game reads the loose files, and a project's first test run has
+no compiled tables to pack. This departs from an earlier draft, which built first.
 
 The launch profile is stored in `project.ini`:
 

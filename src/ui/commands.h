@@ -56,6 +56,7 @@ typedef struct CMD_CTX
    int open_state;       /* MAP_STATE_E of the open map's row */
    int open_is_backup;   /* that row is in a Backup group */
    int any_dirty;
+   int has_project;
    int paste_active;
    int can_undo_object;
 } CMD_CTX;

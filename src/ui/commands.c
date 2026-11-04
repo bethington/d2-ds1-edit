@@ -128,12 +128,11 @@ int commands_is_available(CMD_ID id, const CMD_CTX *c)
    case CMD_MAP_RESTORE_BACKUP:
       return c->has_map && c->open_is_backup;
 
-   /* Step 4 implements these. */
    case CMD_PROJECT_SETTINGS:
    case CMD_BUILD_MPQ:
    case CMD_BUILD_AND_TEST:
    case CMD_LAUNCH_PROFILE:
-      return 0;
+      return c->has_project;
 
    /* Save and the rest of View need a map on screen. */
    default:

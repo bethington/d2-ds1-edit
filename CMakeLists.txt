@@ -247,6 +247,7 @@ set(SOURCES
     src/ui/commands.c
     src/ui/menu_bar.c
     src/ui/map_dialog.c
+    src/ui/fields_dialog.c
     src/ui/map_save_ui.c
     src/ui/export_type_picker.c
     src/ui/upscale_mode_picker.c
