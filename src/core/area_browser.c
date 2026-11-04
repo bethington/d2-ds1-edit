@@ -140,6 +140,7 @@ void area_group_add_entry(AREA_GROUP_S * grp, int lvltype_id,
    e = &grp->entries[grp->entry_count];
    e->lvltype_id = lvltype_id;
    e->lvlprest_def = def;
+   e->palette_act = 0;
    strncpy(e->ds1_path, ds1_path, sizeof(e->ds1_path) - 1);
    e->ds1_path[sizeof(e->ds1_path) - 1] = '\0';
    grp->entry_count++;
@@ -235,6 +236,26 @@ static int area_group_cmp(const void * a, const void * b)
 
 
 /* ---- public API ---- */
+
+/* May the row with this Def be filed by its name under this area? */
+static int area_row_accepts_group(int def, const char * row_name,
+                                  int group_lvltype, const char * group_area)
+{
+   int i, level_type = -1;
+
+   for (i = 0; i < mpq_index_preset_count(); i++)
+   {
+      const PRESET_ENTRY_S * p = mpq_index_preset_at(i);
+      if (p != NULL && p->def == def)
+      {
+         level_type = p->level_type;
+         break;
+      }
+   }
+   return area_row_accepts_name_match(level_type, area_preset_area_name(row_name),
+                                      group_lvltype, group_area);
+}
+
 
 /* Load all Excel tables needed for the area browser. Returns 0 on success. */
 int area_browser_init(void)
@@ -358,7 +379,8 @@ void area_browser_build(void)
        *
        * A row or LvlType with no act in its name is a mod's own, like Project
        * Diablo 2's "Kurast" map. Name matching would file those by accident,
-       * so area_browser_scan_unlisted places them through LevelId instead.
+       * so area_browser_scan_unlisted places them through LevelId instead. It
+       * does the same for a row whose level or rule says the name is misleading.
        */
       {
          const char * area_part;
@@ -411,6 +433,8 @@ void area_browser_build(void)
             lp_def = *lp_def_ptr;
             if (lp_def <= 0)
                continue;
+            if (!area_row_accepts_group((int)lp_def, lp_name, (int)lt_id, lt_name))
+               continue;
 
             /* add each non-empty File1-6 as an entry */
             for (f = 0; f < 6; f++)
@@ -443,11 +467,13 @@ void area_browser_build(void)
          /* Try 3-char prefix */
          {
             char short_prefix[80];
+            char full_name[128];
             const char * ap = grp->name; /* already stripped of "Act X - " */
             int slen = (int)strlen(ap);
             int sk = slen > 3 ? 3 : slen;
             int sm;
 
+            snprintf(full_name, sizeof(full_name), "Act %d - %s", grp->name_act, ap);
             sprintf(short_prefix, "Act %d - ", grp->name_act);
             strncat(short_prefix, ap, sk);
             sm = strlen(short_prefix);
@@ -467,6 +493,8 @@ void area_browser_build(void)
                             + lvlprest->col[lp_def_col].offset);
                lp_def = *lp_def_ptr;
                if (lp_def <= 0)
+                  continue;
+               if (!area_row_accepts_group((int)lp_def, lp_name, grp->lvltype_id, full_name))
                   continue;
 
                for (f = 0; f < 6; f++)
@@ -656,10 +684,15 @@ void area_browser_list_files(const char * filter)
  * Opens it with its correct LvlType and DEF. Returns 0 on success. */
 /* Last-resort palette act, shared by both open paths. misc_open_1_ds1
  * already applied LvlTypes, then the preset's act; only when neither produced
- * a valid act (unlisted map, no preset, v<8 DS1) use the group's folder act. */
-static void area_browser_apply_folder_act(int ds1_idx, const AREA_GROUP_S * g)
+ * a valid act (unlisted map, no preset, v<8 DS1) use the group's folder act.
+ * A map filed by its DT1 names has only a best-fit tileset, so an act of its own
+ * outranks that tileset's. */
+static void area_browser_apply_folder_act(int ds1_idx, const AREA_GROUP_S * g,
+                                          const AREA_DS1_ENTRY_S * e)
 {
-   if (glb_ds1[ds1_idx].txt_act < 1 || glb_ds1[ds1_idx].txt_act > 5)
+   if (e->palette_act != 0)
+      glb_ds1[ds1_idx].txt_act = e->palette_act;
+   else if (glb_ds1[ds1_idx].txt_act < 1 || glb_ds1[ds1_idx].txt_act > 5)
    {
       int act = area_tileless_palette_act((int) glb_ds1[ds1_idx].act, g->act);
 
@@ -754,7 +787,7 @@ int area_browser_open_by_file(const char * ds1_path)
                area_browser_report_open_error(open_error);
                return -1;
             }
-            area_browser_apply_folder_act(ds1_idx, g);
+            area_browser_apply_folder_act(ds1_idx, g, e);
          }
          return 0;
       }
@@ -833,7 +866,7 @@ static int area_browser_open_entry_into_slot(int group_idx, int entry_idx, int d
       return -1;
    }
 
-   area_browser_apply_folder_act(ds1_idx, g);
+   area_browser_apply_folder_act(ds1_idx, g, e);
 
    return 0;
 }
@@ -1298,9 +1331,9 @@ static int unlisted_same_dir(const char * a, const char * b)
 
 /* LvlType of whichever real group already owns this map's folder.
  *
- * A DS1 carries tile indices, not DT1 names, so without a LvlTypes row it has
- * no tileset and renders empty. Neighbouring listed maps are the best guide we
- * have: same folder, same tileset. *act_out receives that group's Act.
+ * Without a LvlTypes row a map has no tileset and renders empty. When its own
+ * DT1 names settle nothing, neighbouring listed maps are the next best guide:
+ * same folder, same tileset. *act_out receives that group's Act.
  * Returns -1 when nothing matches. */
 static int unlisted_lvltype_for_dir(AREA_BROWSER_S * ab, const char * rel,
                                     int * act_out)
@@ -1382,6 +1415,106 @@ static int unlisted_lvltype_by_name(AREA_BROWSER_S * ab, const char * rel,
       return grp->lvltype_id;
    }
    return -1;
+}
+
+static AREA_GROUP_S * unlisted_area_for_lvltype(AREA_BROWSER_S * ab, int lvltype);
+
+/* How well an area suits a map when several tilesets fit its DT1 names equally:
+ * one already holding maps from this folder, then one in the folder's act, then
+ * the bigger area. */
+static long unlisted_tie_rank(const AREA_GROUP_S * grp, const char * rel)
+{
+   long in_folder = 0;
+   int e;
+
+   for (e = 0; e < grp->entry_count; e++)
+   {
+      if (unlisted_same_dir(grp->entries[e].ds1_path, rel))
+         in_folder++;
+   }
+   return in_folder * 1000000L
+        + (grp->act == unlisted_act_from_path(rel) ? 100000L : 0L)
+        + grp->entry_count;
+}
+
+/* LvlTypes Id whose files best hold the DT1 names this map was saved with, or
+ * -1 when they settle nothing. Project Diablo 2's own tilesets are candidates
+ * only for its own maps. *file_act receives the Act the map itself names. */
+static int unlisted_lvltype_from_names(AREA_BROWSER_S * ab, int slot, const char * mpq_path,
+                                       const char * rel, int is_pd2_only, int * file_act)
+{
+   extern GLB_MPQ_S *glb_mpq;
+   extern int mpq_batch_load_in_mem(char *filename, void **buffer,
+                                    long *buf_len, int output);
+   TXT_S * lvltypes = glb_ds1edit.lvltypes_buff;
+   GLB_MPQ_S * saved;
+   char path[512];
+   void * buf = NULL;
+   long buf_len = 0;
+   const char * names = NULL;
+   int count = 0, row, n, f;
+   int lt_id_col, lt_name_col, file_col[32];
+   int best_type = -1, best_score = area_dt1_names_min_score(is_pd2_only) - 1;
+   long best_rank = -1;
+
+   strncpy(path, mpq_path, sizeof(path) - 1);
+   path[sizeof(path) - 1] = '\0';
+
+   saved = glb_mpq;
+   glb_mpq = &glb_mpq_struct[slot];
+   n = mpq_batch_load_in_mem(path, &buf, &buf_len, 0);
+   glb_mpq = saved;
+
+   if (n == -1 || buf == NULL || buf_len <= 0
+       || !area_ds1_embedded_names((const unsigned char *) buf, (size_t) buf_len,
+                                   file_act, &names, &count))
+   {
+      if (buf != NULL) free(buf);
+      return -1;
+   }
+
+   lt_id_col   = misc_get_txt_column_num(RQ_LVLTYPE, "Id");
+   lt_name_col = misc_get_txt_column_num(RQ_LVLTYPE, "Name");
+   for (f = 0; f < 32; f++)
+   {
+      char col_name[10];
+      snprintf(col_name, sizeof(col_name), "File %d", f + 1);
+      file_col[f] = misc_get_txt_column_num(RQ_LVLTYPE, col_name);
+   }
+
+   for (row = 0; row < lvltypes->line_num; row++)
+   {
+      const char * base = lvltypes->data + (row * lvltypes->line_size);
+      const char * files[32];
+      const AREA_GROUP_S * grp;
+      const int id = (int) *(const long *) (base + lvltypes->col[lt_id_col].offset);
+      int score;
+      long rank;
+
+      if (id <= 0) continue;
+      if (!is_pd2_only && area_name_parse_act(base + lvltypes->col[lt_name_col].offset) == 0)
+         continue;
+
+      for (f = 0; f < 32; f++)
+         files[f] = base + lvltypes->col[file_col[f]].offset;
+
+      score = area_dt1_names_score(names, count, files, 32);
+      if (score < best_score) continue;
+
+      grp = unlisted_area_for_lvltype(ab, id);
+      if (grp == NULL) continue;
+
+      rank = unlisted_tie_rank(grp, rel);
+      if (score > best_score || rank > best_rank)
+      {
+         best_type = id;
+         best_score = score;
+         best_rank = rank;
+      }
+   }
+
+   free(buf);
+   return best_type;
 }
 
 /* Find (or create) the per-Act "Unlisted" group. Uses a negative lvltype id
@@ -1518,6 +1651,7 @@ static int unlisted_scan_slot(AREA_BROWSER_S * ab, int slot, int pass)
          const char * rel = line + prefix_len;
          const PRESET_ENTRY_S * preset;
          int act, lvltype = -1, def = -1, nbr_act = 0;
+         int file_act = 0, by_names = 0;
          AREA_GROUP_S * g = NULL;
 
          if (rel[0] == '\0') continue;
@@ -1536,6 +1670,13 @@ static int unlisted_scan_slot(AREA_BROWSER_S * ab, int slot, int pass)
                lvltype = preset->level_type;
             else if (area_preset_area_name(preset->name) != NULL)
                lvltype = unlisted_lvltype_of_area(ab, area_preset_area_name(preset->name));
+         }
+         if (lvltype <= 0 && area_folder_area_name(rel) != NULL)
+            lvltype = unlisted_lvltype_of_area(ab, area_folder_area_name(rel));
+         if (lvltype <= 0)
+         {
+            lvltype = unlisted_lvltype_from_names(ab, slot, line, rel, is_pd2_only, &file_act);
+            by_names = lvltype > 0;
          }
          if (lvltype <= 0)
          {
@@ -1578,7 +1719,15 @@ static int unlisted_scan_slot(AREA_BROWSER_S * ab, int slot, int pass)
          }
          if (g == NULL) continue;
 
-         area_group_add_entry(g, lvltype, def, rel);
+         {
+            const int before = g->entry_count;
+            const AREA_GROUP_S * tileset = by_names ? unlisted_area_for_lvltype(ab, lvltype) : NULL;
+
+            area_group_add_entry(g, lvltype, def, rel);
+            if (tileset != NULL && g->entry_count > before)
+               g->entries[before].palette_act =
+                  file_act >= 2 && file_act != tileset->act ? file_act : 0;
+         }
       }
    }
 

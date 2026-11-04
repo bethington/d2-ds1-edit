@@ -91,6 +91,7 @@ static const struct { const char * prefix; const char * area; } AREA_PRESET_RULE
    { "Act 1 - Bridge",    "Act 1 - Wilderness" },
    { "Act 1 - Cairn",     "Act 1 - Wilderness" },
    { "Act 1 - Camp",      "Act 1 - Wilderness" },
+   { "Act 1 - Cave Entrance", "Act 1 - Wilderness" },
    { "Act 1 - Corral",    "Act 1 - Wilderness" },
    { "Act 1 - Cottages",  "Act 1 - Wilderness" },
    { "Act 1 - DOE",       "Act 1 - Wilderness" },
@@ -115,6 +116,7 @@ static const struct { const char * prefix; const char * area; } AREA_PRESET_RULE
    { "Act 3 - Clearing",  "Act 3 - Jungle"     },
    { "Act 4 - Bridge",    "Act 4 - Lava"       },
    { "Act 4 - Diablo",    "Act 4 - Lava"       },
+   { "Act 4 - Fortress Transition", "Act 4 - Mesa" },
    { "Act 4 - Fortress",  "Act 4 - Town"       },
    { "Act 4 - Pits",      "Act 4 - Mesa"       }
 };
@@ -149,6 +151,196 @@ static int area_path_in_folder(const char * path, const char * folder)
          return 0;
    }
    return 1;
+}
+
+
+/* Folders that no table's tileset owns. Guild maps are Act 1 outdoors whatever
+ * their own Act field says; the arena is built from the Act 2 tomb. */
+static const struct { const char * folder; const char * area; } AREA_FOLDER_RULES[] =
+{
+   { "guild\\cottages\\", "Act 1 - Wilderness" },
+   { "guild\\house1\\",   "Act 1 - Wilderness" },
+   { "guild\\house2\\",   "Act 1 - Wilderness" },
+   { "arena\\tombs\\",    "Act 2 - Tomb"       }
+};
+
+
+const char * area_folder_area_name(const char * rel_path)
+{
+   size_t i;
+
+   if (rel_path == NULL)
+      return NULL;
+
+   for (i = 0; i < sizeof(AREA_FOLDER_RULES) / sizeof(AREA_FOLDER_RULES[0]); i++)
+   {
+      if (area_path_in_folder(rel_path, AREA_FOLDER_RULES[i].folder))
+         return AREA_FOLDER_RULES[i].area;
+   }
+   return NULL;
+}
+
+
+/* May a LvlPrest row whose name starts like this area's be filed under it? Its
+ * level's tileset decides first, then an explicit rule; a name is only a name. */
+int area_row_accepts_name_match(int level_type, const char * rule_area,
+                                int group_lvltype, const char * group_area)
+{
+   if (level_type > 0)
+      return level_type == group_lvltype;
+   if (rule_area != NULL)
+      return group_area != NULL && strcmp(rule_area, group_area) == 0;
+   return 1;
+}
+
+
+static unsigned long area_le32(const unsigned char * p)
+{
+   return (unsigned long) p[0] | ((unsigned long) p[1] << 8)
+        | ((unsigned long) p[2] << 16) | ((unsigned long) p[3] << 24);
+}
+
+
+/* The DT1 name table of a DS1, version 3 onward. *names points into buf at
+ * count NUL-terminated strings. Returns 0 when the file has no complete table. */
+int area_ds1_embedded_names(const unsigned char * buf, size_t len, int * act,
+                            const char ** names, int * count)
+{
+   unsigned long version, stored;
+   size_t pos = 12, p;
+
+   if (buf == NULL || len < 12)
+      return 0;
+
+   version = area_le32(buf);
+   if (version < 3 || version > 0x7FFFFFFFUL)
+      return 0;
+
+   *act = 1;
+   if (version >= 8)
+   {
+      if (len < pos + 4)
+         return 0;
+      stored = area_le32(buf + pos);
+      *act = stored >= 4 ? 5 : (int) stored + 1;
+      pos += 4;
+   }
+   if (version >= 10)
+      pos += 4;
+   if (len < pos + 4)
+      return 0;
+
+   stored = area_le32(buf + pos);
+   pos += 4;
+   if (stored > 0x7FFFFFFFUL)
+      return 0;
+
+   p = pos;
+   {
+      unsigned long i;
+      for (i = 0; i < stored; i++)
+      {
+         const unsigned char * nul = p < len
+            ? (const unsigned char *) memchr(buf + p, 0, len - p) : NULL;
+         if (nul == NULL)
+            return 0;
+         p = (size_t) (nul - buf) + 1;
+      }
+   }
+
+   *names = (const char *) buf + pos;
+   *count = (int) stored;
+   return 1;
+}
+
+
+static char area_path_char(char c)
+{
+   if (c == '/') c = '\\';
+   if (c >= 'A' && c <= 'Z') c = (char) (c - 'A' + 'a');
+   return c;
+}
+
+
+/* Start of "folder\name" in a path, or NULL when it has no folder. *end_out is
+ * where the name stops, before any extension: maps saved with .tg1 names load
+ * the matching .dt1. */
+static const char * area_dt1_tail(const char * path, const char ** end_out)
+{
+   const char * last = NULL, * prev = NULL, * p;
+
+   for (p = path; *p != '\0'; p++)
+   {
+      if (*p == '/' || *p == '\\') { prev = last; last = p; }
+   }
+   if (last == NULL)
+      return NULL;
+
+   *end_out = p;
+   for (p = last; *p != '\0'; p++)
+   {
+      if (*p == '.') *end_out = p;
+   }
+   return prev != NULL ? prev + 1 : path;
+}
+
+
+int area_dt1_names_match(const char * embedded, const char * lvltype_file)
+{
+   const char * a, * b, * a_end = NULL, * b_end = NULL;
+
+   if (embedded == NULL || lvltype_file == NULL)
+      return 0;
+
+   a = area_dt1_tail(embedded, &a_end);
+   b = area_dt1_tail(lvltype_file, &b_end);
+   if (a == NULL || b == NULL || (a_end - a) != (b_end - b))
+      return 0;
+
+   for (; a < a_end; a++, b++)
+   {
+      if (area_path_char(*a) != area_path_char(*b))
+         return 0;
+   }
+   return 1;
+}
+
+
+/* Percent of a map's DT1 names that this tileset's files hold, or -1 when the
+ * map names nothing to judge by. The warp tiles are in nearly every map and
+ * nearly every tileset, so they say nothing. */
+int area_dt1_names_score(const char * names, int count,
+                         const char * const * files, int file_count)
+{
+   int i, f, judged = 0, hits = 0;
+
+   if (names == NULL)
+      return -1;
+
+   for (i = 0; i < count; i++, names += strlen(names) + 1)
+   {
+      if (area_dt1_names_match(names, "barracks\\warp"))
+         continue;
+      judged++;
+      for (f = 0; f < file_count; f++)
+      {
+         if (area_dt1_names_match(names, files[f]))
+         {
+            hits++;
+            break;
+         }
+      }
+   }
+   return judged > 0 ? hits * 100 / judged : -1;
+}
+
+
+/* The score that lets a map's names choose its tileset. A Project Diablo 2 map
+ * mostly names the mod's own DT1s and stays in its own section whatever it is
+ * given, so the nearest tileset beats opening it with none. */
+int area_dt1_names_min_score(int is_pd2_only)
+{
+   return is_pd2_only ? 20 : AREA_DT1_NAMES_MIN_SCORE;
 }
 
 

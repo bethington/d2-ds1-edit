@@ -36,8 +36,12 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
 - **The map browser files maps where they belong.** Maps that `LvlPrest` names
   under a different word than their area, such as Burbs, Slums and Fortress, no
   longer land in "Unlisted", so Act 3 Kurast and Act 4 Town are no longer empty.
-  Maps in a folder with a single known tileset join that area, leaving about 140
-  of the 952 that were unlisted. Empty areas and repeated maps are gone.
+  A row's level now outranks its name, so `tempEnter.ds1` and `MtnTop.ds1` open
+  with Barricade tiles instead of mostly missing ones. Maps no table names are
+  placed by the DT1 names saved in the file, which also corrects guesses such as
+  `chaos08x08_4.ds1` in Act 3 Kurast, then by folder. Guild and arena maps have
+  explicit homes. Five of the 952 unlisted maps remain, because nothing in them
+  points to one tileset. Empty areas and repeated maps are gone.
 - **Thirteen maps no longer close the editor.** A map no `LvlPrest` row names,
   such as `expansion\\lavaE.ds1` or `ACT1\\OUTDOORS\\ruin1.ds1`, stopped the editor
   with a fatal error if rows in other folders used its filename. Those rows are
@@ -48,8 +52,10 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
   naming Act 2 to 5 is believed, which fixes the green `expansion\\lavaX.ds1`.
 - **Project Diablo 2 maps have their own section.** Maps only PD2 ships appear
   under "Project Diablo 2", named by their `LvlPrest` row, and open with the
-  tileset `Levels.txt` gives them, so they draw in full. This needs PD2's current
-  tables: an older `mod_dir` copy of them overrides these names and tilesets.
+  tileset `Levels.txt` gives them, so they draw in full. A map with no level uses
+  the tileset nearest its saved DT1 names, which may draw only part of it. This
+  needs PD2's current tables: an older `mod_dir` copy of them overrides these
+  names and tilesets.
 
 - **The pointer works on any Mac, including over a remote desktop.** macOS now
   reads the pointer from Cocoa events instead of Allegro's mouse driver, which
