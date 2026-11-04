@@ -510,3 +510,10 @@ int project_save_would_replace(const char *src)
       return 0;
    return stat(target, &st) == 0;
 }
+
+const char *project_open_game_folder(const char *configured, const char *project_install)
+{
+   if (configured != NULL && configured[0] != 0)
+      return configured;
+   return project_install != NULL ? project_install : "";
+}

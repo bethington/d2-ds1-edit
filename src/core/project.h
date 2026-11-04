@@ -96,6 +96,11 @@ int  project_path_in_game_install(const char *path);
 // NULL or empty `dir`.
 int  project_path_is_inside(const char *path, const char *dir);
 
+/* The game folder whose archives the editor has open: the configured d2_install (the
+   one the archives were read from at startup), else the project's, which only fills in
+   an empty one. Never NULL. */
+const char *project_open_game_folder(const char *configured, const char *project_install);
+
 /* Everything after the last "/tiles/" in a path, i.e. the form MPQ
  * virtual paths under Data\\Global\\Tiles\\ are keyed on.
  * NULL if the path has no tiles component. */

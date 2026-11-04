@@ -284,7 +284,7 @@ This editor is using essentially the keyboard and the mouse together. There's no
 
 ### Menus
 
-The bar across the top holds **File**, **Edit**, **Map**, **View** and **Build**. Click a title, or press **Alt** with its first letter. Arrow keys move, **Enter** runs the highlighted command, and **Esc** closes the menu. A command with a hotkey shows it; six rows (Project Settings, Revert to Game Version, Remove from Project, Restore Slot, Restore from Backup, Launch Profile) have none. Commands that don't apply right now are dimmed, and some arrive in later releases.
+The bar across the top holds **File**, **Edit**, **Map**, **View** and **Build**. Click a title, or press **Alt** with its first letter. Arrow keys move, **Enter** runs the highlighted command, and **Esc** closes the menu. A command with a hotkey shows it; six rows (Project Settings, Revert to Game Version, Remove from Project, Restore Slot, Restore from Backup, Launch Profile) have none. Commands that don't apply right now are dimmed, and some arrive in later releases. Build MPQ and Build & Test read the game from the folder the editor opened at start, which is `d2_install` in Ds1edit.ini when set; a project's Game folder is used only when that is empty, and a change to it applies the next time the project opens.
 
 | Key | Command |
 |---|---|

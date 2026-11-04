@@ -702,12 +702,11 @@ static int interface_map_in_game(const char *ds1_path, void *ctx)
    return area_browser_game_has_map(ds1_path);
 }
 
-/* The folder this project's game files come from: its own, else the configured one. */
+/* The folder whose archives are open, so the base MPQ, the game's table and in_game
+ * all read one install. A changed project d2_install doesn't move it until reopen. */
 static const char *interface_game_folder(void)
 {
-   if (glb_project.d2_install[0] != '\0')
-      return glb_project.d2_install;
-   return glb_config.d2_install != NULL ? glb_config.d2_install : "";
+   return project_open_game_folder(glb_config.d2_install, glb_project.d2_install);
 }
 
 /* Pack the project into <project>/build/patch_d2.mpq. 0 if it was written, else -1,
@@ -896,7 +895,8 @@ static void interface_project_settings(void)
    }
    if (strcmp(old_game, f.game) != 0)
       interface_info_box("Project Settings", "The game folder changed.",
-         "It takes effect the next time the project opens.");
+         "It takes effect the next time the project opens. If Ds1edit.ini sets d2_install, "
+         "the editor reads that folder instead.");
 }
 
 /* Save, install the project's loose files in the test copy and start the game. The
