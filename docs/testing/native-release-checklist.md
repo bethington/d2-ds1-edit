@@ -222,8 +222,8 @@ Use act 1 Town and at least two other maps from different acts.
      create a map, and save. Run **Build & Test**. At the game's menu, before starting
      a game, run **Build MPQ**. It refuses and says the table has changed since the game
      last compiled it. A new map joins the row's random pick, so seeing it in the game
-     can't be forced. A row with a single map is the way to force a map being used.
-     On a row that has a size, the map must match that size.
+     can't be forced, and it may take several new games with new characters. On a row
+     that has a size, the map must match that size.
   5. **Build the MPQ.** Start a game in the test copy, so the game compiles the tables,
      then run **Build MPQ**. It succeeds and writes `<project>/build/patch_d2.mpq`.
   6. **Use the MPQ in a player's copy.** Replace `patch_d2.mpq` in the second copy with
