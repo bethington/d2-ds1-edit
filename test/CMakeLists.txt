@@ -168,15 +168,21 @@ target_compile_definitions(test_mpq_build PRIVATE DS1EDIT_VERSION_STR="${PROJECT
 add_test(NAME mpq_build COMMAND test_mpq_build)
 set_tests_properties(mpq_build PROPERTIES LABELS "portable")
 
-# The launch profile and the check of whether it is usable
+# The launch profile, the install into a test copy, and starting the game. fake_game
+# stands in for the game and writes what it was given to fake_game.out.
+add_executable(fake_game support/fake_game.c)
 add_executable(test_game_launch test_game_launch.c
     support/test_tmp.c
-    ../src/core/game_launch.c ../src/core/project.c ../src/core/preferences.c
-    ../src/platform.c)
-target_link_libraries(test_game_launch PRIVATE unity ds1edit_allegro)
+    ../src/core/game_launch.c ../src/core/mpq_build.c ../src/core/mpq_write.c
+    ../src/core/mpq_crypt.c ../src/core/map_ops.c ../src/core/lvlprest_text.c
+    ../src/core/file_copy.c
+    ../src/core/project.c ../src/core/preferences.c ../src/platform.c)
+add_dependencies(test_game_launch fake_game)
+target_link_libraries(test_game_launch PRIVATE unity ds1edit_allegro ZLIB::ZLIB)
 target_include_directories(test_game_launch PRIVATE
     ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/test)
-target_compile_definitions(test_game_launch PRIVATE DS1EDIT_VERSION_STR="${PROJECT_VERSION}")
+target_compile_definitions(test_game_launch PRIVATE DS1EDIT_VERSION_STR="${PROJECT_VERSION}"
+    FAKE_GAME_PATH="$<TARGET_FILE:fake_game>")
 add_test(NAME game_launch COMMAND test_game_launch)
 set_tests_properties(game_launch PROPERTIES LABELS "portable")
 

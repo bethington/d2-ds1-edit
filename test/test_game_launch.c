@@ -1,19 +1,30 @@
-/* game_profile_check over a temp folder holding an empty Game.exe. Nothing here
- * touches a game install. */
+/* game_profile_check, game_install and game_start over temp folders. game_start runs
+ * only fake_game. Nothing here touches a game install. */
+#ifndef _WIN32
+#ifndef _GNU_SOURCE
+#define _POSIX_C_SOURCE 200809L
+#endif
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #ifdef WIN32
 #include <direct.h>
+#include <sys/utime.h>
+#include <share.h>
 #define getcwd _getcwd
 #else
 #include <unistd.h>
+#include <utime.h>
 #endif
+#include <allegro5/allegro.h>
 
 #include "unity/unity.h"
 #include "structs.h"
+#include "core/file_copy.h"
 #include "core/game_launch.h"
+#include "core/mpq_build.h"
 #include "core/project.h"
 #include "support/test_tmp.h"
 
@@ -312,6 +323,499 @@ void test_the_write_check_leaves_nothing_behind(void)
    TEST_ASSERT_EQUAL_INT(1, tt_count_entries(game));   /* only Game.exe */
 }
 
+/* ---- game_install ----------------------------------------------------- */
+
+static char proj[1200];
+static int  installed;
+
+static void put(const char *rel, const char *text)
+{
+   char path[1400];
+
+   snprintf(path, sizeof(path), "%s/%s", proj, rel);
+   TEST_ASSERT_TRUE(project_ensure_parent_dirs(path));
+   TEST_ASSERT_TRUE(tt_write_file(path, text, strlen(text)));
+}
+
+static void put_game(const char *rel, const char *text)
+{
+   char path[1400];
+
+   snprintf(path, sizeof(path), "%s/%s", game, rel);
+   TEST_ASSERT_TRUE(project_ensure_parent_dirs(path));
+   TEST_ASSERT_TRUE(tt_write_file(path, text, strlen(text)));
+}
+
+static int game_has(const char *rel)
+{
+   char path[1400];
+
+   snprintf(path, sizeof(path), "%s/%s", game, rel);
+   return tt_file_exists(path);
+}
+
+/* A file as NUL-ended text, or NULL; free it. */
+static char *read_text(const char *path)
+{
+   size_t len;
+   unsigned char *data = tt_read_file(path, &len);
+   char *text;
+
+   if (data == NULL) return NULL;
+   text = (char *) malloc(len + 1);
+   TEST_ASSERT_NOT_NULL(text);
+   memcpy(text, data, len);
+   text[len] = 0;
+   free(data);
+   return text;
+}
+
+/* A file of the game folder as text; free it. */
+static char *game_text(const char *rel)
+{
+   char path[1400];
+   char *text;
+
+   snprintf(path, sizeof(path), "%s/%s", game, rel);
+   text = read_text(path);
+   TEST_ASSERT_NOT_NULL_MESSAGE(text, rel);
+   return text;
+}
+
+static void expect_game_text(const char *rel, const char *text)
+{
+   char *got = game_text(rel);
+
+   TEST_ASSERT_EQUAL_STRING(text, got);
+   free(got);
+}
+
+static int install(void)
+{
+   err[0] = 0;
+   installed = -1;
+   return game_install(proj, game, &installed, err, sizeof(err));
+}
+
+static void make_project(void)
+{
+   snprintf(proj, sizeof(proj), "%s/proj", abs_root);
+   TEST_ASSERT_TRUE(tt_mkdir(proj));
+}
+
+typedef struct { char log[2048]; int n; } SEEN_S;
+
+static void note(const char *source, const char *rel, int is_table, void *ctx)
+{
+   SEEN_S *s = (SEEN_S *) ctx;
+
+   (void) source;
+   snprintf(s->log + strlen(s->log), sizeof(s->log) - strlen(s->log), "%s/%s\n",
+            is_table ? "DATA/GLOBAL/EXCEL" : "DATA/GLOBAL/TILES", rel);
+   s->n++;
+}
+
+void test_tiles_and_tables_land_in_their_folders(void)
+{
+   make_project();
+   put("Global/Tiles/Act1/Town/Mine.ds1", "mine");
+   put("Global/Tiles/Act1/Walls.dt1", "walls");
+   put("Data/Global/Excel/Misc.txt", "misc");
+
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, install(), err);
+   TEST_ASSERT_EQUAL_INT(3, installed);
+   expect_game_text("DATA/GLOBAL/TILES/Act1/Town/Mine.ds1", "mine");
+   expect_game_text("DATA/GLOBAL/TILES/Act1/Walls.dt1", "walls");
+   expect_game_text("DATA/GLOBAL/EXCEL/Misc.txt", "misc");
+}
+
+void test_both_folders_are_made_for_a_project_with_no_tables(void)
+{
+   make_project();
+   put("Global/Tiles/Only.ds1", "x");
+
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, install(), err);
+   TEST_ASSERT_EQUAL_INT(1, installed);
+   TEST_ASSERT_TRUE(game_has("DATA/GLOBAL/EXCEL"));
+   TEST_ASSERT_TRUE(game_has("DATA/GLOBAL/TILES"));
+}
+
+void test_an_empty_project_still_installs_and_makes_the_folders(void)
+{
+   make_project();
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, install(), err);
+   TEST_ASSERT_EQUAL_INT(0, installed);
+   TEST_ASSERT_TRUE(game_has("DATA/GLOBAL/EXCEL"));
+   TEST_ASSERT_TRUE(game_has("DATA/GLOBAL/TILES"));
+}
+
+void test_the_files_are_the_ones_build_mpq_takes(void)
+{
+   SEEN_S s;
+   char *manifest;
+
+   make_project();
+   put("Global/Tiles/Act1/Town/Mine.ds1", "m");
+   put("Data/Global/Tiles/Act2/Deep/Walls.dt1", "w");
+   put("Global/Tiles/readme.md", "x");
+   put("Global/Tiles/Act1/Mine.ds1.bak", "x");
+   put("Global/Excel/Misc.TXT", "t");
+   put("Global/Excel/Misc.bin", "x");
+   put("Global/Other/Thing.ds1", "x");
+   memset(&s, 0, sizeof(s));
+   mpq_build_each_file(proj, note, &s);
+   TEST_ASSERT_EQUAL_INT(3, s.n);
+
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, install(), err);
+   TEST_ASSERT_EQUAL_INT(s.n, installed);
+   TEST_ASSERT_FALSE(game_has("DATA/GLOBAL/TILES/readme.md"));
+   TEST_ASSERT_FALSE(game_has("DATA/GLOBAL/TILES/Act1/Mine.ds1.bak"));
+   TEST_ASSERT_FALSE(game_has("DATA/GLOBAL/EXCEL/Misc.bin"));
+   TEST_ASSERT_FALSE(game_has("DATA/GLOBAL/TILES/Thing.ds1"));
+   /* The manifest names what Build MPQ's callback named, in its order, one to a line,
+      relative with forward slashes and no carriage returns. */
+   manifest = game_text("ds1edit-installed.txt");
+   TEST_ASSERT_EQUAL_STRING(s.log, manifest);
+   free(manifest);
+}
+
+void test_a_second_install_removes_a_map_that_is_gone(void)
+{
+   char path[1400];
+
+   make_project();
+   put("Global/Tiles/Keep.ds1", "keep");
+   put("Global/Tiles/Gone.ds1", "gone");
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, install(), err);
+   TEST_ASSERT_TRUE(game_has("DATA/GLOBAL/TILES/Gone.ds1"));
+
+   snprintf(path, sizeof(path), "%s/Global/Tiles/Gone.ds1", proj);
+   TEST_ASSERT_EQUAL_INT(0, remove(path));
+   put("Global/Tiles/Keep.ds1", "keep, changed");
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, install(), err);
+   TEST_ASSERT_EQUAL_INT(1, installed);
+   TEST_ASSERT_FALSE(game_has("DATA/GLOBAL/TILES/Gone.ds1"));
+   expect_game_text("DATA/GLOBAL/TILES/Keep.ds1", "keep, changed");
+   TEST_ASSERT_FALSE(game_has("DATA/GLOBAL/TILES/Keep.ds1.ds1edit-new"));
+   TEST_ASSERT_FALSE(game_has("ds1edit-installed.txt.ds1edit-new"));
+}
+
+void test_only_listed_files_are_removed(void)
+{
+   char manifest[3000], outside[1400];
+
+   make_project();
+   put("Global/Tiles/A.ds1", "a");
+   put_game("DATA/GLOBAL/TILES/Unrelated.ds1", "not ours");
+   put_game("DATA/GLOBAL/EXCEL/Armor.txt", "the game's");
+   put_game("victim.txt", "above the folders");
+   snprintf(outside, sizeof(outside), "%s/outside.txt", abs_root);
+   TEST_ASSERT_TRUE(tt_write_file(outside, "outside", 7));
+   snprintf(manifest, sizeof(manifest),
+            "DATA/GLOBAL/TILES/../../../victim.txt\n"
+            "%s\n"
+            "/outside.txt\n"
+            "DATA\\GLOBAL\\TILES\\Unrelated.ds1\n"
+            "Game.exe\n"
+            "DATA/GLOBAL/TILES/Old.ds1\n", outside);
+   put_game("ds1edit-installed.txt", manifest);
+   put_game("DATA/GLOBAL/TILES/Old.ds1", "ours, from before");
+
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, install(), err);
+   expect_game_text("DATA/GLOBAL/TILES/Unrelated.ds1", "not ours");
+   expect_game_text("DATA/GLOBAL/EXCEL/Armor.txt", "the game's");
+   expect_game_text("victim.txt", "above the folders");
+   TEST_ASSERT_TRUE(game_has("Game.exe"));
+   TEST_ASSERT_TRUE(tt_file_exists(outside));
+   TEST_ASSERT_FALSE(game_has("DATA/GLOBAL/TILES/Old.ds1"));
+   expect_game_text("DATA/GLOBAL/TILES/A.ds1", "a");
+}
+
+void test_a_tables_bin_is_removed_and_another_bin_is_not(void)
+{
+   make_project();
+   put("Global/Excel/Misc.txt", "t");
+   put_game("DATA/GLOBAL/EXCEL/Misc.bin", "stale");
+   put_game("DATA/GLOBAL/EXCEL/Armor.bin", "the game's");
+
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, install(), err);
+   TEST_ASSERT_FALSE(game_has("DATA/GLOBAL/EXCEL/Misc.bin"));
+   expect_game_text("DATA/GLOBAL/EXCEL/Armor.bin", "the game's");
+   expect_game_text("DATA/GLOBAL/EXCEL/Misc.txt", "t");
+}
+
+void test_the_installed_text_is_not_given_the_sources_old_time(void)
+{
+   char src[1400], dst[1400];
+   struct stat b;
+#ifdef WIN32
+   struct _utimbuf t;
+#else
+   struct utimbuf t;
+#endif
+
+   make_project();
+   put("Global/Excel/Misc.txt", "t");
+   snprintf(src, sizeof(src), "%s/Global/Excel/Misc.txt", proj);
+   snprintf(dst, sizeof(dst), "%s/DATA/GLOBAL/EXCEL/Misc.txt", game);
+   t.actime = t.modtime = 1000000000;   /* 2001 */
+#ifdef WIN32
+   TEST_ASSERT_EQUAL_INT(0, _utime(src, &t));
+#else
+   TEST_ASSERT_EQUAL_INT(0, utime(src, &t));
+#endif
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, install(), err);
+   TEST_ASSERT_EQUAL_INT(0, stat(dst, &b));
+   TEST_ASSERT_TRUE(b.st_mtime > 1000000000 + 86400);
+}
+
+/* Make a file unreadable until unlock_file. 0 if this system can't. */
+#ifdef WIN32
+static FILE *lock_fp;
+static int lock_file(const char *path)
+{
+   lock_fp = _fsopen(path, "rb", _SH_DENYRW);
+   return lock_fp != NULL;
+}
+static void unlock_file(const char *path) { (void) path; fclose(lock_fp); }
+#else
+static int lock_file(const char *path)
+{
+   FILE *fp;
+
+   if (chmod(path, 0) != 0) return 0;
+   fp = fopen(path, "rb");
+   if (fp != NULL) { fclose(fp); chmod(path, 0644); return 0; }   /* root */
+   return 1;
+}
+static void unlock_file(const char *path) { chmod(path, 0644); }
+#endif
+
+void test_a_project_file_that_cant_be_read_changes_nothing(void)
+{
+   char path[1400], tiles_dir[1400];
+   char *old;
+
+   make_project();
+   put("Global/Tiles/A.ds1", "new a");
+   put("Global/Tiles/Z.ds1", "new z");
+   put_game("DATA/GLOBAL/TILES/A.ds1", "old a");
+   put_game("ds1edit-installed.txt", "DATA/GLOBAL/TILES/A.ds1\n");
+   snprintf(path, sizeof(path), "%s/Global/Tiles/Z.ds1", proj);
+   if (!lock_file(path)) TEST_IGNORE_MESSAGE("can't make a file unreadable here");
+
+   TEST_ASSERT_EQUAL_INT(-1, install());
+   unlock_file(path);
+   TEST_ASSERT_NOT_NULL(strstr(err, "Z.ds1"));
+   expect_game_text("DATA/GLOBAL/TILES/A.ds1", "old a");
+   TEST_ASSERT_FALSE(game_has("DATA/GLOBAL/TILES/A.ds1.ds1edit-new"));
+   TEST_ASSERT_FALSE(game_has("DATA/GLOBAL/TILES/Z.ds1.ds1edit-new"));
+   TEST_ASSERT_FALSE(game_has("DATA/GLOBAL/TILES/Z.ds1"));
+   old = game_text("ds1edit-installed.txt");
+   TEST_ASSERT_EQUAL_STRING("DATA/GLOBAL/TILES/A.ds1\n", old);
+   free(old);
+   snprintf(tiles_dir, sizeof(tiles_dir), "%s/DATA/GLOBAL/TILES", game);
+   TEST_ASSERT_EQUAL_INT(1, tt_count_entries(tiles_dir));   /* A.ds1 only */
+}
+
+void test_an_install_never_writes_through_an_existing_file(void)
+{
+#ifdef WIN32
+   TEST_IGNORE_MESSAGE("hard links to a game's files are a POSIX concern here");
+#else
+   char target[1400], other[1400];
+
+   make_project();
+   put("Global/Tiles/A.ds1", "new");
+   put_game("DATA/GLOBAL/TILES/A.ds1", "the original bytes");
+   snprintf(target, sizeof(target), "%s/DATA/GLOBAL/TILES/A.ds1", game);
+   snprintf(other, sizeof(other), "%s/linked-name", game);
+   if (link(target, other) != 0) TEST_IGNORE_MESSAGE("this system can't hard-link here");
+
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, install(), err);
+   expect_game_text("DATA/GLOBAL/TILES/A.ds1", "new");
+   expect_game_text("linked-name", "the original bytes");
+#endif
+}
+
+void test_a_file_the_game_holds_open_says_the_game_may_be_running(void)
+{
+#ifndef WIN32
+   TEST_IGNORE_MESSAGE("a held-open file can be replaced on POSIX");
+#else
+   char target[1400];
+   FILE *held;
+
+   make_project();
+   put("Global/Tiles/A.ds1", "new");
+   put_game("DATA/GLOBAL/TILES/A.ds1", "old");
+   snprintf(target, sizeof(target), "%s/DATA/GLOBAL/TILES/A.ds1", game);
+   held = _fsopen(target, "rb", _SH_DENYWR);   /* like a game with the file open */
+   TEST_ASSERT_NOT_NULL(held);
+   TEST_ASSERT_EQUAL_INT(-1, install());
+   fclose(held);
+   TEST_ASSERT_EQUAL_STRING("The game may be running. Close it and try again.", err);
+   expect_game_text("DATA/GLOBAL/TILES/A.ds1", "old");
+   TEST_ASSERT_FALSE(game_has("DATA/GLOBAL/TILES/A.ds1.ds1edit-new"));
+#endif
+}
+
+/* ---- game_start ------------------------------------------------------- */
+
+static void make_executable(const char *path)
+{
+   TEST_ASSERT_EQUAL_INT(FILE_COPY_OK, file_copy_checked(FAKE_GAME_PATH, path));
+#ifndef WIN32
+   TEST_ASSERT_EQUAL_INT(0, chmod(path, 0755));
+#endif
+}
+
+/* What the fake game wrote, NUL-ended, or NULL after 5 seconds. Free it. */
+static char *wait_for_output(void)
+{
+   char path[1400];
+   int i;
+
+   snprintf(path, sizeof(path), "%s/fake_game.out", game);
+   for (i = 0; i < 100; i++)
+   {
+      char *text = read_text(path);
+
+      if (text != NULL)
+         return text;
+      al_rest(0.05);
+   }
+   return NULL;
+}
+
+/* A folder as typed and as the game saw it may differ in slash style and case. */
+static void expect_same_path(const char *want, const char *got, int n)
+{
+   int i;
+
+   for (i = 0; i < n; i++)
+   {
+      char a = want[i] == '\\' ? '/' : want[i], b = got[i] == '\\' ? '/' : got[i];
+
+      if (a >= 'A' && a <= 'Z') a = (char) (a + 32);
+      if (b >= 'A' && b <= 'Z') b = (char) (b + 32);
+      TEST_ASSERT_EQUAL_CHAR_MESSAGE(a, b, got);
+   }
+}
+
+void test_the_game_gets_its_folder_and_every_argument(void)
+{
+   GAME_PROFILE_S p;
+   char exe[1400], *out, *line;
+
+   snprintf(exe, sizeof(exe), "%s/Game.exe", game);
+   make_executable(exe);
+   p = profile(game, "Game.exe", "-w -direct  \"two words\" -txt \"\"");
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, game_start(&p, err, sizeof(err)), err);
+   out = wait_for_output();
+   TEST_ASSERT_NOT_NULL_MESSAGE(out, "the game never ran");
+   expect_same_path(game, out, (int) strlen(game));
+   line = strchr(out, '\n') + 1;
+   TEST_ASSERT_EQUAL_STRING("-w\n-direct\ntwo words\n-txt\n\n", line);
+   free(out);
+}
+
+void test_a_wrapper_runs_first_and_gets_the_exe_then_the_arguments(void)
+{
+   GAME_PROFILE_S p;
+   char wrapper[1400], exe[1400], *out, *line;
+
+   snprintf(wrapper, sizeof(wrapper), "%s/wrapper.exe", abs_root);
+   make_executable(wrapper);
+   p = profile(game, "Game.exe", "-direct -txt");
+   p.wrapper = wrapper;
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, game_start(&p, err, sizeof(err)), err);
+   out = wait_for_output();
+   TEST_ASSERT_NOT_NULL_MESSAGE(out, "the wrapper never ran");
+   expect_same_path(game, out, (int) strlen(game));
+   line = strchr(out, '\n') + 1;
+   snprintf(exe, sizeof(exe), "%s/Game.exe", game);
+   expect_same_path(exe, line, (int) strlen(exe));
+   line = strchr(line, '\n') + 1;
+   TEST_ASSERT_EQUAL_STRING("-direct\n-txt\n", line);
+   free(out);
+}
+
+void test_a_missing_executable_is_refused_with_the_command_line(void)
+{
+   GAME_PROFILE_S p = profile(game, "Nope.exe", "-direct -txt");
+   char cmd[1400];
+
+   TEST_ASSERT_EQUAL_INT(-1, game_start(&p, err, sizeof(err)));
+   TEST_ASSERT_NOT_NULL(strstr(err, "Nope.exe"));
+   game_command_text(&p, cmd, sizeof(cmd));
+   TEST_ASSERT_NOT_NULL_MESSAGE(strstr(err, cmd), err);
+}
+
+void test_a_missing_wrapper_is_refused_with_the_command_line(void)
+{
+   GAME_PROFILE_S p = profile(game, "Game.exe", "-direct -txt");
+   char wrapper[1400], cmd[1400];
+
+   snprintf(wrapper, sizeof(wrapper), "%s/no-such-wrapper", abs_root);
+   p.wrapper = wrapper;
+   TEST_ASSERT_EQUAL_INT(-1, game_start(&p, err, sizeof(err)));
+   TEST_ASSERT_NOT_NULL(strstr(err, "no-such-wrapper"));
+   game_command_text(&p, cmd, sizeof(cmd));
+   TEST_ASSERT_NOT_NULL_MESSAGE(strstr(err, cmd), err);
+}
+
+void test_a_program_that_cant_run_returns_a_reason_and_the_command(void)
+{
+   /* Present, but not something the system can start. */
+   GAME_PROFILE_S p = profile(game, "Game.exe", "-direct -txt");
+   char exe[1400], cmd[1400];
+
+   snprintf(exe, sizeof(exe), "%s/Game.exe", game);
+   TEST_ASSERT_TRUE(tt_write_file(exe, "not a program", 13));
+#ifndef WIN32
+   TEST_ASSERT_EQUAL_INT(0, chmod(exe, 0755));
+#endif
+   TEST_ASSERT_EQUAL_INT(-1, game_start(&p, err, sizeof(err)));
+   game_command_text(&p, cmd, sizeof(cmd));
+   TEST_ASSERT_NOT_NULL_MESSAGE(strstr(err, cmd), err);
+   TEST_ASSERT_TRUE(strlen(err) > strlen(cmd));
+}
+
+void test_the_command_text_quotes_what_needs_it(void)
+{
+   GAME_PROFILE_S p = profile("/my game", "Game.exe", "-w \"two words\" -txt");
+   char text[1400];
+
+   game_command_text(&p, text, sizeof(text));
+   TEST_ASSERT_EQUAL_STRING("\"/my game/Game.exe\" -w \"two words\" -txt", text);
+   p.wrapper = "wine";
+   game_command_text(&p, text, sizeof(text));
+   TEST_ASSERT_EQUAL_STRING("wine \"/my game/Game.exe\" -w \"two words\" -txt", text);
+   p = profile("/g", "Game.exe", "-a  -b");
+   game_command_text(&p, text, sizeof(text));
+   TEST_ASSERT_EQUAL_STRING("/g/Game.exe -a -b", text);
+}
+
+void test_the_command_text_is_what_ran(void)
+{
+   GAME_PROFILE_S p;
+   char exe[1400], text[2800], want[2800], *out;
+
+   if (strchr(game, ' ') != NULL) TEST_IGNORE_MESSAGE("the test folder has a space in it");
+   snprintf(exe, sizeof(exe), "%s/Game.exe", game);
+   make_executable(exe);
+   p = profile(game, "Game.exe", "-direct \"a b\" -txt");
+   game_command_text(&p, text, sizeof(text));
+   snprintf(want, sizeof(want), "%s/Game.exe -direct \"a b\" -txt", game);
+   TEST_ASSERT_EQUAL_STRING(want, text);
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, game_start(&p, err, sizeof(err)), err);
+   out = wait_for_output();
+   TEST_ASSERT_NOT_NULL(out);
+   TEST_ASSERT_NOT_NULL(strstr(out, "-direct\na b\n-txt\n"));
+   free(out);
+}
+
 int main(void)
 {
    UNITY_BEGIN();
@@ -330,5 +834,23 @@ int main(void)
    RUN_TEST(test_args_need_direct_and_txt_as_whole_words_in_any_case);
    RUN_TEST(test_a_folder_that_cant_be_written_is_refused);
    RUN_TEST(test_the_write_check_leaves_nothing_behind);
+   RUN_TEST(test_tiles_and_tables_land_in_their_folders);
+   RUN_TEST(test_both_folders_are_made_for_a_project_with_no_tables);
+   RUN_TEST(test_an_empty_project_still_installs_and_makes_the_folders);
+   RUN_TEST(test_the_files_are_the_ones_build_mpq_takes);
+   RUN_TEST(test_a_second_install_removes_a_map_that_is_gone);
+   RUN_TEST(test_only_listed_files_are_removed);
+   RUN_TEST(test_a_tables_bin_is_removed_and_another_bin_is_not);
+   RUN_TEST(test_the_installed_text_is_not_given_the_sources_old_time);
+   RUN_TEST(test_a_project_file_that_cant_be_read_changes_nothing);
+   RUN_TEST(test_an_install_never_writes_through_an_existing_file);
+   RUN_TEST(test_a_file_the_game_holds_open_says_the_game_may_be_running);
+   RUN_TEST(test_the_game_gets_its_folder_and_every_argument);
+   RUN_TEST(test_a_wrapper_runs_first_and_gets_the_exe_then_the_arguments);
+   RUN_TEST(test_a_missing_executable_is_refused_with_the_command_line);
+   RUN_TEST(test_a_missing_wrapper_is_refused_with_the_command_line);
+   RUN_TEST(test_a_program_that_cant_run_returns_a_reason_and_the_command);
+   RUN_TEST(test_the_command_text_quotes_what_needs_it);
+   RUN_TEST(test_the_command_text_is_what_ran);
    return UNITY_END();
 }
