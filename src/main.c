@@ -1599,6 +1599,8 @@ int main(int argc, char *argv[])
    // Fill empty MPQ slots from the resolved install path (explicit INI
    // entries always win).
    d2install_resolve_mpqs();
+   // Build MPQ reads the game from the folder these archives came from.
+   project_set_open_game_folder(glb_config.d2_install, glb_config.mpq_file[MPQ_SLOT_D2DATA]);
 
    // Record the install we landed on back into preferences for next session.
    if (glb_config.d2_install != NULL && glb_config.d2_install[0] != 0)

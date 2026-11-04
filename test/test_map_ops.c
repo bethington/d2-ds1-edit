@@ -897,6 +897,42 @@ void test_size_defaults_are_the_map_s_width_not_the_stored_value(void)
    TEST_ASSERT_EQUAL_INT(30, h);
 }
 
+void test_a_row_takes_only_its_own_size(void)
+{
+   char err[256] = "";
+
+   fresh_rows();
+   TEST_ASSERT_EQUAL_INT(0, map_ops_check_row_size(rows, 168, 11, 15, err, sizeof(err)));
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_check_row_size(rows, 168, 12, 15, err, sizeof(err)));
+   TEST_ASSERT_EQUAL_STRING("This row's maps are 11 by 15. Use that size.", err);
+   TEST_ASSERT_TRUE(strlen(err) < 62);
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_check_row_size(rows, 168, 11, 16, err, sizeof(err)));
+   /* One size only: names that one, never "0 by N". */
+   TEST_ASSERT_EQUAL_INT(-1, map_ops_check_row_size(rows, 10, 7, 30, err, sizeof(err)));
+   TEST_ASSERT_EQUAL_STRING("This row's maps are 9 wide. Use that width.", err);
+   TEST_ASSERT_TRUE(strlen(err) < 62);
+   TEST_ASSERT_EQUAL_INT(0, map_ops_check_row_size(rows, 10, 9, 30, err, sizeof(err)));
+   TEST_ASSERT_EQUAL_INT(0, map_ops_check_row_size(rows, 300, 7, 9, err, sizeof(err)));  /* no size */
+   TEST_ASSERT_EQUAL_INT(0, map_ops_check_row_size(rows, 999, 7, 9, err, sizeof(err)));  /* no row */
+}
+
+void test_a_row_warp_cell_is_orientation_10_or_11_low_index_top_bit_clear(void)
+{
+   /* main index = prop3 >> 4 plus (prop4 & 3) << 4; top bit is prop4 & 0x80 */
+   TEST_ASSERT_TRUE(map_ops_wall_cell_is_row_warp(0x30, 0x00, 10));
+   TEST_ASSERT_TRUE(map_ops_wall_cell_is_row_warp(0x30, 0x00, 11));
+   TEST_ASSERT_FALSE(map_ops_wall_cell_is_row_warp(0x30, 0x00, 9));
+   TEST_ASSERT_FALSE(map_ops_wall_cell_is_row_warp(0x30, 0x00, 12));
+   TEST_ASSERT_FALSE(map_ops_wall_cell_is_row_warp(0x30, 0x00, 0));
+   TEST_ASSERT_TRUE(map_ops_wall_cell_is_row_warp(0x00, 0x00, 10));    /* index 0 */
+   TEST_ASSERT_TRUE(map_ops_wall_cell_is_row_warp(0x7f, 0x00, 10));    /* index 7, low bits ignored */
+   TEST_ASSERT_FALSE(map_ops_wall_cell_is_row_warp(0x80, 0x00, 10));   /* index 8 */
+   TEST_ASSERT_FALSE(map_ops_wall_cell_is_row_warp(0x00, 0x01, 10));   /* index 16 */
+   TEST_ASSERT_FALSE(map_ops_wall_cell_is_row_warp(0x30, 0x80, 10));   /* top bit set */
+   TEST_ASSERT_FALSE(map_ops_wall_cell_is_row_warp(0x30, 0x80, 11));
+   TEST_ASSERT_TRUE(map_ops_wall_cell_is_row_warp(0x30, 0x7c, 10));    /* other prop4 bits don't matter */
+}
+
 void test_the_shared_refusal_doesnt_mention_a_tileset(void)
 {
    char game[sizeof(GAME)];
@@ -1078,6 +1114,8 @@ int main(void)
    RUN_TEST(test_create_refuses_a_whole_level_and_writes_nothing);
    RUN_TEST(test_a_table_with_no_size_columns_doesnt_call_a_row_a_whole_level);
    RUN_TEST(test_size_defaults_are_the_map_s_width_not_the_stored_value);
+   RUN_TEST(test_a_row_takes_only_its_own_size);
+   RUN_TEST(test_a_row_warp_cell_is_orientation_10_or_11_low_index_top_bit_clear);
    RUN_TEST(test_the_shared_refusal_doesnt_mention_a_tileset);
    RUN_TEST(test_a_table_with_no_files_column_says_so_first);
    RUN_TEST(test_a_path_past_the_limit_says_to_rename_it);

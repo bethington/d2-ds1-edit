@@ -55,6 +55,14 @@ int  area_browser_open_by_file  (const char * ds1_path);
 int  area_browser_audit_lvltypes(FILE * out);
 void area_browser_refresh_states(void);
 
+/* Is this map in the game's own archives, ignoring any overlay? ds1_path is relative to
+   the Tiles folder, with either slash. Loads the file, so ask only about project maps. */
+int  area_browser_game_has_map(const char * ds1_path);
+
+/* The game's LvlPrest.txt with no project overlay. NULL if it can't be read. The caller
+   frees it. */
+char * area_browser_game_table(void);
+
 // Rebuild the browser from the tables now in effect, after a project change.
 int  area_browser_reload(void);
 

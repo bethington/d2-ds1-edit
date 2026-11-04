@@ -217,7 +217,7 @@ Which function? The forty instructions before the epilogue answer that:
 ```
 
 This is `D2Win`'s archive-mounting routine. It opens `d2data.mpq`, `d2sfx.mpq`,
-`d2speech.mpq`, `d2delta.mpq`, `d2kfixup.mpq` and `d2exp.mpq` in sequence, stores
+`d2speech.mpq`, `d2delta.mpq`, `d2kfixup.mpq`, `patch_d2.mpq` and `d2exp.mpq` in sequence, stores
 each handle in a global, checks that the essential ones came back non-null, and
 returns 1 if the game has its data.
 
@@ -1026,8 +1026,8 @@ value PD2 passes in the same position. The priorities line up too:
 | Caller | Archive | Priority in `EAX` |
 |---|---|---|
 | `D2Win` `6f8eaa38` | `d2data.mpq` | `0x3e8` = 1,000 |
-| `D2Win` `6f8eab04` | last of the base set | `0xbb8` = 3,000 |
-| `D2Win` `6f8eaae2` | `d2exp.mpq` | `0x1388` = 5,000 |
+| `D2Win` `6f8eab04` | `d2exp.mpq` | `0xbb8` = 3,000 |
+| `D2Win` `6f8eaae2` | `patch_d2.mpq` | `0x1388` = 5,000 |
 | **`ProjectDiablo` `102ad5f0`** | `pd2data.mpq` | **`0x1770` = 6,000** |
 
 One notch above everything Blizzard mounts. Project Diablo 2 puts its own four

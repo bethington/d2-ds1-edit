@@ -125,22 +125,64 @@ path, and `Ctrl+Del` as a second way to reach it.
 
 ### Build
 
-**Build > Build MPQ** packs the project's changed files into
-`<project>/build/<project name>.mpq`, replacing the previous output only after the
-new file is complete.
+**Build > Build MPQ** writes `<project>/build/patch_d2.mpq`, replacing the previous
+output only after the new file is complete. The name is fixed by the gate: `patch_d2`
+is the only top-priority archive the game loads with no code changes.
 
-- It includes `Global/Tiles` and `Global/Excel`, stored under the `data\global\...`
-  virtual paths, with a listfile. Backups, `build/` and `project.ini` are excluded.
-- It refuses to run with unsaved maps, offering Save All and Build, or Cancel.
-- It validates first: every map named in the project's tables must resolve, every
-  project map must be registered, and each file's path must fit an MPQ virtual
-  path. Failures list the map and the problem, and nothing is written.
+- **Base:** it appends to a copy of `patch_d2.mpq` from the folder whose archives the
+  editor opened at start, so the output keeps the retail entries in place. That folder
+  is `d2_install` in `Ds1edit.ini`, or the install the editor found or remembered. A
+  project's game folder isn't used for this. The base's name is found in any case. It
+  never writes over that `patch_d2.mpq`.
+- **Contents:** the project's `.ds1` and `.dt1` files from `Data/Global/Tiles` and
+  `Global/Tiles`, and the `.txt` tables from `Data/Global/Excel` and `Global/Excel`,
+  stored under `data\global\tiles\` and `data\global\excel\`, with a `(listfile)`.
+  Backups, `build/` and `project.ini` are excluded. A `<stem>-NNN.ds1` beside
+  `<stem>.ds1` that no table lists is a save's numbered backup and isn't packed.
+- **Compiled tables:** the game reads compiled `.bin` tables, so each project table is
+  packed with its `.bin` from the test copy. The `.bin` must come from this very
+  text: the test copy's `.txt` is byte for byte the project's, and the `.bin` is
+  non-empty and no older than that text. Otherwise the build stops with "`<table>` has
+  changed since the game last compiled it. Run Build & Test and start a game first."
+  A project with no table needs no `.bin`. The test copy's `patch_d2.mpq` must also be
+  the same size as the base's, or the build stops, since compiled tables from another
+  game version can't be used.
+- It asks first about unsaved maps, in a Yes or No box: "Save all maps and build?" Yes
+  saves them and builds. No stops.
+- **It validates first,** and failures list the map and the problem, and nothing is
+  written:
+  - every map named in the project's tables must resolve in the project or the game,
+    and every project map must be named by a table, unless the game already has it;
+  - each file's path must fit an MPQ virtual path, and a File cell the project adds
+    can't be longer than the 41 characters the game takes;
+  - a project map whose size differs from its row's `SizeX` and `SizeY` is refused on
+    a row that has a size, since the game halts or draws wrongly on it;
+  - holes: a new empty cell within a row's `Files` count is refused, since the game crashes
+    when it picks one. A hole the game's own table ships, like Def 915, is allowed;
+  - when the project has a table, the game's `LvlPrest.txt` must be readable, so the
+    two can be compared.
 - It reports files added, total size and duration.
 
 ### Test
 
-**Build > Build & Test** builds, installs the result in the test copy and starts
-the game. The editor stays open while the game runs.
+**Build & Test** saves the open maps, installs the project's loose files in
+the test copy and starts the game. The editor stays open while the game runs. It does
+not pack an MPQ: the game reads the loose files, and a project's first test run has
+no compiled tables to pack. This departs from an earlier draft, which built first.
+
+- **What it writes:** only `DATA/GLOBAL/TILES`, `DATA/GLOBAL/EXCEL` and
+  `ds1edit-installed.txt` in the test copy. It copies each file beside its target
+  first and puts it in place by removing the old file, so it never writes through a
+  link to the game's own files.
+- **The manifest:** `ds1edit-installed.txt` lists what the last install put there. The
+  next install removes those files, and the compiled form of each table it installs, and nothing
+  else. The manifest is written before anything is removed, so an install that stops
+  partway can be cleaned up by the next run. A failed install can leave the copy partly
+  installed, and the message says so.
+- **Arguments:** the game runs with its working folder set to the test copy, so
+  `-direct` and `-txt` both resolve there.
+- **Compiling:** the game compiles the tables when a game starts, not at launch, so
+  `.bin` files appear only after a game has been started.
 
 The launch profile is stored in `project.ini`:
 
@@ -148,51 +190,40 @@ The launch profile is stored in `project.ini`:
 |---|---|
 | `test_game_dir` | The separate game folder used for testing |
 | `test_exe` | Executable, relative to `test_game_dir`. Default `Game.exe` |
-| `test_args` | Arguments. The default comes from the gate below |
-| `test_wrapper` | Optional launcher such as `wine`. Empty on Windows |
+| `test_args` | Arguments. Default `-w -direct -txt`: `-w` keeps a test windowed, and `-direct` and `-txt` are required |
+| `test_wrapper` | Optional launcher. Empty on Windows, `wine` by default on Linux and macOS |
 
 **Build > Launch Profile** edits these. Until the profile is complete, Build &
-Test opens that dialog. The editor refuses a `test_game_dir` that resolves to the
-same folder as the configured `d2_install`.
+Test opens that dialog. The editor refuses a `test_game_dir` that is not a full path,
+or that resolves to the same folder as, contains, or sits inside the configured
+`d2_install`, the project's game folder, the folder of an open archive, or the project
+itself. An install refuses the project overlap again itself, since its list would
+otherwise name the author's own files and the next install would delete them.
 
-- **First-use validation:** the folder must contain `test_exe`, and the install
-  step must be able to write there.
-- **Game already running:** if writing the output fails because the file is in
-  use, the editor says to close the game and changes nothing else.
+- **First-use validation:** the folder must contain `test_exe`, the arguments must
+  include `-direct` and `-txt`, and the folder must take a file.
+- **Game already running:** if a file can't be replaced because it is in use, the editor
+  says "The game may be running. Close it and try again."
 - **Launch failure:** a missing wrapper or executable shows the reason and the full
   command line.
+- **Linux and macOS** start the game through `wine`. That route hasn't been tested yet.
+- **End to end, partly shown on Windows, 1.13c, 2026-11-03:** a changed map seen in a D2Fleet slot, with the install's tree copied in by hand (a tent removed from `TownE1`, the town map that character's game used), a new table compiled by the game, Build MPQ refusing and then, with the `.bin` files copied by hand, succeeding, and the built archive mounting into a running game and serving the edited map. **Not shown:** the built MPQ mounting at startup; a game entered from the editor's own launch; the manual's Build sequence as written. Linux and macOS are untouched. See the gate results.
+- **Town maps:** the Act 1 town row has four maps, and which one a game uses wasn't determined. Test all four and ship all four. Clearing every wall of a town map stopped the game at load, and the cause wasn't found.
+- **Not isolated:** a test run uses real characters through the registry's `Save Path`, and shared settings, including `CmdLine`. Use a throwaway character and back up the saves.
 
 ## Gate: how the game loads the output
 
-Step 4 must not be designed in detail until this is answered. The older plan
-copied an MPQ next to `Game.exe` and ran `-direct -txt`, but that was never
-verified. Diablo II 1.13c may not load an extra MPQ of arbitrary name, and may read
-compiled `.bin` tables rather than the `.txt` files a project edits.
+Step 4 was not designed in detail until this was answered. The older plan copied an
+MPQ next to `Game.exe` and ran `-direct -txt`, and that was never verified. The questions
+were which MPQs 1.13c loads and in what order, what `-direct` and `-txt` read, how
+Project Diablo 2 loads its archives, and whether the game's own code accepts an archive
+from the editor's writer.
 
-Verify against the game binaries and a real test copy:
-
-1. Which MPQs does 1.13c load, in what order, and can an extra one be added without
-   third-party loaders?
-2. What exactly does `-direct` read, from which folder?
-3. What does `-txt` do with an edited `LvlPrest.txt`, and is a stale `.bin` used
-   otherwise?
-4. Which loader mechanism does Project Diablo 2 use, and can the same profile fields
-   describe it?
-5. Does the game's own MPQ code accept an archive from the editor's writer, with
-   uncompressed files? Test this with a small hand-built archive before writing the
-   full build step. If it rejects them, the writer must add the compression the game
-   needs, using an existing reference for the format rather than a new dependency.
-
-Outcomes:
-
-- **A supported way to load an extra MPQ exists:** install it into the test copy and
-  use the verified arguments as the `test_args` default.
-- **It does not:** Build MPQ still produces the MPQ for distribution. Build & Test
-  installs by the verified route, such as loose files under `data\` with `-direct`,
-  and the spec is updated to name that route.
-
-Whichever applies, a test must show a changed map appearing in the running game
-before step 4 ships.
+The answers, and the evidence for each, are in
+[2026-11-03-map-lifecycle-gate-results.md](2026-11-03-map-lifecycle-gate-results.md).
+There is no supported way to add an MPQ of another name, so the second outcome applies:
+Build & Test installs loose files, and Build MPQ writes `patch_d2.mpq`. A changed map
+appearing in the running game is checked per platform in the native release checklist.
 
 ## Menus
 

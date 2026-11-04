@@ -110,7 +110,7 @@ for one package says nothing about another build or platform.
   whether the keyboard worked before and after. A build whose keys never reach
   the editor fails P-items even if the window draws.
 
-## Case `gui-edit-undo-save-reopen` (items E1 to E15)
+## Case `gui-edit-undo-save-reopen` (items E1 to E16)
 
 Use act 1 Town and at least two other maps from different acts.
 
@@ -204,8 +204,53 @@ Use act 1 Town and at least two other maps from different acts.
   map is refused before any confirmation. After Remove, the row in `LvlPrest.txt` has
   `Files` lowered and no `0` before the last map, and restore returns the table byte
   for byte.
+- [ ] **E16 Build and test a project.** Do the steps in order and record what each one showed.
+  1. **Prerequisites.** Two real copies of the game folder, apart from the install the
+     editor reads: a test copy, and a second copy standing for a player's game. In each,
+     `patch_d2.mpq` is the size of the install's. Open a project, open **Build >
+     Launch Profile**, and set the test copy. The defaults are `-w -direct -txt`, and
+     choosing the install folder or the project folder is refused. On Linux and macOS
+     the wrapper is `wine`, which hasn't been tested yet, so record what happened.
+     The test copy shares its save folder and settings with your normal game, so use a
+     throwaway character and back up your saves. On Linux and macOS the same applies
+     per wine prefix, which hasn't been verified.
+  2. **List `DATA`.** Before each **Build & Test**, list every file under `DATA` in the
+     test copy with its size and date, and list it again afterward. Only files under
+     `DATA/GLOBAL/TILES` and `DATA/GLOBAL/EXCEL` change, and `ds1edit-installed.txt`
+     beside `DATA` appears or changes. Also list the install's `DATA` before step 3 and
+     after step 6, and nothing in it has changed.
+  3. **Change a map.** Edit a map you can reach at once. The Act 1 town has four maps
+     (`TownN1`, `TownE1`, `TownS1`, `TownW1`) and which one a game uses wasn't
+     determined, so for the town make the change in all four, or edit a map with a
+     single version. Save, and run **Build & Test**. The game starts windowed from the test copy.
+     Start a game, and the change is in the town.
+  4. **Add a map and change the table.** Close the game from step 3. With **Map > New**
+     on a row that has a size, create a map, and save. Run **Build & Test**. At the game's menu, before starting
+     a game, run **Build MPQ**. It refuses and says the table has changed since the game
+     last compiled it. A new map joins the row's random pick, so seeing it in the game
+     can't be forced, and it may take several new games with new characters. Record the
+     new map as seen, or as "not seen after N games", and that the project's
+     `LvlPrest.txt` lists it. On a row that has a size, the map must match that size.
+  5. **Build the MPQ.** Start a game in the test copy, so the game compiles the tables,
+     then run **Build MPQ**. It succeeds and writes `<project>/build/patch_d2.mpq`.
+  6. **Use the MPQ in a player's copy.** Replace `patch_d2.mpq` in the second copy with
+     that file. On Linux, delete the old `Patch_D2.mpq` first, or the copy holds two
+     names differing only in case and wine picks either. Start the game from it with `-w` and without `-direct -txt`, and the
+     change from step 3 is in the game. Record the platform, the game and the wrapper
+     used, and whether each step passed.
 
-Total items: 15.
+  Windows, 1.13c, 2026-11-03, partly run, so the item stays unchecked on every
+  platform. A tent removed from `TownE1` was seen gone in the town in a D2Fleet slot,
+  with the install's tree copied in by hand (step 3's `TownN1` was not the map in
+  use). A new table was compiled by the game in that slot and entered town with no
+  crash. Build MPQ refused before a game had compiled it, and succeeded once the
+  slot's `.bin` files were copied to the test copy by hand. The built archive holds
+  the 209 retail entries and the project's. Mounted into a running game, it served
+  the edited map. Not shown: the new map drawn, a game entered from the editor's own
+  launch, which reached the menu only, steps 4 and 5 as written, and the built archive
+  mounting at startup in a player's copy (step 6). Linux and macOS are open.
+
+Total items: 16.
 
 ## Case `gui-modal-input` (items M1 to M4)
 
@@ -285,8 +330,8 @@ python -m scripts.equivalence.native_smoke manual ^
     --smoke-report OWNED\native-run\native-smoke-report.json ^
     --tester "Your Name" ^
     --environment "Windows 11 23H2 clean VM, no VC++ redist, 1.13c on D:\" ^
-    --notes "E1-E15 all done; E8 needed a second resize to redraw" ^
-    --items 15 --total 15 --out RESULTS\native.windows-x86.gui-edit-undo-save-reopen.json
+    --notes "E1-E16 all done; E8 needed a second resize to redraw" ^
+    --items 16 --total 16 --out RESULTS\native.windows-x86.gui-edit-undo-save-reopen.json
 ```
 
 Rules the tool enforces and `qualify.py` then checks:

@@ -60,6 +60,15 @@ So:
 
 The crash test ran with every counted cell cleared. A single cleared cell should crash only when that index is picked, so it may pass a short test and fail later.
 
+**A map of a different size in a row.** Four mass runs (`size-control`, `size-swap`, `size-same`, and 1b's R0 over 209 rows) and seven single-row runs (1b's R1 to R7) on 1.13c, the 1b ones read from `task-1b-report.md`. `size-control` (182 sized Act 1 rows, every counted cell a missing file) crashed at load with `Error opening file` and an access violation at `D2Common+0xA57C`, so those rows are picked. Two separate things then halt the game, and an empty map has neither.
+
+- **A map whose size differs from its row, on a row with `Scan` or `Pops` set, halts at load.** `D2Common+0xC664` (`6fd5c664`), line 2239 for width and 2240 for height. Proved by code and by a single-row run (Def 52, `Scan` 1, with `CaveW.ds1`, 24 by 24 into an 8 by 8 row). It is the halt `size-swap` hit. In 1.13c's table 279 of the 1,054 sized rows have `Scan` or `Pops`.
+- **On a `Scan` 0 row a map of another size doesn't halt on the way to the room, and draws wrongly** (Def 46 with `Swamp5.ds1`, 16 by 16: bands of black). Proved by a run only. A map smaller than the row may read past its buffer. That is inferred, not run.
+- **A wall cell of orientation 10 or 11, main index below 8, top bit clear, with no matching link in its room, halts during the walk,** `D2Common` `6fdb9400`, line 689, when the room's tiles are built. Proved by code and by a single-row run (Def 46 with `clfcave.ds1`, same size). The mapping of the array it checks to `Warp0-7`, and of the room's list to the level's warp links, is inferred from layout, and who fills that list wasn't traced. A top-bit warp cell (`CaveDr1.ds1`, same size) didn't halt on a `Scan` 0 row.
+- **`size-same`'s halt at `6fdb9400` is probably this second one,** since its line and address match, and 4 of its Act 1 substitutions (Defs 24, 25, 51, 52, taking `clfcave` or `clfcave2`) carried such a cell. That run wasn't taken apart, so it is not proved.
+- **An empty map of the row's size loaded and reached Blood Moor** on Defs 46 and 52 with no halt, though neither room was stood in. An empty map has orientation 0 everywhere and its size matches, so neither test can fail. Its tiles were built on Def 46 by inference only.
+The Ghidra server had no project open, so the addresses come from disassembling the slot's `D2Common.dll` (md5 `ee1238806ef6d6d9801d12a09d128fe1`) with capstone, not from a decompiler.
+
 ## What Step 4 Must Do
 
 - Write files under `data\global\...` in the archive with flag `0x80000000` only, format 0, sector shift 3, and no `(attributes)`. A stale `(attributes)` arms a fatal CRC check.
@@ -69,17 +78,53 @@ The crash test ran with every counted cell cleared. A single cleared cell should
 - Set the game's working folder to the test copy. `-direct` and `-txt` both resolve from it.
 - Remove the previous install's loose files from the test copy, since a loose file wins over any MPQ.
 
+## End-to-End Run, 2026-11-03
+
+Windows 11, 1.13c copies, windowed. The editor was `bin\ds1edit.exe` run from a scratch folder with `d2_install` set to the reference install. Its windows were driven with window messages, and real keyboard input (`SendInput`) was used twice, to type the test folder into Launch Profile and the new map's name. The game ran in D2Fleet slot 0 for the frames, because the registry `Save Path` of this machine is the 1.14b install's save folder and a plain launch can't enter a game without writing there. Details and screenshots are in `task-8-report.md` beside the plan.
+
+| What | Result |
+|---|---|
+| `Game.exe -w` runs from a real copy (`patch_d2.mpq` a separate file) | Yes, to the main menu. A first try failed with "Only one copy of Diablo II may run at a time" because another game was open |
+| Build & Test from the editor | Installed `DATA\GLOBAL\TILES\...\TownN1.ds1`, `BarW5.ds1` and `LvlPrest.txt` and started the game from the test copy, windowed. It stopped at the main menu, since no character could be used there |
+| A new table, `BarW5` added by **Map > New** on Barracks W | With those files copied into the slot after launch, the game compiled `DATA\GLOBAL\EXCEL\lvlprest.bin` (471,316 bytes, 90 `.bin` files in all) at the start of a game, which holds `Barracks/BarW5.ds1`. It entered town with no crash. The new map was not drawn: a Barracks room wasn't generated |
+| Build MPQ before a compiled table exists in the test copy | Refused, with "Nothing was built. LvlPrest.txt has changed since the game last compiled it. Run Build & Test and start a game first." |
+| Build MPQ after copying the slot's 90 `.bin` files into the test copy | Built, "4 files, 2775684 bytes, 2.5 seconds". That copy was done by hand, standing in for a game started in the test copy |
+| The built archive, read with a throwaway reader | 212 hash entries in a table of 16,384. The 209 retail entries are all there and 207 are byte-identical; `lvlprest.bin` and `LvlPrest.txt` are the project's. Also `data\global\tiles\Act1\Barracks\BarW5.ds1`, `...\Town\TownN1.ds1` and a `(listfile)`. No `(attributes)`. Every file has flag `0x80000000` |
+| The built archive mounted in the running game, with the loose `TownN1` removed first | `SFileOpenArchive` (`Storm.dll+0x2a0b0`, priority 5000, flags 2) returned 1. A read of `data\global\tiles\act1\town\townn1.ds1` was 57,652 bytes before and 57,801 after, and its first 48 and last 101 bytes match the project's file. So the archive mounts into a running game and wins over `d2data.mpq` |
+
+### A changed map: shown, once the right map was edited
+
+The Act 1 town row (Def 1) has `Files` 0 and four maps, `TownN1`, `TownE1`, `TownS1` and `TownW1`, each 57 by 41, so the game picks one. For the test character in a fresh game that one is **`TownE1`**, not `TownN1`. A first edit of `TownN1` showed nothing, and so did a byte-edited `TownN1` with every wall cell cleared: that map isn't the one in use. With all four byte-edited that way, or `TownE1` alone, the game stopped at load with an access violation at `D2Common+0x19083`, which shows the loose files are read. The cause of that crash wasn't looked into, and removing a few wall cells of `TownE1` through the editor didn't cause it. The object list of `TownE1` lines up with the game's town at game subtile = file subtile + (4320, 4560), with 13 matches.
+
+An edit through the editor's UI removed the large canvas tent beside the banner near the spawn from `TownE1` (28 wall cells, game subtiles x 4470 to 4565, y 4565 to 4620). It was saved, put through **Build & Test**'s install, copied to the slot and entered with the same character. At game subtile (4475, 4617) the tent is gone, and with nothing copied it is there, in the same spot. Frames: `E-unchanged-pos4475x4618.png` and `E-changed-TownE1-tent-removed-pos4475x4617.png` in `docs/superpowers/specs/2026-11-03-map-lifecycle-gate-frames/`. So a changed map is seen in the game, from the files Build & Test installs. The files were copied into the slot by hand, since the game was entered in a fleet slot (see above).
+
+The first 14-cell edit to `TownN1` (game subtiles x 4520 to 4540, y 4635 to 4655) was to a map the game didn't use, which is why it showed nothing.
+
+### The `CmdLine` registry value
+
+Each launch writes its arguments to the registry value `CmdLine`, so the test's launches left values there. This is read from `Game.exe` 1.13c at `0x408000`, called from the entry path at `0x4082d8`. It wasn't run. Its thunks go to Storm ordinals 422, 423, 425 and 426, taken to be the registry load and save calls from their arguments.
+
+```
+args non-empty:  CmdLine := "<args> -skiptobnet"
+args empty:      if UseCmdLine != 0: read CmdLine and use it as the args
+                 else CmdLine := "-skiptobnet"
+then:            UseCmdLine := 0
+```
+
+`UseCmdLine` is 0 on this machine, so the next normal launch ignores the value and overwrites it, and the value only records the last launch. It is replayed only if `UseCmdLine` is nonzero. `D2Launch.dll` sets it to 1 on one path (`0x6fa4ef45`), trigger not traced, so a launch that sets it and then dies could replay the test's arguments once. The manual gives this one clause, in its warning that a test run uses real characters and shared settings.
+
 ## Not Proved Yet
 
-These must be checked before step 4 ships, in the end-to-end test the spec requires.
-
-- **A changed map seen in the game.** The edited table was compiled and the game entered town, but the loose map was an unchanged copy of `TownN1`, so the screen doesn't prove which file drew it. The file's last-access time supports it, weakly.
-- **A new map of a different size in a row.** This blocks step 4. Every map tested was a copy of the row's own, and Task 5's run didn't generate the Barracks rooms, so it showed nothing about size. Every sized row's maps match its `SizeX` and `SizeY`, so a new map may have to as well. New defaults to the row's size but lets the author change it, with no warning, until this is known.
+- **Which town map a game uses.** `TownE1` was in use for this character. Whether the pick depends on the seed or the character, and whether `TownS1` or `TownW1` ever come up, wasn't tried.
+- **A loose town map with every wall cleared** stops the game at load (`D2Common+0x19083`). That is expected for a nonsense map, but its cause wasn't found.
+- **A rebuilt `patch_d2.mpq` mounted at startup.** Only mounting into a running game was shown. Starting `Game.exe` from a copy whose `patch_d2.mpq` is the built one, without `-direct -txt`, was not run, so the archive winning at startup is not proved.
+- **A game entered from the editor's own launch.** The editor started the game and it reached its menu; entering a game was done in a fleet slot instead, with files copied in by hand.
+- **The new map drawn in the game.** A new map joins the random pick, and none was generated.
+- **An empty map on a `Scan` or `Pops` row.** On a `Scan` row it may remove what the row provided, such as a cave entrance, and so lose the level's exit. That wasn't tested. An empty map on a `Pops` row wasn't run at all, and neither was standing inside an empty room, or anything outside Act 1.
 - **File cell length.** Static reading infers a stack buffer limit of 41 characters, and `MAP_OPS_TABLE_PATH_MAX` is now 41. The limit itself is not yet tried in the game.
-- **A rebuilt `patch_d2.mpq` mounted at startup.** A fleet launch rewrites its slot first, so this test mounted the archive from inside the running game, through the same Storm export `D2Win` uses.
 - **Read-only excel folder.** Static reading says a failed write is silent.
 - **`wine` on Linux and macOS.** Case handling of `DATA\GLOBAL\...` wasn't run.
-- **1.14 installs.** `C:\Diablo2` is 1.14b, not 1.13c. Its list and priorities match statically, and its `-direct` and `-txt` behaviour wasn't read.
+- **1.14 installs.** `C:\Diablo2` is 1.14b, not 1.13c. Its list and priorities match statically, and its `-direct` and `-txt` behaviour wasn't read. Its `Game.exe` has the same `CmdLine` strings and that logic wasn't traced either, so "no effect on a normal game" is proved for 1.13c only.
 
 ## Corrections Found Along the Way
 

@@ -172,6 +172,8 @@ static int try_accept(DLG * m)
       int w = atoi(m->w), h = atoi(m->h);
       if (map_ops_check_size(w, h, m->status, sizeof(m->status)) != 0)
          return 0;
+      if (!ds1_manager_def_takes_size(m->d->def, w, h, m->status, sizeof(m->status)))
+         return 0;
       m->d->width = w;
       m->d->height = h;
    }

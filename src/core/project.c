@@ -55,6 +55,18 @@ static void make_extra_key(int idx, char *out, int out_cap)
    snprintf(out, out_cap, "extra_mod_mpq_%d", idx);
 }
 
+#ifdef WIN32
+   #define DEFAULT_TEST_WRAPPER ""
+#else
+   #define DEFAULT_TEST_WRAPPER "wine"
+#endif
+
+static void copy_text(char *dst, int cap, const char *src)
+{
+   strncpy(dst, src, cap - 1);
+   dst[cap - 1] = 0;
+}
+
 int project_ini_path(const char *project_dir, char *out, int out_cap)
 {
    if (project_dir == NULL || out == NULL || out_cap < 2) return 0;
@@ -93,6 +105,10 @@ int project_create(const char *path, const char *name,
    al_set_config_value(cfg, "", "name",           name);
    al_set_config_value(cfg, "", "editor_version", DS1EDIT_VERSION_STR);
    al_set_config_value(cfg, "", "d2_install",     d2_install);
+   al_set_config_value(cfg, "", "test_game_dir",  "");
+   al_set_config_value(cfg, "", "test_exe",       "Game.exe");
+   al_set_config_value(cfg, "", "test_args",      PROJECT_DEFAULT_TEST_ARGS);
+   al_set_config_value(cfg, "", "test_wrapper",   DEFAULT_TEST_WRAPPER);
 
    rc = al_save_config_file(ini, cfg);
    al_destroy_config(cfg);
@@ -143,6 +159,22 @@ int project_load(const char *path)
       glb_project.d2_install[PROJECT_PATH_MAX - 1] = 0;
    }
 
+   // An ini from before the launch profile has none of these keys; an empty
+   // exe or argument list is no use to anyone, so both get their default.
+   v = al_get_config_value(cfg, "", "test_game_dir");
+   if (v != NULL) copy_text(glb_project.test_game_dir, sizeof(glb_project.test_game_dir), v);
+   v = al_get_config_value(cfg, "", "test_exe");
+   copy_text(glb_project.test_exe, sizeof(glb_project.test_exe),
+             (v != NULL && v[0] != 0) ? v : "Game.exe");
+   v = al_get_config_value(cfg, "", "test_args");
+   copy_text(glb_project.test_args, sizeof(glb_project.test_args),
+             (v != NULL && v[0] != 0) ? v : PROJECT_DEFAULT_TEST_ARGS);
+   // An empty wrapper is a choice (run the game directly); only a missing key
+   // takes the default.
+   v = al_get_config_value(cfg, "", "test_wrapper");
+   copy_text(glb_project.test_wrapper, sizeof(glb_project.test_wrapper),
+             v != NULL ? v : DEFAULT_TEST_WRAPPER);
+
    for (i = 0; i < PROJECT_EXTRA_MPQ_MAX; i++)
    {
       make_extra_key(i, key, sizeof(key));
@@ -177,6 +209,10 @@ int project_save(void)
    al_set_config_value(cfg, "", "name",           glb_project.name);
    al_set_config_value(cfg, "", "editor_version", DS1EDIT_VERSION_STR);
    al_set_config_value(cfg, "", "d2_install",     glb_project.d2_install);
+   al_set_config_value(cfg, "", "test_game_dir",  glb_project.test_game_dir);
+   al_set_config_value(cfg, "", "test_exe",       glb_project.test_exe);
+   al_set_config_value(cfg, "", "test_args",      glb_project.test_args);
+   al_set_config_value(cfg, "", "test_wrapper",   glb_project.test_wrapper);
 
    for (i = 0; i < glb_project.extra_count && i < PROJECT_EXTRA_MPQ_MAX; i++)
    {
@@ -473,4 +509,20 @@ int project_save_would_replace(const char *src)
    if (project_redirect_ds1_save_path(src, target, (int) sizeof(target)) != 1)
       return 0;
    return stat(target, &st) == 0;
+}
+
+static char s_open_game_folder[PROJECT_PATH_MAX];
+
+void project_set_open_game_folder(const char *d2_install, const char *d2data_mpq)
+{
+   s_open_game_folder[0] = 0;
+   if (d2_install != NULL && d2_install[0] != 0 && d2data_mpq != NULL &&
+       project_path_is_inside(d2data_mpq, d2_install) &&
+       strlen(d2_install) < sizeof(s_open_game_folder))
+      strcpy(s_open_game_folder, d2_install);
+}
+
+const char *project_open_game_folder(void)
+{
+   return s_open_game_folder;
 }

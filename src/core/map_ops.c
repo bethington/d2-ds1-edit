@@ -447,6 +447,28 @@ void map_ops_default_size(char * table, int def, int * width, int * height)
       *height = y + 1;
 }
 
+int map_ops_wall_cell_is_row_warp(unsigned char prop3, unsigned char prop4,
+                                  unsigned char orientation)
+{
+   int main_index = (prop3 >> 4) + ((prop4 & 0x03) << 4);
+
+   return (orientation == 10 || orientation == 11) && main_index < 8 && (prop4 & 0x80) == 0;
+}
+
+int map_ops_check_row_size(char * table, int def, int width, int height, char * error, int cap)
+{
+   int want_w = 0, want_h = 0;
+
+   map_ops_default_size(table, def, &want_w, &want_h);
+   if ((want_w == 0 || width == want_w) && (want_h == 0 || height == want_h))
+      return 0;
+   if (want_w != 0 && want_h != 0)
+      return fail(error, cap, "This row's maps are %d by %d. Use that size.", want_w, want_h);
+   if (want_w != 0)
+      return fail(error, cap, "This row's maps are %d wide. Use that width.", want_w);
+   return fail(error, cap, "This row's maps are %d high. Use that height.", want_h);
+}
+
 /* How many of the row's cells hold this whole path. */
 static int count_copies(char * table, int def, const char * ds1_path)
 {

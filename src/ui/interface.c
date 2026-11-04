@@ -32,7 +32,11 @@
 #include "core/ds1_save_io.h"
 #include "ui/map_save_ui.h"
 #include "ui/map_dialog.h"
+#include "ui/fields_dialog.h"
 #include "core/map_state.h"
+#include "core/project.h"
+#include "core/mpq_build.h"
+#include "core/game_launch.h"
 #include <allegro5/allegro_native_dialog.h>
 
 /* Ask, naming the map and what will happen. */
@@ -663,6 +667,315 @@ static void interface_new_map(int ds1_idx, int clone)
    }
 }
 
+/* A box that tells the user something, not a problem. */
+static void interface_info_box(const char *title, const char *heading, const char *text)
+{
+   al_show_native_message_box(a5_display, title, heading, text, NULL, 0);
+   input_suppress_held();
+   input_discard_pending();
+}
+
+/* True if the open maps are saved or there was nothing to save. Asks first, since a
+ * build or a test run reads the files on disk. A No, or a save that fails, is false. */
+static int interface_save_before(const char *title, const char *heading)
+{
+   int rc;
+
+   if (!map_any_dirty())
+      return TRUE;
+   rc = al_show_native_message_box(a5_display, title, heading,
+      "Some maps have changes that aren't saved yet. They are used from the saved files.",
+      NULL, ALLEGRO_MESSAGEBOX_YES_NO | ALLEGRO_MESSAGEBOX_QUESTION);
+   input_suppress_held();
+   input_discard_pending();
+   if (rc != 1)
+      return FALSE;
+   return map_save_ui_save_dirty() == 0;
+}
+
+/* mpq_build_run asks with the path relative to Tiles, forward slashes, as the project
+ * has it. misc_load_mpq_file turns the slashes into backslashes and the archives ignore
+ * case, so the path goes through as it is. */
+static int interface_map_in_game(const char *ds1_path, void *ctx)
+{
+   (void) ctx;
+   return area_browser_game_has_map(ds1_path);
+}
+
+/* The folder the open archives came from, set once at startup. A project's d2_install
+ * isn't used: with no archives open the table and in_game can't match the base. */
+static const char *interface_game_folder(void)
+{
+   return project_open_game_folder();
+}
+
+/* Pack the project into <project>/build/patch_d2.mpq. 0 if it was written, else -1,
+ * after telling the user why. quiet skips the report of what was written. */
+static int interface_build_mpq(int quiet)
+{
+   MPQ_BUILD_ARGS_S a;
+   MPQ_BUILD_RESULT_S res;
+   char base[PROJECT_PATH_MAX + 32], out[PROJECT_PATH_MAX + 32];
+   char problems[4096], report[PROJECT_PATH_MAX + 512];
+   char *table;
+   double t0, secs;
+   int rc;
+
+   if (!glb_project.is_open)
+      return -1;
+   if (interface_game_folder()[0] == '\0')
+   {
+      interface_map_op_failed("Build MPQ", "Nothing was built.",
+         "The editor found no game folder when it started. Set d2_install in Ds1edit.ini and restart.");
+      return -1;
+   }
+   if (!interface_save_before("Build MPQ", "Save all maps and build?"))
+      return -1;
+
+   table = area_browser_game_table();
+   if (table == NULL)
+   {
+      interface_map_op_failed("Build MPQ", "Nothing was built.",
+         "The game's LvlPrest.txt can't be read. Set d2_install in Ds1edit.ini and restart.");
+      return -1;
+   }
+
+   mpq_build_base_path(interface_game_folder(), base, (int) sizeof(base));
+   snprintf(out, sizeof(out), "%s/build/patch_d2.mpq", glb_project.path);
+   memset(&a, 0, sizeof(a));
+   a.project_dir = glb_project.path;
+   a.base_mpq = base;
+   a.test_game_dir = glb_project.test_game_dir;
+   a.out_mpq = out;
+   a.game_table = table;
+   a.in_game = interface_map_in_game;
+   memset(&res, 0, sizeof(res));
+   problems[0] = '\0';
+
+   t0 = al_get_time();
+   rc = mpq_build_run(&a, &res, problems, (int) sizeof(problems));
+   secs = al_get_time() - t0;
+   free(table);
+
+   if (rc != 0)
+   {
+      interface_map_op_failed("Build MPQ", "Nothing was built.", problems);
+      return -1;
+   }
+   if (!quiet)
+   {
+      snprintf(report, sizeof(report),
+         "%s\n\n%d files, %ld bytes, %.1f seconds.\n\n"
+         "Install it by replacing patch_d2.mpq in a copy of the game. "
+         "Check it in the game before you share it: a built MPQ hasn't been tried "
+         "at game startup yet.",
+         out, res.files, res.bytes, secs);
+      interface_info_box("Build MPQ", "The MPQ was built.", report);
+   }
+   return 0;
+}
+
+typedef struct PROFILE_FORM
+{
+   char dir[PROJECT_PATH_MAX];
+   char exe[128];
+   char args[256];
+   char wrapper[PROJECT_PATH_MAX];
+} PROFILE_FORM;
+
+#define PROFILE_INSTALLS_MAX (2 + MAX_MPQ_FILE)
+
+/* What a test folder can't overlap: both d2_install values, and the folder of each
+ * archive, since archives can be listed by hand from elsewhere. An archive in a root
+ * folder adds nothing, or every folder on that disk would be refused. The count. */
+static int interface_profile_installs(const char **installs)
+{
+   static char folders[MAX_MPQ_FILE][PROJECT_PATH_MAX];
+   int i, n = 0;
+
+   installs[n++] = glb_config.d2_install;
+   installs[n++] = glb_project.d2_install;
+   for (i = 0; i < MAX_MPQ_FILE; i++)
+   {
+      const char *file = glb_config.mpq_file[i];
+      const char *end, *back;
+      size_t len;
+
+      if (file == NULL)
+         continue;
+      end = strrchr(file, '/');
+      back = strrchr(file, '\\');
+      if (back != NULL && (end == NULL || back > end))
+         end = back;
+      if (end == NULL)
+         continue;
+      len = (size_t) (end - file);
+      if (len == 0 || (len == 2 && file[1] == ':') || len >= sizeof(folders[i]))
+         continue;
+      memcpy(folders[i], file, len);
+      folders[i][len] = '\0';
+      installs[n++] = folders[i];
+   }
+   return n;
+}
+
+static int interface_profile_check(char *status, int cap, void *ctx)
+{
+   const PROFILE_FORM *f = (const PROFILE_FORM *) ctx;
+   GAME_PROFILE_S p;
+   const char *installs[PROFILE_INSTALLS_MAX];
+   int count = interface_profile_installs(installs);
+
+   p.game_dir = f->dir;
+   p.exe = f->exe;
+   p.args = f->args;
+   p.wrapper = f->wrapper;
+   return game_profile_check(&p, glb_project.path, installs, count, status, cap);
+}
+
+/* Edit the test copy of the game and how it starts. 1 if the profile was stored,
+ * 0 for cancel. */
+static int interface_launch_profile(void)
+{
+   PROFILE_FORM f;
+   FIELD_S fields[4];
+
+   if (!glb_project.is_open)
+      return 0;
+   snprintf(f.dir, sizeof(f.dir), "%s", glb_project.test_game_dir);
+   snprintf(f.exe, sizeof(f.exe), "%s", glb_project.test_exe);
+   snprintf(f.args, sizeof(f.args), "%s", glb_project.test_args);
+   snprintf(f.wrapper, sizeof(f.wrapper), "%s", glb_project.test_wrapper);
+   fields[0].label = "Test game folder";
+   fields[0].value = f.dir;
+   fields[0].cap = (int) sizeof(f.dir);
+   fields[1].label = "Executable";
+   fields[1].value = f.exe;
+   fields[1].cap = (int) sizeof(f.exe);
+   fields[2].label = "Arguments";
+   fields[2].value = f.args;
+   fields[2].cap = (int) sizeof(f.args);
+   fields[3].label = "Wrapper";
+   fields[3].value = f.wrapper;
+   fields[3].cap = (int) sizeof(f.wrapper);
+
+   if (!fields_dialog_show("Launch Profile", fields, 4, interface_profile_check, &f))
+      return 0;
+
+   snprintf(glb_project.test_game_dir, sizeof(glb_project.test_game_dir), "%s", f.dir);
+   snprintf(glb_project.test_exe, sizeof(glb_project.test_exe), "%s", f.exe);
+   snprintf(glb_project.test_args, sizeof(glb_project.test_args), "%s", f.args);
+   snprintf(glb_project.test_wrapper, sizeof(glb_project.test_wrapper), "%s", f.wrapper);
+   if (!project_save())
+   {
+      interface_map_op_failed("Launch Profile", "The profile wasn't saved.",
+         "project.ini can't be written. Check that the project folder is writable.");
+      return 0;
+   }
+   return 1;
+}
+
+typedef struct SETTINGS_FORM
+{
+   char name[PROJECT_NAME_MAX];
+   char game[PROJECT_PATH_MAX];
+} SETTINGS_FORM;
+
+static int interface_settings_check(char *status, int cap, void *ctx)
+{
+   const SETTINGS_FORM *f = (const SETTINGS_FORM *) ctx;
+
+   if (f->name[0] == '\0')
+   {
+      snprintf(status, (size_t) cap, "Give the project a name.");
+      return -1;
+   }
+   if (f->game[0] == '\0' || !al_filename_exists(f->game))
+   {
+      snprintf(status, (size_t) cap, "The game folder doesn't exist. Enter the full path to your Diablo II folder.");
+      return -1;
+   }
+   return 0;
+}
+
+static void interface_project_settings(void)
+{
+   SETTINGS_FORM f;
+   FIELD_S fields[2];
+   char old_name[PROJECT_NAME_MAX], old_game[PROJECT_PATH_MAX];
+
+   if (!glb_project.is_open)
+      return;
+   snprintf(f.name, sizeof(f.name), "%s", glb_project.name);
+   snprintf(f.game, sizeof(f.game), "%s", glb_project.d2_install);
+   fields[0].label = "Name";
+   fields[0].value = f.name;
+   fields[0].cap = (int) sizeof(f.name);
+   fields[1].label = "Game folder";
+   fields[1].value = f.game;
+   fields[1].cap = (int) sizeof(f.game);
+
+   if (!fields_dialog_show("Project Settings", fields, 2, interface_settings_check, &f))
+      return;
+
+   snprintf(old_name, sizeof(old_name), "%s", glb_project.name);
+   snprintf(old_game, sizeof(old_game), "%s", glb_project.d2_install);
+   snprintf(glb_project.name, sizeof(glb_project.name), "%s", f.name);
+   snprintf(glb_project.d2_install, sizeof(glb_project.d2_install), "%s", f.game);
+   if (!project_save())
+   {
+      snprintf(glb_project.name, sizeof(glb_project.name), "%s", old_name);
+      snprintf(glb_project.d2_install, sizeof(glb_project.d2_install), "%s", old_game);
+      interface_map_op_failed("Project Settings", "The settings weren't saved.",
+         "project.ini can't be written. Check that the project folder is writable.");
+      return;
+   }
+   if (strcmp(old_game, f.game) != 0)
+      interface_info_box("Project Settings", "The game folder changed.",
+         "The editor reads the game when it starts, so this takes effect after you reopen "
+         "the project and restart the editor, unless Ds1edit.ini sets d2_install, which wins.");
+}
+
+/* Save, install the project's loose files in the test copy and start the game. The
+ * game's window is the answer, so success says nothing. No MPQ: the game reads the
+ * loose files, and a project's first test has no compiled tables to pack. */
+static void interface_build_and_test(void)
+{
+   GAME_PROFILE_S p;
+   const char *installs[PROFILE_INSTALLS_MAX];
+   char error[2048];
+   int count, files = 0;
+
+   if (!glb_project.is_open)
+      return;
+   if (!interface_save_before("Build & Test", "Save all maps and test?"))
+      return;
+
+   p.game_dir = glb_project.test_game_dir;
+   p.exe = glb_project.test_exe;
+   p.args = glb_project.test_args;
+   p.wrapper = glb_project.test_wrapper;
+   count = interface_profile_installs(installs);
+   error[0] = '\0';
+   if (game_profile_check(&p, glb_project.path, installs, count, error, (int) sizeof(error)) != 0)
+   {
+      /* The dialog says what's wrong. A cancel there stops the test. */
+      if (!interface_launch_profile())
+         return;
+   }
+
+   error[0] = '\0';
+   if (game_install(glb_project.path, glb_project.test_game_dir, &files, error,
+                    (int) sizeof(error)) != 0)
+   {
+      interface_map_op_failed("Build & Test", "The game wasn't started.", error);
+      return;
+   }
+   error[0] = '\0';
+   if (game_start(&p, error, (int) sizeof(error)) != 0)
+      interface_map_op_failed("Build & Test", "The game wasn't started.", error);
+}
+
 static CMD_CTX interface_command_context(int ds1_idx, const PASTE_POS_S *paste)
 {
    AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
@@ -682,6 +995,7 @@ static CMD_CTX interface_command_context(int ds1_idx, const PASTE_POS_S *paste)
                       ab->loaded_entry >= 0 &&
                       ab->loaded_entry < ab->groups[ab->loaded_group].entry_count;
    c.any_dirty = map_any_dirty();
+   c.has_project = glb_project.is_open;
    c.paste_active = paste->start != FALSE;
    c.can_undo_object = c.has_map && glb_ds1[ds1_idx].can_undo_obj != FALSE;
    return c;
@@ -757,6 +1071,11 @@ static void interface_run_command(CMD_ID cmd, int ds1_idx, int cx, int cy,
    case CMD_MAP_RESTORE_BACKUP:
       interface_restore_backup(ab->loaded_group, ab->loaded_entry);
       break;
+
+   case CMD_PROJECT_SETTINGS: interface_project_settings();   break;
+   case CMD_BUILD_MPQ:        interface_build_mpq(FALSE);     break;
+   case CMD_BUILD_AND_TEST:   interface_build_and_test();     break;
+   case CMD_LAUNCH_PROFILE:   interface_launch_profile();     break;
 
    default:
       break;
@@ -928,6 +1247,8 @@ void interfac_user_handler(int start_ds1_idx)
          case CMD_OPEN_PRESET: case CMD_EXPORT_ASSETS: case CMD_SAVE:
          case CMD_SAVE_ALL: case CMD_QUIT:
          case CMD_MAP_NEW: case CMD_MAP_CLONE:
+         case CMD_PROJECT_SETTINGS: case CMD_BUILD_MPQ:
+         case CMD_BUILD_AND_TEST: case CMD_LAUNCH_PROFILE:
             input_pump();
             input_suppress_held();
             break;

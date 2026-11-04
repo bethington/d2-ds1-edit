@@ -45,6 +45,11 @@ typedef void (* LVLPREST_ROW_CB)(int def, const char * ds1_path, void * ctx);
 /* Calls cb for each file a row lists. */
 void lvlprest_each_file(char * table, LVLPREST_ROW_CB cb, void * ctx);
 
+typedef void (* LVLPREST_DEF_CB)(int def, void * ctx);
+
+/* Calls cb for each row's Def, whether or not it lists a file. */
+void lvlprest_each_def(char * table, LVLPREST_DEF_CB cb, void * ctx);
+
 /* Calls cb for each file a row of `game` lists that the same Def's row in
    `project` doesn't, by whole path. A Def with no row in `project` is skipped. */
 void lvlprest_each_cleared(char * game, char * project, LVLPREST_ROW_CB cb,

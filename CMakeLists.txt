@@ -196,7 +196,11 @@ set(SOURCES
     src/core/ds1_manager.c
     src/core/file_copy.c
     src/core/lvlprest_text.c
+    src/core/game_launch.c
     src/core/map_ops.c
+    src/core/mpq_build.c
+    src/core/mpq_crypt.c
+    src/core/mpq_write.c
     src/core/asset_export.c
     src/core/upscale.c
     src/core/dt1.c
@@ -243,6 +247,7 @@ set(SOURCES
     src/ui/commands.c
     src/ui/menu_bar.c
     src/ui/map_dialog.c
+    src/ui/fields_dialog.c
     src/ui/map_save_ui.c
     src/ui/export_type_picker.c
     src/ui/upscale_mode_picker.c

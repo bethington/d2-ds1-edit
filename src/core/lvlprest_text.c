@@ -302,6 +302,41 @@ void lvlprest_each_file(char * table, LVLPREST_ROW_CB cb, void * ctx)
    }
 }
 
+void lvlprest_each_def(char * table, LVLPREST_DEF_CB cb, void * ctx)
+{
+   int def_col = lvlprest_find_col(table, "Def");
+   char * line = table;
+   int is_header = 1;
+
+   if (def_col < 0)
+      return;
+
+   while (*line != '\0')
+   {
+      char * next = line;
+      while (*next != '\0' && *next != '\n' && *next != '\r')
+         next++;
+
+      if (!is_header)
+      {
+         char * p = line;
+         int col = 0;
+
+         while (col < def_col && p < next)
+         {
+            if (*p == '\t') col++;
+            p++;
+         }
+         if (col == def_col && atoi(p) > 0)
+            cb(atoi(p), ctx);
+      }
+
+      while (*next == '\n' || *next == '\r') next++;
+      line = next;
+      is_header = 0;
+   }
+}
+
 void lvlprest_each_cleared(char * game, char * project, LVLPREST_ROW_CB cb,
                            void * ctx)
 {

@@ -9,6 +9,7 @@
 #define PROJECT_PATH_MAX          512
 #define PROJECT_NAME_MAX          128
 #define PROJECT_EXTRA_MPQ_MAX       8
+#define PROJECT_DEFAULT_TEST_ARGS   "-w -direct -txt"
 
 typedef struct PROJECT_S
 {
@@ -18,6 +19,12 @@ typedef struct PROJECT_S
    char d2_install [PROJECT_PATH_MAX];  // project's bound D2 install
    char extra_mod_mpqs[PROJECT_EXTRA_MPQ_MAX][PROJECT_PATH_MAX];
    int  extra_count;
+   // The launch profile: a separate test copy of the game that runs this
+   // project's map. Never the install the project is bound to.
+   char test_game_dir[PROJECT_PATH_MAX];
+   char test_exe     [128];                 // default "Game.exe"
+   char test_args    [256];                 // default PROJECT_DEFAULT_TEST_ARGS
+   char test_wrapper [PROJECT_PATH_MAX];    // default "" on Windows, "wine" elsewhere
 } PROJECT_S;
 
 extern PROJECT_S glb_project;
@@ -88,6 +95,14 @@ int  project_path_in_game_install(const char *path);
 // boundaries, ignoring case and slash direction); 0 otherwise, and for a
 // NULL or empty `dir`.
 int  project_path_is_inside(const char *path, const char *dir);
+
+/* Remember, once at startup after the archives are resolved, the folder they were opened
+   from: d2_install if the d2data archive lies inside it, else none. A later project
+   change doesn't move it. */
+void project_set_open_game_folder(const char *d2_install, const char *d2data_mpq);
+
+/* That folder; "" if no archive was opened from an install. Never NULL. */
+const char *project_open_game_folder(void);
 
 /* Everything after the last "/tiles/" in a path, i.e. the form MPQ
  * virtual paths under Data\\Global\\Tiles\\ are keyed on.
