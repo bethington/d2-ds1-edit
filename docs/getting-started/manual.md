@@ -284,7 +284,7 @@ This editor is using essentially the keyboard and the mouse together. There's no
 
 ### Menus
 
-The bar across the top holds **File**, **Edit**, **Map**, **View** and **Build**. Click a title, or press **Alt** with its first letter. Arrow keys move, **Enter** runs the highlighted command, and **Esc** closes the menu. A command with a hotkey shows it; six rows (Project Settings, Revert to Game Version, Remove from Project, Restore Slot, Restore from Backup, Launch Profile) have none. Commands that don't apply right now are dimmed, and some arrive in later releases. Build MPQ and Build & Test read the game from the folder the editor opened at start, which is `d2_install` in Ds1edit.ini when set; a project's Game folder is used only when that is empty, and a change to it applies the next time the project opens.
+The bar across the top holds **File**, **Edit**, **Map**, **View** and **Build**. Click a title, or press **Alt** with its first letter. Arrow keys move, **Enter** runs the highlighted command, and **Esc** closes the menu. A command with a hotkey shows it; six rows (Project Settings, Revert to Game Version, Remove from Project, Restore Slot, Restore from Backup, Launch Profile) have none. Commands that don't apply right now are dimmed, and Project Settings and the Build commands stay dimmed until a project is open. Build MPQ reads the game from the folder the editor opened at start, which is `d2_install` in Ds1edit.ini when set; a project's Game folder is used only when that is empty, and a change to it applies the next time the project opens. See "Building and testing".
 
 | Key | Command |
 |---|---|
@@ -298,7 +298,7 @@ The bar across the top holds **File**, **Edit**, **Map**, **View** and **Build**
 
 #### Creating maps
 
-**Map > New** and **Map > Clone** open a dialog with the map's name, area and tileset. New also asks for the width and height, each 1 to 1000. They start at the chosen tileset's size, from its row's `SizeX` and `SizeY` plus one, and follow as you change the area or tileset. A row with no size starts at 20, or at the open map's size. A row that has a size takes only that size, and the dialog refuses another. In the game a map of another size halts it while the level loads on rows with `Scan` or `Pops` set, and on the one `Scan` 0 row tried it drew wrongly. An empty map of the row's size loaded in the game and, on the rows tried, didn't halt it. A clone keeps the size of the map it copies, so cloning into a row of another size is refused too. Clone copies the map as it is in memory, so it includes unsaved edits, and it works on maps that exist only in an MPQ. **Don't put a warp cell in a map for a different row.** A warp cell is a wall tile of orientation 10 or 11 with a low main index, the kind the cave and dungeon maps use for the doorway or stairs into another level. Each row's level has its own links for those, and a map whose row has none for a cell halts the game while the room is built, in the middle of a walk. A new map is empty, so it has no warp cell, and it has exactly the row's size; on the rows tried it didn't halt the game. On a `Scan` or `Pops` row that isn't proved, and an empty map may lose that room's exit, so check it in the game. Clone refuses a map with such a cell unless it goes to its own row's Def, and says so. Painting one into a map by hand is not checked. The original stays as it was, still marked unsaved if it had edits. With no project open, the editor asks for one first.
+**Map > New** and **Map > Clone** open a dialog with the map's name, area and tileset. New also asks for the width and height, each 1 to 1000. They start at the chosen tileset's size, from its row's `SizeX` and `SizeY` plus one, and follow as you change the area or tileset. A row with no size starts at 20, or at the open map's size. A row that has a size takes only that size, and the dialog refuses another. In the game a map of another size halts it while the level loads on rows with `Scan` or `Pops` set, and on the one `Scan` 0 row tried it drew wrongly. An empty map of the row's size loaded in the game and, on the plain rows tried, didn't halt it. A clone keeps the size of the map it copies, so cloning into a row of another size is refused too. Clone copies the map as it is in memory, so it includes unsaved edits, and it works on maps that exist only in an MPQ. **Don't put a warp cell in a map for a different row.** A warp cell is a wall tile of orientation 10 or 11 with a low main index, the kind the cave and dungeon maps use for the doorway or stairs into another level. Each row's level has its own links for those, and a map whose row has none for a cell halts the game while the room is built, in the middle of a walk. A new map is empty, so it has no warp cell, and it has exactly the row's size; on the plain rows tried it didn't halt the game. On a `Scan` or `Pops` row that isn't proved, and an empty map may lose that room's exit, so check it in the game. Clone refuses a map with such a cell unless it goes to its own row's Def, and says so. Painting one into a map by hand is not checked. The original stays as it was, still marked unsaved if it had edits. With no project open, the editor asks for one first.
 
 The dialog stays up, with a message, if the name is empty, uses anything but letters, digits, `_`, `-` and `.`, starts or ends with a dot, is a Windows reserved name such as `CON`, is too long, or is already used in that map's folder, in any area, or if the chosen tileset can't take another map. A row in `LvlPrest.txt` takes no new map if its `Files` column is 0, if it has filled cells past `Files`, or if it's full, with `Files` at 6. A row that is a whole level with no fixed size, with `SizeX` and `SizeY` both 0, takes a clone but not an empty new map: Tristram and the towns of Acts 3 and 5 are like this, while the town of Act 1 has `Files` of 0 and takes neither. A row with an empty cell below `Files` takes nothing until you fix it by hand, since that can already crash the game. A name is too long if the map's whole path, folder included, would be over the 41 characters a File column of `LvlPrest.txt` allows. A new map is added at the end of its row and raises `Files` by one. **It joins the game's random pick at once:** any time the game builds that row's level or room it can choose the new map, however unfinished. If the table can't be written, the new map is removed again and nothing changes. A new map shows `N` in the area browser, which scrolls to it. Click it to open it.
 
@@ -330,6 +330,53 @@ Taking a map out of a row moves the later maps back and lowers `Files`, because 
 In a project over a mod overlay, game files the overlay replaced show struck through once the project writes its first table, since that table doesn't list them.
 
 Backups now live in `<project>/backup`. A second backup of the same map on the same day gets its own folder (`_2`, `_3`, ...) instead of replacing the first. Backups made by older versions in the editor's own `backup` folder stay listed, and move into the project when restored.
+
+#### Building and testing
+
+The **Build** menu has two commands that do different jobs, and **Launch Profile** sets up the second.
+
+| Command | Hotkey | What it does |
+|---|---|---|
+| **Build MPQ** | **Ctrl+B** | Packs the project into `<project>/build/patch_d2.mpq`, the file you give to players |
+| **Build & Test** | **Ctrl+Shift+B** | Saves, copies the project's loose files into a test copy of the game, and starts the game from it. It makes no MPQ |
+| **Launch Profile** | none | Sets the test copy, the program, the arguments and the wrapper |
+
+Both ask first if maps have unsaved changes ("Save all maps and build?" and "Save all maps and test?"), because they use the saved files.
+
+**Setting up a test copy.** Copy your whole Diablo II folder to somewhere else, as a real copy and not a shortcut. This is the test copy. The editor never reads the game from it. Open **Build > Launch Profile** and fill in four fields:
+
+| Field | Meaning |
+|---|---|
+| Test game folder | The full path of the copy |
+| Executable | The program in the copy. `Game.exe` unless you changed it |
+| Arguments | `-w -direct -txt` by default. `-w` keeps the game in a window. `-direct` and `-txt` are required, and the dialog refuses arguments without them: "The test arguments need -direct and -txt, or the game ignores the project." |
+| Wrapper | A launcher placed before the program. Empty on Windows, and `wine` by default on Linux and macOS |
+
+The folder can't be your Diablo II install, hold it or sit inside it, and the dialog says so: "The test folder can't be your Diablo II install, or contain it or sit inside it. Make a separate copy of the game and choose that." It must hold the executable, and the editor must be able to write there, which it checks by making and removing a file named `ds1edit-write-test.tmp`. The profile is stored in the project's `project.ini`. Build & Test opens this dialog by itself until the profile is complete.
+
+**Where the editor writes in a game folder.** The test copy is the only game folder the editor writes to. There it writes only under `DATA/GLOBAL/TILES` and `DATA/GLOBAL/EXCEL`, plus a file called `ds1edit-installed.txt` that lists what the last Build & Test put there. The next Build & Test removes the files on that list, and the compiled form of each table it installs, and nothing else, so the rest of the copy is left alone. Each file is copied in beside its target first and put in place by removing the old one, so a game file that is linked from elsewhere is never written through. Your install is only read. Build MPQ writes only in the project's `build` folder.
+
+If Build & Test says "The game may be running. Close it and try again.", a file couldn't be replaced because the game has it open. A Build & Test that stops partway can leave the copy partly installed, and it then says "The test copy is only partly installed." Close the game and run Build & Test again, which clears what was left.
+
+**What the test run does.** The game runs from the test copy, with `-direct` so it reads the loose files in `DATA` before its archives, and `-txt` so it builds its tables from your `.txt` files. A project map that replaces a game map, or a new one, appears in the game with no MPQ. On Linux and macOS the game runs through `wine`. That route hasn't been tested yet.
+
+**The game compiles tables when a game starts, not at launch.** It writes the compiled `.bin` form of each table, such as `lvlprest.bin`, only when you start a game, and not when its menu appears. Build MPQ needs those compiled tables, so after Build & Test, start a game and let it load in.
+
+**Why Build & Test comes first when a table changed.** A project has its own `LvlPrest.txt` once it has a new map, or once a map has been taken out of a row. The game reads compiled tables, so the MPQ must carry the `.bin` the game made from your current text. Build MPQ takes it from the test copy, and refuses unless that copy holds your exact table and the `.bin` is not empty and not older than it. Then it stops with "`LvlPrest.txt` has changed since the game last compiled it. Run Build & Test and start a game first." Run Build & Test and start a game once after each change to a table. A project that only changes existing maps has no table, needs no `.bin`, and needs no test run before Build MPQ.
+
+**What Build MPQ packs.** It copies the base `patch_d2.mpq` and adds the project's maps (`.ds1`), tiles (`.dt1`) and tables to the copy, so the output holds everything the game's own `patch_d2.mpq` does plus your files. The base comes from the folder whose archives the editor has open: `d2_install` in Ds1edit.ini when it is set, and the project's Game folder when that is empty. So the MPQ is built from your install's version of the game, and suits only that version. The test copy's `patch_d2.mpq` must be the same size as that one, or the build stops with "The test copy is a different game version from the install, so its compiled tables can't be used." The output is written whole before it replaces the last one. Backups, the `build` folder and `project.ini` are left out. A file named `<stem>-NNN.ds1` beside `<stem>.ds1` that no table lists counts as a backup the editor made when saving, and isn't packed.
+
+**Giving the MPQ to players.** The game gives `patch_d2.mpq` the top priority and has no way to load an archive of another name. A player replaces `patch_d2.mpq` in their copy of Diablo II 1.13c with your built file, so they should keep the original.
+
+**What Build MPQ refuses.** It checks the project first. If anything is wrong it lists each problem under "Nothing was built." and writes nothing. It refuses:
+
+- a map a table names that is in neither the project nor the game, and a project map that no table lists, unless the game already has it;
+- a File cell longer than the 41 characters the game takes, and a file name over the archive's limit of 200 characters of plain ASCII;
+- a project map whose size differs from its row's size, such as "`<map>` is 24 by 24, but Def 52's maps are 8 by 8. The game can't use it.", since the game halts or draws wrongly on it;
+- a new empty cell within a row's `Files` count, which crashes the game when it picks that cell. A hole the game's own table ships, like Def 915, is allowed;
+- a game folder with no `patch_d2.mpq`, and a project with nothing to pack.
+
+When it finishes it says "The MPQ was built." with the path, the number of files, the size and the time.
 
 * * *
 

@@ -7,7 +7,7 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
 
 ### Added
 
-- **Menu bar.** File, Edit, Map, View and Build menus, opened with a click or **Alt** plus the first letter. Commands that have a hotkey show it; six rows (Project Settings, Revert to Game Version, Remove from Project, Restore Slot, Restore from Backup, Launch Profile) have none. Some rows are dimmed when they don't apply, and Project Settings and the Build commands are dimmed until they arrive.
+- **Menu bar.** File, Edit, Map, View and Build menus, opened with a click or **Alt** plus the first letter. Commands that have a hotkey show it; six rows (Project Settings, Revert to Game Version, Remove from Project, Restore Slot, Restore from Backup, Launch Profile) have none. Some rows are dimmed when they don't apply, and Project Settings and the Build commands are dimmed until a project is open.
 
 - **Hotkeys for maps.** **Ctrl+N** creates a map, **Ctrl+D** clones the open one, and **Ctrl+Del** deletes, reverts or removes the open one by its state, after asking. These replace **Insert** and **Shift+Insert**, and **Insert** keeps its object-mode role.
 
@@ -37,6 +37,8 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
   project over a mod overlay, game files the overlay replaced show struck through
   after the project's first table write. A row's File cells can't be edited in the
   properties panel any more, since an edit there could leave a blank that crashes the game.
+
+- **Build MPQ and Build & Test.** **Build > Build MPQ** (**Ctrl+B**) packs the project's maps, tiles and tables into `<project>/build/patch_d2.mpq`, on top of a copy of the game's own `patch_d2.mpq`, so a player installs it by replacing that file in a Diablo II 1.13c copy. The base comes from the folder whose archives the editor has open, `d2_install` in `Ds1edit.ini` or the project's Game folder when that is empty. It stops before writing anything, and lists why, if a map a table names can't be found, a project map is in no table, a map's size differs from its row's, a row has a new empty cell within its `Files` count (a hole the game's own table ships, like Def 915, is allowed), or a table hasn't been compiled by the game since it last changed. A `<stem>-NNN.ds1` beside `<stem>.ds1` that no table lists is a save's backup and isn't packed. **Build > Build & Test** (**Ctrl+Shift+B**) saves, copies the project's loose files into a separate test copy of the game and starts the game from it with `-w -direct -txt`, with no MPQ. **Build > Launch Profile** sets the test copy, program, arguments and wrapper, which are stored in `project.ini`; the test copy can't be your install. The editor writes in a game folder only there, only under `DATA/GLOBAL/TILES`, `DATA/GLOBAL/EXCEL` and `ds1edit-installed.txt`, and removes only what the last install listed. **The game compiles tables when a game starts, not at launch**, so after a table changes, Build MPQ needs a Build & Test and a game started in the test copy first. Linux and macOS run the game through `wine`, which hasn't been tested yet.
 
 - **Backups now live in the project's `backup` folder**, and a second backup of a
   map on the same day no longer replaces the first.

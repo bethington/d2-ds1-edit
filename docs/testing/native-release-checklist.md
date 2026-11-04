@@ -110,7 +110,7 @@ for one package says nothing about another build or platform.
   whether the keyboard worked before and after. A build whose keys never reach
   the editor fails P-items even if the window draws.
 
-## Case `gui-edit-undo-save-reopen` (items E1 to E15)
+## Case `gui-edit-undo-save-reopen` (items E1 to E16)
 
 Use act 1 Town and at least two other maps from different acts.
 
@@ -204,8 +204,24 @@ Use act 1 Town and at least two other maps from different acts.
   map is refused before any confirmation. After Remove, the row in `LvlPrest.txt` has
   `Files` lowered and no `0` before the last map, and restore returns the table byte
   for byte.
+- [ ] **E16 Build and test a project.** Needs a test copy of the game: a real copy of
+  the game folder, not the one the editor reads, with a `patch_d2.mpq` the size of
+  the install's. Open a project, set **Build > Launch Profile** to the copy, and
+  check the defaults `-w -direct -txt`, and that the install folder is refused. On
+  Linux and macOS the wrapper is `wine`, which hasn't been tested yet, so record what
+  happened. Create a map in a row, edit it, save, and run **Build & Test**. The game
+  starts windowed from the copy, and the new map appears in the game. Only
+  `DATA/GLOBAL/TILES`, `DATA/GLOBAL/EXCEL` and `ds1edit-installed.txt` changed in
+  the copy, and nothing changed in the install. Run **Build MPQ** before starting a
+  game: it refuses with the message that the table has changed since the game last
+  compiled it. Start a game in the copy, run **Build MPQ**, and it builds
+  `<project>/build/patch_d2.mpq`. Replace `patch_d2.mpq` in another copy of the
+  game with it, and the new map appears in the game there. Delete the map, run
+  **Build & Test** again, and the map is gone from the copy and its entry is no
+  longer in `ds1edit-installed.txt`. Record the platform, the game and wrapper used,
+  and whether each step passed.
 
-Total items: 15.
+Total items: 16.
 
 ## Case `gui-modal-input` (items M1 to M4)
 
@@ -285,8 +301,8 @@ python -m scripts.equivalence.native_smoke manual ^
     --smoke-report OWNED\native-run\native-smoke-report.json ^
     --tester "Your Name" ^
     --environment "Windows 11 23H2 clean VM, no VC++ redist, 1.13c on D:\" ^
-    --notes "E1-E15 all done; E8 needed a second resize to redraw" ^
-    --items 15 --total 15 --out RESULTS\native.windows-x86.gui-edit-undo-save-reopen.json
+    --notes "E1-E16 all done; E8 needed a second resize to redraw" ^
+    --items 16 --total 16 --out RESULTS\native.windows-x86.gui-edit-undo-save-reopen.json
 ```
 
 Rules the tool enforces and `qualify.py` then checks:

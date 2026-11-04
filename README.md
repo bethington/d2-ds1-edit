@@ -323,11 +323,12 @@ runs, set `use_pd2 = no`. The command-line equivalents are `--pd2-dir=` and `--u
 | **Ctrl+S** | Save the current map into the project, asking for a project first if none is open |
 | **Ctrl+Shift+S** | Save every map with unsaved edits |
 | **Ctrl+Shift+N / O / W** | New, Open or Close Project |
-| **Ctrl+N** / **Ctrl+D** | New map / clone the open map. Each opens a dialog for the name, area and tileset (New also asks for the size). Clone copies the map as it is in memory, unsaved edits included, and works on maps that exist only in an MPQ |
+| **Ctrl+N** / **Ctrl+D** | New map / clone the open map. Each opens a dialog for the name, area and tileset (New also asks for the size, but a row that has a size sets it). Clone copies the map as it is in memory, unsaved edits included, and works on maps that exist only in an MPQ |
 | **Ctrl+Shift+P** / **Ctrl+Shift+A** | Open a preset / export assets |
+| **Ctrl+B** / **Ctrl+Shift+B** | Build MPQ: pack the project into `<project>/build/patch_d2.mpq`. Build & Test: copy its loose files into a test copy of the game and start it, with no MPQ. See the [manual](docs/getting-started/manual.md) |
 | **Alt+F, E, M, V, B** | Open the File, Edit, Map, View or Build menu. Arrow keys move, **Enter** runs and **Esc** closes |
 
-On macOS, **Cmd** works wherever **Ctrl** does. Some menu rows are dimmed because they don't apply right now, such as Cut with no map open; others arrive in later releases.
+On macOS, **Cmd** works wherever **Ctrl** does. Some menu rows are dimmed because they don't apply right now, such as Cut with no map open or the Build commands with no project open.
 
 Scroll speeds are `keyb_scroll_x/y` and `mouse_scroll_x/y` in `Ds1edit.ini`. The
 [manual](docs/getting-started/manual.md) describes the rest of the editing keys.
