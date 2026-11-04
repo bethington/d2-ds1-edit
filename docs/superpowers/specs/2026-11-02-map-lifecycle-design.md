@@ -203,6 +203,7 @@ or that resolves to the same folder as, contains, or sits inside the configured
 - **Launch failure:** a missing wrapper or executable shows the reason and the full
   command line.
 - **Linux and macOS** start the game through `wine`. That route hasn't been tested yet.
+- **Not yet shown end to end:** the full run, a changed map seen in the game and the built MPQ in a player's copy, hasn't been done yet.
 
 ## Gate: how the game loads the output
 

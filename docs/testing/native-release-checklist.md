@@ -204,22 +204,32 @@ Use act 1 Town and at least two other maps from different acts.
   map is refused before any confirmation. After Remove, the row in `LvlPrest.txt` has
   `Files` lowered and no `0` before the last map, and restore returns the table byte
   for byte.
-- [ ] **E16 Build and test a project.** Needs a test copy of the game: a real copy of
-  the game folder, not the one the editor reads, with a `patch_d2.mpq` the size of
-  the install's. Open a project, set **Build > Launch Profile** to the copy, and
-  check the defaults `-w -direct -txt`, and that the install folder is refused. On
-  Linux and macOS the wrapper is `wine`, which hasn't been tested yet, so record what
-  happened. Create a map in a row, edit it, save, and run **Build & Test**. The game
-  starts windowed from the copy, and the new map appears in the game. Only
-  `DATA/GLOBAL/TILES`, `DATA/GLOBAL/EXCEL` and `ds1edit-installed.txt` changed in
-  the copy, and nothing changed in the install. Run **Build MPQ** before starting a
-  game: it refuses with the message that the table has changed since the game last
-  compiled it. Start a game in the copy, run **Build MPQ**, and it builds
-  `<project>/build/patch_d2.mpq`. Replace `patch_d2.mpq` in another copy of the
-  game with it, and the new map appears in the game there. Delete the map, run
-  **Build & Test** again, and the map is gone from the copy and its entry is no
-  longer in `ds1edit-installed.txt`. Record the platform, the game and wrapper used,
-  and whether each step passed.
+- [ ] **E16 Build and test a project.** Do the steps in order and record what each one showed.
+  1. **Prerequisites.** Two real copies of the game folder, apart from the install the
+     editor reads: a test copy, and a second copy standing for a player's game. In each,
+     `patch_d2.mpq` is the size of the install's. Open a project, open **Build >
+     Launch Profile**, and set the test copy. The defaults are `-w -direct -txt`, and
+     choosing the install folder is refused. On Linux and macOS the wrapper is `wine`,
+     which hasn't been tested yet, so record what happened.
+  2. **List `DATA`.** Before each **Build & Test**, list every file under `DATA` in the
+     test copy with its size and date, and list it again afterward. Only files under
+     `DATA/GLOBAL/TILES` and `DATA/GLOBAL/EXCEL` change, and `ds1edit-installed.txt`
+     beside `DATA` appears or changes. Nothing changes in the install.
+  3. **Change a map.** Edit a map you can reach at once, such as `Act1/Town/TownN1.ds1`,
+     save, and run **Build & Test**. The game starts windowed from the test copy.
+     Start a game, and the change is in the town.
+  4. **Add a map and change the table.** With **Map > New** on a row that has a size,
+     create a map, and save. Run **Build & Test**. At the game's menu, before starting
+     a game, run **Build MPQ**. It refuses and says the table has changed since the game
+     last compiled it. A new map joins the row's random pick, so seeing it in the game
+     can't be forced. A row with a single map is the way to force a map being used.
+     On a row that has a size, the map must match that size.
+  5. **Build the MPQ.** Start a game in the test copy, so the game compiles the tables,
+     then run **Build MPQ**. It succeeds and writes `<project>/build/patch_d2.mpq`.
+  6. **Use the MPQ in a player's copy.** Replace `patch_d2.mpq` in the second copy with
+     that file. Start the game from it with `-w` and without `-direct -txt`, and the
+     change from step 3 is in the game. Record the platform, the game and the wrapper
+     used, and whether each step passed.
 
 Total items: 16.
 
