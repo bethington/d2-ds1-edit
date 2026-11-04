@@ -517,13 +517,22 @@ void test_path_is_inside_null_and_empty_dir_are_never_inside(void)
    TEST_ASSERT_EQUAL_INT(0, project_path_is_inside(NULL, "C:\\Diablo2"));
 }
 
-void test_open_game_folder_is_the_configured_one_else_the_projects(void)
+void test_open_game_folder_is_where_the_archives_opened_from(void)
 {
-   TEST_ASSERT_EQUAL_STRING("C:\D2", project_open_game_folder("C:\D2", "D:\Other"));
-   TEST_ASSERT_EQUAL_STRING("D:\Other", project_open_game_folder("", "D:\Other"));
-   TEST_ASSERT_EQUAL_STRING("D:\Other", project_open_game_folder(NULL, "D:\Other"));
-   TEST_ASSERT_EQUAL_STRING("", project_open_game_folder(NULL, ""));
-   TEST_ASSERT_EQUAL_STRING("", project_open_game_folder("", NULL));
+   TEST_ASSERT_EQUAL_STRING("", project_open_game_folder());
+
+   project_set_open_game_folder("C:/D2", "C:/D2/d2data.mpq");
+   TEST_ASSERT_EQUAL_STRING("C:/D2", project_open_game_folder());
+
+   /* An explicit archive elsewhere: nothing was opened from the install. */
+   project_set_open_game_folder("C:/D2", "E:/Mods/d2data.mpq");
+   TEST_ASSERT_EQUAL_STRING("", project_open_game_folder());
+
+   project_set_open_game_folder("C:/D2", "C:/D2/d2data.mpq");
+   project_set_open_game_folder(NULL, "C:/D2/d2data.mpq");
+   TEST_ASSERT_EQUAL_STRING("", project_open_game_folder());
+   project_set_open_game_folder("", NULL);
+   TEST_ASSERT_EQUAL_STRING("", project_open_game_folder());
 }
 
 void test_ensure_parent_dirs_creates_the_chain(void)
@@ -592,7 +601,7 @@ int main(void)
    RUN_TEST(test_path_is_inside_ignores_case_and_slash_direction);
    RUN_TEST(test_path_is_inside_dir_with_trailing_separator);
    RUN_TEST(test_path_is_inside_null_and_empty_dir_are_never_inside);
-   RUN_TEST(test_open_game_folder_is_the_configured_one_else_the_projects);
+   RUN_TEST(test_open_game_folder_is_where_the_archives_opened_from);
    RUN_TEST(test_ensure_parent_dirs_creates_the_chain);
    RUN_TEST(test_ensure_parent_dirs_reports_a_file_in_the_way);
 

@@ -96,10 +96,13 @@ int  project_path_in_game_install(const char *path);
 // NULL or empty `dir`.
 int  project_path_is_inside(const char *path, const char *dir);
 
-/* The game folder whose archives the editor has open: the configured d2_install (the
-   one the archives were read from at startup), else the project's, which only fills in
-   an empty one. Never NULL. */
-const char *project_open_game_folder(const char *configured, const char *project_install);
+/* Remember, once at startup after the archives are resolved, the folder they were opened
+   from: d2_install if the d2data archive lies inside it, else none. A later project
+   change doesn't move it. */
+void project_set_open_game_folder(const char *d2_install, const char *d2data_mpq);
+
+/* That folder; "" if no archive was opened from an install. Never NULL. */
+const char *project_open_game_folder(void);
 
 /* Everything after the last "/tiles/" in a path, i.e. the form MPQ
  * virtual paths under Data\\Global\\Tiles\\ are keyed on.

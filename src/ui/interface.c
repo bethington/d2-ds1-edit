@@ -702,11 +702,11 @@ static int interface_map_in_game(const char *ds1_path, void *ctx)
    return area_browser_game_has_map(ds1_path);
 }
 
-/* The folder whose archives are open, so the base MPQ, the game's table and in_game
- * all read one install. A changed project d2_install doesn't move it until reopen. */
+/* The folder the open archives came from, set once at startup. A project's d2_install
+ * isn't used: with no archives open the table and in_game can't match the base. */
 static const char *interface_game_folder(void)
 {
-   return project_open_game_folder(glb_config.d2_install, glb_project.d2_install);
+   return project_open_game_folder();
 }
 
 /* Pack the project into <project>/build/patch_d2.mpq. 0 if it was written, else -1,
@@ -726,7 +726,7 @@ static int interface_build_mpq(int quiet)
    if (interface_game_folder()[0] == '\0')
    {
       interface_map_op_failed("Build MPQ", "Nothing was built.",
-         "This project has no game folder. Set it in File > Project Settings.");
+         "The editor found no game folder when it started. Set d2_install in Ds1edit.ini and restart.");
       return -1;
    }
    if (!interface_save_before("Build MPQ", "Save all maps and build?"))
@@ -895,8 +895,8 @@ static void interface_project_settings(void)
    }
    if (strcmp(old_game, f.game) != 0)
       interface_info_box("Project Settings", "The game folder changed.",
-         "It takes effect the next time the project opens. If Ds1edit.ini sets d2_install, "
-         "the editor reads that folder instead.");
+         "The editor reads the game when it starts, so this takes effect after you reopen "
+         "the project and restart the editor, unless Ds1edit.ini sets d2_install, which wins.");
 }
 
 /* Save, install the project's loose files in the test copy and start the game. The

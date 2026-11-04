@@ -511,9 +511,18 @@ int project_save_would_replace(const char *src)
    return stat(target, &st) == 0;
 }
 
-const char *project_open_game_folder(const char *configured, const char *project_install)
+static char s_open_game_folder[PROJECT_PATH_MAX];
+
+void project_set_open_game_folder(const char *d2_install, const char *d2data_mpq)
 {
-   if (configured != NULL && configured[0] != 0)
-      return configured;
-   return project_install != NULL ? project_install : "";
+   s_open_game_folder[0] = 0;
+   if (d2_install != NULL && d2_install[0] != 0 && d2data_mpq != NULL &&
+       project_path_is_inside(d2data_mpq, d2_install) &&
+       strlen(d2_install) < sizeof(s_open_game_folder))
+      strcpy(s_open_game_folder, d2_install);
+}
+
+const char *project_open_game_folder(void)
+{
+   return s_open_game_folder;
 }
