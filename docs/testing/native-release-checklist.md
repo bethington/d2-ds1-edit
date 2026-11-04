@@ -233,6 +233,15 @@ Use act 1 Town and at least two other maps from different acts.
      change from step 3 is in the game. Record the platform, the game and the wrapper
      used, and whether each step passed.
 
+  Windows, 1.13c, 2026-11-03, partly run, so the item stays unchecked on every
+  platform. A new table was compiled by the game and entered town with no crash;
+  Build MPQ refused before a game had compiled it and succeeded after, and the
+  built archive holds the 209 retail entries and the project's. The built archive,
+  mounted into a running game, served the edited `TownN1`. Not shown: the
+  changed map in the game (a loose `TownN1` was not read in that run, see the gate
+  results), the new map drawn, and the built archive mounting at startup in a
+  player's copy. Steps 3 and 6 are open, and so are Linux and macOS.
+
 Total items: 16.
 
 ## Case `gui-modal-input` (items M1 to M4)

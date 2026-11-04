@@ -203,7 +203,7 @@ or that resolves to the same folder as, contains, or sits inside the configured
 - **Launch failure:** a missing wrapper or executable shows the reason and the full
   command line.
 - **Linux and macOS** start the game through `wine`. That route hasn't been tested yet.
-- **Not yet shown end to end:** the full run, a changed map seen in the game and the built MPQ in a player's copy, hasn't been done yet.
+- **End to end, partly shown on Windows, 2026-11-03:** a new table compiled by the game, Build MPQ refusing and then succeeding, and the built archive mounting into a running game and serving the edited map. **Not shown:** a changed map in the game (the game did not read a loose `TownN1.ds1`), and the built MPQ mounting at startup in a player's copy. Linux and macOS are untouched. See the gate results.
 
 ## Gate: how the game loads the output
 

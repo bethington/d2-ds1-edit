@@ -78,14 +78,34 @@ The Ghidra server had no project open, so the addresses come from disassembling 
 - Set the game's working folder to the test copy. `-direct` and `-txt` both resolve from it.
 - Remove the previous install's loose files from the test copy, since a loose file wins over any MPQ.
 
+## End-to-End Run, 2026-11-03
+
+Windows 11, 1.13c copies, windowed. The editor was `bin\ds1edit.exe` run from a scratch folder with `d2_install` set to the reference install. Its windows were driven with window messages, and real keyboard input (`SendInput`) was used twice, to type the test folder into Launch Profile and the new map's name. The game ran in D2Fleet slot 0 for the frames, because the registry `Save Path` of this machine is the 1.14b install's save folder and a plain launch can't enter a game without writing there. Details and screenshots are in `task-8-report.md` beside the plan.
+
+| What | Result |
+|---|---|
+| `Game.exe -w` runs from a real copy (`patch_d2.mpq` a separate file) | Yes, to the main menu. A first try failed with "Only one copy of Diablo II may run at a time" because another game was open |
+| Build & Test from the editor | Installed `DATA\GLOBAL\TILES\...\TownN1.ds1`, `BarW5.ds1` and `LvlPrest.txt` and started the game from the test copy, windowed. It stopped at the main menu, since no character could be used there |
+| A new table, `BarW5` added by **Map > New** on Barracks W | With those files copied into the slot after launch, the game compiled `DATA\GLOBAL\EXCEL\lvlprest.bin` (471,316 bytes, 90 `.bin` files in all) at the start of a game, which holds `Barracks/BarW5.ds1`. It entered town with no crash. The new map was not drawn: a Barracks room wasn't generated |
+| Build MPQ before a compiled table exists in the test copy | Refused, with "Nothing was built. LvlPrest.txt has changed since the game last compiled it. Run Build & Test and start a game first." |
+| Build MPQ after copying the slot's 90 `.bin` files into the test copy | Built, "4 files, 2775684 bytes, 2.5 seconds". That copy was done by hand, standing in for a game started in the test copy |
+| The built archive, read with a throwaway reader | 212 hash entries in a table of 16,384. The 209 retail entries are all there and 207 are byte-identical; `lvlprest.bin` and `LvlPrest.txt` are the project's. Also `data\global\tiles\Act1\Barracks\BarW5.ds1`, `...\Town\TownN1.ds1` and a `(listfile)`. No `(attributes)`. Every file has flag `0x80000000` |
+| The built archive mounted in the running game, with the loose `TownN1` removed first | `SFileOpenArchive` (`Storm.dll+0x2a0b0`, priority 5000, flags 2) returned 1. A read of `data\global\tiles\act1\town\townn1.ds1` was 57,652 bytes before and 57,801 after, and its first 48 and last 101 bytes match the project's file. So the archive mounts into a running game and wins over `d2data.mpq` |
+
+### A changed map: not shown
+
+The saved `TownN1` differs from the game's in 14 wall cells (x 36 to 39, y 9 to 12, two wall layers). In the game those cells lie in subtiles x 4520 to 4540, y 4635 to 4655, by the gate in the south fence. This was found by diffing the two files, since the object lists of the file and the game's town line up at a fixed offset (game subtile = file subtile + (4340, 4590)).
+
+With the loose file in the slot, the same character at the same spot showed the same frame as with no loose file, and the walkable map around it was the same. A stronger test then put a `TownN1` with every wall cell cleared (a byte-edited copy of the retail file) in the slot: the town at the start of the game still had its stone wall and its tent. So in this run the game did not read the loose `TownN1.ds1` at all, which is not what the earlier static reading expected, and Build & Test's map path stays unproved. The reason wasn't found. The file's last-access time also did not move after a game was entered, which points the same way but proves little.
+
 ## Not Proved Yet
 
-These must be checked before step 4 ships, in the end-to-end test the spec requires.
-
-- **A changed map seen in the game.** The edited table was compiled and the game entered town, but the loose map was an unchanged copy of `TownN1`, so the screen doesn't prove which file drew it. The file's last-access time supports it, weakly.
+- **A changed map seen in the game.** See above: not shown, and a loose `TownN1` was not read in the run. Until that is understood, the sentence "the game reads a project's maps from loose files" is not proved. A new table from a loose `LvlPrest.txt` did work.
+- **A rebuilt `patch_d2.mpq` mounted at startup.** Only mounting into a running game was shown. Starting `Game.exe` from a copy whose `patch_d2.mpq` is the built one, without `-direct -txt`, was not run, so the archive winning at startup is not proved.
+- **A game entered from the editor's own launch.** The editor started the game and it reached its menu; entering a game was done in a fleet slot instead, with files copied in by hand.
+- **The new map drawn in the game.** A new map joins the random pick, and none was generated.
 - **An empty map on a `Scan` or `Pops` row.** On a `Scan` row it may remove what the row provided, such as a cave entrance, and so lose the level's exit. That wasn't tested. An empty map on a `Pops` row wasn't run at all, and neither was standing inside an empty room, or anything outside Act 1.
 - **File cell length.** Static reading infers a stack buffer limit of 41 characters, and `MAP_OPS_TABLE_PATH_MAX` is now 41. The limit itself is not yet tried in the game.
-- **A rebuilt `patch_d2.mpq` mounted at startup.** A fleet launch rewrites its slot first, so this test mounted the archive from inside the running game, through the same Storm export `D2Win` uses.
 - **Read-only excel folder.** Static reading says a failed write is silent.
 - **`wine` on Linux and macOS.** Case handling of `DATA\GLOBAL\...` wasn't run.
 - **1.14 installs.** `C:\Diablo2` is 1.14b, not 1.13c. Its list and priorities match statically, and its `-direct` and `-txt` behaviour wasn't read.
