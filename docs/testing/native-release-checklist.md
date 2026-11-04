@@ -216,7 +216,9 @@ Use act 1 Town and at least two other maps from different acts.
      `DATA/GLOBAL/TILES` and `DATA/GLOBAL/EXCEL` change, and `ds1edit-installed.txt`
      beside `DATA` appears or changes. Also list the install's `DATA` before step 3 and
      after step 6, and nothing in it has changed.
-  3. **Change a map.** Edit a map you can reach at once, such as `Act1/Town/TownN1.ds1`,
+  3. **Change a map.** Edit a map you can reach at once. The Act 1 town has four maps
+     (`TownN1`, `TownE1`, `TownS1`, `TownW1`) and a game uses one, so for the town edit
+     the one in use, or a map with a single version,
      save, and run **Build & Test**. The game starts windowed from the test copy.
      Start a game, and the change is in the town.
   4. **Add a map and change the table.** Close the game from step 3. With **Map > New**
@@ -234,13 +236,14 @@ Use act 1 Town and at least two other maps from different acts.
      used, and whether each step passed.
 
   Windows, 1.13c, 2026-11-03, partly run, so the item stays unchecked on every
-  platform. A new table was compiled by the game and entered town with no crash;
+  platform. A tent removed from `TownE1` was gone in the town (the Act 1 town has
+  four maps and the game uses one, so edit the one it uses; step 3's `TownN1` was
+  not in use). A new table was compiled by the game and entered town with no crash;
   Build MPQ refused before a game had compiled it and succeeded after, and the
   built archive holds the 209 retail entries and the project's. The built archive,
-  mounted into a running game, served the edited `TownN1`. Not shown: the
-  changed map in the game (a loose `TownN1` was not read in that run, see the gate
-  results), the new map drawn, and the built archive mounting at startup in a
-  player's copy. Steps 3 and 6 are open, and so are Linux and macOS.
+  mounted into a running game, served the edited map. Not shown: the new map
+  drawn, and the built archive mounting at startup in a player's copy (step 6).
+  Linux and macOS are open.
 
 Total items: 16.
 
