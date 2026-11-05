@@ -1956,6 +1956,8 @@ static int unlisted_scan_slot(AREA_BROWSER_S * ab, int slot, int pass)
          }
          if (g == NULL) continue;
 
+         if (def > 0)
+            area_note_def_group(def, g->lvltype_id);
          area_group_add_entry(g, lvltype, def, rel);
       }
    }
@@ -2121,7 +2123,7 @@ static int area_row_is_cleared_map(const AREA_DS1_ENTRY_S * e, int def, const ch
 
 static int area_group_is_unlisted(const AREA_GROUP_S * g)
 {
-   return !g->is_backup && g->lvltype_id <= -100;
+   return !g->is_backup && !g->is_pd2 && g->lvltype_id <= -100;
 }
 
 /* A map the game lists and the project's table has cleared. It goes in each group
@@ -2886,10 +2888,10 @@ void area_browser_scroll_to_row(int group_idx, int entry_idx)
    /* The rows area_browser_draw_sidebar counts, with its bottom bar of 10. */
    for (i = 0; i <= group_idx; i++)
    {
-      if (ab->groups[i].act != last_act)
+      if (area_group_section(&ab->groups[i]) != last_act)
       {
          row++;
-         last_act = ab->groups[i].act;
+         last_act = area_group_section(&ab->groups[i]);
       }
       if (i == group_idx)
       {
