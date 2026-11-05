@@ -95,6 +95,9 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
   table rows further up were dimmed. With a section above collapsed, an edit box also
   opened on the wrong row.
 
+- **The side panels stop at their last row.** The mouse wheel could scroll the area
+  browser and the properties panel past their content, leaving them blank.
+
 - **The Delete key no longer deletes the map.** One press in the map view also
   ran the area browser's map delete on the last row the mouse had hovered, in
   tile and object mode alike, with no confirmation: under a mod folder that

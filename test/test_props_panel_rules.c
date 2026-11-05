@@ -146,6 +146,20 @@ static void test_other_columns_move_nothing(void)
    TEST_ASSERT_EQUAL_INT(168, s_rows[1].lvltype_id);
 }
 
+void test_a_scroll_past_the_end_stops_with_the_last_rows_showing(void)
+{
+   TEST_ASSERT_EQUAL_INT(70, pp_scroll_clamp(120, 100, 30));
+   TEST_ASSERT_EQUAL_INT(70, pp_scroll_clamp(70, 100, 30));
+   TEST_ASSERT_EQUAL_INT(69, pp_scroll_clamp(69, 100, 30));
+}
+
+void test_a_list_that_fits_or_a_negative_offset_stays_at_the_top(void)
+{
+   TEST_ASSERT_EQUAL_INT(0, pp_scroll_clamp(5, 20, 30));
+   TEST_ASSERT_EQUAL_INT(0, pp_scroll_clamp(-3, 100, 30));
+   TEST_ASSERT_EQUAL_INT(0, pp_scroll_clamp(0, 0, 0));
+}
+
 int main(void)
 {
    UNITY_BEGIN();
@@ -160,5 +174,7 @@ int main(void)
    RUN_TEST(test_a_def_edit_moves_the_rows_with_that_def);
    RUN_TEST(test_a_lvltype_id_edit_moves_its_rows_and_group);
    RUN_TEST(test_other_columns_move_nothing);
+   RUN_TEST(test_a_scroll_past_the_end_stops_with_the_last_rows_showing);
+   RUN_TEST(test_a_list_that_fits_or_a_negative_offset_stays_at_the_top);
    return UNITY_END();
 }

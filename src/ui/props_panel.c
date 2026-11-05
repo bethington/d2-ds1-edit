@@ -1162,6 +1162,11 @@ draw_footer:
       int footer_y = panel_bottom - footer_h;
       ALLEGRO_COLOR fc_bg, fc_border, fc_text;
 
+      /* The wheel can overshoot, and a section can collapse under the offset. */
+      if (pp->active_tab == PP_TAB_PROPERTIES)
+         pp->scroll_offset = pp_scroll_clamp(pp->scroll_offset, draw_row,
+            (footer_y - (panel_top + PP_HEADER_H + 4)) / PP_LINE_H);
+
       /* Footer background */
       al_draw_filled_rectangle((float)panel_x, (float)footer_y,
                                 (float)panel_right, (float)panel_bottom,

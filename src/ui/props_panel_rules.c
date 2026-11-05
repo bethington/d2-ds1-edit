@@ -53,3 +53,11 @@ void props_panel_follow_key_edit(AREA_BROWSER_S * ab, PP_FIELD_SOURCE_E source,
       }
    }
 }
+
+int pp_scroll_clamp(int offset, int total, int visible)
+{
+   int limit = total - visible;
+
+   if (offset > limit) offset = limit;
+   return offset < 0 ? 0 : offset;
+}

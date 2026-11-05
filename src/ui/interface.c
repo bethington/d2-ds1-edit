@@ -719,6 +719,7 @@ static int interface_build_mpq(int quiet)
    char problems[4096], report[PROJECT_PATH_MAX + 1024];
    char *table;
    double t0, secs;
+   char shown[sizeof(out)];
    int rc;
 
    if (!glb_project.is_open)
@@ -764,12 +765,21 @@ static int interface_build_mpq(int quiet)
    }
    if (!quiet)
    {
+      strcpy(shown, out);
+#ifdef WIN32
+      {
+         char *c;
+
+         for (c = shown; *c != 0; c++)
+            if (*c == '/') *c = '\\';
+      }
+#endif
       snprintf(report, sizeof(report),
-         "%s\n\n%d files, %ld bytes, %.1f seconds.\n\n"
+         "%s\n\n%d %s, %ld bytes, %.1f seconds.\n\n"
          "%s"
          "Install it by replacing patch_d2.mpq in a copy of the game. "
          "Check it in the game before you share it.",
-         out, res.files, res.bytes, secs,
+         shown, res.files, res.files == 1 ? "file" : "files", res.bytes, secs,
          res.pd2_ignores_tables ?
             "Project Diablo 2 won't use this MPQ's tables. Its pd2data.mpq outranks "
             "patch_d2.mpq and has its own LvlPrest, so a new or removed map won't reach "

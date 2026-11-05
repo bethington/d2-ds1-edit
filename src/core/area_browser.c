@@ -19,6 +19,7 @@
 #include "core/map_ops.h"
 #include "core/lvlprest_text.h"
 #include "ui/props_panel.h"
+#include "ui/props_panel_rules.h"
 #include "ui/ui_layout.h"
 #include "platform.h"
 #include "ui/input.h"
@@ -2557,6 +2558,10 @@ void area_browser_draw_sidebar(int width, int height)
          }
       }
    }
+
+   /* The wheel can overshoot, and a group can collapse under the offset. */
+   ab->scroll_offset = pp_scroll_clamp(ab->scroll_offset, draw_row,
+      (panel_bottom - (panel_top + SB_HEADER_H + 4) - 1) / SB_LINE_H);
 }
 
 /* Draw collapsed sidebar tab — small ">" button at left edge. */
@@ -2785,6 +2790,8 @@ static void area_browser_draw(void)
       }
       draw_row++;
    }
+
+   ab->scroll_offset = pp_scroll_clamp(ab->scroll_offset, draw_row, visible_lines);
 
    /* Footer */
    al_draw_filled_rectangle(0, (float)(h - AB_FOOTER_H), (float)w, (float)h,

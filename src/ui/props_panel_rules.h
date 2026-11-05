@@ -25,4 +25,8 @@ int props_panel_header_field_read_only(int header_field);
 void props_panel_follow_key_edit(AREA_BROWSER_S * ab, PP_FIELD_SOURCE_E source,
                                  const char * col_name, int old_value, int new_value);
 
+/* The scroll offset, held so a list's last rows still fill the panel: at most
+   total - visible, and never below 0. */
+int pp_scroll_clamp(int offset, int total, int visible);
+
 #endif
