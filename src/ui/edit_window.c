@@ -6,6 +6,7 @@
 #include "render/preview.h"
 #include "error.h"
 #include "editor/undo.h"
+#include "core/map_state.h"
 #include "misc.h"
 #include "core/palette.h"
 #include "ui/edit_window.h"
@@ -1614,7 +1615,38 @@ void wedit_keep_tile(int ds1_idx, int x, int y,
                      CELL_S_S *src_s_ptr)
 {
    UNDO_S *u = &glb_ds1[ds1_idx].undo;
-   int n;
+   int n, i, t, changed = FALSE;
+
+   // The tile window edits the live map before OK, so the undo buffer's
+   // baseline would already include this edit: mark it directly when saved
+   // content differs from what the window started with.
+   t = (y * glb_ds1[ds1_idx].floor_line) + (x * glb_ds1[ds1_idx].floor_num);
+   for (i = 0; i < glb_ds1[ds1_idx].floor_num; i++)
+   {
+      const CELL_F_S *c = glb_ds1[ds1_idx].floor_buff + t + i;
+      if (c->prop1 != src_f_ptr[i].prop1 || c->prop2 != src_f_ptr[i].prop2 ||
+          c->prop3 != src_f_ptr[i].prop3 || c->prop4 != src_f_ptr[i].prop4)
+         changed = TRUE;
+   }
+   t = (y * glb_ds1[ds1_idx].shadow_line) + (x * glb_ds1[ds1_idx].shadow_num);
+   for (i = 0; i < glb_ds1[ds1_idx].shadow_num; i++)
+   {
+      const CELL_S_S *c = glb_ds1[ds1_idx].shadow_buff + t + i;
+      if (c->prop1 != src_s_ptr[i].prop1 || c->prop2 != src_s_ptr[i].prop2 ||
+          c->prop3 != src_s_ptr[i].prop3 || c->prop4 != src_s_ptr[i].prop4)
+         changed = TRUE;
+   }
+   t = (y * glb_ds1[ds1_idx].wall_line) + (x * glb_ds1[ds1_idx].wall_num);
+   for (i = 0; i < glb_ds1[ds1_idx].wall_num; i++)
+   {
+      const CELL_W_S *c = glb_ds1[ds1_idx].wall_buff + t + i;
+      if (c->prop1 != src_w_ptr[i].prop1 || c->prop2 != src_w_ptr[i].prop2 ||
+          c->prop3 != src_w_ptr[i].prop3 || c->prop4 != src_w_ptr[i].prop4 ||
+          c->orientation != src_w_ptr[i].orientation)
+         changed = TRUE;
+   }
+   if (changed)
+      map_dirty_mark(ds1_idx);
 
    undo_new_tile_buffer(ds1_idx);
 

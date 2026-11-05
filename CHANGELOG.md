@@ -5,6 +5,44 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
 
 ## 2.2.1 (unreleased)
 
+### Added
+
+- **Menu bar.** File, Edit, Map, View and Build menus, opened with a click or **Alt** plus the first letter. Commands that have a hotkey show it; six rows (Project Settings, Revert to Game Version, Remove from Project, Restore Slot, Restore from Backup, Launch Profile) have none. Some rows are dimmed when they don't apply, and Project Settings and the Build commands are dimmed until a project is open.
+
+- **Hotkeys for maps.** **Ctrl+N** creates a map, **Ctrl+D** clones the open one, and **Ctrl+Del** deletes, reverts or removes the open one by its state, after asking. These replace **Insert** and **Shift+Insert**, and **Insert** keeps its object-mode role.
+
+- **Map > New and Clone open a dialog** for the name, area, tileset and size.
+  Clone copies the map as it is in memory, so it includes unsaved edits and works
+  on maps that exist only in an MPQ. A failed table write removes the new map.
+  The new row is scrolled to in the area browser, where a click opens it.
+
+- **Deleting follows the map's state.** A map new to the project is deleted, a
+  modified one is reverted to the game's version, and a game map is removed from
+  the project's table, where it stays listed, struck through, until its slot is
+  restored. Each one asks first and can be undone. An open map whose file has gone
+  this way can't be saved until it's reopened or restored. Remove and Delete move
+  the row's later maps back and lower its `Files` column, so the game never meets a
+  blank map below `Files`, and Restore Slot raises it again. A row's only map, and a
+  map in a row that picks its maps by its own rules, can't be removed: Remove and Delete
+  say so before they ask to confirm and change nothing. Delete does clear a new map from a
+  cell past `Files`, as 2.2.0 could write, and leaves `Files` alone. Any of them refuses a row
+  with an empty cell below `Files`, which needs fixing by hand. New adds a map to the end of a
+  row and raises `Files`, and it joins the game's random pick at once. A row with `Files` of 0,
+  with cells past `Files`, or that's full takes no new map. A row that is a whole level with no
+  fixed size, like Tristram or the towns of Acts 3 and 5, takes a clone but not an empty new map.
+  New's size starts at the row's size. Restore from Backup can be refused when the row can't
+  take the map back, or its path is over the limit, in which case the file must be renamed by
+  hand. A map's whole path can be at most 41 characters. A game map the game's own
+  table doesn't list has nothing to take out of the row, so Remove stops with a message. In a
+  project over a mod overlay, game files the overlay replaced show struck through
+  after the project's first table write. A row's File cells can't be edited in the
+  properties panel any more, since an edit there could leave a blank that crashes the game.
+
+- **Build MPQ and Build & Test.** **Build > Build MPQ** (**Ctrl+B**) packs the project's maps, tiles and tables into `<project>/build/patch_d2.mpq`, on top of a copy of the game's own `patch_d2.mpq`, so a player installs it by replacing that file in a copy of the same game version. The base comes from the folder the editor's archives were opened from at start, `d2_install` in `Ds1edit.ini` or the install the editor found or remembered. A project's Game folder isn't used for this. It stops before writing anything, and lists why, if a map in a File cell the project added can't be found, a project map is in no table, a map's size differs from its row's, a row has a new empty cell within its `Files` count (a hole the game's own table ships, like Def 915, is allowed, though that row hasn't been tested), or a table hasn't been compiled by the game since it last changed. A `<stem>-NNN.ds1` beside `<stem>.ds1` that no table lists is a save's backup and isn't packed. **Build > Build & Test** (**Ctrl+Shift+B**) saves, copies the project's loose files into a separate test copy of the game and starts the game from it with `-w -direct -txt`, with no MPQ. **Build > Launch Profile** sets the test copy, program, arguments and wrapper, which are stored in `project.ini`; the test copy can't overlap your install, the folder of an open archive, or your project, since an install into the project would delete its maps. The editor writes in a game folder only there, only under `DATA/GLOBAL/TILES`, `DATA/GLOBAL/EXCEL` and `ds1edit-installed.txt`, and removes only what the last install listed, plus the compiled `.bin` of each table it installs. **The game compiles tables when a game starts, not at launch**, so after a table changes, Build MPQ needs a Build & Test and a game started in the test copy first. Linux and macOS run the game through `wine`, which hasn't been tested yet. A run on Windows, 1.13c, on 2026-11-03 showed a changed map in a D2Fleet slot, with the install's tree copied in by hand, a new table compiled by the game, and a built MPQ that mounts into a running game and serves the edited map. The `.bin` files for that build were copied by hand. No game was entered from the editor's own launch, and the manual's Build sequence has not been run as written. A built MPQ has been run at game startup in D2Fleet slots: on 1.13c under Wine, and on Windows on copies of 1.14b and Project Diablo 2 Season 14. A map changed through it was drawn on all three, and a new map on 1.14b. Those archives came from a test tool calling the same build code, not from the editor's window. On a copy of 1.14b on Windows, the editor's own Build & Test and Build MPQ have also run on a changed `TownE1`, with no table. Build & Test reached the game's menu. The same change was then drawn in a game in D2Fleet slots, through both the installed file and the built MPQ, because a game entered from the editor's own launch would use your real characters. Project Diablo 2's `pd2data.mpq` outranks `patch_d2.mpq` and has its own compiled `LvlPrest`, so a new or removed map doesn't reach the game there, and Build MPQ warns when it packs a table for a PD2 folder. The Act 1 town has four maps and which one a game uses wasn't determined, so test all four and ship all four. A test run uses real characters through the registry's `Save Path`, and shared settings, so use a throwaway character and back up your saves. Clearing every wall of a town map stopped the game at load, and the cause wasn't found.
+
+- **Backups now live in the project's `backup` folder**, and a second backup of a
+  map on the same day no longer replaces the first.
+
 ### Changed
 
 - **The release gate is workable.** It still fails closed, but it can now be
@@ -30,6 +68,12 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
   recover it. The save now fails with a message and writes nothing. The `.tmp`
   autosave still works. Among the vanilla maps this is one file:
   `act1\court\court1b.ds1`.
+
+- **Saved maps go into a project.** The first save asks you to create or open one, and maps opened from the game's archives now save into it, instead of failing or writing to a relative path. If the project already has its own copy of the map, the save asks before replacing it, and the old copy becomes a numbered backup. A project can't be created inside the game's folder, and a map opened from inside that folder is refused rather than saved over the game's files. `mod_dir` still works as a read overlay behind the project. Closing a project restores it.
+
+- **Unsaved edits are tracked.** Opening a map from the area browser used to discard every open map's edits with no warning; it now asks first. So do closing a project, changing project (which now closes the old project's maps) and quitting, and only when something is unsaved. The browser marks unsaved maps with `*`, project copies of game maps with `M`, and project-only maps with `N`.
+
+- **Ctrl+Shift+S saves every map with unsaved edits, and Ctrl+S with no map open does nothing,** instead of reporting a save that never happened.
 
 ### Fixed
 
@@ -61,6 +105,50 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
   needs PD2's current tables: an older `mod_dir` copy of them overrides these
   names and tilesets.
 
+- **The properties panel shows and edits the open map's row.** Hovering another map
+  in the area browser, or opening a map by Restore from Backup or Revert, showed a
+  different map's `LvlPrest.txt` row. An edit made while that row showed, once
+  applied, changed the other map's row. If you edited a row's `Name`, `Def`,
+  `Dt1Mask` or `LevelId` in the panel, or its `File` cells in 2.2.0, check the
+  project's `LvlPrest.txt`. A map opened without a row now shows no table rows at
+  all, where it used to show `Def` 0's.
+
+- **The panel's table rows stay after Apply.** They went blank until another map
+  was opened. Changing a row's `Def` or LvlTypes `Id` also left the panel without a
+  row, because the area browser kept the old value; its rows now follow the edit.
+
+- **The panel dims and blocks the right DS1 header fields.** `file`, `width`,
+  `height`, `txt_act`, `walls`, `floors`, `shadows`, `tags` and `objects` are dimmed
+  and a click on one starts no edit. They could be clicked before, while unrelated
+  table rows further up were dimmed. With a section above collapsed, an edit box also
+  opened on the wrong row.
+
+- **The side panels stop at their last row.** The mouse wheel could scroll the area
+  browser and the properties panel past their content, leaving them blank.
+
+- **The Delete key no longer deletes the map.** One press in the map view also
+  ran the area browser's map delete on the last row the mouse had hovered, in
+  tile and object mode alike, with no confirmation: under a mod folder that
+  removed the map's file and cleared its `LvlPrest.txt` slot, and Ctrl+Z could not
+  bring it back. Delete now acts only on the selected tiles or objects. To delete
+  a map, right-click its row in the area browser and choose **Delete map...**,
+  which asks first and names the file. **Delete permanently** on a backup asks
+  too. A command that changes a map asks for a project first if none is open.
+- **A map is no longer deleted when its backup fails.** A backup that could not
+  be written still counted as a success, so the delete went on to remove the
+  original. Every write is now checked, a failure stops the delete, and the
+  editor reports it.
+- **A map is no longer deleted when its `LvlPrest.txt` slot can't be cleared.**
+  With no table in the mod folder, or a second delete in the same session, the
+  file was removed and the slot left naming it. The slot is now found in the
+  table on disk before anything changes, and a table that can't be read or
+  written stops the delete with a message. A new map the project's table doesn't
+  list can still be deleted, as long as that table can be read. In a project with
+  no table of its own, the delete stops with the same message.
+- **One Delete press makes one undo step in tile mode.** It ran once per frame
+  while the key was down, stacking empty undo steps, so the first Ctrl+Z could
+  appear to do nothing.
+- **Native dialogs no longer crash the Linux build on Wayland.** Allegro's GTK dialogs wrap the editor's X11 window, and segfaulted when GTK chose its Wayland backend, so an error box such as "The map was not saved" took the editor and any unsaved work with it. The editor now sets `GDK_BACKEND=x11` at startup.
 - **The pointer works on any Mac, including over a remote desktop.** macOS now
   reads the pointer from Cocoa events instead of Allegro's mouse driver, which
   refuses to install on a Mac with no HID pointing device, as with Jump Desktop
@@ -74,6 +162,20 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
 - **Reading `.txt` tables no longer returns freed memory.** `txt_read_in_mem` returned its old pointer after `realloc`, so `LvlTypes`, `LvlPrest` and `Objects` were parsed from a freed block whenever `realloc` moved it.
 - **DCC frames too large for the direction box are refused in the frame header.** A width of `0xFFFFFFFF` wrapped a 32-bit `long` to an empty frame box and got past the direction box check on the Windows build; huge widths, heights and offsets at the end of the 32-bit range now fail there.
 - **`--selftest` no longer fails healthy runs on a busy machine.** The frame-time rule that backs up the MEMORY-bitmap draw guard compared the mean *wall* time of a frame with 250 ms. With parallel test lanes, frames waited seconds for a core (act1_town at 1:8: about 50 ms of CPU per frame, 200 ms to several seconds of wall time), and roughly one windowed GPU run in 150 exited 1 with nothing wrong. The rule now uses the main thread's CPU time per frame, which a host under load does not inflate; the direct MEMORY-bitmap guard is unchanged. The selftest summary and `--selftest-report` JSON now include it (`frame cpu ms avg`, `frame_cpu_ms_avg`).
+
+- **Hotkeys match their exact modifiers.** **Ctrl+N** no longer also toggles night mode, **Ctrl+Shift+N** no longer does either, and **Ctrl+S** no longer scrolls the map.
+
+- **Closing the window during the "saved" message no longer quits without asking.**
+
+- **Selected tiles show their colour again.** Since the Allegro 5 port a selection was only drawn half see-through, which hardly showed on a dark map. A selected wall is blue again, a floor grey, a selection being dragged orange, and a paste green or red, as in the original editor.
+
+- **A message box no longer shows the one before it.** After Save asked for a project and one was chosen, "Your DS1 has been saved" was drawn over what was left of the project prompt.
+
+- **macOS: alerts show what happened.** Allegro's macOS alert drops the heading, so boxes showed only the command's name and the detail, never "The MPQ was built." or "The game wasn't started.". The heading now leads the box.
+
+- **macOS: New Project's folder picker can make a folder.** It had no New Folder button, said Open, and didn't show its own instruction to click New folder. It now has the button, shows the instruction and says Select.
+
+- **macOS: the first Cmd shortcut after a folder picker works.** A picker opened with **Cmd+Shift+O** kept the Cmd release, so the next Cmd shortcut, such as **Cmd+Shift+B**, did nothing until it was pressed a second time.
 
 ## 2.2.0
 

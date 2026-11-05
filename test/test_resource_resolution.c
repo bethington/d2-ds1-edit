@@ -233,6 +233,20 @@ void test_tmp_autosave_is_never_redirected(void)
    rootp(proj, sizeof(proj), "proj");
    TEST_ASSERT_TRUE(tt_mkdir(proj));
    open_project_at(proj);
+
+   /* The rule is for a map at a rooted path; the temp root is relative, and a
+    * relative name's autosave belongs in the project. */
+   {
+      char *cwd = al_get_current_directory();
+      char  rooted[512];
+
+      TEST_ASSERT_NOT_NULL(cwd);
+      snprintf(rooted, sizeof(rooted), "%s" SEPS "%s", cwd, src);
+      al_free(cwd);
+      snprintf(src, sizeof(src), "%s", rooted);
+      snprintf(glb_ds1[0].name, sizeof(glb_ds1[0].name), "%s", src);
+   }
+
    TEST_ASSERT_EQUAL_INT_MESSAGE(0, ds1_save_checked(0, TRUE, err, sizeof(err)), err);
    snprintf(tmpf, sizeof(tmpf), "%.*s.tmp", (int) (strlen(src) - 4), src);
    TEST_ASSERT_TRUE(tt_file_exists(tmpf));

@@ -910,10 +910,10 @@ int read_lvlprest_txt(int ds1_idx, int def)
       {
          if (def == -1)
          {
-            /* No single LvlPrest row means no authoritative mask. Enable all
-             * slots of any valid LvlTypes row; if there is none,
+            /* No LvlPrest row, or several naming this file, means no authoritative
+             * mask. Enable all slots of any valid LvlTypes row; if there is none,
              * misc_open_1_ds1() loads the DS1's embedded tile references as a
-             * fallback. Opening a map is not worth closing the editor over. */
+             * fallback. Stopping here would lose unsaved edits to a click. */
             int b;
             printf("%i LvlPrest rows for \"%s\"; enabling all LvlTypes DT1 slots\n",
                    found_nb, glb_ds1[ds1_idx].filename);

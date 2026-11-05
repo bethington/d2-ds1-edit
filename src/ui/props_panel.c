@@ -2,9 +2,12 @@
 #include "misc.h"
 #include "core/area_browser.h"
 #include "core/ds1_manager.h"
+#include "core/map_state.h"
 #include "core/txtread.h"
 #include "ui/compat.h"
 #include "ui/props_panel.h"
+#include "ui/props_panel_rules.h"
+#include "ui/ui_layout.h"
 #include "ui/tile_picker.h"
 
 /* Layout constants — match left sidebar style */
@@ -61,14 +64,10 @@ void props_panel_calc_shared_counts(void)
    if (lv == NULL) return;
 
    {
-      AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
-      int gi = ab->loaded_group;
-      int ei = ab->selected_entry;
-      if (gi < 0 || gi >= ab->group_count) return;
-      if (ei < 0 || ei >= ab->groups[gi].entry_count) ei = 0;
-      if (ei >= ab->groups[gi].entry_count) return;
-      lvltype_id = ab->groups[gi].entries[ei].lvltype_id;
-      lvlprest_def = ab->groups[gi].entries[ei].lvlprest_def;
+      const AREA_DS1_ENTRY_S * open_row = props_panel_open_row(&glb_ds1edit.area_browser);
+      if (open_row == NULL) return;
+      lvltype_id = open_row->lvltype_id;
+      lvlprest_def = open_row->lvlprest_def;
    }
 
    lt_col = pp_find_col(lv, RQ_LEVELS, "LevelType");
@@ -117,6 +116,7 @@ static void pp_sync_act_from_txt(int ds1_idx)
    printf("props_panel: sync act %ld -> %d (from txt_act)\n",
           glb_ds1[ds1_idx].act, glb_ds1[ds1_idx].txt_act);
    glb_ds1[ds1_idx].act = glb_ds1[ds1_idx].txt_act;
+   map_dirty_mark(ds1_idx);
 }
 
 /* Sync DS1 embedded file list from LvlTypes.txt File 1-32 columns. */
@@ -134,14 +134,10 @@ static void pp_sync_files_from_lvltypes(int ds1_idx)
    if (lt == NULL) return;
 
    {
-      AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
-      int gi = ab->loaded_group;
-      int ei = ab->selected_entry;
-      if (gi < 0 || gi >= ab->group_count) return;
-      if (ei < 0) ei = 0;
-      if (ei >= ab->groups[gi].entry_count) return;
-      lvltype_id = ab->groups[gi].entries[ei].lvltype_id;
-      lvlprest_def = ab->groups[gi].entries[ei].lvlprest_def;
+      const AREA_DS1_ENTRY_S * open_row = props_panel_open_row(&glb_ds1edit.area_browser);
+      if (open_row == NULL) return;
+      lvltype_id = open_row->lvltype_id;
+      lvlprest_def = open_row->lvlprest_def;
    }
 
    lt_row = pp_find_txt_row(lt, RQ_LVLTYPE, "Id", lvltype_id);
@@ -196,6 +192,7 @@ static void pp_sync_files_from_lvltypes(int ds1_idx)
       glb_ds1[ds1_idx].file_num = 0;
    }
 
+   map_dirty_mark(ds1_idx);
    printf("props_panel: synced %d DT1 files from LvlTypes.txt\n", new_count);
    fflush(stdout);
 }
@@ -301,17 +298,9 @@ static int pp_find_pending(int field_idx)
    return -1;
 }
 
-/* Check if a field index corresponds to a read-only DS1 field. */
-static int pp_is_read_only(int field_idx)
-{
-   /* DS1 header fields 0-11:
-    * 0=file(RO), 1=version, 2=width(RO), 3=height(RO), 4=act, 5=txt_act(RO),
-    * 6=tag_type, 7=walls(RO), 8=floors(RO), 9=shadows(RO), 10=tags(RO), 11=objects(RO) */
-   if (field_idx == 0 || field_idx == 2 || field_idx == 3 ||
-       field_idx == 5 || (field_idx >= 7 && field_idx <= 11))
-      return 1;
-   return 0;
-}
+/* The next row drawn shows as read-only. The caller decides: pp_field_idx counts
+ * every row above this one, so it can't say what the row is. */
+static int pp_next_field_read_only = 0;
 
 /* Draw a label:value field row. Returns the new y position. */
 static int pp_draw_field(int panel_x, int panel_right, int y,
@@ -321,13 +310,15 @@ static int pp_draw_field(int panel_x, int panel_right, int y,
    PROPS_PANEL_S * pp = &glb_ds1edit.props_panel;
    int cur_field = pp_field_idx++;
    int pend_idx = pp_find_pending(cur_field);
-   int is_ro = pp_is_read_only(cur_field);
+   int is_ro = pp_next_field_read_only;
    int is_hovered = 0;
    int val_x = panel_x + PP_MARGIN_X + PP_LABEL_W;
    ALLEGRO_COLOR col_label = al_map_rgb(140, 130, 120);
    /* Editable = bright white, read-only = dim gray */
    ALLEGRO_COLOR col_value = is_ro ? al_map_rgb(130, 130, 130)
                                     : al_map_rgb(220, 220, 220);
+
+   pp_next_field_read_only = 0;
 
    if (draw_row >= scroll_off && y + PP_LINE_H < panel_bottom)
    {
@@ -532,23 +523,14 @@ static const char * pp_txt_get_str(TXT_S * txt, RQ_ENUM rq, int row, const char 
    return sptr;
 }
 
-/* Get the lvltype_id and lvlprest_def for the currently displayed DS1. */
+/* Get the lvltype_id and lvlprest_def of the open map. With no row open both are
+ * -1, which matches no table row, so the panel shows and edits none. */
 static void pp_get_entry_link(int * out_lvltype, int * out_def)
 {
-   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
-   int gi = ab->loaded_group;
-   int ei = ab->selected_entry;
+   const AREA_DS1_ENTRY_S * open_row = props_panel_open_row(&glb_ds1edit.area_browser);
 
-   *out_lvltype = 0;
-   *out_def = 0;
-
-   if (gi < 0 || gi >= ab->group_count) return;
-   if (ei < 0 || ei >= ab->groups[gi].entry_count)
-      ei = 0;  /* default to first entry */
-   if (ei >= ab->groups[gi].entry_count) return;
-
-   *out_lvltype = ab->groups[gi].entries[ei].lvltype_id;
-   *out_def = ab->groups[gi].entries[ei].lvlprest_def;
+   *out_lvltype = open_row != NULL ? open_row->lvltype_id : -1;
+   *out_def = open_row != NULL ? open_row->lvlprest_def : -1;
 }
 
 /* Draw a field row with edit/pending support (TXT fields). Returns new y.
@@ -583,7 +565,7 @@ void props_panel_draw(int width, int height)
 {
    PROPS_PANEL_S * pp = &glb_ds1edit.props_panel;
    int disp_w = al_get_display_width(a5_display);
-   int top_bar_h = glb_ds1edit.show_2nd_row ? 20 : 9;
+   int top_bar_h = ui_top_bar_height();
    int bottom_bar_h = 10;
    int panel_top = top_bar_h;
    int panel_bottom = height - bottom_bar_h;
@@ -821,16 +803,22 @@ void props_panel_draw(int width, int height)
 
       if (pp->section_expanded[PPS_DS1_HEADER])
       {
+         pp_next_field_read_only = props_panel_header_field_read_only(0);
          y = pp_draw_field(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
                             panel_bottom, "file", glb_ds1[idx].filename);
+         pp_next_field_read_only = props_panel_header_field_read_only(1);
          y = pp_draw_field_long(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
                                  panel_bottom, "version", glb_ds1[idx].version);
+         pp_next_field_read_only = props_panel_header_field_read_only(2);
          y = pp_draw_field_long(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
                                  panel_bottom, "width", glb_ds1[idx].width);
+         pp_next_field_read_only = props_panel_header_field_read_only(3);
          y = pp_draw_field_long(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
                                  panel_bottom, "height", glb_ds1[idx].height);
+         pp_next_field_read_only = props_panel_header_field_read_only(4);
          y = pp_draw_field_long(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
                                  panel_bottom, "act", glb_ds1[idx].act);
+         pp_next_field_read_only = props_panel_header_field_read_only(5);
          y = pp_draw_field_int(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
                                 panel_bottom, "txt_act", glb_ds1[idx].txt_act);
          if (glb_ds1[idx].txt_act > 0 && glb_ds1[idx].act != glb_ds1[idx].txt_act)
@@ -841,16 +829,22 @@ void props_panel_draw(int width, int height)
             y += PP_LINE_H;
             draw_row++;
          }
+         pp_next_field_read_only = props_panel_header_field_read_only(6);
          y = pp_draw_field_long(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
                                  panel_bottom, "tag_type", glb_ds1[idx].tag_type);
+         pp_next_field_read_only = props_panel_header_field_read_only(7);
          y = pp_draw_field_int(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
                                 panel_bottom, "walls", glb_ds1[idx].wall_num);
+         pp_next_field_read_only = props_panel_header_field_read_only(8);
          y = pp_draw_field_int(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
                                 panel_bottom, "floors", glb_ds1[idx].floor_num);
+         pp_next_field_read_only = props_panel_header_field_read_only(9);
          y = pp_draw_field_int(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
                                 panel_bottom, "shadows", glb_ds1[idx].shadow_num);
+         pp_next_field_read_only = props_panel_header_field_read_only(10);
          y = pp_draw_field_int(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
                                 panel_bottom, "tags", glb_ds1[idx].tag_num);
+         pp_next_field_read_only = props_panel_header_field_read_only(11);
          y = pp_draw_field_long(panel_x, panel_right, y, draw_row++, pp->scroll_offset,
                                  panel_bottom, "objects", glb_ds1[idx].obj_num);
       }
@@ -883,6 +877,9 @@ void props_panel_draw(int width, int height)
                ffname = strrchr(fpath, '/');
                if (ffname == NULL) ffname = strrchr(fpath, '\\');
                if (ffname != NULL) ffname++; else ffname = fpath;
+               /* Read-only: an edit here could leave a hole below Files, which
+                  crashes the game. Maps join and leave a row by the Map commands. */
+               pp_next_field_read_only = 1;
                y = pp_draw_field_tagged(panel_x, width, y, draw_row++, pp->scroll_offset,
                      panel_bottom, fcol, ffname, "[Prest]");
             }
@@ -1165,6 +1162,11 @@ draw_footer:
       int footer_y = panel_bottom - footer_h;
       ALLEGRO_COLOR fc_bg, fc_border, fc_text;
 
+      /* The wheel can overshoot, and a section can collapse under the offset. */
+      if (pp->active_tab == PP_TAB_PROPERTIES)
+         pp->scroll_offset = pp_scroll_clamp(pp->scroll_offset, draw_row,
+            (footer_y - (panel_top + PP_HEADER_H + 4)) / PP_LINE_H);
+
       /* Footer background */
       al_draw_filled_rectangle((float)panel_x, (float)footer_y,
                                 (float)panel_right, (float)panel_bottom,
@@ -1251,16 +1253,16 @@ void props_panel_apply(void)
          {
             case 0:  /* filename — read-only, skip */
                break;
-            case 1:  glb_ds1[idx].version  = val; break;
+            case 1:  glb_ds1[idx].version  = val; map_dirty_mark(idx); break;
             case 2:  /* width — structural, warn */
                printf("props_panel: width change requires reload (not applied)\n");
                break;
             case 3:  /* height — structural, warn */
                printf("props_panel: height change requires reload (not applied)\n");
                break;
-            case 4:  glb_ds1[idx].act      = val; break;
-            case 5:  glb_ds1[idx].txt_act  = (int)val; break;
-            case 6:  glb_ds1[idx].tag_type = val; break;
+            case 4:  glb_ds1[idx].act      = val; map_dirty_mark(idx); break;
+            case 5:  glb_ds1[idx].txt_act  = (int)val; map_dirty_mark(idx); break;
+            case 6:  glb_ds1[idx].tag_type = val; map_dirty_mark(idx); break;
             case 7:  /* wall_num — structural */
                printf("props_panel: wall_num change requires reload (not applied)\n");
                break;
@@ -1322,6 +1324,8 @@ void props_panel_apply(void)
             {
                printf("props_panel: wrote %s.%s = '%s' (key %s=%d)\n",
                       key_col, p->col_name, p->new_value, key_col, p->key_val);
+               props_panel_follow_key_edit(&glb_ds1edit.area_browser, p->field.source,
+                                           p->col_name, p->key_val, atoi(p->new_value));
             }
             else
             {
@@ -1336,7 +1340,8 @@ void props_panel_apply(void)
    printf("props_panel: applied %d change(s)\n", pp->pending_count);
    fflush(stdout);
 
-   /* Invalidate cached TXT buffers if any TXT files were modified */
+   /* Read any TXT files that were modified again: the panel draws its rows from
+    * these buffers, and nothing else would load them before the next map opens. */
    if (txt_changed)
    {
       if (glb_ds1edit.lvlprest_buff != NULL)
@@ -1345,7 +1350,8 @@ void props_panel_apply(void)
          glb_ds1edit.lvltypes_buff = txt_destroy(glb_ds1edit.lvltypes_buff);
       if (glb_ds1edit.levels_buff != NULL)
          glb_ds1edit.levels_buff = txt_destroy(glb_ds1edit.levels_buff);
-      printf("props_panel: invalidated TXT caches\n");
+      if (txt_ensure_lvltypes() != 0 || txt_ensure_lvlprest() != 0 || read_levels_txt() != 0)
+         printf("props_panel: failed to read the TXT files again\n");
    }
 
    pp->pending_count = 0;
@@ -1358,7 +1364,7 @@ void props_panel_apply(void)
 void props_panel_draw_tab(int height)
 {
    int disp_w = al_get_display_width(a5_display);
-   int top_bar_h = glb_ds1edit.show_2nd_row ? 20 : 9;
+   int top_bar_h = ui_top_bar_height();
    int bottom_bar_h = 10;
    int panel_top = top_bar_h;
    int panel_bottom = height - bottom_bar_h;
@@ -1384,7 +1390,7 @@ int props_panel_click(int mx, int my, int panel_w, int disp_h)
    PROPS_PANEL_S * pp = &glb_ds1edit.props_panel;
    int disp_w = al_get_display_width(a5_display);
    int panel_x = disp_w - panel_w;
-   int top_bar_h = glb_ds1edit.show_2nd_row ? 20 : 9;
+   int top_bar_h = ui_top_bar_height();
    int panel_top = top_bar_h;
    int bottom_bar_h = 10;
    int panel_bottom = disp_h - bottom_bar_h;
@@ -1455,7 +1461,8 @@ int props_panel_click(int mx, int my, int panel_w, int disp_h)
        * KEY_VAL is the row key for TXT write-back (Def, Id, etc.) */
       #define PP_CLICK_FIELD(SRC, KEY, COL_NAME, CUR_VAL) \
          { \
-            int _fi = pp_field_idx++; \
+            /* The draw counts only the rows it shows, so this has to as well. */ \
+            int _fi = pp->section_expanded[cur_sec] ? pp_field_idx++ : -1; \
             if (pp->section_expanded[cur_sec] && \
                 draw_row >= pp->scroll_offset && my >= y && my < y + PP_LINE_H) { \
                pp->editing = TRUE; \
@@ -1475,6 +1482,18 @@ int props_panel_click(int mx, int my, int panel_w, int disp_h)
                return 1; \
             } \
             if (pp->section_expanded[cur_sec]) { y += PP_LINE_H; draw_row++; } \
+         }
+
+      /* Helper: a row that shows but can't be edited. It keeps the field count and
+       * layout in step with the draw, and a click on it does nothing. */
+      #define PP_CLICK_READ_ONLY_FIELD() \
+         { \
+            if (pp->section_expanded[cur_sec]) { \
+               pp_field_idx++; \
+               if (draw_row >= pp->scroll_offset && my >= y && my < y + PP_LINE_H) \
+                  return 1; \
+               y += PP_LINE_H; draw_row++; \
+            } \
          }
 
       {
@@ -1551,6 +1570,8 @@ int props_panel_click(int mx, int my, int panel_w, int disp_h)
                if (draw_row >= pp->scroll_offset && my >= y && my < y + PP_LINE_H)
                {
                   char cur_val[PP_EDIT_BUF_MAX];
+                  if (props_panel_header_field_read_only(fi))
+                     return 1;
                   cur_val[0] = '\0';
                   switch (fi)
                   {
@@ -1612,7 +1633,7 @@ int props_panel_click(int mx, int my, int panel_w, int disp_h)
                fp = pp_txt_get_str(lp, RQ_LVLPREST, lp_row, fcol);
                if (fp[0] == '\0' || (fp[0] == '0' && fp[1] == '\0'))
                   continue;
-               PP_CLICK_FIELD(PFS_LVLPREST, lvlprest_def, fcol, fp)
+               PP_CLICK_READ_ONLY_FIELD()
             }
          }
 
@@ -1781,6 +1802,7 @@ int props_panel_click(int mx, int my, int panel_w, int disp_h)
          }
 
       #undef PP_CLICK_SECTION
+      #undef PP_CLICK_READ_ONLY_FIELD
       #undef PP_CLICK_FIELD
    }
 
@@ -2031,7 +2053,7 @@ void props_panel_handle_keychar(int unichar, int keycode)
                {
                   int disp_w = al_get_display_width(a5_display);
                   int disp_h = al_get_display_height(a5_display);
-                  int top_h = glb_ds1edit.show_2nd_row ? 20 : 9;
+                  int top_h = ui_top_bar_height();
                   int click_x = disp_w - glb_ds1edit.props_panel_width / 2;
                   int click_y = top_h + PP_HEADER_H + 4
                                 + pp->focused_row * PP_LINE_H

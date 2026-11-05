@@ -17,6 +17,8 @@
 #include "core/ds1.h"
 #include "core/project.h"
 #include "core/ds1_save_io.h"
+#include "core/map_state.h"
+#include "editor/undo.h"
 
 #include "support/editor_test_state.h"
 #include "support/ds1_fixture.h"
@@ -137,6 +139,9 @@ void setUp(void)
 
 void tearDown(void)
 {
+   project_close();
+   memset(glb_config.mod_dir, 0, sizeof(glb_config.mod_dir));
+   glb_config.d2_install = NULL;
    memset(&glb_project, 0, sizeof(glb_project));
    editor_test_state_destroy();
 }
@@ -468,6 +473,36 @@ void test_copy_on_save_parent_creation_failure_changes_nothing(void)
    free(orig);
 }
 
+/* The area browser names maps relative to Tiles, as in "Act1/Town/x.ds1". */
+void test_copy_on_save_redirects_a_tiles_relative_name(void)
+{
+   FX_SPEC s;
+   char src[512], target[512];
+
+   make_source_tree();
+   load_fixture(&s, 18, "src" DS1_SEP_STR "tiles" DS1_SEP_STR "act1" DS1_SEP_STR "town.ds1",
+                0, src, sizeof(src));
+   snprintf(glb_ds1[0].name, sizeof(glb_ds1[0].name), "Act1/Town/TownN1.ds1");
+   open_project("proj");
+
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, SAVE(0, FALSE), err);
+   snprintf(target, sizeof(target), "%s%sGlobal%sTiles%sAct1%sTown%sTownN1.ds1",
+            glb_project.path, DS1_SEP_STR, DS1_SEP_STR, DS1_SEP_STR, DS1_SEP_STR, DS1_SEP_STR);
+   TEST_ASSERT_TRUE(tt_file_exists(target));
+   reload_and_expect(target, &s, 1);
+}
+
+void test_redirect_treats_backslashes_in_a_relative_name_as_separators(void)
+{
+   char dst[512], want[512];
+
+   open_project("proj");
+   TEST_ASSERT_EQUAL_INT(1, project_redirect_ds1_save_path("Act1\\Town\\x.ds1", dst, sizeof(dst)));
+   snprintf(want, sizeof(want), "%s%sGlobal%sTiles%sAct1%sTown%sx.ds1",
+            glb_project.path, DS1_SEP_STR, DS1_SEP_STR, DS1_SEP_STR, DS1_SEP_STR, DS1_SEP_STR);
+   TEST_ASSERT_EQUAL_STRING(want, dst);
+}
+
 /* ------------------------------------------------------------------ */
 /* I/O failures: reported, recoverable, no state change                */
 /* ------------------------------------------------------------------ */
@@ -662,6 +697,458 @@ void test_legacy_wrapper_returns_the_failure(void)
    TEST_ASSERT_EQUAL_STRING(src, glb_ds1[0].name);
 }
 
+void test_a_real_save_clears_dirty_and_a_tmp_save_does_not(void)
+{
+   FX_SPEC s;
+   char src[512];
+
+   load_fixture(&s, 18, "dirty.ds1", 0, src, sizeof(src));
+   map_dirty_mark(0);
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, SAVE(0, TRUE), err);
+   TEST_ASSERT_TRUE(map_is_dirty(0));
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, SAVE(0, FALSE), err);
+   TEST_ASSERT_FALSE(map_is_dirty(0));
+}
+
+void test_a_failed_save_leaves_the_map_dirty(void)
+{
+   FX_SPEC s;
+   char src[512];
+
+   load_fixture(&s, 18, "dirty.ds1", 0, src, sizeof(src));
+   map_dirty_mark(0);
+   faults.fail_open = 1;
+   TEST_ASSERT_EQUAL_INT(-1, save_faulty(0, FALSE));
+   TEST_ASSERT_TRUE(map_is_dirty(0));
+}
+
+void test_closing_a_project_restores_the_configured_mod_dir(void)
+{
+   char configured[] = "my_mod";
+   char *before = glb_config.mod_dir[0];
+
+   glb_config.mod_dir[0] = configured;
+   open_project("proj");
+   project_apply_to_config();
+   TEST_ASSERT_EQUAL_STRING(glb_project.path, glb_config.mod_dir[0]);
+
+   project_close();
+   TEST_ASSERT_TRUE(glb_config.mod_dir[0] == configured);
+   TEST_ASSERT_NULL(glb_config.mod_dir[1]);
+   glb_config.mod_dir[0] = before;
+}
+
+void test_the_configured_mod_dir_stays_in_the_read_chain_behind_the_project(void)
+{
+   char configured[] = "my_mod";
+
+   glb_config.mod_dir[0] = configured;
+   glb_config.mod_dir[1] = NULL;
+   open_project("proj");
+   project_apply_to_config();
+   TEST_ASSERT_EQUAL_STRING(glb_project.path, glb_config.mod_dir[0]);
+   TEST_ASSERT_TRUE(glb_config.mod_dir[1] == configured);
+
+   project_close();
+   glb_config.mod_dir[0] = NULL;
+}
+
+void test_switching_project_replaces_only_the_project_entry(void)
+{
+   char configured[] = "my_mod";
+
+   glb_config.mod_dir[0] = configured;
+   glb_config.mod_dir[1] = NULL;
+   open_project("proj");
+   project_apply_to_config();
+   open_project("proj2");
+   project_apply_to_config();
+   TEST_ASSERT_EQUAL_STRING(glb_project.path, glb_config.mod_dir[0]);
+   TEST_ASSERT_TRUE(glb_config.mod_dir[1] == configured);
+
+   project_close();
+   TEST_ASSERT_TRUE(glb_config.mod_dir[0] == configured);
+   TEST_ASSERT_NULL(glb_config.mod_dir[1]);
+   glb_config.mod_dir[0] = NULL;
+}
+
+void test_a_full_read_chain_drops_its_last_entry_and_close_restores_it(void)
+{
+   char first[] = "first_mod", last[] = "last_mod";
+
+   glb_config.mod_dir[0] = first;
+   glb_config.mod_dir[MAX_MOD_DIR - 1] = last;
+   open_project("proj");
+   project_apply_to_config();
+   TEST_ASSERT_EQUAL_STRING(glb_project.path, glb_config.mod_dir[0]);
+   TEST_ASSERT_TRUE(glb_config.mod_dir[1] == first);
+
+   project_close();
+   TEST_ASSERT_TRUE(glb_config.mod_dir[0] == first);
+   TEST_ASSERT_TRUE(glb_config.mod_dir[MAX_MOD_DIR - 1] == last);
+   memset(glb_config.mod_dir, 0, sizeof(glb_config.mod_dir));
+}
+
+/* ------------------------------------------------------------------ */
+/* The first save must not silently replace the project's own copy     */
+/* ------------------------------------------------------------------ */
+
+static void project_map_path(char *out, size_t cap, const char *dir_sep_name)
+{
+   snprintf(out, cap, "%s%sGlobal%sTiles%s%s", glb_project.path,
+            DS1_SEP_STR, DS1_SEP_STR, DS1_SEP_STR, dir_sep_name);
+}
+
+void test_would_replace_only_when_a_redirect_lands_on_an_existing_file(void)
+{
+   char target[512];
+
+   /* no project: nothing redirects */
+   TEST_ASSERT_EQUAL_INT(0, project_save_would_replace("Act1/Town/TownN1.ds1"));
+
+   open_project("proj");
+   /* redirects, but the project has no copy yet */
+   TEST_ASSERT_EQUAL_INT(0, project_save_would_replace("Act1/Town/TownN1.ds1"));
+
+   project_map_path(target, sizeof(target),
+                    "Act1" DS1_SEP_STR "Town" DS1_SEP_STR "TownN1.ds1");
+   TEST_ASSERT_TRUE(project_ensure_parent_dirs(target));
+   TEST_ASSERT_TRUE(tt_write_file(target, "x", 1));
+
+   TEST_ASSERT_EQUAL_INT(1, project_save_would_replace("Act1/Town/TownN1.ds1"));
+   /* the map is already the project's copy: an ordinary in-place save */
+   TEST_ASSERT_EQUAL_INT(0, project_save_would_replace(target));
+   /* a path the save would refuse is not a replacement either */
+   TEST_ASSERT_EQUAL_INT(0, project_save_would_replace("../Act1/Town/TownN1.ds1"));
+   TEST_ASSERT_EQUAL_INT(0, project_save_would_replace(NULL));
+}
+
+/* ------------------------------------------------------------------ */
+/* Save paths that could leave the project or reach the game install   */
+/* ------------------------------------------------------------------ */
+
+void test_redirect_refuses_a_parent_reference(void)
+{
+   char dst[512];
+
+   open_project("proj");
+   TEST_ASSERT_EQUAL_INT(-1, project_redirect_ds1_save_path("../x.ds1", dst, sizeof(dst)));
+   TEST_ASSERT_EQUAL_STRING("../x.ds1", dst);
+   TEST_ASSERT_EQUAL_INT(-1, project_redirect_ds1_save_path("Act1\\..\\..\\x.ds1", dst, sizeof(dst)));
+   TEST_ASSERT_EQUAL_INT(-1, project_redirect_ds1_save_path("Act1/..", dst, sizeof(dst)));
+   /* after a tiles segment it would climb out of the project just the same */
+   TEST_ASSERT_EQUAL_INT(-1, project_redirect_ds1_save_path("/g/tiles/../../x.ds1", dst, sizeof(dst)));
+   /* dots inside a name are not a component */
+   TEST_ASSERT_EQUAL_INT(1, project_redirect_ds1_save_path("Act1/a..b.ds1", dst, sizeof(dst)));
+   TEST_ASSERT_EQUAL_INT(1, project_redirect_ds1_save_path("Act1/..b/x.ds1", dst, sizeof(dst)));
+}
+
+void test_a_real_save_of_a_parent_reference_says_why_and_writes_nothing(void)
+{
+   FX_SPEC s;
+   char src[512];
+   int entries;
+
+   load_fixture(&s, 18, "m.ds1", 0, src, sizeof(src));
+   snprintf(glb_ds1[0].name, sizeof(glb_ds1[0].name), "../outside.ds1");
+   open_project("proj");
+   entries = tt_count_entries(glb_project.path);
+
+   TEST_ASSERT_EQUAL_INT(-1, SAVE(0, FALSE));
+   TEST_ASSERT_NOT_NULL_MESSAGE(strstr(err, "outside the project"), err);
+   TEST_ASSERT_NULL_MESSAGE(strstr(err, "longer"), err);
+   TEST_ASSERT_EQUAL_STRING("../outside.ds1", glb_ds1[0].name);
+   TEST_ASSERT_EQUAL_INT(entries, tt_count_entries(glb_project.path));
+   TEST_ASSERT_FALSE(tt_file_exists("../outside.ds1"));
+}
+
+/* An absolute path below the test's temp root. */
+static void abs_path(char *out, size_t cap, const char *name)
+{
+   char  rel[512];
+   char *cwd = al_get_current_directory();
+
+   TEST_ASSERT_NOT_NULL(cwd);
+   root_path(rel, sizeof(rel), name);
+   snprintf(out, cap, "%s%s%s", cwd, DS1_SEP_STR, rel);
+   al_free(cwd);
+}
+
+/* A map at an absolute path inside a directory configured as the install. */
+static char install_dir[512];
+
+static void load_map_in_install(FX_SPEC *s, const char *rel, char *out, size_t cap)
+{
+   char file[512], e[256];
+
+   abs_path(install_dir, sizeof(install_dir), "install");
+   TEST_ASSERT_TRUE(tt_mkdir(install_dir));
+   glb_config.d2_install = install_dir;
+   fx_default(s, 18);
+   snprintf(file, sizeof(file), "%s%s%s", install_dir, DS1_SEP_STR, rel);
+   TEST_ASSERT_TRUE(project_ensure_parent_dirs(file));
+   TEST_ASSERT_TRUE(fx_write(s, file, -1));
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, ds1_read_checked(file, 0, 0, 0, e, sizeof(e)), e);
+   snprintf(out, cap, "%s", file);
+}
+
+static void expect_install_refusal(const char *file)
+{
+   size_t len, after;
+   unsigned char *before = tt_read_file(file, &len), *now;
+   int entries = tt_count_entries(install_dir);
+   char name[256];
+
+   snprintf(name, sizeof(name), "%s", glb_ds1[0].name);
+   TEST_ASSERT_EQUAL_INT(-1, SAVE(0, FALSE));
+   TEST_ASSERT_NOT_NULL_MESSAGE(strstr(err, "Diablo II install"), err);
+   TEST_ASSERT_EQUAL_STRING(name, glb_ds1[0].name);
+   TEST_ASSERT_EQUAL_INT(entries, tt_count_entries(install_dir));
+   now = tt_read_file(file, &after);
+   TEST_ASSERT_EQUAL_UINT32(len, after);
+   TEST_ASSERT_EQUAL_MEMORY(before, now, len);
+   free(before);
+   free(now);
+   glb_config.d2_install = NULL;
+}
+
+void test_a_loose_map_inside_the_install_is_refused_with_a_project_open(void)
+{
+   FX_SPEC s;
+   char file[512];
+
+   load_map_in_install(&s, "loose.ds1", file, sizeof(file));
+   open_project("proj");
+   expect_install_refusal(file);
+}
+
+void test_a_loose_map_inside_the_install_is_refused_with_no_project(void)
+{
+   FX_SPEC s;
+   char file[512];
+
+   load_map_in_install(&s, "loose.ds1", file, sizeof(file));
+   expect_install_refusal(file);
+}
+
+void test_a_rooted_path_that_climbs_into_the_install_is_refused(void)
+{
+   FX_SPEC s;
+   char file[512], climbing[512];
+
+   load_map_in_install(&s, "loose.ds1", file, sizeof(file));
+   abs_path(climbing, sizeof(climbing), "elsewhere" DS1_SEP_STR ".." DS1_SEP_STR
+            "install" DS1_SEP_STR "loose.ds1");
+   snprintf(glb_ds1[0].name, sizeof(glb_ds1[0].name), "%s", climbing);
+   open_project("proj");
+   expect_install_refusal(file);
+}
+
+void test_a_map_under_the_installs_tiles_still_saves_into_the_project(void)
+{
+   FX_SPEC s;
+   char file[512], target[512];
+   int entries;
+
+   load_map_in_install(&s, "tiles" DS1_SEP_STR "town.ds1", file, sizeof(file));
+   open_project("proj");
+   entries = tt_count_entries(install_dir);
+
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, SAVE(0, FALSE), err);
+   project_map_path(target, sizeof(target), "town.ds1");
+   TEST_ASSERT_TRUE(tt_file_exists(target));
+   TEST_ASSERT_EQUAL_INT(entries, tt_count_entries(install_dir));
+   glb_config.d2_install = NULL;
+}
+
+void test_a_rooted_map_outside_the_install_keeps_saving_in_place(void)
+{
+   FX_SPEC s;
+   char file[512], backup[512], e[256];
+
+   abs_path(install_dir, sizeof(install_dir), "install");
+   glb_config.d2_install = install_dir;
+   abs_path(file, sizeof(file), "loose.ds1");
+   fx_default(&s, 18);
+   TEST_ASSERT_TRUE(fx_write(&s, file, -1));
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, ds1_read_checked(file, 0, 0, 0, e, sizeof(e)), e);
+   open_project("proj");
+
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, SAVE(0, FALSE), err);
+   TEST_ASSERT_EQUAL_STRING(file, glb_ds1[0].name);
+   abs_path(backup, sizeof(backup), "loose-000.ds1");
+   TEST_ASSERT_TRUE(tt_file_exists(backup));
+   glb_config.d2_install = NULL;
+}
+
+/* ------------------------------------------------------------------ */
+/* Where the .tmp autosave lands                                       */
+/* ------------------------------------------------------------------ */
+
+/* The autosave lands at `want`, and the map keeps its name and stays dirty. */
+static void expect_tmp_at(const char *want)
+{
+   char name[256], staging[600];
+
+   snprintf(name, sizeof(name), "%s", glb_ds1[0].name);
+   map_dirty_mark(0);
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, SAVE(0, TRUE), err);
+   TEST_ASSERT_TRUE_MESSAGE(tt_file_exists(want), want);
+   TEST_ASSERT_EQUAL_STRING(name, glb_ds1[0].name);
+   TEST_ASSERT_TRUE(map_is_dirty(0));
+   snprintf(staging, sizeof(staging), "%s%s", want, DS1_SAVE_STAGING_SUFFIX);
+   TEST_ASSERT_FALSE(tt_file_exists(staging));
+}
+
+static void load_as(FX_SPEC *s, const char *name)
+{
+   char src[512];
+
+   load_fixture(s, 18, "m.ds1", 0, src, sizeof(src));
+   snprintf(glb_ds1[0].name, sizeof(glb_ds1[0].name), "%s", name);
+}
+
+void test_tmp_of_a_relative_name_goes_into_the_open_project(void)
+{
+   FX_SPEC s;
+   char want[512];
+
+   load_as(&s, "Act1/Town/TownN1.ds1");
+   open_project("proj");
+   project_map_path(want, sizeof(want),
+                    "Act1" DS1_SEP_STR "Town" DS1_SEP_STR "TownN1.tmp");
+   expect_tmp_at(want);
+}
+
+void test_tmp_of_a_relative_name_with_no_project_goes_to_the_tmp_dir(void)
+{
+   FX_SPEC s;
+   char want[512];
+
+   load_as(&s, "Act1/Town/TownN1.ds1");
+   snprintf(want, sizeof(want), "%sTownN1.tmp", glb_ds1edit_tmp_dir);
+   expect_tmp_at(want);
+}
+
+void test_tmp_of_a_parent_reference_cannot_leave_the_project(void)
+{
+   FX_SPEC s;
+   char want[512];
+
+   load_as(&s, "../outside.ds1");
+   open_project("proj");
+   snprintf(want, sizeof(want), "%soutside.tmp", glb_ds1edit_tmp_dir);
+   expect_tmp_at(want);
+   TEST_ASSERT_FALSE(tt_file_exists("../outside.tmp"));
+}
+
+void test_tmp_of_a_map_inside_the_install_goes_to_the_tmp_dir(void)
+{
+   FX_SPEC s;
+   char file[512], want[512];
+   int entries;
+
+   load_map_in_install(&s, "loose.ds1", file, sizeof(file));
+   entries = tt_count_entries(install_dir);
+   snprintf(want, sizeof(want), "%sloose.tmp", glb_ds1edit_tmp_dir);
+   expect_tmp_at(want);
+   TEST_ASSERT_EQUAL_INT(entries, tt_count_entries(install_dir));
+   glb_config.d2_install = NULL;
+}
+
+void test_tmp_of_a_rooted_map_elsewhere_stays_next_to_the_map(void)
+{
+   FX_SPEC s;
+   char file[512], want[512], e[256];
+
+   abs_path(file, sizeof(file), "loose.ds1");
+   fx_default(&s, 18);
+   TEST_ASSERT_TRUE(fx_write(&s, file, -1));
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, ds1_read_checked(file, 0, 0, 0, e, sizeof(e)), e);
+   open_project("proj");
+   abs_path(want, sizeof(want), "loose.tmp");
+   expect_tmp_at(want);
+}
+
+void test_undo_cleanup_leaves_the_tmp_autosave_alone(void)
+{
+   FX_SPEC s;
+   char want[512], undo_file[512];
+
+   load_as(&s, "Act1/Town/undo.ds1");
+   snprintf(want, sizeof(want), "%sundo.tmp", glb_ds1edit_tmp_dir);
+   expect_tmp_at(want);
+   snprintf(undo_file, sizeof(undo_file), "%sundo0.bin", glb_ds1edit_tmp_dir);
+   TEST_ASSERT_TRUE(tt_write_file(undo_file, "x", 1));
+
+   undo_exit();
+
+   TEST_ASSERT_FALSE(tt_file_exists(undo_file));
+   TEST_ASSERT_TRUE(tt_file_exists(want));
+}
+
+void test_save_copy_writes_memory_and_leaves_the_map_alone(void)
+{
+   FX_SPEC s, dec;
+   char src[512], dest[512], name_before[sizeof(glb_ds1[0].name)];
+   UDWORD count_before;
+   size_t len;
+   unsigned char *buf;
+
+   load_fixture(&s, 18, "copysrc.ds1", 0, src, sizeof(src));
+   root_path(dest, sizeof(dest), "copy.ds1");
+   glb_ds1[0].floor_buff[0].prop1 = 0x42;   /* an unsaved edit */
+   map_dirty_mark(0);
+   snprintf(name_before, sizeof(name_before), "%s", glb_ds1[0].name);
+   count_before = glb_ds1[0].save_count;
+
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, ds1_save_copy_checked(0, dest, err, sizeof(err)), err);
+
+   TEST_ASSERT_EQUAL_STRING(name_before, glb_ds1[0].name);
+   TEST_ASSERT_EQUAL_UINT32(count_before, glb_ds1[0].save_count);
+   TEST_ASSERT_TRUE(map_is_dirty(0));
+   TEST_ASSERT_TRUE(tt_file_exists(dest));
+
+   /* the copy carries the edit from memory; the source on disk does not */
+   buf = tt_read_file(dest, &len);
+   TEST_ASSERT_NOT_NULL(buf);
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, fx_decode_v18(buf, len, &dec), "decode the copy");
+   TEST_ASSERT_EQUAL_UINT8(0x42, dec.floor[0][0][0][0]);
+   free(buf);
+   buf = tt_read_file(src, &len);
+   TEST_ASSERT_NOT_NULL(buf);
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, fx_decode_v18(buf, len, &dec), "decode the source");
+   TEST_ASSERT_TRUE(dec.floor[0][0][0][0] != 0x42);
+   free(buf);
+}
+
+void test_save_copy_refuses_to_replace_a_file(void)
+{
+   FX_SPEC s;
+   char src[512], dest[512];
+
+   load_fixture(&s, 18, "copysrc.ds1", 0, src, sizeof(src));
+   root_path(dest, sizeof(dest), "copy.ds1");
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, ds1_save_copy_checked(0, dest, err, sizeof(err)), err);
+   TEST_ASSERT_EQUAL_INT(-1, ds1_save_copy_checked(0, dest, err, sizeof(err)));
+}
+
+void test_save_copy_refuses_a_dest_inside_the_install(void)
+{
+   FX_SPEC s;
+   char file[512], dest[512], staging[600];
+
+   load_map_in_install(&s, "loose.ds1", file, sizeof(file));
+   snprintf(dest, sizeof(dest), "%s%snewcopy.ds1", install_dir, DS1_SEP_STR);
+   snprintf(staging, sizeof(staging), "%s%s", dest, DS1_SAVE_STAGING_SUFFIX);
+
+   TEST_ASSERT_EQUAL_INT(-1, ds1_save_copy_checked(0, dest, err, sizeof(err)));
+   TEST_ASSERT_NOT_NULL_MESSAGE(strstr(err, "Diablo II install"), err);
+   TEST_ASSERT_FALSE(tt_file_exists(dest));
+   TEST_ASSERT_FALSE(tt_file_exists(staging));
+   glb_config.d2_install = NULL;
+}
+
 int main(int argc, char **argv)
 {
    pkgc_test_filter = argc > 1 ? argv[1] : NULL;
@@ -686,6 +1173,8 @@ int main(int argc, char **argv)
    PKGC_RUN(test_save_count_is_written_only_by_a_save);
    PKGC_RUN(test_copy_on_save_writes_into_the_project_and_keeps_the_original);
    PKGC_RUN(test_copy_on_save_parent_creation_failure_changes_nothing);
+   PKGC_RUN(test_copy_on_save_redirects_a_tiles_relative_name);
+   PKGC_RUN(test_redirect_treats_backslashes_in_a_relative_name_as_separators);
    PKGC_RUN(test_short_write_is_reported_and_keeps_the_destination);
    PKGC_RUN(test_failed_tile_byte_write_is_reported);
    PKGC_RUN(test_failed_close_is_reported_and_the_handle_released);
@@ -697,5 +1186,28 @@ int main(int argc, char **argv)
    PKGC_RUN(test_failed_copy_on_save_keeps_the_original_name);
    PKGC_RUN(test_empty_slot_is_not_an_error);
    PKGC_RUN(test_legacy_wrapper_returns_the_failure);
+   PKGC_RUN(test_a_real_save_clears_dirty_and_a_tmp_save_does_not);
+   PKGC_RUN(test_a_failed_save_leaves_the_map_dirty);
+   PKGC_RUN(test_closing_a_project_restores_the_configured_mod_dir);
+   PKGC_RUN(test_the_configured_mod_dir_stays_in_the_read_chain_behind_the_project);
+   PKGC_RUN(test_switching_project_replaces_only_the_project_entry);
+   PKGC_RUN(test_a_full_read_chain_drops_its_last_entry_and_close_restores_it);
+   PKGC_RUN(test_would_replace_only_when_a_redirect_lands_on_an_existing_file);
+   PKGC_RUN(test_redirect_refuses_a_parent_reference);
+   PKGC_RUN(test_a_real_save_of_a_parent_reference_says_why_and_writes_nothing);
+   PKGC_RUN(test_a_loose_map_inside_the_install_is_refused_with_a_project_open);
+   PKGC_RUN(test_a_loose_map_inside_the_install_is_refused_with_no_project);
+   PKGC_RUN(test_a_rooted_path_that_climbs_into_the_install_is_refused);
+   PKGC_RUN(test_a_map_under_the_installs_tiles_still_saves_into_the_project);
+   PKGC_RUN(test_a_rooted_map_outside_the_install_keeps_saving_in_place);
+   PKGC_RUN(test_tmp_of_a_relative_name_goes_into_the_open_project);
+   PKGC_RUN(test_tmp_of_a_relative_name_with_no_project_goes_to_the_tmp_dir);
+   PKGC_RUN(test_tmp_of_a_parent_reference_cannot_leave_the_project);
+   PKGC_RUN(test_tmp_of_a_map_inside_the_install_goes_to_the_tmp_dir);
+   PKGC_RUN(test_tmp_of_a_rooted_map_elsewhere_stays_next_to_the_map);
+   PKGC_RUN(test_undo_cleanup_leaves_the_tmp_autosave_alone);
+   PKGC_RUN(test_save_copy_writes_memory_and_leaves_the_map_alone);
+   PKGC_RUN(test_save_copy_refuses_to_replace_a_file);
+   PKGC_RUN(test_save_copy_refuses_a_dest_inside_the_install);
    return UNITY_END();
 }

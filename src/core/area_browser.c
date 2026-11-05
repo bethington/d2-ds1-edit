@@ -14,15 +14,23 @@
 #include "core/mpq_index.h"
 #include "render/preview.h"
 #include "core/area_browser.h"
+#include "core/map_state.h"
+#include "core/project.h"
+#include "core/map_ops.h"
+#include "core/lvlprest_text.h"
 #include "ui/props_panel.h"
+#include "ui/props_panel_rules.h"
+#include "ui/ui_layout.h"
 #include "platform.h"
 #include "ui/input.h"
 #include <allegro5/allegro_native_dialog.h>
+#include "ui/message_box.h"
 
 #define AREA_INIT_GROUPS    64
 #define AREA_INIT_ENTRIES   32
 
 static int unlisted_path_equal(const char *a, const char *b);
+static void area_add_project_rows(void);
 
 /* Animation frames contain colors from the palette active when decoded. */
 static const RGBA_PALETTE *browser_animation_palette = NULL;
@@ -34,7 +42,7 @@ static void area_browser_report_open_error(const char * error)
    fprintf(stderr, "area browser: %s\n", error);
    fflush(stderr);
    if (a5_display != NULL)
-      al_show_native_message_box(a5_display, "DS1Edit",
+      ds1_message_box(a5_display, "DS1Edit",
          "The map could not be opened", error, NULL, ALLEGRO_MESSAGEBOX_ERROR);
 }
 
@@ -140,6 +148,8 @@ void area_group_add_entry(AREA_GROUP_S * grp, int lvltype_id,
    e = &grp->entries[grp->entry_count];
    e->lvltype_id = lvltype_id;
    e->lvlprest_def = def;
+   e->state = MAP_STATE_GAME;
+   e->slot_cleared = 0;
    strncpy(e->ds1_path, ds1_path, sizeof(e->ds1_path) - 1);
    e->ds1_path[sizeof(e->ds1_path) - 1] = '\0';
    grp->entry_count++;
@@ -261,6 +271,10 @@ int area_browser_init(void)
 {
    int rc;
 
+   /* A table a crash left as .old goes back before anything reads it. */
+   if (glb_project.is_open)
+      map_ops_recover_table(glb_project.path);
+
    /* Parse and cache the two tables. This used to call
     * read_lvltypes_txt(0, 0) on the assumption that 0 "won't match any
     * row" -- but row 0 is ID 0 ("None"), so it matched and went on to
@@ -297,7 +311,43 @@ int area_browser_init(void)
     * -- maze and room fragments -- would otherwise have no way into the
     * browser at all. */
    area_browser_scan_unlisted();
+
+   /* After the scan, which can only see the archives, and before the sort, since
+      both can add Unlisted groups. */
+   area_add_project_rows();
+   if (glb_ds1edit.area_browser.group_count > 1)
+      qsort(glb_ds1edit.area_browser.groups, glb_ds1edit.area_browser.group_count,
+            sizeof(AREA_GROUP_S), area_group_cmp);
+
+   area_browser_refresh_states();
    return 0;
+}
+
+/* Which groups each LvlPrest row went to during this build, including rows with
+ * no file left, so a Removed map can be put back in its own group. */
+typedef struct { int def; int lvltype_id; } DEF_GROUP;
+static DEF_GROUP * s_def_groups;
+static int s_def_group_count, s_def_group_max;
+
+static void area_note_def_group(int def, int lvltype_id)
+{
+   int i;
+
+   for (i = 0; i < s_def_group_count; i++)
+      if (s_def_groups[i].def == def && s_def_groups[i].lvltype_id == lvltype_id)
+         return;
+   if (s_def_group_count >= s_def_group_max)
+   {
+      int new_max = s_def_group_max > 0 ? s_def_group_max * 2 : 256;
+      DEF_GROUP * tmp = (DEF_GROUP *) realloc(s_def_groups, sizeof(DEF_GROUP) * new_max);
+      if (tmp == NULL)
+         return;
+      s_def_groups = tmp;
+      s_def_group_max = new_max;
+   }
+   s_def_groups[s_def_group_count].def = def;
+   s_def_groups[s_def_group_count].lvltype_id = lvltype_id;
+   s_def_group_count++;
 }
 
 /* Build the grouped area list from the loaded TXT data. */
@@ -331,6 +381,9 @@ void area_browser_build(void)
 
    /* clear any previous data */
    area_browser_destroy();
+   s_def_group_count = 0;
+   ab->loaded_group = -1;
+   ab->loaded_entry = -1;
    ab->lvltypes_act_mismatch_count = area_browser_audit_lvltypes_rows(
       lvltypes,
       glb_ds1edit.cmd_line.debug_mode == TRUE ? stdout : NULL);
@@ -436,6 +489,7 @@ void area_browser_build(void)
                continue;
 
             /* add each non-empty File1-6 as an entry */
+            area_note_def_group((int)lp_def, grp->lvltype_id);
             for (f = 0; f < 6; f++)
             {
                char * ds1_path = lvlprest->data + (lp_row * lvlprest->line_size)
@@ -496,6 +550,7 @@ void area_browser_build(void)
                if (!area_row_accepts_group((int)lp_def, lp_name, grp->lvltype_id, full_name))
                   continue;
 
+               area_note_def_group((int)lp_def, grp->lvltype_id);
                for (f = 0; f < 6; f++)
                {
                   char * ds1_path = lvlprest->data + (lp_row * lvlprest->line_size)
@@ -783,6 +838,8 @@ int area_browser_open_by_file(const char * ds1_path)
             }
             area_browser_apply_folder_act(ds1_idx, g);
          }
+         ab->loaded_group = i;
+         ab->loaded_entry = j;
          return 0;
       }
    }
@@ -805,6 +862,170 @@ static void area_browser_unload_current(void)
 
    /* Keep decoded animations until the new map's usage is known.
     * anim_update_gfx() frees those the next map does not use. */
+}
+
+static int (*s_unload_guard)(void);
+
+void area_browser_set_unload_guard(int (*guard)(void))
+{
+   s_unload_guard = guard;
+}
+
+void area_browser_unload_all(void)
+{
+   area_browser_unload_current();
+   glb_ds1edit.has_loaded_ds1 = FALSE;
+   glb_ds1edit.area_browser.loaded_group = -1;
+   glb_ds1edit.area_browser.loaded_entry = -1;
+
+   /* Pending values must not apply to whichever map opens next. */
+   glb_ds1edit.props_panel.pending_count = 0;
+   glb_ds1edit.props_panel.editing = FALSE;
+   glb_ds1edit.props_panel.ds1_idx = 0;
+}
+
+/* Returns TRUE if the open maps may go. Otherwise it puts the highlight back
+ * on the map that stays open, since navigation moves it before switching. With
+ * no browser map loaded it has nothing to go back to and leaves it alone.
+ *
+ * The guard can Save All and open a project, which rebuilds the group table, so
+ * a caller's indexes are only good if ab->reload_generation is unchanged. */
+static int area_browser_may_unload(void)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+
+   if (s_unload_guard == NULL || s_unload_guard())
+      return TRUE;
+   if (ab->loaded_group >= 0)
+   {
+      ab->selected_group = ab->loaded_group;
+      ab->selected_entry = ab->loaded_entry;
+   }
+   return FALSE;
+}
+
+static int project_has_map(const char * ds1_path)
+{
+   char found[1024];
+
+   return map_ops_find_tile(glb_project.path, ds1_path, found, sizeof(found));
+}
+
+/* In the game's own archives, ignoring any overlay? Loads the file, so it is
+ * only asked about maps the project also has. */
+int area_browser_game_has_map(const char * ds1_path)
+{
+   char  name[512];
+   char *saved[MAX_MOD_DIR];
+   char *buff = NULL;
+   long  len = 0;
+   int   i, entry;
+
+   snprintf(name, sizeof(name), "Data\\Global\\Tiles\\%s", ds1_path);
+   for (i = 0; i < MAX_MOD_DIR; i++)
+   {
+      saved[i] = glb_config.mod_dir[i];
+      glb_config.mod_dir[i] = NULL;
+   }
+   entry = misc_load_mpq_file(name, &buff, &len, FALSE);
+   for (i = 0; i < MAX_MOD_DIR; i++)
+      glb_config.mod_dir[i] = saved[i];
+
+   if (buff != NULL)
+      free(buff);
+   return entry != -1;
+}
+
+void area_browser_refresh_states(void)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   int i, j;
+
+   for (i = 0; i < ab->group_count; i++)
+   {
+      AREA_GROUP_S * g = &ab->groups[i];
+
+      for (j = 0; j < g->entry_count; j++)
+      {
+         AREA_DS1_ENTRY_S * e = &g->entries[j];
+
+         if (g->is_backup || !glb_project.is_open)
+            e->state = MAP_STATE_GAME;
+         else if (e->slot_cleared)
+            e->state = MAP_STATE_REMOVED;
+         else if (!project_has_map(e->ds1_path))
+            e->state = MAP_STATE_GAME;
+         else
+            e->state = map_state_classify(area_browser_game_has_map(e->ds1_path), 1, 0);
+      }
+   }
+}
+
+int area_browser_find_row(const char * ds1_path, int def, int * group_idx, int * entry_idx)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   int i, j;
+
+   for (i = 0; i < ab->group_count; i++)
+   {
+      if (ab->groups[i].is_backup)
+         continue;
+      for (j = 0; j < ab->groups[i].entry_count; j++)
+      {
+         AREA_DS1_ENTRY_S * e = &ab->groups[i].entries[j];
+         if (e->lvlprest_def == def && map_state_path_matches(e->ds1_path, ds1_path))
+         {
+            *group_idx = i;
+            *entry_idx = j;
+            return 1;
+         }
+      }
+   }
+   return 0;
+}
+
+/* After the rows are rebuilt, find the row of the map open in this slot. */
+static void area_browser_adopt_open_map(int ds1_idx)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   int i, j;
+
+   for (i = 0; i < ab->group_count; i++)
+   {
+      if (ab->groups[i].is_backup)
+         continue;
+      for (j = 0; j < ab->groups[i].entry_count; j++)
+      {
+         if (map_state_path_matches(glb_ds1[ds1_idx].name, ab->groups[i].entries[j].ds1_path))
+         {
+            ab->loaded_group = i;
+            ab->loaded_entry = j;
+            return;
+         }
+      }
+   }
+}
+
+int area_browser_reload(void)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   int rc;
+
+   ab->reload_generation++;
+
+   if (glb_ds1edit.lvlprest_buff != NULL)
+      glb_ds1edit.lvlprest_buff = txt_destroy(glb_ds1edit.lvlprest_buff);
+   if (glb_ds1edit.lvltypes_buff != NULL)
+      glb_ds1edit.lvltypes_buff = txt_destroy(glb_ds1edit.lvltypes_buff);
+   if (glb_ds1edit.levels_buff != NULL)
+      glb_ds1edit.levels_buff = txt_destroy(glb_ds1edit.levels_buff);
+
+   rc = area_browser_init();
+   ab->loaded_group = -1;
+   ab->loaded_entry = -1;
+   if (glb_ds1edit.has_loaded_ds1 && glb_ds1[0].name[0] != '\0')
+      area_browser_adopt_open_map(0);
+   return rc;
 }
 
 static int area_browser_open_entry_into_slot(int group_idx, int entry_idx, int ds1_idx)
@@ -942,12 +1163,18 @@ static void area_browser_finish_load(int group_idx, int active_ds1_idx, int open
 int area_browser_switch_area(int group_idx)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
-   int opened;
+   int opened, generation;
 
    if (group_idx < 0 || group_idx >= ab->group_count)
       return -1;
    if (ab->groups[group_idx].entry_count == 0)
       return -1;
+
+   generation = ab->reload_generation;
+   if (!area_browser_may_unload())
+      return -1;
+   if (ab->reload_generation != generation)
+      return -1; /* the indexes are stale; the maps stay loaded */
 
    printf("Switching to area: ");
    fflush(stdout);
@@ -962,6 +1189,8 @@ int area_browser_switch_area(int group_idx)
       return -1;
    }
 
+   /* Before finish_load: the properties panel reads the open row there. */
+   ab->loaded_entry = 0;
    area_browser_finish_load(group_idx, 0, opened);
 
    printf("done (%d maps loaded)\n", opened);
@@ -1011,11 +1240,24 @@ int area_browser_switch_single(int group_idx, int entry_idx)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
    double switch_start_ms;
+   int generation;
 
    if (group_idx < 0 || group_idx >= ab->group_count)
       return -1;
    if (entry_idx < 0 || entry_idx >= ab->groups[group_idx].entry_count)
       return -1;
+   if (ab->groups[group_idx].entries[entry_idx].slot_cleared)
+   {
+      printf("area_browser: %s is removed from the project; restore its slot to open it\n",
+             ab->groups[group_idx].entries[entry_idx].ds1_path);
+      return -1;
+   }
+
+   generation = ab->reload_generation;
+   if (!area_browser_may_unload())
+      return -1;
+   if (ab->reload_generation != generation)
+      return -1; /* the indexes are stale; the maps stay loaded */
 
    printf("Switching to DS1 entry %d in group %d\n", entry_idx, group_idx);
    fflush(stdout);
@@ -1045,6 +1287,8 @@ int area_browser_switch_single(int group_idx, int entry_idx)
           glb_open_profile.lvltypes_dt1_ms, glb_open_profile.block_table_ms);
    fflush(stdout);
 
+   /* Before finish_load: the properties panel reads the open row there. */
+   ab->loaded_entry = entry_idx;
    area_browser_finish_load(group_idx, 0, 1);
    return 0;
 }
@@ -1096,7 +1340,7 @@ int area_browser_nav_down(void)
    int gi = ab->selected_group;
    int ei = ab->selected_entry;
 
-   if (ab->group_count == 0) return -1;
+   if (gi < 0 || gi >= ab->group_count) return -1;
 
    if (ei == -1)
    {
@@ -1758,15 +2002,256 @@ void area_browser_scan_unlisted(void)
    }
 }
 
-/* Free all area browser dynamic memory. */
-/* Scan the backup/ directory for backed-up DS1 files and add them
+/* ---- Rows only the project's table can name ---- */
+
+int area_browser_path_known(const char * ds1_path)
+{
+   return unlisted_already_known(&glb_ds1edit.area_browser, ds1_path);
+}
+
+/* The preset index's row for this Def, or NULL. */
+static const PRESET_ENTRY_S * area_preset_for_def(int def)
+{
+   int i, count = mpq_index_preset_count();
+
+   for (i = 0; i < count; i++)
+   {
+      const PRESET_ENTRY_S * preset = mpq_index_preset_at(i);
+
+      if (preset != NULL && preset->def == def)
+         return preset;
+   }
+   return NULL;
+}
+
+int area_browser_lvltype_for_def(int def, int fallback)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   const PRESET_ENTRY_S * preset;
+   int g, e;
+
+   for (g = 0; g < ab->group_count; g++)
+   {
+      if (ab->groups[g].is_backup)
+         continue;
+      for (e = 0; e < ab->groups[g].entry_count; e++)
+         if (ab->groups[g].entries[e].lvlprest_def == def &&
+             ab->groups[g].entries[e].lvltype_id > 0)
+            return ab->groups[g].entries[e].lvltype_id;
+   }
+   preset = area_preset_for_def(def);
+   if (preset != NULL && preset->level_type > 0 && preset->type_name[0] != '\0')
+      return preset->level_type;
+   return fallback;
+}
+
+/* Which act's Unlisted group a map goes in, by the same rules as the archive scan. */
+static int area_unlisted_act(int def, int lvltype, const char * ds1_path)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   const PRESET_ENTRY_S * preset = area_preset_for_def(def);
+   int g;
+
+   if (preset != NULL && preset->act >= 1 && preset->act <= 5)
+      return preset->act;
+   for (g = 0; lvltype > 0 && g < ab->group_count; g++)
+      if (ab->groups[g].lvltype_id == lvltype && ab->groups[g].act >= 1 && ab->groups[g].act <= 5)
+         return ab->groups[g].act;
+   return unlisted_act_from_path(ds1_path);
+}
+
+/* An index into ab->groups, since making a group can move them. -1 if it can't be made. */
+static int area_add_unlisted_row(int def, int lvltype, const char * ds1_path)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   AREA_GROUP_S * g = unlisted_group_for_act(ab, area_unlisted_act(def, lvltype, ds1_path));
+   int before;
+
+   if (g == NULL)
+      return -1;
+   before = g->entry_count;
+   area_group_add_entry(g, lvltype, def, ds1_path);
+   return g->entry_count > before ? (int) (g - ab->groups) : -1;
+}
+
+int area_browser_add_map_row(int def, int lvltype, const char * ds1_path,
+                             int * group_idx, int * entry_idx)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   int g, e, found = -1, before;
+
+   /* Beside the Def's other files. */
+   for (g = 0; def > 0 && found < 0 && g < ab->group_count; g++)
+   {
+      if (ab->groups[g].is_backup)
+         continue;
+      for (e = 0; found < 0 && e < ab->groups[g].entry_count; e++)
+         if (ab->groups[g].entries[e].lvlprest_def == def)
+            found = g;
+   }
+   for (g = 0; lvltype > 0 && found < 0 && g < ab->group_count; g++)
+      if (!ab->groups[g].is_backup && ab->groups[g].lvltype_id == lvltype)
+         found = g;
+
+   if (found >= 0)
+   {
+      before = ab->groups[found].entry_count;
+      area_group_add_entry(&ab->groups[found], lvltype, def, ds1_path);
+      if (ab->groups[found].entry_count == before)
+         return 0;
+   }
+   else
+   {
+      found = area_add_unlisted_row(def, lvltype, ds1_path);
+      if (found < 0)
+         return 0;
+   }
+   *group_idx = found;
+   *entry_idx = ab->groups[found].entry_count - 1;
+   return 1;
+}
+
+/* A row an Unlisted group holds for this map. The scan can have filled in no Def:
+ * the index it asks is built from this same table, which no longer lists it. */
+static int area_row_is_cleared_map(const AREA_DS1_ENTRY_S * e, int def, const char * ds1_path)
+{
+   return (e->lvlprest_def == def || e->lvlprest_def <= 0) &&
+          unlisted_path_equal(e->ds1_path, ds1_path);
+}
+
+static int area_group_is_unlisted(const AREA_GROUP_S * g)
+{
+   return !g->is_backup && g->lvltype_id <= -100;
+}
+
+/* A map the game lists and the project's table has cleared. It goes in each group
+ * its Def belongs to, or stays in Unlisted if there's none, so it shows struck
+ * through whether or not its Def has a LvlType group. */
+static void area_add_removed_row(int def, const char * ds1_path, void * ctx)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   int i, g, e, placed = 0;
+
+   (void) ctx;
+   for (i = 0; i < s_def_group_count; i++)
+   {
+      if (s_def_groups[i].def != def)
+         continue;
+      for (g = 0; g < ab->group_count; g++)
+      {
+         AREA_GROUP_S * grp = &ab->groups[g];
+         int have = 0;
+
+         if (grp->is_backup || grp->lvltype_id != s_def_groups[i].lvltype_id)
+            continue;
+         placed = 1;
+         for (e = 0; e < grp->entry_count; e++)
+            if (grp->entries[e].lvlprest_def == def &&
+                unlisted_path_equal(grp->entries[e].ds1_path, ds1_path))
+            {
+               grp->entries[e].slot_cleared = 1;
+               have = 1;
+            }
+         if (!have)
+         {
+            int before = grp->entry_count;
+
+            area_group_add_entry(grp, grp->lvltype_id, def, ds1_path);
+            if (grp->entry_count > before)
+               grp->entries[grp->entry_count - 1].slot_cleared = 1;
+         }
+      }
+   }
+
+   for (g = 0; g < ab->group_count; g++)
+   {
+      AREA_GROUP_S * grp = &ab->groups[g];
+
+      if (!area_group_is_unlisted(grp))
+         continue;
+      for (e = 0; e < grp->entry_count; e++)
+      {
+         AREA_DS1_ENTRY_S * row = &grp->entries[e];
+
+         if (!area_row_is_cleared_map(row, def, ds1_path))
+            continue;
+         if (placed)
+         {
+            /* Its own group has it now; this is the scan's copy. */
+            memmove(row, row + 1, sizeof(AREA_DS1_ENTRY_S) * (grp->entry_count - e - 1));
+            grp->entry_count--;
+            e--;
+         }
+         else
+         {
+            /* Its Def's LvlType over the scan's guess from the folder. */
+            int lvltype = area_browser_lvltype_for_def(def, row->lvltype_id);
+
+            row->lvlprest_def = def;
+            row->lvltype_id = lvltype;
+            row->slot_cleared = 1;
+            placed = 1;
+         }
+      }
+   }
+
+   if (!placed)
+   {
+      int lvltype = area_browser_lvltype_for_def(def, -1);
+
+      g = area_add_unlisted_row(def, lvltype, ds1_path);
+      if (g >= 0)
+         ab->groups[g].entries[ab->groups[g].entry_count - 1].slot_cleared = 1;
+   }
+}
+
+/* A file the project's table lists that no row holds: a map made in a Def with no
+ * LvlType group has no group to come back in, and the archive scan can't see it. */
+static void area_add_listed_row(int def, const char * ds1_path, void * ctx)
+{
+   (void) ctx;
+   if (!unlisted_already_known(&glb_ds1edit.area_browser, ds1_path))
+      area_add_unlisted_row(def, area_browser_lvltype_for_def(def, -1), ds1_path);
+}
+
+/* The game's own LvlPrest.txt, from its archives with no project overlay. */
+char * area_browser_game_table(void)
+{
+   char lvlprest[] = "Data\\Global\\Excel\\LvlPrest.txt";
+
+   return (char *) txt_read_in_mem_mpq_only(lvlprest);
+}
+
+/* The union the spec asks for: rows the project's table cleared stay visible, and
+ * rows only it names appear. */
+static void area_add_project_rows(void)
+{
+   long len;
+   char * project, * game;
+
+   if (!glb_project.is_open)
+      return;
+   project = map_ops_read_table(glb_project.path, &len);
+   if (project == NULL)
+      return;
+   game = area_browser_game_table();
+   if (game != NULL)
+   {
+      lvlprest_each_cleared(game, project, area_add_removed_row, NULL);
+      free(game);
+   }
+   lvlprest_each_file(project, area_add_listed_row, NULL);
+   free(project);
+}
+
+/* Scan a backup/ directory for backed-up DS1 files and add them
  * as "Backup" sub-groups under each Act. */
-void area_browser_scan_backups(void)
+static void scan_backup_root(const char * root)
 {
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
    DS1_DIR dir;
 
-   if (!ds1_dir_open(&dir, "backup"))
+   if (!ds1_dir_open(&dir, root))
       return;
 
    while (ds1_dir_next(&dir))
@@ -1777,7 +2262,7 @@ void area_browser_scan_backups(void)
       if (!dir.is_dir || dir.name[0] == '.')
          continue;
 
-      snprintf(sub_path, sizeof(sub_path), "backup" DS1_SEP_STR "%s", dir.name);
+      snprintf(sub_path, sizeof(sub_path), "%s" DS1_SEP_STR "%s", root, dir.name);
       if (!ds1_dir_open(&jdir, sub_path))
          continue;
 
@@ -1806,9 +2291,16 @@ void area_browser_scan_backups(void)
                /* Simple JSON parsing - find "area" and extract act number */
                if (strstr(line, "\"area\"") != NULL)
                {
-                  char * p = strstr(line, "Act ");
+                  /* "Act 1 - Town" from older backups, "Act1-Town" from the project's */
+                  char * p = strstr(line, "Act");
                   if (p != NULL)
-                     act = p[4] - '0';
+                  {
+                     p += 3;
+                     if (*p == ' ')
+                        p++;
+                     if (*p >= '0' && *p <= '9')
+                        act = *p - '0';
+                  }
                }
                if (strstr(line, "\"original_path\"") != NULL)
                {
@@ -1877,15 +2369,34 @@ void area_browser_scan_backups(void)
                strncpy(full_backup_path, jdir.name, nlen - 5);
                strcpy(full_backup_path + nlen - 5, ".ds1");
 
-               snprintf(ds1_path, sizeof(ds1_path), "backup" DS1_SEP_STR
-                        "%s" DS1_SEP_STR "%s", dir.name, full_backup_path);
-               area_group_add_entry(bgrp, backup_lvltype, backup_def, ds1_path);
+               int n = snprintf(ds1_path, sizeof(ds1_path), "%s" DS1_SEP_STR
+                                "%s" DS1_SEP_STR "%s", root, dir.name, full_backup_path);
+
+               if (n < 0 || n >= (int) sizeof(((AREA_DS1_ENTRY_S *) 0)->ds1_path))
+                  printf("area_browser: backup path too long, skipped: %s\n", ds1_path);
+               else
+                  area_group_add_entry(bgrp, backup_lvltype, backup_def, ds1_path);
             }
          }
       }
       ds1_dir_close(&jdir);
    }
    ds1_dir_close(&dir);
+}
+
+void area_browser_scan_backups(void)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+
+   /* A project keeps its own. The editor's old folder stays listed, since it may
+      hold the only copy of a deleted map. */
+   if (glb_project.is_open)
+   {
+      char root[512];
+      snprintf(root, sizeof(root), "%s" DS1_SEP_STR "backup", glb_project.path);
+      scan_backup_root(root);
+   }
+   scan_backup_root("backup");
 
    /* Re-sort groups so backup groups appear after their act's regular groups */
    if (ab->group_count > 1)
@@ -1893,6 +2404,39 @@ void area_browser_scan_backups(void)
 
    printf("[area browser] scanned backups, %d groups total\n", ab->group_count);
    fflush(stdout);
+}
+
+/* Rebuild the Backup rows after one was added. The re-sort can move groups, so
+ * the open map's row is found again by its path. */
+void area_browser_rescan_backups(void)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   char open_path[256] = "";
+   int open_def = 0, i, gi, ei;
+
+   if (ab->loaded_group >= 0 && ab->loaded_group < ab->group_count &&
+       !ab->groups[ab->loaded_group].is_backup &&
+       ab->loaded_entry >= 0 && ab->loaded_entry < ab->groups[ab->loaded_group].entry_count)
+   {
+      AREA_DS1_ENTRY_S * e = &ab->groups[ab->loaded_group].entries[ab->loaded_entry];
+      snprintf(open_path, sizeof(open_path), "%s", e->ds1_path);
+      open_def = e->lvlprest_def;
+   }
+
+   for (i = 0; i < ab->group_count; i++)
+      if (ab->groups[i].is_backup)
+         ab->groups[i].entry_count = 0;
+   area_browser_scan_backups();
+
+   ab->selected_group = -1;
+   ab->selected_entry = -1;
+   ab->loaded_group = -1;
+   ab->loaded_entry = -1;
+   if (open_path[0] != '\0' && area_browser_find_row(open_path, open_def, &gi, &ei))
+   {
+      ab->loaded_group = gi;
+      ab->loaded_entry = ei;
+   }
 }
 
 void area_browser_destroy(void)
@@ -1912,7 +2456,12 @@ void area_browser_destroy(void)
    ab->groups = NULL;
    ab->group_count = 0;
    ab->group_max = 0;
+   free(s_def_groups);
+   s_def_groups = NULL;
+   s_def_group_count = 0;
+   s_def_group_max = 0;
    ab->selected_group = -1;
+   ab->selected_entry = -1;
    ab->scroll_offset = 0;
    ab->is_active = FALSE;
 }
@@ -2055,6 +2604,11 @@ int area_browser_open_group(int group_idx)
              total - acc, total > 0 ? 100.0 * (total - acc) / total : 0.0);
    }
    fflush(stdout);
+   if (opened > 0)
+   {
+      ab->loaded_group = group_idx;
+      ab->loaded_entry = 0;
+   }
    return opened;
 }
 
@@ -2073,7 +2627,7 @@ void area_browser_draw_sidebar(int width, int height)
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
    int y, i, last_act = -1;
    int draw_row = 0;
-   int top_bar_h = glb_ds1edit.show_2nd_row ? 20 : 9;
+   int top_bar_h = ui_top_bar_height();
    int bottom_bar_h = 10;
    int panel_top = top_bar_h;
    int panel_bottom = height - bottom_bar_h;
@@ -2190,8 +2744,26 @@ void area_browser_draw_sidebar(int width, int height)
                   fc = col_file_sel;
                }
 
+               if (g->entries[j].slot_cleared)
+                  fc = al_map_rgb(110, 110, 110);
                al_draw_textf(a5_font, fc, (float)(SB_MARGIN_X + 22), (float)y, 0,
                               "%s", fname);
+               if (g->entries[j].slot_cleared)
+                  al_draw_line((float)(SB_MARGIN_X + 22), (float)y + 4.5f,
+                               (float)(SB_MARGIN_X + 22 + al_get_text_width(a5_font, fname)),
+                               (float)y + 4.5f, fc, 1.0f);
+               {
+                  /* State letter, then * if an open copy has unsaved edits. */
+                  int k, entry_dirty = 0;
+
+                  for (k = 0; k < DS1_MAX && !entry_dirty; k++)
+                     entry_dirty = glb_ds1[k].name[0] != 0 && map_is_dirty(k) &&
+                        map_state_path_matches(glb_ds1[k].name, g->entries[j].ds1_path);
+
+                  al_draw_textf(a5_font, fc, (float)(width - 28), (float)y, 0, "%s%s",
+                                map_state_mark((MAP_STATE_E) g->entries[j].state),
+                                entry_dirty ? "*" : "");
+               }
 
                y += SB_LINE_H;
             }
@@ -2199,12 +2771,16 @@ void area_browser_draw_sidebar(int width, int height)
          }
       }
    }
+
+   /* The wheel can overshoot, and a group can collapse under the offset. */
+   ab->scroll_offset = pp_scroll_clamp(ab->scroll_offset, draw_row,
+      (panel_bottom - (panel_top + SB_HEADER_H + 4) - 1) / SB_LINE_H);
 }
 
 /* Draw collapsed sidebar tab — small ">" button at left edge. */
 void area_browser_draw_sidebar_tab(int height)
 {
-   int top_bar_h = glb_ds1edit.show_2nd_row ? 20 : 9;
+   int top_bar_h = ui_top_bar_height();
    int bottom_bar_h = 10;
    int panel_top = top_bar_h;
    int panel_bottom = height - bottom_bar_h;
@@ -2226,7 +2802,7 @@ int area_browser_sidebar_click(int mx, int my, int sidebar_w, int disp_h)
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
    int y, i, last_act = -1;
    int draw_row = 0;
-   int top_bar_h = glb_ds1edit.show_2nd_row ? 20 : 9;
+   int top_bar_h = ui_top_bar_height();
    int panel_top = top_bar_h;
 
    /* Close button */
@@ -2289,6 +2865,49 @@ int area_browser_sidebar_click(int mx, int my, int sidebar_w, int disp_h)
       }
    }
    return -1;
+}
+
+void area_browser_scroll_to_row(int group_idx, int entry_idx)
+{
+   AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
+   int i, last_act = -1, row = 0, visible;
+   int first_y = ui_top_bar_height() + SB_HEADER_H + 4;
+   int disp_h = a5_display != NULL ? al_get_display_height(a5_display) : glb_config.screen.height;
+
+   if (group_idx < 0 || group_idx >= ab->group_count ||
+       entry_idx < 0 || entry_idx >= ab->groups[group_idx].entry_count)
+      return;
+
+   ab->groups[group_idx].is_expanded = TRUE;
+   ab->selected_group = group_idx;
+   ab->selected_entry = entry_idx;
+   glb_ds1edit.sidebar_visible = TRUE;
+
+   /* The rows area_browser_draw_sidebar counts, with its bottom bar of 10. */
+   for (i = 0; i <= group_idx; i++)
+   {
+      if (ab->groups[i].act != last_act)
+      {
+         row++;
+         last_act = ab->groups[i].act;
+      }
+      if (i == group_idx)
+      {
+         row += 1 + entry_idx;
+         break;
+      }
+      row++;
+      if (ab->groups[i].is_expanded)
+         row += ab->groups[i].entry_count;
+   }
+
+   visible = (disp_h - 10 - first_y - 1) / SB_LINE_H;
+   if (visible < 1)
+      visible = 1;
+   if (row < ab->scroll_offset)
+      ab->scroll_offset = row;
+   else if (row >= ab->scroll_offset + visible)
+      ab->scroll_offset = row - visible + 1;
 }
 
 /* Handle mouse wheel scroll in sidebar. Returns 1 if handled. */
@@ -2381,6 +3000,8 @@ static void area_browser_draw(void)
       }
       draw_row++;
    }
+
+   ab->scroll_offset = pp_scroll_clamp(ab->scroll_offset, draw_row, visible_lines);
 
    /* Footer */
    al_draw_filled_rectangle(0, (float)(h - AB_FOOTER_H), (float)w, (float)h,

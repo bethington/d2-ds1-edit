@@ -105,6 +105,83 @@ void test_editor_undo_shortcuts_fire_once_and_respect_active_property_edits(void
    TEST_ASSERT_FALSE(input_undo_shortcut_hit(0));
 }
 
+void test_escape_only_asks_to_quit_when_the_panel_does_not_own_it(void)
+{
+   TEST_ASSERT_TRUE(input_escape_may_quit(0, 0));
+   TEST_ASSERT_FALSE(input_escape_may_quit(1, 0));
+   TEST_ASSERT_FALSE(input_escape_may_quit(0, 1));
+   TEST_ASSERT_FALSE(input_escape_may_quit(1, 1));
+}
+
+void test_quit_asks_for_unsaved_maps_or_pending_panel_values(void)
+{
+   TEST_ASSERT_FALSE(input_quit_needs_prompt(0, 0));
+   TEST_ASSERT_TRUE(input_quit_needs_prompt(1, 0));
+   TEST_ASSERT_TRUE(input_quit_needs_prompt(0, 2));
+   TEST_ASSERT_TRUE(input_quit_needs_prompt(1, 2));
+}
+
+/* ---- Delete: the selected tiles, and nothing else ---------------------- */
+
+void test_delete_key_hits_tiles_once_per_press_on_either_key(void)
+{
+   ALLEGRO_EVENT del = key_down_event(ALLEGRO_KEY_DELETE);
+   ALLEGRO_EVENT pad = key_down_event(ALLEGRO_KEY_PAD_DELETE);
+
+   input_begin_frame();
+   TEST_ASSERT_FALSE(input_delete_hits_tiles(1, 0));
+
+   input_begin_frame();
+   input_note_event(&del);
+   hold_key(ALLEGRO_KEY_DELETE);
+   TEST_ASSERT_TRUE(input_delete_hits_tiles(1, 0));
+
+   /* Still held: each frame's delete would push another undo buffer, and the
+      first Ctrl+Z would then undo a delete that removed nothing. */
+   input_begin_frame();
+   TEST_ASSERT_FALSE(input_delete_hits_tiles(1, 0));
+
+   release_key(ALLEGRO_KEY_DELETE);
+   input_begin_frame();
+   input_note_event(&pad);
+   TEST_ASSERT_TRUE(input_delete_hits_tiles(1, 0));
+}
+
+void test_delete_key_leaves_tiles_alone_outside_tile_mode_and_during_paste(void)
+{
+   ALLEGRO_EVENT del = key_down_event(ALLEGRO_KEY_DELETE);
+
+   input_begin_frame();
+   input_note_event(&del);
+
+   TEST_ASSERT_FALSE(input_delete_hits_tiles(0, 0));
+   TEST_ASSERT_FALSE(input_delete_hits_tiles(1, 1));
+}
+
+/* Ctrl+Del is Delete Map; Ctrl+KeypadDel and Ctrl+Shift+Del must not take
+   tiles either. */
+void test_delete_key_ignored_while_ctrl_held(void)
+{
+   ALLEGRO_EVENT del = key_down_event(ALLEGRO_KEY_DELETE);
+   ALLEGRO_EVENT pad = key_down_event(ALLEGRO_KEY_PAD_DELETE);
+
+   hold_key(ALLEGRO_KEY_RCTRL);
+   input_begin_frame();
+   input_note_event(&pad);
+   TEST_ASSERT_FALSE(input_delete_hits_tiles(1, 0));
+
+   hold_key(ALLEGRO_KEY_LSHIFT);
+   input_begin_frame();
+   input_note_event(&del);
+   TEST_ASSERT_FALSE(input_delete_hits_tiles(1, 0));
+   release_key(ALLEGRO_KEY_LSHIFT);
+   release_key(ALLEGRO_KEY_RCTRL);
+
+   input_begin_frame();
+   input_note_event(&del);
+   TEST_ASSERT_TRUE(input_delete_hits_tiles(1, 0));
+}
+
 /* ---- key_hit: once per press, not once per frame ---------------------- */
 
 void test_key_hit_fires_on_the_frame_the_key_goes_down(void)
@@ -249,6 +326,59 @@ void test_suppress_held_clears_pending_edges(void)
    TEST_ASSERT_FALSE(key_hit(ALLEGRO_KEY_ESCAPE));
 }
 
+static ALLEGRO_EVENT key_char_event(int keycode, int modifiers)
+{
+   ALLEGRO_EVENT ev;
+   memset(&ev, 0, sizeof(ev));
+   ev.keyboard.type = ALLEGRO_EVENT_KEY_CHAR;
+   ev.keyboard.keycode = keycode;
+   ev.keyboard.modifiers = modifiers;
+   return ev;
+}
+
+/* macOS: a native panel opened with Cmd+Shift+O took the Cmd release, so
+   Allegro still had Cmd down and the next Cmd press made no KEY_DOWN. Only the
+   typed key said Cmd was held; until then Cmd+Shift+B read as Shift+B. */
+void test_a_modifier_held_through_a_modal_counts_again_when_a_key_is_typed_with_it(void)
+{
+   ALLEGRO_EVENT ev = key_char_event(ALLEGRO_KEY_B,
+                                     ALLEGRO_KEYMOD_COMMAND | ALLEGRO_KEYMOD_SHIFT);
+
+   hold_key(ALLEGRO_KEY_COMMAND);
+   input_suppress_held();
+   TEST_ASSERT_FALSE(key_is_down(ALLEGRO_KEY_COMMAND));
+
+   hold_key(ALLEGRO_KEY_LSHIFT);
+   input_note_event(&ev);
+
+   TEST_ASSERT_TRUE(key_is_down(ALLEGRO_KEY_COMMAND));
+   TEST_ASSERT_TRUE(key_is_down(ALLEGRO_KEY_LSHIFT));
+}
+
+void test_a_key_typed_without_the_modifier_leaves_it_suppressed(void)
+{
+   ALLEGRO_EVENT ev = key_char_event(ALLEGRO_KEY_B, ALLEGRO_KEYMOD_SHIFT);
+
+   hold_key(ALLEGRO_KEY_COMMAND);
+   input_suppress_held();
+   input_note_event(&ev);
+
+   TEST_ASSERT_FALSE(key_is_down(ALLEGRO_KEY_COMMAND));
+}
+
+void test_a_typed_modifier_that_reads_as_up_is_left_alone(void)
+{
+   ALLEGRO_EVENT ev = key_char_event(ALLEGRO_KEY_B, ALLEGRO_KEYMOD_CTRL);
+
+   /* Escape was held into the modal; Ctrl never was. */
+   hold_key(ALLEGRO_KEY_ESCAPE);
+   input_suppress_held();
+   input_note_event(&ev);
+
+   TEST_ASSERT_FALSE(key_is_down(ALLEGRO_KEY_LCTRL));
+   TEST_ASSERT_FALSE(key_is_down(ALLEGRO_KEY_ESCAPE));
+}
+
 /* ---- device loss ------------------------------------------------------- */
 
 static ALLEGRO_EVENT display_event(int type)
@@ -297,6 +427,11 @@ int main(void)
    RUN_TEST(test_display_found_restores_video_bitmaps_once_and_clears_lost);
    RUN_TEST(test_display_found_without_a_loss_still_restores);
    RUN_TEST(test_editor_undo_shortcuts_fire_once_and_respect_active_property_edits);
+   RUN_TEST(test_escape_only_asks_to_quit_when_the_panel_does_not_own_it);
+   RUN_TEST(test_quit_asks_for_unsaved_maps_or_pending_panel_values);
+   RUN_TEST(test_delete_key_hits_tiles_once_per_press_on_either_key);
+   RUN_TEST(test_delete_key_leaves_tiles_alone_outside_tile_mode_and_during_paste);
+   RUN_TEST(test_delete_key_ignored_while_ctrl_held);
    RUN_TEST(test_key_hit_fires_on_the_frame_the_key_goes_down);
    RUN_TEST(test_key_hit_is_clear_on_later_frames_while_still_held);
    RUN_TEST(test_key_hit_fires_again_after_release_and_repress);
@@ -307,5 +442,8 @@ int main(void)
    RUN_TEST(test_suppressed_key_stays_hidden_until_genuinely_repressed);
    RUN_TEST(test_suppress_held_leaves_keys_that_were_up_alone);
    RUN_TEST(test_suppress_held_clears_pending_edges);
+   RUN_TEST(test_a_modifier_held_through_a_modal_counts_again_when_a_key_is_typed_with_it);
+   RUN_TEST(test_a_key_typed_without_the_modifier_leaves_it_suppressed);
+   RUN_TEST(test_a_typed_modifier_that_reads_as_up_is_left_alone);
    return UNITY_END();
 }

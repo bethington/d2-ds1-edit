@@ -8,5 +8,10 @@
 int wmsg_main     (WMSG_S * wmsg);
 int msg_quit_main (void);
 int msg_save_main (void);
+int msg_unsaved_main          (const char *text);
+int msg_project_required_main (void);
+
+// 0 : replace the project's copy, 1 or -1 : cancel
+int msg_replace_project_copy_main (void);
 
 #endif

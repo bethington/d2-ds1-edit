@@ -143,8 +143,12 @@ jobs:
             echo "::error::Python suites were not registered (py_unavailable/py_missing present)"; exit 1
           fi
 
+      # Without include(CTest) a test has no default limit, so one hung test would hold
+      # the job for GitHub's six hours. --timeout covers only tests with no TIMEOUT of
+      # their own, and prints the killed test's output.
       - name: Test
-        run: ctest --preset ci --output-junit "$(pwd -W 2>/dev/null || pwd)/ctest-junit.xml"
+        timeout-minutes: 30
+        run: ctest --preset ci --timeout 300 --output-junit "$(pwd -W 2>/dev/null || pwd)/ctest-junit.xml"
 
       - name: Package (CPack ZIP)
         run: |

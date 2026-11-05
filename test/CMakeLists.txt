@@ -1,6 +1,9 @@
 # Unity test framework
 add_library(unity STATIC unity/unity.c)
 target_include_directories(unity PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/unity)
+# Each result line is flushed whole. With stdout buffered, a stderr message from the
+# code under test could land inside one, and CI evidence reads those lines.
+target_compile_definitions(unity PUBLIC UNITY_USE_FLUSH_STDOUT)
 
 add_executable(test_selection_logic test_selection_logic.c ../src/editor/selection_logic.c)
 target_link_libraries(test_selection_logic PRIVATE unity)
@@ -8,7 +11,7 @@ target_include_directories(test_selection_logic PRIVATE ${CMAKE_SOURCE_DIR}/src)
 add_test(NAME selection_logic COMMAND test_selection_logic)
 
 add_executable(test_editor_selection test_editor_selection.c
-    ../src/editor/tiles.c ../src/editor/selection_logic.c)
+    ../src/editor/tiles.c ../src/editor/selection_logic.c ../src/core/map_state.c)
 target_link_libraries(test_editor_selection PRIVATE unity ds1edit_allegro)
 target_include_directories(test_editor_selection PRIVATE
     ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/mpq)
@@ -126,6 +129,91 @@ target_link_libraries(test_blend_convention PRIVATE unity ds1edit_allegro)
 target_include_directories(test_blend_convention PRIVATE
     ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/mpq)
 add_test(NAME blend_convention COMMAND test_blend_convention)
+
+# The copy that map deletion relies on before removing the original
+add_executable(test_file_copy test_file_copy.c ../src/core/file_copy.c)
+target_link_libraries(test_file_copy PRIVATE unity)
+target_include_directories(test_file_copy PRIVATE
+    ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/test)
+add_test(NAME file_copy COMMAND test_file_copy)
+set_tests_properties(file_copy PROPERTIES LABELS "portable")
+
+# Finding a map's slot in the raw LvlPrest.txt before a delete changes anything
+add_executable(test_lvlprest_text test_lvlprest_text.c ../src/core/lvlprest_text.c)
+target_link_libraries(test_lvlprest_text PRIVATE unity)
+target_include_directories(test_lvlprest_text PRIVATE
+    ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/test)
+add_test(NAME lvlprest_text COMMAND test_lvlprest_text)
+set_tests_properties(lvlprest_text PROPERTIES LABELS "portable")
+
+# Creating, registering and backing up maps in a project folder
+add_executable(test_map_ops test_map_ops.c
+    support/test_tmp.c
+    ../src/core/map_ops.c ../src/core/lvlprest_text.c ../src/core/file_copy.c
+    ../src/core/project.c ../src/core/preferences.c ../src/platform.c)
+target_link_libraries(test_map_ops PRIVATE unity ds1edit_allegro)
+target_include_directories(test_map_ops PRIVATE
+    ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/test)
+target_compile_definitions(test_map_ops PRIVATE DS1EDIT_VERSION_STR="${PROJECT_VERSION}")
+add_test(NAME map_ops COMMAND test_map_ops)
+set_tests_properties(map_ops PROPERTIES LABELS "portable")
+
+# What Build MPQ takes, what it refuses, and the archive it writes over a base
+add_executable(test_mpq_build test_mpq_build.c support/test_tmp.c
+    ../src/core/mpq_build.c ../src/core/mpq_crypt.c ../src/core/mpq_write.c
+    ../src/core/map_ops.c ../src/core/lvlprest_text.c ../src/core/file_copy.c
+    ../src/core/project.c ../src/core/preferences.c ../src/platform.c
+    ../src/mpq/MpqView.c ../src/mpq/Explode.c ../src/mpq/Dcl_tbl.c ../src/mpq/Wav_unp.c)
+target_link_libraries(test_mpq_build PRIVATE unity ds1edit_allegro ZLIB::ZLIB)
+target_include_directories(test_mpq_build PRIVATE
+    ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/mpq ${CMAKE_SOURCE_DIR}/test)
+target_compile_definitions(test_mpq_build PRIVATE DS1EDIT_VERSION_STR="${PROJECT_VERSION}")
+add_test(NAME mpq_build COMMAND test_mpq_build)
+set_tests_properties(mpq_build PROPERTIES LABELS "portable")
+
+# The launch profile, the install into a test copy, and starting the game. fake_game
+# stands in for the game and writes what it was given to fake_game.out.
+add_executable(fake_game support/fake_game.c)
+add_executable(test_game_launch test_game_launch.c
+    support/test_tmp.c
+    ../src/core/game_launch.c ../src/core/mpq_build.c ../src/core/mpq_write.c
+    ../src/core/mpq_crypt.c ../src/core/map_ops.c ../src/core/lvlprest_text.c
+    ../src/core/file_copy.c
+    ../src/core/project.c ../src/core/preferences.c ../src/platform.c)
+add_dependencies(test_game_launch fake_game)
+target_link_libraries(test_game_launch PRIVATE unity ds1edit_allegro ZLIB::ZLIB)
+target_include_directories(test_game_launch PRIVATE
+    ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/test)
+target_compile_definitions(test_game_launch PRIVATE DS1EDIT_VERSION_STR="${PROJECT_VERSION}"
+    FAKE_GAME_PATH="$<TARGET_FILE:fake_game>")
+add_test(NAME game_launch COMMAND test_game_launch)
+set_tests_properties(game_launch PROPERTIES LABELS "portable")
+
+# The editor's own MPQ writer, read back through the editor's own reader
+add_executable(test_mpq_write test_mpq_write.c support/test_tmp.c
+    ../src/core/mpq_crypt.c ../src/core/mpq_write.c ../src/core/file_copy.c
+    ../src/mpq/MpqView.c ../src/mpq/Explode.c ../src/mpq/Dcl_tbl.c ../src/mpq/Wav_unp.c
+    ../src/platform.c)
+target_link_libraries(test_mpq_write PRIVATE unity ds1edit_allegro ZLIB::ZLIB)
+target_include_directories(test_mpq_write PRIVATE
+    ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/mpq ${CMAKE_SOURCE_DIR}/test)
+add_test(NAME mpq_write COMMAND test_mpq_write)
+set_tests_properties(mpq_write PROPERTIES LABELS "portable")
+
+# GTK backend choice for Allegro's native dialogs
+add_executable(test_platform_dialogs test_platform_dialogs.c)
+target_link_libraries(test_platform_dialogs PRIVATE unity)
+target_include_directories(test_platform_dialogs PRIVATE
+    ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/test)
+add_test(NAME platform_dialogs COMMAND test_platform_dialogs)
+
+# Command table: bindings, conflicts, availability, menu navigation
+add_executable(test_commands test_commands.c ../src/ui/commands.c)
+target_link_libraries(test_commands PRIVATE unity ds1edit_allegro)
+target_include_directories(test_commands PRIVATE
+    ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/test)
+add_test(NAME commands COMMAND test_commands)
+set_tests_properties(commands PROPERTIES LABELS "portable")
 
 # Compose RGBA blit primitive (pure pixel ops)
 add_executable(test_compose_blit test_compose_blit.c ../src/core/compose_blit.c)
@@ -316,12 +404,21 @@ target_include_directories(test_selftest_verdict PRIVATE ${CMAKE_SOURCE_DIR}/src
 add_test(NAME selftest_verdict COMMAND test_selftest_verdict)
 set_tests_properties(selftest_verdict PROPERTIES LABELS "portable")
 
+# Which row the properties panel shows and edits, and which DS1 header fields it
+# won't let you edit
+add_executable(test_props_panel_rules test_props_panel_rules.c ../src/ui/props_panel_rules.c)
+target_link_libraries(test_props_panel_rules PRIVATE unity ds1edit_allegro)
+target_include_directories(test_props_panel_rules PRIVATE ${CMAKE_SOURCE_DIR}/src)
+add_test(NAME props_panel_rules COMMAND test_props_panel_rules)
+set_tests_properties(props_panel_rules PROPERTIES LABELS "portable")
+
 # Release-qualification test packages. Each package keeps its targets in its
 # own file so the packages can evolve independently. A package that links
 # Allegro appends its target names to DS1EDIT_ALLEGRO_TESTS so the DLL copy
 # below covers it.
-set(DS1EDIT_ALLEGRO_TESTS test_rgba_cache test_asset_export_smoke test_project
-    test_input_edges test_editor_selection test_blend_convention)
+set(DS1EDIT_ALLEGRO_TESTS test_props_panel_rules test_rgba_cache test_asset_export_smoke test_project
+    test_input_edges test_editor_selection test_blend_convention test_commands
+    test_map_ops test_game_launch test_mpq_build)
 find_package(Python3 COMPONENTS Interpreter)
 # CTest cuts the output it keeps for a passed test at 1 KiB. The CI evidence
 # (scripts/equivalence/ci_evidence.py) reads per-test lines (Unity PASS lines,
