@@ -265,7 +265,7 @@ static void wpreview_draw_bitmap(ALLEGRO_BITMAP *bmp, int x, int y)
 }
 #endif /* DS1EDIT_PERF_LOG */
 
-static void wpreview_draw_trans_bitmap(ALLEGRO_BITMAP *bmp, int x, int y, float alpha)
+static void wpreview_draw_tinted(ALLEGRO_BITMAP *bmp, int x, int y, ALLEGRO_COLOR tint)
 {
    int mul = 1, div = 1;
    if (glb_ds1edit.has_loaded_ds1)
@@ -275,8 +275,7 @@ static void wpreview_draw_trans_bitmap(ALLEGRO_BITMAP *bmp, int x, int y, float 
    }
    if (mul == 1 && div == 1)
    {
-      al_draw_tinted_bitmap(bmp, a5_alpha_tint(alpha),
-                            (float)x, (float)y, 0);
+      al_draw_tinted_bitmap(bmp, tint, (float)x, (float)y, 0);
    }
    else
    {
@@ -284,9 +283,14 @@ static void wpreview_draw_trans_bitmap(ALLEGRO_BITMAP *bmp, int x, int y, float 
       float sh = (float)al_get_bitmap_height(bmp);
       float dw = sw * (float)mul / (float)div;
       float dh = sh * (float)mul / (float)div;
-      al_draw_tinted_scaled_bitmap(bmp, a5_alpha_tint(alpha),
+      al_draw_tinted_scaled_bitmap(bmp, tint,
                                    0, 0, sw, sh, (float)x, (float)y, dw, dh, 0);
    }
+}
+
+static void wpreview_draw_trans_bitmap(ALLEGRO_BITMAP *bmp, int x, int y, float alpha)
+{
+   wpreview_draw_tinted(bmp, x, y, a5_alpha_tint(alpha));
 }
 
 static void wpreview_draw_blended_bitmap(ALLEGRO_BITMAP *bmp, int x, int y, int trans_b)
@@ -417,12 +421,87 @@ static void wpreview_draw_rectfill(int x1, int y1, int x2, int y2, int color)
 #pragma warning(disable : 4244 4267)
 #endif
 
+/* How far a selected tile is drawn toward its selection colour. Allegro 4's
+   colour map moved each pixel this way, so a selection showed on a dark map too. */
+#define WPREVIEW_SELECT_MIX 0.5f
+
+/* A tile's shape filled with one colour, alpha-premultiplied, for blending a
+   selection colour over the tile. Reused, and only grown. */
+static ALLEGRO_BITMAP *wpreview_tint_scratch;
+
+static ALLEGRO_BITMAP *wpreview_silhouette(ALLEGRO_BITMAP *bmp, ALLEGRO_COLOR col,
+                                           int w, int h)
+{
+   ALLEGRO_STATE state;
+
+   if (wpreview_tint_scratch == NULL ||
+       al_get_bitmap_width(wpreview_tint_scratch) < w ||
+       al_get_bitmap_height(wpreview_tint_scratch) < h)
+   {
+      int sw = w, sh = h;
+      if (wpreview_tint_scratch != NULL)
+      {
+         if (al_get_bitmap_width(wpreview_tint_scratch) > sw)
+            sw = al_get_bitmap_width(wpreview_tint_scratch);
+         if (al_get_bitmap_height(wpreview_tint_scratch) > sh)
+            sh = al_get_bitmap_height(wpreview_tint_scratch);
+         al_destroy_bitmap(wpreview_tint_scratch);
+      }
+      wpreview_tint_scratch = al_create_bitmap(sw, sh);
+      if (wpreview_tint_scratch == NULL)
+         return NULL;
+   }
+
+   al_store_state(&state, ALLEGRO_STATE_TARGET_BITMAP | ALLEGRO_STATE_BLENDER);
+   al_set_target_bitmap(wpreview_tint_scratch);
+   al_set_clipping_rectangle(0, 0, w, h);
+   al_clear_to_color(col);
+   /* Colour from what's there, coverage from the tile: rgb = col * alpha,
+      alpha = the tile's alpha. */
+   al_set_separate_blender(ALLEGRO_ADD, ALLEGRO_ZERO, ALLEGRO_ALPHA,
+                           ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_ZERO);
+   al_draw_bitmap(bmp, 0, 0, 0);
+   al_restore_state(&state);
+   return wpreview_tint_scratch;
+}
+
 // ==========================================================================
 // draw a sprite with a tint
 void wpreview_shape(ALLEGRO_BITMAP *tmp_bmp, int x0, int y0, int ds1_idx,
                     COL_E col_idx)
 {
-   wpreview_draw_trans_bitmap(tmp_bmp, x0, y0, a5_trans_alpha);
+   /* Allegro 4 drew these through a colour map: the tile went blue when
+      selected, orange while a left-click selection was being dragged, green or
+      red for a paste. The port drew every one half see-through instead, so a
+      selection on a dark map could hardly be seen. Draw the tile, then its
+      shape in the selection colour over it. A tile under the mouse that isn't
+      selected (white) stays see-through, as it was. */
+   ALLEGRO_BITMAP *shape;
+   int w, h, mul = 1, div = 1;
+   float k = WPREVIEW_SELECT_MIX;
+
+   (void) ds1_idx;
+   if (col_idx == COL_MOUSE)
+   {
+      wpreview_draw_trans_bitmap(tmp_bmp, x0, y0, a5_trans_alpha);
+      return;
+   }
+   wpreview_draw_tinted(tmp_bmp, x0, y0, al_map_rgb_f(1, 1, 1));
+
+   w = al_get_bitmap_width(tmp_bmp);
+   h = al_get_bitmap_height(tmp_bmp);
+   shape = wpreview_silhouette(tmp_bmp, pal_color(col_idx), w, h);
+   if (shape == NULL)
+      return;
+   if (glb_ds1edit.has_loaded_ds1)
+   {
+      mul = glb_ds1[glb_ds1edit.ds1_group_idx].height_mul;
+      div = glb_ds1[glb_ds1edit.ds1_group_idx].height_div;
+   }
+   al_draw_tinted_scaled_bitmap(shape, al_map_rgba_f(k, k, k, k),
+                                0, 0, (float)w, (float)h, (float)x0, (float)y0,
+                                (float)w * (float)mul / (float)div,
+                                (float)h * (float)mul / (float)div, 0);
 }
 
 // ==========================================================================

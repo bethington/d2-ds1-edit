@@ -9,6 +9,48 @@
 #include "ui/input.h"
 
 
+/* The window is drawn straight into screen_buff, which holds the last map frame.
+ * Nothing redraws the map between two boxes that follow each other (Save asking
+ * for a project, then saying the map was saved), so the second one showed what
+ * was left of the first. Keep what was under the window and put it back. */
+static ALLEGRO_BITMAP *wmsg_save_under(int x0, int y0, int x1, int y1)
+{
+   ALLEGRO_BITMAP *under, *previous;
+   ALLEGRO_STATE   state;
+   int w = x1 - x0 + 1, h = y1 - y0 + 1;
+
+   if (glb_ds1edit.screen_buff == NULL || w <= 0 || h <= 0)
+      return NULL;
+   under = al_create_bitmap(w, h);
+   if (under == NULL)
+      return NULL;
+   previous = a5_begin_target_bitmap(under);
+   al_store_state(&state, ALLEGRO_STATE_BLENDER);
+   al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_ZERO);
+   al_draw_bitmap_region(glb_ds1edit.screen_buff, (float)x0, (float)y0,
+                         (float)w, (float)h, 0, 0, 0);
+   al_restore_state(&state);
+   a5_end_target_bitmap(previous, under);
+   return under;
+}
+
+static void wmsg_restore_under(ALLEGRO_BITMAP *under, int x0, int y0)
+{
+   ALLEGRO_BITMAP *previous;
+   ALLEGRO_STATE   state;
+
+   if (under == NULL)
+      return;
+   previous = a5_begin_target_bitmap(glb_ds1edit.screen_buff);
+   al_store_state(&state, ALLEGRO_STATE_BLENDER);
+   al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_ZERO);
+   al_draw_bitmap(under, (float)x0, (float)y0, 0);
+   al_restore_state(&state);
+   a5_end_target_bitmap(previous, glb_ds1edit.screen_buff);
+   al_destroy_bitmap(under);
+}
+
+
 // ==========================================================================
 // wmsg_main - generic message window with buttons
 // ==========================================================================
@@ -22,6 +64,7 @@ int wmsg_main(WMSG_S * wmsg)
    int  ret = -1, bx0, by0, but_maxwidth = 0, bg, fg, border;
    int  s, k, all_keys;
    char tmp[512];
+   ALLEGRO_BITMAP *under;
 
    // for safety
    if (wmsg == NULL)
@@ -87,6 +130,7 @@ int wmsg_main(WMSG_S * wmsg)
    wx1 = wx0 + max_width;
    wy1 = wy0 + curr_height;
    by0 = wy1 - line_height * 4;
+   under = wmsg_save_under(wx0, wy0, wx1, wy1);
    a5_rectfill(glb_ds1edit.screen_buff, wx0, wy0, wx1, wy1, wmsg->col_win.bg);
    x = wx0 + wmsg->font_width;
    y = wy0 + wmsg->font_height;
@@ -244,6 +288,7 @@ int wmsg_main(WMSG_S * wmsg)
    }
 
 
+   wmsg_restore_under(under, wx0, wy0);
    return ret;
 }
 

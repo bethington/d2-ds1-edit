@@ -2,6 +2,7 @@
 
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_native_dialog.h>
+#include "ui/message_box.h"
 
 #include "structs.h"
 #include "ui/compat.h"
@@ -38,7 +39,7 @@ static int save_one(int ds1_idx, int is_tmp_file)
    {
       snprintf(error, sizeof(error), "%s was removed from the project, so it wasn't saved. "
                "Reopen it, or use Restore from Backup.", glb_ds1[ds1_idx].name);
-      al_show_native_message_box(a5_display, "DS1Edit", "The map was not saved",
+      ds1_message_box(a5_display, "DS1Edit", "The map was not saved",
                                  error, NULL, ALLEGRO_MESSAGEBOX_ERROR);
       return -1;
    }
@@ -50,7 +51,7 @@ static int save_one(int ds1_idx, int is_tmp_file)
    if (ds1_save_checked(ds1_idx, is_tmp_file, error, sizeof(error)) == 0)
       return 0;
 
-   al_show_native_message_box(a5_display, "DS1Edit",
+   ds1_message_box(a5_display, "DS1Edit",
       is_tmp_file ? "The autosave (.tmp) was not written"
                   : "The map was not saved",
       error, NULL, ALLEGRO_MESSAGEBOX_ERROR);

@@ -9,6 +9,7 @@
 
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_native_dialog.h>
+#include "ui/message_box.h"
 
 #include "structs.h"
 #include "ui/compat.h"
@@ -41,6 +42,9 @@
 #include "core/preferences.h"
 #include "core/upscale.h"
 #include "platform.h"
+#ifdef __APPLE__
+#include "mac_folder_picker.h"
+#endif
 
 // Basename extraction: returns pointer into `path` at the last path element.
 static const char *basename_of(const char *path)
@@ -59,7 +63,7 @@ static const char *basename_of(const char *path)
 static void reload_area_browser(void)
 {
    if (area_browser_reload() != 0)
-      al_show_native_message_box(a5_display, "DS1Edit",
+      ds1_message_box(a5_display, "DS1Edit",
          "The area list could not be reloaded",
          "The game's tables could not be read for this project. The list may be out of date.",
          NULL, ALLEGRO_MESSAGEBOX_ERROR);
@@ -91,6 +95,10 @@ static int pick_folder(const char *title, const char *initial,
 {
 #ifdef WIN32
    return win_pick_folder(title, initial, out, out_cap);
+#elif defined(__APPLE__)
+   /* Allegro's panel on macOS can't make a folder and doesn't show the title:
+      see mac_folder_picker.m. */
+   return ds1_mac_pick_folder(title, initial, out, out_cap);
 #else
    ALLEGRO_FILECHOOSER *dlg;
    const char *picked;
@@ -132,7 +140,7 @@ static int refuse_game_folder(const char *path)
        !project_path_is_inside(path, glb_prefs.last_d2_install))
       return 0;
 
-   al_show_native_message_box(a5_display, "Project folder",
+   ds1_message_box(a5_display, "Project folder",
       "That folder is part of the Diablo II install.",
       "Projects can't live inside the game's folder, because saved maps must never touch the game files. Choose a folder somewhere else.",
       NULL, ALLEGRO_MESSAGEBOX_WARN);
@@ -177,7 +185,7 @@ static int action_new_project(void)
       if (fp != NULL)
       {
          fclose(fp);
-         al_show_native_message_box(a5_display,
+         ds1_message_box(a5_display,
             "Project already exists",
             "project.ini was found in the selected folder.",
             "Use Open Project (Ctrl+Shift+O) to load it instead.",
@@ -193,7 +201,7 @@ static int action_new_project(void)
 
    if (!project_create(path, name, install))
    {
-      al_show_native_message_box(a5_display,
+      ds1_message_box(a5_display,
          "Create Project failed",
          "Could not write project.ini",
          "Check folder permissions and try again.",
@@ -204,7 +212,7 @@ static int action_new_project(void)
 
    if (!project_load(path))
    {
-      al_show_native_message_box(a5_display,
+      ds1_message_box(a5_display,
          "Create Project failed",
          "Project was written but could not be re-loaded.",
          NULL, NULL, ALLEGRO_MESSAGEBOX_ERROR);
@@ -248,7 +256,7 @@ static int action_open_project(void)
    if (!project_ini_path(path, ini, sizeof(ini)) ||
        (fp = fopen(ini, "rb")) == NULL)
    {
-      al_show_native_message_box(a5_display,
+      ds1_message_box(a5_display,
          "Not a Project",
          "project.ini was not found in the selected folder.",
          "Use Ctrl+Shift+N to create a new project here.",
@@ -260,7 +268,7 @@ static int action_open_project(void)
 
    if (!project_load(path))
    {
-      al_show_native_message_box(a5_display,
+      ds1_message_box(a5_display,
          "Open Project failed",
          "project.ini could not be parsed.",
          NULL, NULL, ALLEGRO_MESSAGEBOX_ERROR);
@@ -374,7 +382,7 @@ static int confirm_overwrite_output(const char *title, const char *output_path)
    snprintf(detail, sizeof(detail),
             "The selected output folder already contains files.\n\n%s\n\nOverwrite existing export results?",
             output_path);
-   rc = al_show_native_message_box(a5_display,
+   rc = ds1_message_box(a5_display,
       title,
       "Output folder is not empty.",
       detail,
@@ -423,7 +431,7 @@ static int run_upscale_pipeline(const char *title,
     * detail; rc here just controls flow. */
    (void) rc;
 
-   al_show_native_message_box(a5_display,
+   ds1_message_box(a5_display,
       title,
       "Upscale failed.",
       error[0] ? error
@@ -445,7 +453,7 @@ static void show_export_result(const char *title,
 
    if (exported_count <= 0)
    {
-      al_show_native_message_box(a5_display,
+      ds1_message_box(a5_display,
          title,
          "No PNGs were exported.",
          detail,
@@ -455,7 +463,7 @@ static void show_export_result(const char *title,
    }
 
    snprintf(message, sizeof(message), summary, exported_count);
-   al_show_native_message_box(a5_display,
+   ds1_message_box(a5_display,
       title,
       message,
       output_path,
@@ -1057,7 +1065,7 @@ static void action_export_compose(void)
             "  Skipped (no COF):       %d%s",
             run.success_count, run.failure_count, run.skipped_tuples,
             failure_tail);
-         al_show_native_message_box(a5_display,
+         ds1_message_box(a5_display,
             "Compose Export - Cancelled",
             "The export was interrupted.",
             message, NULL, ALLEGRO_MESSAGEBOX_WARN);
@@ -1092,7 +1100,7 @@ static void action_export_compose(void)
             "exist in the loaded MPQ chain.\n\n"
             "  Skipped (no COF):  %d%s",
             run.skipped_tuples, sample_tail);
-         al_show_native_message_box(a5_display,
+         ds1_message_box(a5_display,
             "Compose Export - Nothing Exported",
             "No animations were produced.",
             message, NULL, ALLEGRO_MESSAGEBOX_WARN);
@@ -1107,7 +1115,7 @@ static void action_export_compose(void)
             "Output: %s%s",
             run.success_count, run.failure_count, run.skipped_tuples,
             output_path, failure_tail);
-         al_show_native_message_box(a5_display,
+         ds1_message_box(a5_display,
             "Compose Export - Done",
             "Compose export finished.",
             message, NULL,
@@ -1143,7 +1151,7 @@ static void action_export_unified(void)
 
    if (glb_config.mod_dir[0] == NULL || glb_config.mod_dir[0][0] == 0)
    {
-      al_show_native_message_box(a5_display,
+      ds1_message_box(a5_display,
          "Export Assets",
          "No mod overlay is configured.",
          "Set a mod directory in Ds1edit.ini before exporting.",
@@ -1206,7 +1214,7 @@ static void action_export_unified(void)
       if (!make_virtual_prefix_from_mod_path(folder_path,
                                              asset_prefix, sizeof(asset_prefix)))
       {
-         al_show_native_message_box(a5_display,
+         ds1_message_box(a5_display,
             "Export Assets",
             "The selected folder is outside the current mod overlay.",
             glb_config.mod_dir[0],
@@ -1232,7 +1240,7 @@ static void action_export_unified(void)
 
       if (candidates == 0)
       {
-         al_show_native_message_box(a5_display,
+         ds1_message_box(a5_display,
             "Export Assets",
             "Scope matched no files.",
             "Check the pattern, the selected folder, or your mod_dir setting.",
@@ -1248,7 +1256,7 @@ static void action_export_unified(void)
             "(export_dc6_single_frame_only=YES). Set it to NO in "
             "Ds1edit.ini to include multi-frame files.",
             candidates);
-         al_show_native_message_box(a5_display,
+         ds1_message_box(a5_display,
             "Export Assets",
             "All matching files were filtered out.",
             detail,
@@ -1285,7 +1293,7 @@ static void action_export_unified(void)
       if (!upscale_create_temp_dir(staging_path, sizeof(staging_path)))
       {
          asset_export_plan_free(&plan);
-         al_show_native_message_box(a5_display,
+         ds1_message_box(a5_display,
             "Export Assets",
             "Failed to prepare temporary export staging.",
             NULL,
@@ -1324,7 +1332,7 @@ static void action_export_unified(void)
          "was kept.", exported_count,
          staging_path[0] != 0 ? staging_path : output_path);
       export_progress_end();
-      al_show_native_message_box(a5_display,
+      ds1_message_box(a5_display,
          "Export Assets",
          "Canceled.",
          detail,
@@ -1338,7 +1346,7 @@ static void action_export_unified(void)
       if (staging_path[0] != 0)
          upscale_remove_tree(staging_path);
       export_progress_end();
-      al_show_native_message_box(a5_display,
+      ds1_message_box(a5_display,
          "Export Assets",
          "No PNGs were written.",
          "The matched assets did not produce any PNGs (decoder errors or empty input).",
@@ -1366,7 +1374,7 @@ static void action_export_unified(void)
                "Canceled during upscale. Native PNGs are at %s; partially "
                "upscaled files are at %s.", staging_path, output_path);
             export_progress_end();
-            al_show_native_message_box(a5_display,
+            ds1_message_box(a5_display,
                "Export Assets",
                "Canceled.",
                detail,

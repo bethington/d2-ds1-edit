@@ -86,6 +86,11 @@ void input_init(void);
 void input_pump(void);
 void input_begin_frame(void);
 void input_note_event(const ALLEGRO_EVENT *ev);
+
+/* A key typed with these ALLEGRO_KEYMOD_* bits held: the modifiers among them
+   that read as down are really down, so stop suppressing them. KEY_CHAR events
+   go through here from input_note_event(). */
+void input_note_held_modifiers(int keymods);
 void input_end_frame(void);
 
 /* Drop every "still held" belief. Called on focus loss, where the release

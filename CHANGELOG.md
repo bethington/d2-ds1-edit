@@ -139,6 +139,16 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
 
 - **Closing the window during the "saved" message no longer quits without asking.**
 
+- **Selected tiles show their colour again.** Since the Allegro 5 port a selection was only drawn half see-through, which hardly showed on a dark map. A selected wall is blue again, a floor grey, a selection being dragged orange, and a paste green or red, as in the original editor.
+
+- **A message box no longer shows the one before it.** After Save asked for a project and one was chosen, "Your DS1 has been saved" was drawn over what was left of the project prompt.
+
+- **macOS: alerts show what happened.** Allegro's macOS alert drops the heading, so boxes showed only the command's name and the detail, never "The MPQ was built." or "The game wasn't started.". The heading now leads the box.
+
+- **macOS: New Project's folder picker can make a folder.** It had no New Folder button, said Open, and didn't show its own instruction to click New folder. It now has the button, shows the instruction and says Select.
+
+- **macOS: the first Cmd shortcut after a folder picker works.** A picker opened with **Cmd+Shift+O** kept the Cmd release, so the next Cmd shortcut, such as **Cmd+Shift+B**, did nothing until it was pressed a second time.
+
 ## 2.2.0
 
 ### Added

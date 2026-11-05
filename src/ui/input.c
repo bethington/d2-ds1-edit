@@ -116,6 +116,33 @@ void input_discard_pending(void)
    input_suppress_held();
 }
 
+/* A modifier held when a modal opened is suppressed until it's pressed again,
+   which input_note_event() sees as its KEY_DOWN. On macOS that KEY_DOWN may
+   never come: a native panel opened with Cmd+Shift+O takes the Cmd release,
+   Allegro still has Cmd down, and the next press changes nothing it can see.
+   The first Cmd shortcut after the panel then read as the bare key, so
+   Cmd+Shift+B did nothing until it was tried again. A typed key carries the
+   modifiers really held, so it ends the suppression of those that are down. */
+void input_note_held_modifiers(int keymods)
+{
+   static const struct { int mod; int key; } map[] = {
+      { ALLEGRO_KEYMOD_SHIFT,   ALLEGRO_KEY_LSHIFT },
+      { ALLEGRO_KEYMOD_SHIFT,   ALLEGRO_KEY_RSHIFT },
+      { ALLEGRO_KEYMOD_CTRL,    ALLEGRO_KEY_LCTRL },
+      { ALLEGRO_KEYMOD_CTRL,    ALLEGRO_KEY_RCTRL },
+      { ALLEGRO_KEYMOD_ALT,     ALLEGRO_KEY_ALT },
+      { ALLEGRO_KEYMOD_ALTGR,   ALLEGRO_KEY_ALTGR },
+      { ALLEGRO_KEYMOD_LWIN,    ALLEGRO_KEY_LWIN },
+      { ALLEGRO_KEYMOD_RWIN,    ALLEGRO_KEY_RWIN },
+      { ALLEGRO_KEYMOD_COMMAND, ALLEGRO_KEY_COMMAND },
+   };
+   size_t i;
+
+   for (i = 0; i < sizeof(map) / sizeof(map[0]); i++)
+      if ((keymods & map[i].mod) && al_key_down(&a5_kb_state, map[i].key))
+         a5_key_suppressed[map[i].key] = 0;
+}
+
 void input_note_event(const ALLEGRO_EVENT *ev)
 {
    if (ev == NULL)
@@ -133,6 +160,10 @@ void input_note_event(const ALLEGRO_EVENT *ev)
          a5_key_suppressed[ev->keyboard.keycode] = 0;
          a5_key_hit[ev->keyboard.keycode] = 1;
       }
+      break;
+
+   case ALLEGRO_EVENT_KEY_CHAR:
+      input_note_held_modifiers(ev->keyboard.modifiers);
       break;
 
    case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:

@@ -24,6 +24,7 @@
 #include "platform.h"
 #include "ui/input.h"
 #include <allegro5/allegro_native_dialog.h>
+#include "ui/message_box.h"
 
 #define AREA_INIT_GROUPS    64
 #define AREA_INIT_ENTRIES   32
@@ -41,7 +42,7 @@ static void area_browser_report_open_error(const char * error)
    fprintf(stderr, "area browser: %s\n", error);
    fflush(stderr);
    if (a5_display != NULL)
-      al_show_native_message_box(a5_display, "DS1Edit",
+      ds1_message_box(a5_display, "DS1Edit",
          "The map could not be opened", error, NULL, ALLEGRO_MESSAGEBOX_ERROR);
 }
 
