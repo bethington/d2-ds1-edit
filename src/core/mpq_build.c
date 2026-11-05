@@ -354,7 +354,8 @@ static void settle(ENTRY_LIST_S * l, const STR_SET_S * listed)
 {
    int i, kept = 0;
 
-   qsort(l->items, (size_t) l->count, sizeof(ENTRY_S), compare_entries);
+   if (l->count > 1)
+      qsort(l->items, (size_t) l->count, sizeof(ENTRY_S), compare_entries);
    for (i = 0; i < l->count; i++)
    {
       if (kept > 0 && l->items[kept - 1].is_table == l->items[i].is_table &&

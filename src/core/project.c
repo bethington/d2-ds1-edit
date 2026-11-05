@@ -29,6 +29,7 @@ PROJECT_S glb_project;
 // The configured read chain, moved down one by the project and restored when it
 // closes.
 static char *s_configured_mod_dir[MAX_MOD_DIR];
+static char *s_project_mod_dir;
 static int   s_mod_dir_replaced;
 
 static int file_exists(const char *path)
@@ -234,6 +235,8 @@ void project_close(void)
       for (i = 0; i < MAX_MOD_DIR; i++)
          glb_config.mod_dir[i] = s_configured_mod_dir[i];
       s_mod_dir_replaced = 0;
+      free(s_project_mod_dir);
+      s_project_mod_dir = NULL;
    }
    memset(&glb_project, 0, sizeof(glb_project));
 }
@@ -246,9 +249,7 @@ void project_apply_to_config(void)
    if (!glb_project.is_open) return;
 
    // Put the project folder first in the read chain. The configured overlays
-   // stay behind it. Changing project replaces only entry 0; the old project's
-   // string leaks, which is acceptable given the lifecycle, and the existing INI
-   // loader does the same thing.
+   // stay behind it. Changing project replaces only entry 0.
    len = strlen(glb_project.path);
    buf = (char *) malloc(len + 1);
    if (buf != NULL)
@@ -269,6 +270,8 @@ void project_apply_to_config(void)
             glb_config.mod_dir[i] = glb_config.mod_dir[i - 1];
          s_mod_dir_replaced = 1;
       }
+      free(s_project_mod_dir);
+      s_project_mod_dir = buf;
       glb_config.mod_dir[0] = buf;
    }
 

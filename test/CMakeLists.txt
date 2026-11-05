@@ -1,6 +1,9 @@
 # Unity test framework
 add_library(unity STATIC unity/unity.c)
 target_include_directories(unity PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/unity)
+# Each result line is flushed whole. With stdout buffered, a stderr message from the
+# code under test could land inside one, and CI evidence reads those lines.
+target_compile_definitions(unity PUBLIC UNITY_USE_FLUSH_STDOUT)
 
 add_executable(test_selection_logic test_selection_logic.c ../src/editor/selection_logic.c)
 target_link_libraries(test_selection_logic PRIVATE unity)

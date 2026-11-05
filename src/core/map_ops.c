@@ -1,5 +1,6 @@
 #include <ctype.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -182,7 +183,8 @@ char * map_ops_read_file(const char * path, long * out_len)
       return NULL;   /* errno says why */
    if (fseek(f, 0, SEEK_END) == 0)
       len = ftell(f);
-   if (len >= 0 && fseek(f, 0, SEEK_SET) == 0)
+   /* On Linux a folder opens, and its end is at LONG_MAX. */
+   if (len >= 0 && len < LONG_MAX && fseek(f, 0, SEEK_SET) == 0)
       buf = (char *) malloc((size_t) len + 1);
    if (buf != NULL)
    {
