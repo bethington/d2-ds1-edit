@@ -404,11 +404,19 @@ target_include_directories(test_selftest_verdict PRIVATE ${CMAKE_SOURCE_DIR}/src
 add_test(NAME selftest_verdict COMMAND test_selftest_verdict)
 set_tests_properties(selftest_verdict PROPERTIES LABELS "portable")
 
+# Which row the properties panel shows and edits, and which DS1 header fields it
+# won't let you edit
+add_executable(test_props_panel_rules test_props_panel_rules.c ../src/ui/props_panel_rules.c)
+target_link_libraries(test_props_panel_rules PRIVATE unity ds1edit_allegro)
+target_include_directories(test_props_panel_rules PRIVATE ${CMAKE_SOURCE_DIR}/src)
+add_test(NAME props_panel_rules COMMAND test_props_panel_rules)
+set_tests_properties(props_panel_rules PROPERTIES LABELS "portable")
+
 # Release-qualification test packages. Each package keeps its targets in its
 # own file so the packages can evolve independently. A package that links
 # Allegro appends its target names to DS1EDIT_ALLEGRO_TESTS so the DLL copy
 # below covers it.
-set(DS1EDIT_ALLEGRO_TESTS test_rgba_cache test_asset_export_smoke test_project
+set(DS1EDIT_ALLEGRO_TESTS test_props_panel_rules test_rgba_cache test_asset_export_smoke test_project
     test_input_edges test_editor_selection test_blend_convention test_commands
     test_map_ops test_game_launch test_mpq_build)
 find_package(Python3 COMPONENTS Interpreter)

@@ -1169,8 +1169,9 @@ int area_browser_switch_area(int group_idx)
       return -1;
    }
 
-   area_browser_finish_load(group_idx, 0, opened);
+   /* Before finish_load: the properties panel reads the open row there. */
    ab->loaded_entry = 0;
+   area_browser_finish_load(group_idx, 0, opened);
 
    printf("done (%d maps loaded)\n", opened);
    fflush(stdout);
@@ -1266,8 +1267,9 @@ int area_browser_switch_single(int group_idx, int entry_idx)
           glb_open_profile.lvltypes_dt1_ms, glb_open_profile.block_table_ms);
    fflush(stdout);
 
-   area_browser_finish_load(group_idx, 0, 1);
+   /* Before finish_load: the properties panel reads the open row there. */
    ab->loaded_entry = entry_idx;
+   area_browser_finish_load(group_idx, 0, 1);
    return 0;
 }
 
