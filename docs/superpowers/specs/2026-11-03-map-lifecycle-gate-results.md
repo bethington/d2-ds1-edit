@@ -126,6 +126,8 @@ Fleet slots, each beside an unmodified copy, 0 faults. The archives came from a 
 | A new map, PD2 Season 14, through `patch_d2.mpq` | **Doesn't work.** `pd2data.mpq` holds its own `lvlprest.bin` and outranks it: the game read PD2's table, with no error |
 | A new map, PD2 Season 14, with the table in a rebuilt `pd2data.mpq` | Drawn as on 1.14b. Offline only. PD2's launcher wasn't tried with that file |
 
+The editor's own window, 1.14b, a project with no table: `TownE1` edited and saved, then Build & Test and Build MPQ from the Build menu, with `C:\Diablo2` as the install and `C:\D2Test\lod-114b` as the test copy. Build & Test installed the file and the game reached its menu. Build MPQ wrote 3,973,215 bytes. Two fleet slots, one from the test copy with `-w -direct -txt` and one from a copy holding the built MPQ with `-w`, both drew the half-removed tent, and the character walked where the removed half stood. A game wasn't entered from the editor's own launch, because it would use the real save folder.
+
 PD2 fleet members used `C:\Diablo2\Save`, not their manifest's save folder, and rewrote `SProbe.d2s`, `pd2_shared.stash` and `pd2_shared.compendium` there. Copy that folder aside before a PD2 run.
 
 ## Not Proved Yet
