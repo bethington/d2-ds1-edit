@@ -824,14 +824,21 @@ static int spawn(const GAME_PROFILE_S *p, char *cmd, char *reason, int cap)
 {
    STARTUPINFOA si;
    PROCESS_INFORMATION pi;
-   DWORD code, n;
+   DWORD code, n, mode = 0;
+   BOOL started;
 
    memset(&si, 0, sizeof(si));
    si.cb = sizeof(si);
    memset(&pi, 0, sizeof(pi));
-   if (!CreateProcessA(NULL, cmd, NULL, NULL, FALSE, 0, NULL, p->game_dir, &si, &pi))
+   // A file that isn't a program can make Windows put up its own box, which waits for a
+   // click, instead of failing. The caller reports the failure. The game doesn't inherit this.
+   SetThreadErrorMode(GetThreadErrorMode() | SEM_FAILCRITICALERRORS, &mode);
+   started = CreateProcessA(NULL, cmd, NULL, NULL, FALSE, CREATE_DEFAULT_ERROR_MODE, NULL,
+                            p->game_dir, &si, &pi);
+   code = GetLastError();
+   SetThreadErrorMode(mode, NULL);
+   if (!started)
    {
-      code = GetLastError();
       n = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
                          code, 0, reason, (DWORD) cap, NULL);
       while (n > 0 && (reason[n - 1] == '\r' || reason[n - 1] == '\n' ||
