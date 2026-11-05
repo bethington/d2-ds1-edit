@@ -113,18 +113,31 @@ then:            UseCmdLine := 0
 
 `UseCmdLine` is 0 on this machine, so the next normal launch ignores the value and overwrites it, and the value only records the last launch. It is replayed only if `UseCmdLine` is nonzero. `D2Launch.dll` sets it to 1 on one path (`0x6fa4ef45`), trigger not traced, so a launch that sets it and then dies could replay the test's arguments once. The manual gives this one clause, in its warning that a test run uses real characters and shared settings.
 
+## Runs on 2026-11-04
+
+Fleet slots, each beside an unmodified copy, 0 faults. The archives came from a test tool calling `mpq_build_run`, not from the editor's window, and `-w` was passed with no `-direct -txt`.
+
+| What | Result |
+|---|---|
+| Built `patch_d2.mpq` at startup, 1.13c under Wine on docker-1 | Bytes of `TownE1` and `TownN1` read through the game matched the project. The tent was gone, and 45 walkable cells differed |
+| The same on Windows, on copies of `C:\Diablo2` (1.14b) and PD2 Season 14 | The tent was gone and 45 blocked cells cleared on both. Bytes were read and matched on PD2. On 1.14b the game has no `Storm.dll` for the fleet's read, so the frame and the walkable grid are the evidence |
+| `-direct -txt` compiling a table, 1.14b and PD2 Season 14 | `lvlprest.bin` was written and held the new map on both |
+| A new map, 1.14b | An empty map from `map_ops_create_empty`, with floors painted by script, on Defs 8-15 (Wild Border 5-12) with their old maps removed so the pick must choose it. Drawn at Blood Moor's north edge, where the unmodified copy has a stone wall |
+| A new map, PD2 Season 14, through `patch_d2.mpq` | **Doesn't work.** `pd2data.mpq` holds its own `lvlprest.bin` and outranks it: the game read PD2's table, with no error |
+| A new map, PD2 Season 14, with the table in a rebuilt `pd2data.mpq` | Drawn as on 1.14b. Offline only. PD2's launcher wasn't tried with that file |
+
+PD2 fleet members used `C:\Diablo2\Save`, not their manifest's save folder, and rewrote `SProbe.d2s`, `pd2_shared.stash` and `pd2_shared.compendium` there. Copy that folder aside before a PD2 run.
+
 ## Not Proved Yet
 
 - **Which town map a game uses.** `TownE1` was in use for this character. Whether the pick depends on the seed or the character, and whether `TownS1` or `TownW1` ever come up, wasn't tried.
 - **A loose town map with every wall cleared** stops the game at load (`D2Common+0x19083`). That is expected for a nonsense map, but its cause wasn't found.
-- **A rebuilt `patch_d2.mpq` mounted at startup.** Only mounting into a running game was shown. Starting `Game.exe` from a copy whose `patch_d2.mpq` is the built one, without `-direct -txt`, was not run, so the archive winning at startup is not proved.
 - **A game entered from the editor's own launch.** The editor started the game and it reached its menu; entering a game was done in a fleet slot instead, with files copied in by hand.
-- **The new map drawn in the game.** A new map joins the random pick, and none was generated.
 - **An empty map on a `Scan` or `Pops` row.** On a `Scan` row it may remove what the row provided, such as a cave entrance, and so lose the level's exit. That wasn't tested. An empty map on a `Pops` row wasn't run at all, and neither was standing inside an empty room, or anything outside Act 1.
 - **File cell length.** Static reading infers a stack buffer limit of 41 characters, and `MAP_OPS_TABLE_PATH_MAX` is now 41. The limit itself is not yet tried in the game.
 - **Read-only excel folder.** Static reading says a failed write is silent.
 - **`wine` on Linux and macOS.** Case handling of `DATA\GLOBAL\...` wasn't run.
-- **1.14 installs.** `C:\Diablo2` is 1.14b, not 1.13c. Its list and priorities match statically, and its `-direct` and `-txt` behaviour wasn't read. Its `Game.exe` has the same `CmdLine` strings and that logic wasn't traced either, so "no effect on a normal game" is proved for 1.13c only.
+- **1.14 installs.** `C:\Diablo2` is 1.14b, not 1.13c. `-direct -txt` compiled a table there, as below. Its `Game.exe` has the same `CmdLine` strings and that logic wasn't traced either, so "no effect on a normal game" is proved for 1.13c only.
 
 ## Corrections Found Along the Way
 

@@ -768,8 +768,7 @@ static int interface_build_mpq(int quiet)
          "%s\n\n%d files, %ld bytes, %.1f seconds.\n\n"
          "%s"
          "Install it by replacing patch_d2.mpq in a copy of the game. "
-         "Check it in the game before you share it: a built MPQ hasn't been tried "
-         "at game startup yet.",
+         "Check it in the game before you share it.",
          out, res.files, res.bytes, secs,
          res.pd2_ignores_tables ?
             "Project Diablo 2 won't use this MPQ's tables. Its pd2data.mpq outranks "
