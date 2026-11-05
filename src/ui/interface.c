@@ -38,6 +38,7 @@
 #include "core/mpq_build.h"
 #include "core/game_launch.h"
 #include <allegro5/allegro_native_dialog.h>
+#include "ui/message_box.h"
 
 /* Ask, naming the map and what will happen. */
 static int interface_confirm_map_op(const char *title, const char *heading_fmt,
@@ -53,7 +54,7 @@ static int interface_confirm_map_op(const char *title, const char *heading_fmt,
    snprintf(heading, sizeof(heading), heading_fmt, path);
    snprintf(body, sizeof(body), "%s%s", text,
             dirty ? "\n\nThis map has unsaved edits, which won't be saved." : "");
-   rc = al_show_native_message_box(a5_display, title, heading, body, NULL,
+   rc = ds1_message_box(a5_display, title, heading, body, NULL,
                                    ALLEGRO_MESSAGEBOX_YES_NO | ALLEGRO_MESSAGEBOX_WARN);
    input_suppress_held();
    input_discard_pending();
@@ -85,7 +86,7 @@ static void interface_set_detached(const char *path, int detached)
 
 static void interface_map_op_failed(const char *title, const char *heading, const char *error)
 {
-   al_show_native_message_box(a5_display, title, heading, error, NULL, ALLEGRO_MESSAGEBOX_ERROR);
+   ds1_message_box(a5_display, title, heading, error, NULL, ALLEGRO_MESSAGEBOX_ERROR);
    input_suppress_held();
    input_discard_pending();
 }
@@ -249,7 +250,7 @@ static void interface_delete_backup(int gi, int ei)
 
    snprintf(path, sizeof(path), "%s", ab->groups[gi].entries[ei].ds1_path);
    snprintf(heading, sizeof(heading), "Permanently delete the backup %s?", path);
-   rc = al_show_native_message_box(a5_display, "Delete Backup", heading,
+   rc = ds1_message_box(a5_display, "Delete Backup", heading,
       "This can't be undone or restored.",
       NULL, ALLEGRO_MESSAGEBOX_YES_NO | ALLEGRO_MESSAGEBOX_WARN);
    input_suppress_held();
@@ -660,7 +661,7 @@ static void interface_new_map(int ds1_idx, int clone)
                                     error, sizeof(error));
    if (rc != 0)
    {
-      al_show_native_message_box(a5_display, clone ? "Clone Map" : "New Map",
+      ds1_message_box(a5_display, clone ? "Clone Map" : "New Map",
          "The map wasn't created. Nothing was changed.", error, NULL,
          ALLEGRO_MESSAGEBOX_WARN);
       input_suppress_held();
@@ -670,7 +671,7 @@ static void interface_new_map(int ds1_idx, int clone)
 /* A box that tells the user something, not a problem. */
 static void interface_info_box(const char *title, const char *heading, const char *text)
 {
-   al_show_native_message_box(a5_display, title, heading, text, NULL, 0);
+   ds1_message_box(a5_display, title, heading, text, NULL, 0);
    input_suppress_held();
    input_discard_pending();
 }
@@ -683,7 +684,7 @@ static int interface_save_before(const char *title, const char *heading)
 
    if (!map_any_dirty())
       return TRUE;
-   rc = al_show_native_message_box(a5_display, title, heading,
+   rc = ds1_message_box(a5_display, title, heading,
       "Some maps have changes that aren't saved yet. They are used from the saved files.",
       NULL, ALLEGRO_MESSAGEBOX_YES_NO | ALLEGRO_MESSAGEBOX_QUESTION);
    input_suppress_held();

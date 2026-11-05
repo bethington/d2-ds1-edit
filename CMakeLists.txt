@@ -154,11 +154,11 @@ if(OPENGL_FOUND)
     target_compile_definitions(ds1edit_allegro INTERFACE DS1EDIT_HAVE_GL)
 endif()
 
-# The macOS pointer. A library rather than a SOURCES entry because compat.h
-# reaches it from code the test targets compile too; hanging it off
-# ds1edit_allegro gives every one of them the symbols.
+# The macOS pointer, and the folder picker beside it. A library rather than a
+# SOURCES entry because compat.h reaches it from code the test targets compile
+# too; hanging it off ds1edit_allegro gives every one of them the symbols.
 if(APPLE)
-    add_library(ds1edit_mac_pointer STATIC src/mac_pointer.m)
+    add_library(ds1edit_mac_pointer STATIC src/mac_pointer.m src/mac_folder_picker.m)
     target_include_directories(ds1edit_mac_pointer PRIVATE
         src
         $<TARGET_PROPERTY:ds1edit_allegro,INTERFACE_INCLUDE_DIRECTORIES>)

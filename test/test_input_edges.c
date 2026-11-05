@@ -326,6 +326,59 @@ void test_suppress_held_clears_pending_edges(void)
    TEST_ASSERT_FALSE(key_hit(ALLEGRO_KEY_ESCAPE));
 }
 
+static ALLEGRO_EVENT key_char_event(int keycode, int modifiers)
+{
+   ALLEGRO_EVENT ev;
+   memset(&ev, 0, sizeof(ev));
+   ev.keyboard.type = ALLEGRO_EVENT_KEY_CHAR;
+   ev.keyboard.keycode = keycode;
+   ev.keyboard.modifiers = modifiers;
+   return ev;
+}
+
+/* macOS: a native panel opened with Cmd+Shift+O took the Cmd release, so
+   Allegro still had Cmd down and the next Cmd press made no KEY_DOWN. Only the
+   typed key said Cmd was held; until then Cmd+Shift+B read as Shift+B. */
+void test_a_modifier_held_through_a_modal_counts_again_when_a_key_is_typed_with_it(void)
+{
+   ALLEGRO_EVENT ev = key_char_event(ALLEGRO_KEY_B,
+                                     ALLEGRO_KEYMOD_COMMAND | ALLEGRO_KEYMOD_SHIFT);
+
+   hold_key(ALLEGRO_KEY_COMMAND);
+   input_suppress_held();
+   TEST_ASSERT_FALSE(key_is_down(ALLEGRO_KEY_COMMAND));
+
+   hold_key(ALLEGRO_KEY_LSHIFT);
+   input_note_event(&ev);
+
+   TEST_ASSERT_TRUE(key_is_down(ALLEGRO_KEY_COMMAND));
+   TEST_ASSERT_TRUE(key_is_down(ALLEGRO_KEY_LSHIFT));
+}
+
+void test_a_key_typed_without_the_modifier_leaves_it_suppressed(void)
+{
+   ALLEGRO_EVENT ev = key_char_event(ALLEGRO_KEY_B, ALLEGRO_KEYMOD_SHIFT);
+
+   hold_key(ALLEGRO_KEY_COMMAND);
+   input_suppress_held();
+   input_note_event(&ev);
+
+   TEST_ASSERT_FALSE(key_is_down(ALLEGRO_KEY_COMMAND));
+}
+
+void test_a_typed_modifier_that_reads_as_up_is_left_alone(void)
+{
+   ALLEGRO_EVENT ev = key_char_event(ALLEGRO_KEY_B, ALLEGRO_KEYMOD_CTRL);
+
+   /* Escape was held into the modal; Ctrl never was. */
+   hold_key(ALLEGRO_KEY_ESCAPE);
+   input_suppress_held();
+   input_note_event(&ev);
+
+   TEST_ASSERT_FALSE(key_is_down(ALLEGRO_KEY_LCTRL));
+   TEST_ASSERT_FALSE(key_is_down(ALLEGRO_KEY_ESCAPE));
+}
+
 /* ---- device loss ------------------------------------------------------- */
 
 static ALLEGRO_EVENT display_event(int type)
@@ -389,5 +442,8 @@ int main(void)
    RUN_TEST(test_suppressed_key_stays_hidden_until_genuinely_repressed);
    RUN_TEST(test_suppress_held_leaves_keys_that_were_up_alone);
    RUN_TEST(test_suppress_held_clears_pending_edges);
+   RUN_TEST(test_a_modifier_held_through_a_modal_counts_again_when_a_key_is_typed_with_it);
+   RUN_TEST(test_a_key_typed_without_the_modifier_leaves_it_suppressed);
+   RUN_TEST(test_a_typed_modifier_that_reads_as_up_is_left_alone);
    return UNITY_END();
 }
