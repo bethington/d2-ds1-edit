@@ -672,6 +672,36 @@ void mpq_build_base_path(const char * game_dir, char * out, int cap)
       snprintf(out, (size_t) cap, "%s/patch_d2.mpq", game_dir);
 }
 
+/* A Project Diablo 2 folder: base_mpq's or the test copy's has pd2data.mpq. */
+static int folder_has_pd2_data(const char * folder)
+{
+   char path[PATH_CAP];
+
+   return folder != NULL && folder[0] != '\0' &&
+          ds1_path_resolve_nocase(folder, "pd2data.mpq", path, sizeof(path)) &&
+          file_size(path) >= 0;
+}
+
+static int is_pd2_game(const MPQ_BUILD_ARGS_S * a)
+{
+   char folder[PATH_CAP];
+   char * slash, * back;
+
+   if (folder_has_pd2_data(a->test_game_dir))
+      return 1;
+   if (a->base_mpq == NULL || strlen(a->base_mpq) >= sizeof(folder))
+      return 0;
+   strcpy(folder, a->base_mpq);
+   slash = strrchr(folder, '/');
+   back = strrchr(folder, '\\');
+   if (back != NULL && (slash == NULL || back > slash))
+      slash = back;
+   if (slash == NULL)
+      return 0;
+   *slash = '\0';
+   return folder_has_pd2_data(folder);
+}
+
 int mpq_build_run(const MPQ_BUILD_ARGS_S * a, MPQ_BUILD_RESULT_S * out, char * problems_buf,
                   int cap)
 {
@@ -694,6 +724,7 @@ int mpq_build_run(const MPQ_BUILD_ARGS_S * a, MPQ_BUILD_RESULT_S * out, char * p
    {
       out->files = 0;
       out->bytes = 0;
+      out->pd2_ignores_tables = 0;
    }
    memset(&listed, 0, sizeof(listed));
 
@@ -896,6 +927,7 @@ int mpq_build_run(const MPQ_BUILD_ARGS_S * a, MPQ_BUILD_RESULT_S * out, char * p
          {
             out->files = n;
             out->bytes = file_size(a->out_mpq);
+            out->pd2_ignores_tables = bins > 0 && is_pd2_game(a);
          }
       }
       remove(listfile_path);

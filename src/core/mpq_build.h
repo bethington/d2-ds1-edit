@@ -24,6 +24,8 @@ typedef struct MPQ_BUILD_RESULT_S
 {
    int files;   /* project files and compiled tables packed, not the listfile */
    long bytes;  /* size of the archive written */
+   int pd2_ignores_tables; /* compiled tables were packed for a Project Diablo 2 folder, whose
+                              pd2data.mpq outranks patch_d2.mpq and has its own */
 } MPQ_BUILD_RESULT_S;
 
 /* Validate, choose and write. 0, or -1 with every problem in `problems`, one to a line,

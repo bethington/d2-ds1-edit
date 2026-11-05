@@ -982,6 +982,66 @@ void test_a_map_of_a_row_only_the_game_lists_is_not_checked(void)
                                  problems);
 }
 
+/* pd2data.mpq outranks patch_d2.mpq and holds LvlPrest.bin, measured on PD2 S14: the game
+   read PD2's table with a built patch_d2.mpq in place. */
+static void project_with_compiled_table(void)
+{
+   project_table(GAME);
+   compile("LvlPrest");
+   test_copy_patch();
+}
+
+static int built_warns(void)
+{
+   MPQ_BUILD_RESULT_S res;
+
+   memset(&res, 0, sizeof(res));
+   res.pd2_ignores_tables = -1;
+   TEST_ASSERT_EQUAL_INT_MESSAGE(0, run_with(test_copy, &res), problems);
+   TEST_ASSERT_TRUE(exists("proj/build/patch_d2.mpq"));
+   return res.pd2_ignores_tables;
+}
+
+void test_a_table_built_with_pd2data_beside_the_base_warns_and_still_builds(void)
+{
+   project_with_compiled_table();
+   put("install/pd2data.mpq", "x");
+   TEST_ASSERT_EQUAL_INT(1, built_warns());
+   expect_in_archive("data\\global\\excel\\LvlPrest.bin", "compiled");
+}
+
+void test_a_table_built_with_pd2data_in_the_test_copy_warns(void)
+{
+   project_with_compiled_table();
+   put("test/pd2data.mpq", "x");
+   TEST_ASSERT_EQUAL_INT(1, built_warns());
+}
+
+void test_a_table_built_with_no_pd2data_does_not_warn(void)
+{
+   project_with_compiled_table();
+   TEST_ASSERT_EQUAL_INT(0, built_warns());
+}
+
+void test_a_map_with_no_table_does_not_warn_on_pd2(void)
+{
+   put("proj/Global/Tiles/Act1/Town/TownN1.ds1", "map");
+   put("install/pd2data.mpq", "x");
+   put("test/pd2data.mpq", "x");
+   TEST_ASSERT_EQUAL_INT(0, built_warns());
+}
+
+void test_a_refused_build_does_not_warn(void)
+{
+   MPQ_BUILD_RESULT_S res;
+
+   project_table(GAME);
+   put("install/pd2data.mpq", "x");
+   res.pd2_ignores_tables = -1;
+   TEST_ASSERT_EQUAL_INT(-1, run_with(test_copy, &res));
+   TEST_ASSERT_EQUAL_INT(0, res.pd2_ignores_tables);
+}
+
 int main(void)
 {
    UNITY_BEGIN();
@@ -1021,5 +1081,10 @@ int main(void)
    RUN_TEST(test_a_project_with_nothing_to_pack_is_a_problem);
    RUN_TEST(test_the_output_cannot_be_the_base);
    RUN_TEST(test_problems_that_do_not_fit_are_cut_short_and_terminated);
+   RUN_TEST(test_a_table_built_with_pd2data_beside_the_base_warns_and_still_builds);
+   RUN_TEST(test_a_table_built_with_pd2data_in_the_test_copy_warns);
+   RUN_TEST(test_a_table_built_with_no_pd2data_does_not_warn);
+   RUN_TEST(test_a_map_with_no_table_does_not_warn_on_pd2);
+   RUN_TEST(test_a_refused_build_does_not_warn);
    return UNITY_END();
 }

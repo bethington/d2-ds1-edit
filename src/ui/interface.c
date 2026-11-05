@@ -716,7 +716,7 @@ static int interface_build_mpq(int quiet)
    MPQ_BUILD_ARGS_S a;
    MPQ_BUILD_RESULT_S res;
    char base[PROJECT_PATH_MAX + 32], out[PROJECT_PATH_MAX + 32];
-   char problems[4096], report[PROJECT_PATH_MAX + 512];
+   char problems[4096], report[PROJECT_PATH_MAX + 1024];
    char *table;
    double t0, secs;
    int rc;
@@ -766,10 +766,15 @@ static int interface_build_mpq(int quiet)
    {
       snprintf(report, sizeof(report),
          "%s\n\n%d files, %ld bytes, %.1f seconds.\n\n"
+         "%s"
          "Install it by replacing patch_d2.mpq in a copy of the game. "
          "Check it in the game before you share it: a built MPQ hasn't been tried "
          "at game startup yet.",
-         out, res.files, res.bytes, secs);
+         out, res.files, res.bytes, secs,
+         res.pd2_ignores_tables ?
+            "Project Diablo 2 won't use this MPQ's tables. Its pd2data.mpq outranks "
+            "patch_d2.mpq and has its own LvlPrest, so a new or removed map won't reach "
+            "the game. Changes to maps PD2's archives don't carry still work.\n\n" : "");
       interface_info_box("Build MPQ", "The MPQ was built.", report);
    }
    return 0;

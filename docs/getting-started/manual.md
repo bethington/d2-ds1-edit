@@ -374,6 +374,8 @@ If Build & Test says "The game may be running. Close it and try again.", a file 
 
 **Giving the MPQ to players.** The game gives `patch_d2.mpq` the top priority and has no way to load an archive of another name. The built MPQ has been mounted only into a running game, and never at startup, so start the game from a copy that holds it, without `-direct -txt`, and check your change before you share it. A player replaces `patch_d2.mpq` in their copy of Diablo II 1.13c with your built file, so they should keep the original. On Linux, delete the old `Patch_D2.mpq` when you put the built file in, or the copy holds two names differing only in case and wine picks either.
 
+**Project Diablo 2 ignores a built table.** PD2's `pd2data.mpq` outranks `patch_d2.mpq` and has its own `LvlPrest.bin`, so on PD2 Season 14 the game read PD2's table with a built MPQ in place, and a new or removed map didn't reach the game. Build MPQ still writes the file, and warns when it packs a table and `pd2data.mpq` is in the game folder or the test copy. It looks only in those two folders. A changed map that PD2's archives don't carry, such as an Act 1 town map, does work through `patch_d2.mpq`.
+
 **What Build MPQ refuses.** It checks the project first. If anything is wrong it lists each problem under "Nothing was built." and writes nothing. It refuses:
 
 - a map in a File cell the project added to the game's table, when that map is in neither the project nor the game, and a project map that no table lists, unless the game already has it;
