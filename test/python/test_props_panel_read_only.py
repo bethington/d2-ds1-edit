@@ -60,5 +60,26 @@ class OpenRow(unittest.TestCase):
                             body.index("area_browser_finish_load("), function)
 
 
+class Apply(unittest.TestCase):
+    """Apply dropped the tables and nothing read them again, so the panel's table
+    rows stayed blank until another map was opened."""
+
+    def setUp(self):
+        self.apply = between(PANEL, "void props_panel_apply(void)", "\n}\n")
+
+    def test_the_tables_are_read_again_before_the_panel_counts_from_them(self):
+        count = self.apply.index("props_panel_calc_shared_counts()")
+        for loader in ("txt_ensure_lvltypes()", "txt_ensure_lvlprest()", "read_levels_txt()"):
+            self.assertLess(self.apply.rindex("txt_destroy"), self.apply.index(loader), loader)
+            self.assertLess(self.apply.index(loader), count, loader)
+
+    def test_only_a_cell_that_was_written_moves_the_rows(self):
+        write = self.apply.index("ds1_manager_txt_set_cell(")
+        follow = self.apply.index("props_panel_follow_key_edit(")
+        failed = self.apply.index("failed to write")
+        self.assertLess(write, follow)
+        self.assertLess(follow, failed)
+
+
 if __name__ == "__main__":
     unittest.main()

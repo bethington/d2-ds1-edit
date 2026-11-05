@@ -1319,6 +1319,8 @@ void props_panel_apply(void)
             {
                printf("props_panel: wrote %s.%s = '%s' (key %s=%d)\n",
                       key_col, p->col_name, p->new_value, key_col, p->key_val);
+               props_panel_follow_key_edit(&glb_ds1edit.area_browser, p->field.source,
+                                           p->col_name, p->key_val, atoi(p->new_value));
             }
             else
             {
@@ -1333,7 +1335,8 @@ void props_panel_apply(void)
    printf("props_panel: applied %d change(s)\n", pp->pending_count);
    fflush(stdout);
 
-   /* Invalidate cached TXT buffers if any TXT files were modified */
+   /* Read any TXT files that were modified again: the panel draws its rows from
+    * these buffers, and nothing else would load them before the next map opens. */
    if (txt_changed)
    {
       if (glb_ds1edit.lvlprest_buff != NULL)
@@ -1342,7 +1345,8 @@ void props_panel_apply(void)
          glb_ds1edit.lvltypes_buff = txt_destroy(glb_ds1edit.lvltypes_buff);
       if (glb_ds1edit.levels_buff != NULL)
          glb_ds1edit.levels_buff = txt_destroy(glb_ds1edit.levels_buff);
-      printf("props_panel: invalidated TXT caches\n");
+      if (txt_ensure_lvltypes() != 0 || txt_ensure_lvlprest() != 0 || read_levels_txt() != 0)
+         printf("props_panel: failed to read the TXT files again\n");
    }
 
    pp->pending_count = 0;

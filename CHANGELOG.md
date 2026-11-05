@@ -83,6 +83,10 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
   project's `LvlPrest.txt`. A map opened without a row now shows no table rows at
   all, where it used to show `Def` 0's.
 
+- **The panel's table rows stay after Apply.** They went blank until another map
+  was opened. Changing a row's `Def` or LvlTypes `Id` also left the panel without a
+  row, because the area browser kept the old value; its rows now follow the edit.
+
 - **The panel dims and blocks the right DS1 header fields.** `file`, `width`,
   `height`, `txt_act`, `walls`, `floors`, `shadows`, `tags` and `objects` are dimmed
   and a click on one starts no edit. They could be clicked before, while unrelated

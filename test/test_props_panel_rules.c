@@ -106,6 +106,46 @@ static void test_header_fields_that_cannot_be_edited(void)
       TEST_ASSERT_TRUE(props_panel_header_field_read_only(read_only[i]));
 }
 
+/* Changing a row's own key in the panel: the browser's rows still hold the old
+   value, so the panel found no table row until a restart. */
+static void test_a_def_edit_moves_the_rows_with_that_def(void)
+{
+   open_barw5();
+   s_rows[2].lvlprest_def = 168;  /* a second row of the same Def */
+   props_panel_follow_key_edit(&s_ab, PFS_LVLPREST, "Def", 168, 170);
+   TEST_ASSERT_EQUAL_INT(170, props_panel_open_row(&s_ab)->lvlprest_def);
+   TEST_ASSERT_EQUAL_INT(170, s_rows[2].lvlprest_def);
+   TEST_ASSERT_EQUAL_INT(182, s_rows[0].lvlprest_def);
+}
+
+static void test_a_lvltype_id_edit_moves_its_rows_and_group(void)
+{
+   open_barw5();
+   s_groups[0].lvltype_id = 4;
+   s_rows[0].lvltype_id = 4;
+   s_rows[1].lvltype_id = 4;
+   s_groups[1].lvltype_id = 9;
+   s_rows[2].lvltype_id = 9;
+   props_panel_follow_key_edit(&s_ab, PFS_LVLTYPES, "Id", 4, 5);
+   TEST_ASSERT_EQUAL_INT(5, s_groups[0].lvltype_id);
+   TEST_ASSERT_EQUAL_INT(5, s_rows[0].lvltype_id);
+   TEST_ASSERT_EQUAL_INT(5, s_rows[1].lvltype_id);
+   TEST_ASSERT_EQUAL_INT(9, s_groups[1].lvltype_id);
+   TEST_ASSERT_EQUAL_INT(9, s_rows[2].lvltype_id);
+}
+
+/* Levels.txt's Id, and any other column, aren't what the rows hold. */
+static void test_other_columns_move_nothing(void)
+{
+   open_barw5();
+   s_rows[1].lvltype_id = 168;
+   props_panel_follow_key_edit(&s_ab, PFS_LVLPREST, "Name", 168, 170);
+   props_panel_follow_key_edit(&s_ab, PFS_LVLPREST, "LevelId", 168, 170);
+   props_panel_follow_key_edit(&s_ab, PFS_LEVELS, "Id", 168, 170);
+   TEST_ASSERT_EQUAL_INT(168, s_rows[1].lvlprest_def);
+   TEST_ASSERT_EQUAL_INT(168, s_rows[1].lvltype_id);
+}
+
 int main(void)
 {
    UNITY_BEGIN();
@@ -117,5 +157,8 @@ int main(void)
    RUN_TEST(test_an_open_row_out_of_range_is_no_row);
    RUN_TEST(test_header_fields_that_can_be_edited);
    RUN_TEST(test_header_fields_that_cannot_be_edited);
+   RUN_TEST(test_a_def_edit_moves_the_rows_with_that_def);
+   RUN_TEST(test_a_lvltype_id_edit_moves_its_rows_and_group);
+   RUN_TEST(test_other_columns_move_nothing);
    return UNITY_END();
 }

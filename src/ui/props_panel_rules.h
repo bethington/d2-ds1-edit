@@ -19,4 +19,10 @@ const AREA_DS1_ENTRY_S * props_panel_open_row(const AREA_BROWSER_S * ab);
  * 8=floors 9=shadows 10=tags 11=objects. */
 int props_panel_header_field_read_only(int header_field);
 
+/* A cell was written: if it was the Def or LvlTypes Id that the browser's rows hold,
+ * move the rows that held old_value to new_value, or they no longer name a table
+ * row. */
+void props_panel_follow_key_edit(AREA_BROWSER_S * ab, PP_FIELD_SOURCE_E source,
+                                 const char * col_name, int old_value, int new_value);
+
 #endif
