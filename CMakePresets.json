@@ -40,7 +40,8 @@
                     "type": "FILEPATH",
                     "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
                 },
-                "VCPKG_TARGET_TRIPLET": "x86-windows"
+                "VCPKG_TARGET_TRIPLET": "x86-windows",
+                "X_VCPKG_APPLOCAL_DEPS_SERIALIZED": true
             },
             "condition": {
                 "type": "equals",
