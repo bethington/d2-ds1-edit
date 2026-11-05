@@ -2,13 +2,11 @@
  *
  * Two things the editor needs from macOS that no other platform asks for:
  *
- *   1. Input Monitoring. Allegro's macOS mouse driver (src/macosx/qzmouse.m,
- *      osx_init_mouse) counts buttons by enumerating HID devices and fails
- *      when it finds no mouse-class device. Under TCC a process that has not
- *      been granted Input Monitoring cannot see the trackpad or mouse at all,
- *      so al_install_mouse() returns false and startup dies -- on a machine
- *      whose mouse obviously works. IOHIDRequestAccess raises the system
- *      prompt so the user can grant it by name.
+ *   1. Input Monitoring. Under TCC a process that has not been granted it
+ *      cannot see HID input devices. The pointer no longer depends on this
+ *      (mac_pointer.m); the release checklist records the keyboard as needing
+ *      it. IOHIDRequestAccess raises the system prompt so the user can grant
+ *      it by name.
  *
  *   2. Working directory. Every resource path here is relative to the
  *      process CWD ("assets/editor/", "Ds1edit.ini"). Launched from a .app

@@ -245,6 +245,27 @@ void test_mouse_hit_follows_the_same_rule(void)
 
 /* ---- modal isolation: the Escape bug ---------------------------------- */
 
+/* No mouse driver is installed in this binary, which is the state the editor
+   runs in on a machine with no pointing device. Allegro's own calls would
+   dereference the missing driver here. */
+void test_no_mouse_driver_reads_as_an_idle_pointer(void)
+{
+   TEST_ASSERT_FALSE(al_is_mouse_installed());
+
+   a5_ms_state.x = 123;
+   a5_ms_state.buttons = 1;
+   a5_get_mouse_state(&a5_ms_state);
+
+   TEST_ASSERT_EQUAL_INT(0, a5_mouse_x);
+   TEST_ASSERT_EQUAL_INT(0, a5_mouse_b);
+}
+
+void test_no_mouse_driver_ignores_warp_and_event_registration(void)
+{
+   TEST_ASSERT_FALSE(a5_set_mouse_xy(NULL, 10, 10));
+   a5_register_mouse_events(NULL); /* a NULL queue would trap if it were used */
+}
+
 void test_suppress_held_hides_a_key_that_is_still_down(void)
 {
    hold_key(ALLEGRO_KEY_ESCAPE);
@@ -362,6 +383,8 @@ int main(void)
    RUN_TEST(test_key_hit_is_clear_on_later_frames_while_still_held);
    RUN_TEST(test_key_hit_fires_again_after_release_and_repress);
    RUN_TEST(test_mouse_hit_follows_the_same_rule);
+   RUN_TEST(test_no_mouse_driver_reads_as_an_idle_pointer);
+   RUN_TEST(test_no_mouse_driver_ignores_warp_and_event_registration);
    RUN_TEST(test_suppress_held_hides_a_key_that_is_still_down);
    RUN_TEST(test_suppressed_key_stays_hidden_until_genuinely_repressed);
    RUN_TEST(test_suppress_held_leaves_keys_that_were_up_alone);

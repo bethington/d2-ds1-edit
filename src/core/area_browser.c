@@ -2823,7 +2823,7 @@ int area_browser_run(void)
    /* Create event queue for the browser */
    eq = al_create_event_queue();
    al_register_event_source(eq, al_get_keyboard_event_source());
-   al_register_event_source(eq, al_get_mouse_event_source());
+   a5_register_mouse_events(eq);
    al_register_event_source(eq, al_get_display_event_source(a5_display));
 
    while (!done)
