@@ -10,6 +10,7 @@
 #include "editor/objects.h"
 #include "editor/paths.h"
 #include "render/preview.h"
+#include "ui/ui_layout.h"
 #include "core/dt1.h"
 #include "core/palette.h"
 #include "core/project.h"
@@ -264,7 +265,7 @@ static void wpreview_draw_bitmap(ALLEGRO_BITMAP *bmp, int x, int y)
 }
 #endif /* DS1EDIT_PERF_LOG */
 
-static void wpreview_draw_trans_bitmap(ALLEGRO_BITMAP *bmp, int x, int y, float alpha)
+static void wpreview_draw_tinted(ALLEGRO_BITMAP *bmp, int x, int y, ALLEGRO_COLOR tint)
 {
    int mul = 1, div = 1;
    if (glb_ds1edit.has_loaded_ds1)
@@ -274,8 +275,7 @@ static void wpreview_draw_trans_bitmap(ALLEGRO_BITMAP *bmp, int x, int y, float 
    }
    if (mul == 1 && div == 1)
    {
-      al_draw_tinted_bitmap(bmp, a5_alpha_tint(alpha),
-                            (float)x, (float)y, 0);
+      al_draw_tinted_bitmap(bmp, tint, (float)x, (float)y, 0);
    }
    else
    {
@@ -283,9 +283,14 @@ static void wpreview_draw_trans_bitmap(ALLEGRO_BITMAP *bmp, int x, int y, float 
       float sh = (float)al_get_bitmap_height(bmp);
       float dw = sw * (float)mul / (float)div;
       float dh = sh * (float)mul / (float)div;
-      al_draw_tinted_scaled_bitmap(bmp, a5_alpha_tint(alpha),
+      al_draw_tinted_scaled_bitmap(bmp, tint,
                                    0, 0, sw, sh, (float)x, (float)y, dw, dh, 0);
    }
+}
+
+static void wpreview_draw_trans_bitmap(ALLEGRO_BITMAP *bmp, int x, int y, float alpha)
+{
+   wpreview_draw_tinted(bmp, x, y, a5_alpha_tint(alpha));
 }
 
 static void wpreview_draw_blended_bitmap(ALLEGRO_BITMAP *bmp, int x, int y, int trans_b)
@@ -416,12 +421,87 @@ static void wpreview_draw_rectfill(int x1, int y1, int x2, int y2, int color)
 #pragma warning(disable : 4244 4267)
 #endif
 
+/* How far a selected tile is drawn toward its selection colour. Allegro 4's
+   colour map moved each pixel this way, so a selection showed on a dark map too. */
+#define WPREVIEW_SELECT_MIX 0.5f
+
+/* A tile's shape filled with one colour, alpha-premultiplied, for blending a
+   selection colour over the tile. Reused, and only grown. */
+static ALLEGRO_BITMAP *wpreview_tint_scratch;
+
+static ALLEGRO_BITMAP *wpreview_silhouette(ALLEGRO_BITMAP *bmp, ALLEGRO_COLOR col,
+                                           int w, int h)
+{
+   ALLEGRO_STATE state;
+
+   if (wpreview_tint_scratch == NULL ||
+       al_get_bitmap_width(wpreview_tint_scratch) < w ||
+       al_get_bitmap_height(wpreview_tint_scratch) < h)
+   {
+      int sw = w, sh = h;
+      if (wpreview_tint_scratch != NULL)
+      {
+         if (al_get_bitmap_width(wpreview_tint_scratch) > sw)
+            sw = al_get_bitmap_width(wpreview_tint_scratch);
+         if (al_get_bitmap_height(wpreview_tint_scratch) > sh)
+            sh = al_get_bitmap_height(wpreview_tint_scratch);
+         al_destroy_bitmap(wpreview_tint_scratch);
+      }
+      wpreview_tint_scratch = al_create_bitmap(sw, sh);
+      if (wpreview_tint_scratch == NULL)
+         return NULL;
+   }
+
+   al_store_state(&state, ALLEGRO_STATE_TARGET_BITMAP | ALLEGRO_STATE_BLENDER);
+   al_set_target_bitmap(wpreview_tint_scratch);
+   al_set_clipping_rectangle(0, 0, w, h);
+   al_clear_to_color(col);
+   /* Colour from what's there, coverage from the tile: rgb = col * alpha,
+      alpha = the tile's alpha. */
+   al_set_separate_blender(ALLEGRO_ADD, ALLEGRO_ZERO, ALLEGRO_ALPHA,
+                           ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_ZERO);
+   al_draw_bitmap(bmp, 0, 0, 0);
+   al_restore_state(&state);
+   return wpreview_tint_scratch;
+}
+
 // ==========================================================================
 // draw a sprite with a tint
 void wpreview_shape(ALLEGRO_BITMAP *tmp_bmp, int x0, int y0, int ds1_idx,
                     COL_E col_idx)
 {
-   wpreview_draw_trans_bitmap(tmp_bmp, x0, y0, a5_trans_alpha);
+   /* Allegro 4 drew these through a colour map: the tile went blue when
+      selected, orange while a left-click selection was being dragged, green or
+      red for a paste. The port drew every one half see-through instead, so a
+      selection on a dark map could hardly be seen. Draw the tile, then its
+      shape in the selection colour over it. A tile under the mouse that isn't
+      selected (white) stays see-through, as it was. */
+   ALLEGRO_BITMAP *shape;
+   int w, h, mul = 1, div = 1;
+   float k = WPREVIEW_SELECT_MIX;
+
+   (void) ds1_idx;
+   if (col_idx == COL_MOUSE)
+   {
+      wpreview_draw_trans_bitmap(tmp_bmp, x0, y0, a5_trans_alpha);
+      return;
+   }
+   wpreview_draw_tinted(tmp_bmp, x0, y0, al_map_rgb_f(1, 1, 1));
+
+   w = al_get_bitmap_width(tmp_bmp);
+   h = al_get_bitmap_height(tmp_bmp);
+   shape = wpreview_silhouette(tmp_bmp, pal_color(col_idx), w, h);
+   if (shape == NULL)
+      return;
+   if (glb_ds1edit.has_loaded_ds1)
+   {
+      mul = glb_ds1[glb_ds1edit.ds1_group_idx].height_mul;
+      div = glb_ds1[glb_ds1edit.ds1_group_idx].height_div;
+   }
+   al_draw_tinted_scaled_bitmap(shape, al_map_rgba_f(k, k, k, k),
+                                0, 0, (float)w, (float)h, (float)x0, (float)y0,
+                                (float)w * (float)mul / (float)div,
+                                (float)h * (float)mul / (float)div, 0);
 }
 
 // ==========================================================================
@@ -3095,28 +3175,31 @@ void wpreview_draw_tiles(int ds1_idx)
        &glb_render_perf_stats.help_ms_max,
        render_perf_now_ms() - perf_section_start_ms);
 
+   /* The HUD sits under the menu bar; the bar covers the rows above it. */
+   const int hud_y = ui_menu_bar_height();
+
    // make up & bottom border black, with white line
    perf_section_start_ms = render_perf_now_ms();
    if (glb_ds1edit.show_2nd_row == TRUE)
    {
-      wpreview_draw_rectfill(0, 0, glb_config.screen.width, 19, 0);
-      wpreview_draw_hline(0, 9, glb_config.screen.width, 29);
-      wpreview_draw_hline(0, 20, glb_config.screen.width, 255);
+      wpreview_draw_rectfill(0, 0, glb_config.screen.width, hud_y + 19, 0);
+      wpreview_draw_hline(0, hud_y + 9, glb_config.screen.width, 29);
+      wpreview_draw_hline(0, hud_y + 20, glb_config.screen.width, 255);
 
       // 2nd row datas
-      wpreview_textprintf(0, 11, 255, "Set:");
-      wpreview_textprintf(32, 11, 109, "%i", glb_ds1edit.ds1_group_idx + 1);
+      wpreview_textprintf(0, hud_y + 11, 255, "Set:");
+      wpreview_textprintf(32, hud_y + 11, 109, "%i", glb_ds1edit.ds1_group_idx + 1);
 
-      wpreview_textprintf(65, 11, 255, "Ds1Index:");
-      wpreview_textprintf(137, 11, 109, "%i", ds1_idx + 1);
+      wpreview_textprintf(65, hud_y + 11, 255, "Ds1Index:");
+      wpreview_textprintf(137, hud_y + 11, 109, "%i", ds1_idx + 1);
 
-      wpreview_textprintf(175, 11, 255, "File:");
-      wpreview_textprintf(215, 11, 109, "%s", glb_ds1[ds1_idx].name);
+      wpreview_textprintf(175, hud_y + 11, 255, "File:");
+      wpreview_textprintf(215, hud_y + 11, 109, "%s", glb_ds1[ds1_idx].name);
    }
    else
    {
-      wpreview_draw_rectfill(0, 0, glb_config.screen.width, 8, 0);
-      wpreview_draw_hline(0, 9, glb_config.screen.width, 255);
+      wpreview_draw_rectfill(0, 0, glb_config.screen.width, hud_y + 8, 0);
+      wpreview_draw_hline(0, hud_y + 9, glb_config.screen.width, 255);
    }
 
    // bottom row background
@@ -3129,24 +3212,24 @@ void wpreview_draw_tiles(int ds1_idx)
    for (i = 0; i < glb_ds1[ds1_idx].floor_num; i++)
    {
       if (glb_ds1[ds1_idx].floor_layer_mask[i] == 0)
-         wpreview_textprintf(20 * i, 0, 98, "f%i", i + 1);
+         wpreview_textprintf(20 * i, hud_y, 98, "f%i", i + 1);
       else
-         wpreview_textprintf(20 * i, 0, 132, "f%i", i + 1);
+         wpreview_textprintf(20 * i, hud_y, 132, "f%i", i + 1);
    }
 
    // animation layer (F3)
    switch (glb_ds1[ds1_idx].animations_layer_mask)
    {
    case 0:
-      wpreview_textprintf(50, 0, 98, "anims");
+      wpreview_textprintf(50, hud_y, 98, "anims");
       break;
 
    case 1:
-      wpreview_textprintf(50, 0, 132, "anims");
+      wpreview_textprintf(50, hud_y, 132, "anims");
       break;
 
    default:
-      wpreview_textprintf(50, 0, 108, "anims");
+      wpreview_textprintf(50, hud_y, 108, "anims");
       break;
    }
 
@@ -3154,19 +3237,19 @@ void wpreview_draw_tiles(int ds1_idx)
    switch (glb_ds1[ds1_idx].objects_layer_mask)
    {
    case OL_NONE:
-      wpreview_textprintf(100, 0, 98, "obj");
+      wpreview_textprintf(100, hud_y, 98, "obj");
       break;
 
    case OL_TYPEID:
-      wpreview_textprintf(100, 0, 210, "obj");
+      wpreview_textprintf(100, hud_y, 210, "obj");
       break;
 
    case OL_SPEED:
-      wpreview_textprintf(100, 0, 108, "obj");
+      wpreview_textprintf(100, hud_y, 108, "obj");
       break;
 
    case OL_DESC:
-      wpreview_textprintf(100, 0, 132, "obj");
+      wpreview_textprintf(100, hud_y, 132, "obj");
       break;
 
    default:
@@ -3177,11 +3260,11 @@ void wpreview_draw_tiles(int ds1_idx)
    switch (glb_ds1[ds1_idx].special_layer_mask)
    {
    case 0:
-      wpreview_textprintf(240, 0, 98, "spl");
+      wpreview_textprintf(240, hud_y, 98, "spl");
       break;
 
    default:
-      wpreview_textprintf(240, 0, 132, "spl");
+      wpreview_textprintf(240, hud_y, 132, "spl");
       break;
    }
 
@@ -3189,49 +3272,49 @@ void wpreview_draw_tiles(int ds1_idx)
    for (i = 0; i < glb_ds1[ds1_idx].wall_num; i++)
    {
       if (glb_ds1[ds1_idx].wall_layer_mask[i] == 0)
-         wpreview_textprintf(140 + 20 * i, 0, 98, "w%i", i + 1);
+         wpreview_textprintf(140 + 20 * i, hud_y, 98, "w%i", i + 1);
       else
-         wpreview_textprintf(140 + 20 * i, 0, 132, "w%i", i + 1);
+         wpreview_textprintf(140 + 20 * i, hud_y, 132, "w%i", i + 1);
    }
 
    // paths layer (F10)
    if (glb_ds1[ds1_idx].paths_layer_mask == 0)
-      wpreview_textprintf(280, 0, 98, "path");
+      wpreview_textprintf(280, hud_y, 98, "path");
    else
-      wpreview_textprintf(280, 0, 132, "path");
+      wpreview_textprintf(280, hud_y, 132, "path");
 
    // shadow layer (F11)
    switch (glb_ds1[ds1_idx].shadow_layer_mask[0])
    {
    case 1:
-      wpreview_textprintf(340, 0, 210, "shad");
+      wpreview_textprintf(340, hud_y, 210, "shad");
       break;
 
    case 2:
-      wpreview_textprintf(340, 0, 255, "shad");
+      wpreview_textprintf(340, hud_y, 255, "shad");
       break;
 
    case 3:
-      wpreview_textprintf(340, 0, 132, "shad");
+      wpreview_textprintf(340, hud_y, 132, "shad");
       break;
 
    default:
-      wpreview_textprintf(340, 0, 98, "shad");
+      wpreview_textprintf(340, hud_y, 98, "shad");
       break;
    }
 
    // other infos
 
    // zoom (+, -)
-   wpreview_textprintf(390, 0, 255, "zoom=%i:%i",
+   wpreview_textprintf(390, hud_y, 255, "zoom=%i:%i",
                        glb_ds1[ds1_idx].height_mul, glb_ds1[ds1_idx].height_div);
 
    // gamma (F12)
-   wpreview_textprintf(490, 0, 255, "gamma=%s",
+   wpreview_textprintf(490, hud_y, 255, "gamma=%s",
                        glb_gamma_str[glb_ds1edit.cur_gamma].str);
 
    // ds1 file name
-   wpreview_textprintf(606, 0, 109, "%s",
+   wpreview_textprintf(606, hud_y, 109, "%s",
                        glb_ds1[ds1_idx].filename);
 
    // cell coordinates
@@ -3254,7 +3337,7 @@ void wpreview_draw_tiles(int ds1_idx)
 
    // frames per second
    wpreview_textprintf(
-       glb_config.screen.width - 80, 0, 255,
+       glb_config.screen.width - 80, hud_y, 255,
        "  fps=%i",
        glb_ds1edit.old_fps);
 

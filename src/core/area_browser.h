@@ -12,7 +12,25 @@ int  area_browser_run           (void);
 void area_group_add_entry       (AREA_GROUP_S * grp, int lvltype_id,
                                   int def, const char * ds1_path);
 void area_browser_scan_backups  (void);
+void area_browser_rescan_backups(void);
+int  area_browser_find_row(const char * ds1_path, int def, int * group_idx, int * entry_idx);
 void area_browser_scan_unlisted (void);
+
+/* Does any regular row hold this table path? Ignores case and slash style. */
+int  area_browser_path_known(const char * ds1_path);
+
+/* The LvlType of a Def: a row that has one, then the preset index, then fallback. */
+int  area_browser_lvltype_for_def(int def, int fallback);
+
+/* Add a row for a map that has none: beside its Def's other rows, in its LvlType's
+ * group, or in Unlisted. 1 with where it went, or 0. Can move the groups' memory,
+ * though not their order. */
+int  area_browser_add_map_row(int def, int lvltype, const char * ds1_path,
+                              int * group_idx, int * entry_idx);
+
+/* Show this row: opens the sidebar and its group, selects it, scrolls to it. */
+void area_browser_scroll_to_row(int group_idx, int entry_idx);
+
 void area_browser_list          (void);
 void area_browser_list_ext      (void);
 void area_browser_draw_sidebar  (int width, int height);
@@ -35,5 +53,21 @@ int  area_browser_switch_single (int group_idx, int entry_idx);
 void area_browser_list_files    (const char * filter);
 int  area_browser_open_by_file  (const char * ds1_path);
 int  area_browser_audit_lvltypes(FILE * out);
+void area_browser_refresh_states(void);
+
+/* Is this map in the game's own archives, ignoring any overlay? ds1_path is relative to
+   the Tiles folder, with either slash. Loads the file, so ask only about project maps. */
+int  area_browser_game_has_map(const char * ds1_path);
+
+/* The game's LvlPrest.txt with no project overlay. NULL if it can't be read. The caller
+   frees it. */
+char * area_browser_game_table(void);
+
+// Rebuild the browser from the tables now in effect, after a project change.
+int  area_browser_reload(void);
+
+// `guard` runs before anything unloads the open maps, and returns 0 to stop.
+void area_browser_set_unload_guard(int (*guard)(void));
+void area_browser_unload_all(void);
 
 #endif

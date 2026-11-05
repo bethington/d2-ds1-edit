@@ -39,7 +39,7 @@
 #define D2_USE_PD2_AUTO        0
 #define D2_USE_PD2_YES         1
 #define D2_USE_PD2_NO          2
-#define MAX_MOD_DIR            1
+#define MAX_MOD_DIR            2   /* an open project, then the configured mod_dir */
 #define DT1_IN_DS1_MAX        33
 #define DS1_MAX             2048
 #define DT1_MAX              512
@@ -583,6 +583,8 @@ typedef struct AREA_DS1_ENTRY_S
    int  lvltype_id;     /* LvlTypes.txt Id (tileset id)          */
    int  lvlprest_def;   /* LvlPrest.txt Def                      */
    char ds1_path[256];  /* DS1 file path from LvlPrest File1-6   */
+   int  state;          /* MAP_STATE_E, set by area_browser_refresh_states */
+   int  slot_cleared;   /* in the game's table, but cleared in the project's */
 } AREA_DS1_ENTRY_S;
 
 typedef struct AREA_GROUP_S
@@ -610,6 +612,8 @@ typedef struct AREA_BROWSER_S
    int  scroll_offset;         /* First visible group index            */
    int  is_active;             /* TRUE if browser is showing           */
    int  loaded_group;          /* group_idx of currently loaded area, -1=none */
+   int  loaded_entry;          /* entry within loaded_group, -1=none   */
+   int  reload_generation;     /* bumped when area_browser_reload rebuilds groups */
    int  lvltypes_act_mismatch_count; /* mismatched Name prefix vs Act column */
 } AREA_BROWSER_S;
 
@@ -1169,6 +1173,18 @@ typedef struct DS1_S
 
    // save count
    UDWORD save_count;
+
+   // unsaved-edit tracking; see core/map_state.h
+   int  other_dirty;       // a path, DS1 field or untracked tile edit is unsaved; cleared only by a save
+   int  object_dirty;      // an object edit is unsaved; the one-step object undo can clear it
+   int  undo_object_dirty; // object_dirty as it was before the last object edit
+   unsigned long long saved_tile_hash;    // tile content at load or last save
+   unsigned long long current_tile_hash;  // tile content after the latest edit or undo
+   int tile_hash_valid;                   // the two above have been set
+
+   // this map's file was deleted, reverted or restored while it stayed open, so a
+   // real save would recreate a file nothing lists; see ui/map_save_ui.c
+   int  detached;
 
    // current number of objects
    long current_obj_max;

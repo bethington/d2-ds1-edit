@@ -5,6 +5,7 @@
 #include "misc.h"
 #include "error.h"
 #include "core/cof.h"
+#include "core/map_state.h"
 #include "editor/paths.h"
 #include "editor/objects.h"
 #include "editor/selection_logic.h"
@@ -805,6 +806,7 @@ void editobj_prepare_undo(int ds1_idx)
    }
    glb_ds1[ds1_idx].obj_num_undo = glb_ds1[ds1_idx].obj_num;
    glb_ds1[ds1_idx].can_undo_obj = TRUE;
+   map_dirty_before_object_edit(ds1_idx);
 }
 
 
@@ -827,6 +829,7 @@ void editobj_undo(int ds1_idx)
       memcpy(ptr_d, ptr_s, sizeof (OBJ_S));
    }
    glb_ds1[ds1_idx].obj_num = glb_ds1[ds1_idx].obj_num_undo;
+   map_dirty_after_object_undo(ds1_idx);
 }
 
 

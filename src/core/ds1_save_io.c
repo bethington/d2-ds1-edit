@@ -15,10 +15,12 @@
 #include <stdint.h>
 #include <sys/stat.h>
 
+#include "platform.h"
 #include "structs.h"
 #include "core/project.h"
 #include "core/ds1.h"
 #include "core/ds1_save_io.h"
+#include "core/map_state.h"
 #include "render/preview.h"
 
 // ==========================================================================
@@ -395,6 +397,52 @@ static int fail(char * error, size_t cap, const char * fmt, const char * a, cons
    return -1;
 }
 
+/* The name an autosave is built from; ".tmp" replaces its extension. A name that
+ * is really on disk keeps its autosave beside it. A table-relative name has no
+ * folder of its own, so its autosave goes in the open project. Everything else
+ * -- no project, a name that can't go in the project, a map in the game's own
+ * folder -- goes to the editor's tmp folder, so that Q at the quit prompt always
+ * leaves the file it promised and never writes to the install. Returns 0, or -1
+ * if the tmp folder path can't be used. */
+static int autosave_target(const char * name, char * out, size_t cap)
+{
+   const char * c, * file = name;
+   size_t       dir_len;
+   int          n;
+
+   if (project_path_is_rooted(name))
+   {
+      if (! project_path_in_game_install(name))
+      {
+         snprintf(out, cap, "%s", name);
+         return 0;
+      }
+   }
+   else if (glb_project.is_open)
+   {
+      int r = project_redirect_ds1_save_path(name, out, (int) cap);
+
+      if (r == 0)
+         return 0;
+      if ((r > 0) && (! project_path_in_game_install(out)) &&
+          project_ensure_parent_dirs(out))
+         return 0;
+   }
+
+   for (c = name; * c != 0; c++)
+      if ((* c == '/') || (* c == '\\'))
+         file = c + 1;
+
+   dir_len = strlen(glb_ds1edit_tmp_dir);
+   n = snprintf(out, cap, "%s%s%s", glb_ds1edit_tmp_dir,
+                ((dir_len == 0) || DS1_IS_SEP(glb_ds1edit_tmp_dir[dir_len - 1]))
+                   ? "" : DS1_SEP_STR,
+                file);
+   if ((n < 0) || ((size_t) n >= cap))
+      return -1;
+   return project_ensure_parent_dirs(out) ? 0 : -1;
+}
+
 int ds1_save_with_io(int ds1_idx, int is_tmp_file, const DS1_SAVE_IO * io,
                      char * error, size_t error_cap)
 {
@@ -438,18 +486,39 @@ int ds1_save_with_io(int ds1_idx, int is_tmp_file, const DS1_SAVE_IO * io,
    // the write into the project's Global\Tiles\<suffix> tree. After the
    // first redirected save, the map's name lives inside the project, so
    // subsequent saves are in-place and the backup-rename path works.
-   // TMP saves stay next to the origin so auto-saves don't silently move a
-   // file into the project before the user has explicitly committed to it.
-   // The new name is committed only once the file is actually there.
-   if (! is_tmp_file)
+   // The new name is committed only once the file is actually there. TMP saves
+   // never change the name, so they don't move the map into the project before
+   // the user has explicitly committed to it; autosave_target() says where they
+   // land.
+   if (is_tmp_file)
+   {
+      if (autosave_target(d->name, target, sizeof(target)) != 0)
+         return fail(error, error_cap, "there is no usable place for the autosave "
+                     "of %s in the tmp folder %s", d->name, glb_ds1edit_tmp_dir);
+   }
+   else
    {
       char redir[sizeof(glb_ds1[0].name)];
       int  r = project_redirect_ds1_save_path(d->name, redir, (int) sizeof(redir));
 
       if (r < 0)
+      {
+         if (project_path_has_parent_ref(d->name))
+            return fail(error, error_cap,
+                        "the name %s contains \"..\", which could lead outside the "
+                        "project folder; nothing was saved%s", d->name, NULL);
          return fail(error, error_cap,
                      "the project copy of %s would need a path longer than the "
                      "editor supports; nothing was saved%s", d->name, NULL);
+      }
+
+      // Saved maps must never touch the game files. `redir` is where the save
+      // would land: the project copy, or the name itself when nothing redirects.
+      if (project_path_in_game_install(redir))
+         return fail(error, error_cap,
+                     "%s is inside the Diablo II install, and saved maps must never "
+                     "touch the game files; nothing was saved. Copy the map out of "
+                     "the game's folder to edit it%s", redir, NULL);
       if (r > 0)
       {
          fprintf(stdout, "copy-on-save: %s -> %s\n", d->name, redir);
@@ -550,6 +619,54 @@ int ds1_save_with_io(int ds1_idx, int is_tmp_file, const DS1_SAVE_IO * io,
    if (redirected)
       snprintf(d->name, sizeof(d->name), "%s", target);
    d->save_count = new_save_count;
+   if (! is_tmp_file)
+      map_dirty_mark_saved(ds1_idx);
+   return 0;
+}
+
+int ds1_save_copy_checked(int ds1_idx, const char * dest, char * error, size_t error_cap)
+{
+   DS1_WRITER w;
+   char       staging[1024];
+   int        close_rc;
+
+   if (error != NULL && error_cap > 0)
+      error[0] = 0;
+   if ((ds1_idx < 0) || (ds1_idx >= DS1_MAX) || (strlen(glb_ds1[ds1_idx].name) == 0))
+      return fail(error, error_cap, "no map to copy%s%s", "", NULL);
+   if (glb_ds1[ds1_idx].version < 4)
+      return fail(error, error_cap, "%s uses an old DS1 format (before version 4) that "
+                  "this editor cannot save without losing its tag layer%s",
+                  glb_ds1[ds1_idx].name, NULL);
+   if (project_path_in_game_install(dest))
+      return fail(error, error_cap, "%s is inside the Diablo II install, and saved maps "
+                  "must never touch the game files%s", dest, NULL);
+   if (path_exists(dest))
+      return fail(error, error_cap, "%s already exists%s", dest, NULL);
+   if (snprintf(staging, sizeof(staging), "%s%s", dest, DS1_SAVE_STAGING_SUFFIX) >=
+       (int) sizeof(staging))
+      return fail(error, error_cap, "the path %s is too long%s", dest, NULL);
+   if (! project_ensure_parent_dirs(dest))
+      return fail(error, error_cap, "can't create the folder for %s%s", dest, NULL);
+
+   w.io = & default_io;
+   w.ok = 1;
+   w.f  = w.io->open(staging, "wb");
+   if (w.f == NULL)
+      return fail(error, error_cap, "can't write %s%s", staging, NULL);
+   ds1_serialize(& w, ds1_idx, glb_ds1[ds1_idx].save_count);
+   close_rc = w.io->close(w.f);
+   if (! w.ok || close_rc != 0)
+   {
+      w.io->remove(staging);
+      return fail(error, error_cap, "writing %s failed (disk full or I/O error)%s",
+                  staging, NULL);
+   }
+   if (w.io->rename(staging, dest) != 0)
+   {
+      w.io->remove(staging);
+      return fail(error, error_cap, "couldn't create %s%s", dest, NULL);
+   }
    return 0;
 }
 

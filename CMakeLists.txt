@@ -154,11 +154,11 @@ if(OPENGL_FOUND)
     target_compile_definitions(ds1edit_allegro INTERFACE DS1EDIT_HAVE_GL)
 endif()
 
-# The macOS pointer. A library rather than a SOURCES entry because compat.h
-# reaches it from code the test targets compile too; hanging it off
-# ds1edit_allegro gives every one of them the symbols.
+# The macOS pointer, and the folder picker beside it. A library rather than a
+# SOURCES entry because compat.h reaches it from code the test targets compile
+# too; hanging it off ds1edit_allegro gives every one of them the symbols.
 if(APPLE)
-    add_library(ds1edit_mac_pointer STATIC src/mac_pointer.m)
+    add_library(ds1edit_mac_pointer STATIC src/mac_pointer.m src/mac_folder_picker.m)
     target_include_directories(ds1edit_mac_pointer PRIVATE
         src
         $<TARGET_PROPERTY:ds1edit_allegro,INTERFACE_INCLUDE_DIRECTORIES>)
@@ -204,6 +204,13 @@ set(SOURCES
     src/core/ds1.c
     src/core/ds1_save_io.c
     src/core/ds1_manager.c
+    src/core/file_copy.c
+    src/core/lvlprest_text.c
+    src/core/game_launch.c
+    src/core/map_ops.c
+    src/core/mpq_build.c
+    src/core/mpq_crypt.c
+    src/core/mpq_write.c
     src/core/asset_export.c
     src/core/upscale.c
     src/core/dt1.c
@@ -225,6 +232,7 @@ set(SOURCES
     src/core/palette.c
     src/core/preferences.c
     src/core/project.c
+    src/core/map_state.c
     src/core/rgba_cache.c
     src/core/txtread.c
     # render/
@@ -244,8 +252,14 @@ set(SOURCES
     src/ui/edit_window.c
     src/ui/bits_window.c
     src/ui/props_panel.c
+    src/ui/props_panel_rules.c
     src/ui/tile_picker.c
     src/ui/project_menu.c
+    src/ui/commands.c
+    src/ui/menu_bar.c
+    src/ui/map_dialog.c
+    src/ui/fields_dialog.c
+    src/ui/map_save_ui.c
     src/ui/export_type_picker.c
     src/ui/upscale_mode_picker.c
     src/ui/compose_category_picker.c

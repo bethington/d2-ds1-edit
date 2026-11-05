@@ -15,6 +15,7 @@
 #include "core/area_browser.h"
 #include "config.h"
 #include "ui/props_panel.h"
+#include "ui/menu_bar.h"
 #include "misc.h"
 
 // ==========================================================================
@@ -1796,6 +1797,8 @@ void misc_draw_screen(int mx, int my)
       props_panel_draw(glb_ds1edit.props_panel_width, disp_h);
    else
       props_panel_draw_tab(disp_h);
+
+   menu_bar_draw();
 
    /* Hand the pointer to the compositor when we can: an OS cursor tracks the
       real device instead of lagging our frame rate. Only draw it ourselves if

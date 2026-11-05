@@ -8,6 +8,12 @@
  *              <name>-NNN.ds1, then the staging file becomes <name>.ds1.
  *              If that last rename fails the backup is renamed back.
  *   .tmp save: the staging file replaces <name>.tmp (the rolling autosave).
+ *              <name> stays beside a rooted map; a relative name goes in the open
+ *              project's Global/Tiles, or with no project in the editor's tmp
+ *              folder, as does a map inside the Diablo II install.
+ *
+ * A real save refuses a path that could leave the project (a ".." component) and
+ * one that lands inside the Diablo II install.
  *
  * A failed save returns -1 with a message, leaves the existing destination's
  * bytes in place (or, if even the rollback failed, names the backup that
@@ -41,6 +47,11 @@ int ds1_save_checked(int ds1_idx, int is_tmp_file, char * error, size_t error_ca
 /* Same, through caller-supplied file operations (tests inject failures). */
 int ds1_save_with_io(int ds1_idx, int is_tmp_file, const DS1_SAVE_IO * io,
                      char * error, size_t error_cap);
+
+/* Write the map as it is in memory to a new file at `dest`. Its name, save
+ * counter and unsaved state don't change. Refuses a file that exists, a dest in
+ * the Diablo II install, and pre-version-4 maps, as a real save does. */
+int ds1_save_copy_checked(int ds1_idx, const char * dest, char * error, size_t error_cap);
 
 /* Suffix of the staging file written next to the destination. */
 #define DS1_SAVE_STAGING_SUFFIX ".saving"

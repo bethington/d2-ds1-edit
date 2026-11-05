@@ -9,6 +9,48 @@
 #include "ui/input.h"
 
 
+/* The window is drawn straight into screen_buff, which holds the last map frame.
+ * Nothing redraws the map between two boxes that follow each other (Save asking
+ * for a project, then saying the map was saved), so the second one showed what
+ * was left of the first. Keep what was under the window and put it back. */
+static ALLEGRO_BITMAP *wmsg_save_under(int x0, int y0, int x1, int y1)
+{
+   ALLEGRO_BITMAP *under, *previous;
+   ALLEGRO_STATE   state;
+   int w = x1 - x0 + 1, h = y1 - y0 + 1;
+
+   if (glb_ds1edit.screen_buff == NULL || w <= 0 || h <= 0)
+      return NULL;
+   under = al_create_bitmap(w, h);
+   if (under == NULL)
+      return NULL;
+   previous = a5_begin_target_bitmap(under);
+   al_store_state(&state, ALLEGRO_STATE_BLENDER);
+   al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_ZERO);
+   al_draw_bitmap_region(glb_ds1edit.screen_buff, (float)x0, (float)y0,
+                         (float)w, (float)h, 0, 0, 0);
+   al_restore_state(&state);
+   a5_end_target_bitmap(previous, under);
+   return under;
+}
+
+static void wmsg_restore_under(ALLEGRO_BITMAP *under, int x0, int y0)
+{
+   ALLEGRO_BITMAP *previous;
+   ALLEGRO_STATE   state;
+
+   if (under == NULL)
+      return;
+   previous = a5_begin_target_bitmap(glb_ds1edit.screen_buff);
+   al_store_state(&state, ALLEGRO_STATE_BLENDER);
+   al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_ZERO);
+   al_draw_bitmap(under, (float)x0, (float)y0, 0);
+   al_restore_state(&state);
+   a5_end_target_bitmap(previous, glb_ds1edit.screen_buff);
+   al_destroy_bitmap(under);
+}
+
+
 // ==========================================================================
 // wmsg_main - generic message window with buttons
 // ==========================================================================
@@ -22,6 +64,7 @@ int wmsg_main(WMSG_S * wmsg)
    int  ret = -1, bx0, by0, but_maxwidth = 0, bg, fg, border;
    int  s, k, all_keys;
    char tmp[512];
+   ALLEGRO_BITMAP *under;
 
    // for safety
    if (wmsg == NULL)
@@ -87,6 +130,7 @@ int wmsg_main(WMSG_S * wmsg)
    wx1 = wx0 + max_width;
    wy1 = wy0 + curr_height;
    by0 = wy1 - line_height * 4;
+   under = wmsg_save_under(wx0, wy0, wx1, wy1);
    a5_rectfill(glb_ds1edit.screen_buff, wx0, wy0, wx1, wy1, wmsg->col_win.bg);
    x = wx0 + wmsg->font_width;
    y = wy0 + wmsg->font_height;
@@ -244,7 +288,99 @@ int wmsg_main(WMSG_S * wmsg)
    }
 
 
+   wmsg_restore_under(under, wx0, wy0);
    return ret;
+}
+
+
+// A warning window styled like the quit window, with `count` buttons (at most 3).
+// return value : -1 : error, otherwise the index of the chosen button
+static int msg_buttons(char *title, char *text, char **labels, const int *keys,
+                       int count)
+{
+   WMSG_BUT_S buttons[4]; // the last button is NULL, needed
+   WMSG_S     wmsg;
+   int        col_black    = makecol(0, 0, 0),
+              col_midgreen = makecol(0, 128, 0),
+              col_white    = makecol(255, 255, 255),
+              col_green    = makecol(0, 255, 0);
+   int        i;
+
+   memset(buttons, 0, sizeof(buttons));
+   for (i = 0; i < count; i++)
+   {
+      buttons[i].text               = labels[i];
+      buttons[i].right_spaces       = (i < count - 1) ? 3 : 0;
+      buttons[i].on.fg              = col_black;
+      buttons[i].on.bg              = col_midgreen;
+      buttons[i].on.border          = col_white;
+      buttons[i].off.fg             = col_green;
+      buttons[i].off.bg             = col_black;
+      buttons[i].off.border         = col_green;
+      buttons[i].shortcut[0].key[0] = keys[i];
+   }
+
+   wmsg.title        = title;
+   wmsg.text         = text;
+   wmsg.font_width   = 8;
+   wmsg.font_height  = 8;
+   wmsg.col_win.bg   = col_black;
+   wmsg.col_win.fg   = col_white;
+   wmsg.col_title.bg = col_green;
+   wmsg.col_title.fg = col_black;
+   wmsg.col_text.bg  = -1;
+   wmsg.col_text.fg  = col_green;
+   wmsg.button       = & buttons[0];
+
+   return wmsg_main( & wmsg);
+}
+
+static int msg_three_buttons(char *title, char *text,
+                             char *label0, int key0,
+                             char *label1, int key1)
+{
+   char *labels[3];
+   int   keys[3];
+
+   labels[0] = label0;           keys[0] = key0;
+   labels[1] = label1;           keys[1] = key1;
+   labels[2] = " (Esc) CANCEL "; keys[2] = KEY_ESC;
+
+   return msg_buttons(title, text, labels, keys, 3);
+}
+
+static int msg_two_buttons(char *title, char *text, char *label0, int key0)
+{
+   char *labels[2];
+   int   keys[2];
+
+   labels[0] = label0;           keys[0] = key0;
+   labels[1] = " (Esc) CANCEL "; keys[1] = KEY_ESC;
+
+   return msg_buttons(title, text, labels, keys, 2);
+}
+
+int msg_unsaved_main(const char *text)
+{
+   return msg_three_buttons("WARNING", (char *) text,
+                            "(S) SAVE ALL", KEY_S,
+                            "(D) DISCARD", KEY_D);
+}
+
+int msg_project_required_main(void)
+{
+   return msg_three_buttons("PROJECT NEEDED",
+      "\nSaved maps live in a project folder. Choose one to continue.",
+      "(N) NEW PROJECT", KEY_N,
+      "(O) OPEN PROJECT", KEY_O);
+}
+
+int msg_replace_project_copy_main(void)
+{
+   return msg_two_buttons("WARNING",
+      "\nThe project already has its own copy of this map."
+      "\nReplacing it keeps the old one as a numbered backup.",
+      "(R) REPLACE", KEY_R);
 }
 
 

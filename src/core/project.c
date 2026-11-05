@@ -26,6 +26,12 @@
 
 PROJECT_S glb_project;
 
+// The configured read chain, moved down one by the project and restored when it
+// closes.
+static char *s_configured_mod_dir[MAX_MOD_DIR];
+static char *s_project_mod_dir;
+static int   s_mod_dir_replaced;
+
 static int file_exists(const char *path)
 {
    FILE *fp = fopen(path, "rb");
@@ -48,6 +54,18 @@ static int ensure_dir(const char *path)
 static void make_extra_key(int idx, char *out, int out_cap)
 {
    snprintf(out, out_cap, "extra_mod_mpq_%d", idx);
+}
+
+#ifdef WIN32
+   #define DEFAULT_TEST_WRAPPER ""
+#else
+   #define DEFAULT_TEST_WRAPPER "wine"
+#endif
+
+static void copy_text(char *dst, int cap, const char *src)
+{
+   strncpy(dst, src, cap - 1);
+   dst[cap - 1] = 0;
 }
 
 int project_ini_path(const char *project_dir, char *out, int out_cap)
@@ -88,6 +106,10 @@ int project_create(const char *path, const char *name,
    al_set_config_value(cfg, "", "name",           name);
    al_set_config_value(cfg, "", "editor_version", DS1EDIT_VERSION_STR);
    al_set_config_value(cfg, "", "d2_install",     d2_install);
+   al_set_config_value(cfg, "", "test_game_dir",  "");
+   al_set_config_value(cfg, "", "test_exe",       "Game.exe");
+   al_set_config_value(cfg, "", "test_args",      PROJECT_DEFAULT_TEST_ARGS);
+   al_set_config_value(cfg, "", "test_wrapper",   DEFAULT_TEST_WRAPPER);
 
    rc = al_save_config_file(ini, cfg);
    al_destroy_config(cfg);
@@ -138,6 +160,22 @@ int project_load(const char *path)
       glb_project.d2_install[PROJECT_PATH_MAX - 1] = 0;
    }
 
+   // An ini from before the launch profile has none of these keys; an empty
+   // exe or argument list is no use to anyone, so both get their default.
+   v = al_get_config_value(cfg, "", "test_game_dir");
+   if (v != NULL) copy_text(glb_project.test_game_dir, sizeof(glb_project.test_game_dir), v);
+   v = al_get_config_value(cfg, "", "test_exe");
+   copy_text(glb_project.test_exe, sizeof(glb_project.test_exe),
+             (v != NULL && v[0] != 0) ? v : "Game.exe");
+   v = al_get_config_value(cfg, "", "test_args");
+   copy_text(glb_project.test_args, sizeof(glb_project.test_args),
+             (v != NULL && v[0] != 0) ? v : PROJECT_DEFAULT_TEST_ARGS);
+   // An empty wrapper is a choice (run the game directly); only a missing key
+   // takes the default.
+   v = al_get_config_value(cfg, "", "test_wrapper");
+   copy_text(glb_project.test_wrapper, sizeof(glb_project.test_wrapper),
+             v != NULL ? v : DEFAULT_TEST_WRAPPER);
+
    for (i = 0; i < PROJECT_EXTRA_MPQ_MAX; i++)
    {
       make_extra_key(i, key, sizeof(key));
@@ -172,6 +210,10 @@ int project_save(void)
    al_set_config_value(cfg, "", "name",           glb_project.name);
    al_set_config_value(cfg, "", "editor_version", DS1EDIT_VERSION_STR);
    al_set_config_value(cfg, "", "d2_install",     glb_project.d2_install);
+   al_set_config_value(cfg, "", "test_game_dir",  glb_project.test_game_dir);
+   al_set_config_value(cfg, "", "test_exe",       glb_project.test_exe);
+   al_set_config_value(cfg, "", "test_args",      glb_project.test_args);
+   al_set_config_value(cfg, "", "test_wrapper",   glb_project.test_wrapper);
 
    for (i = 0; i < glb_project.extra_count && i < PROJECT_EXTRA_MPQ_MAX; i++)
    {
@@ -186,6 +228,16 @@ int project_save(void)
 
 void project_close(void)
 {
+   if (s_mod_dir_replaced)
+   {
+      int i;
+
+      for (i = 0; i < MAX_MOD_DIR; i++)
+         glb_config.mod_dir[i] = s_configured_mod_dir[i];
+      s_mod_dir_replaced = 0;
+      free(s_project_mod_dir);
+      s_project_mod_dir = NULL;
+   }
    memset(&glb_project, 0, sizeof(glb_project));
 }
 
@@ -196,14 +248,30 @@ void project_apply_to_config(void)
 
    if (!glb_project.is_open) return;
 
-   // Point the overlay at the project folder. This replaces mod_dir[0];
-   // previous value (if any) leaks -- acceptable given the lifecycle and
-   // the existing INI loader does the same thing.
+   // Put the project folder first in the read chain. The configured overlays
+   // stay behind it. Changing project replaces only entry 0.
    len = strlen(glb_project.path);
    buf = (char *) malloc(len + 1);
    if (buf != NULL)
    {
       memcpy(buf, glb_project.path, len + 1);
+      if (!s_mod_dir_replaced)
+      {
+         int i;
+
+         for (i = 0; i < MAX_MOD_DIR; i++)
+            s_configured_mod_dir[i] = glb_config.mod_dir[i];
+         if (glb_config.mod_dir[MAX_MOD_DIR - 1] != NULL)
+            fprintf(stderr,
+               "project_apply_to_config: the read chain is full; <%s> is not "
+               "read while the project is open\n",
+               glb_config.mod_dir[MAX_MOD_DIR - 1]);
+         for (i = MAX_MOD_DIR - 1; i > 0; i--)
+            glb_config.mod_dir[i] = glb_config.mod_dir[i - 1];
+         s_mod_dir_replaced = 1;
+      }
+      free(s_project_mod_dir);
+      s_project_mod_dir = buf;
       glb_config.mod_dir[0] = buf;
    }
 
@@ -325,6 +393,61 @@ static int path_starts_with(const char *path, const char *dir)
    return path[i] == 0 || path[i] == '/' || path[i] == '\\';
 }
 
+int project_path_is_inside(const char *path, const char *dir)
+{
+   char   trimmed[PROJECT_PATH_MAX];
+   size_t n;
+
+   if (path == NULL || dir == NULL || dir[0] == 0) return 0;
+   if (path_starts_with(path, dir)) return 1;
+
+   // `dir` spelled with a trailing separator still matches `dir` itself.
+   n = strlen(dir);
+   if (n >= sizeof(trimmed)) return 0;
+   memcpy(trimmed, dir, n + 1);
+   while (n > 1 && (trimmed[n - 1] == '/' || trimmed[n - 1] == '\\'))
+      trimmed[--n] = 0;
+   return path_starts_with(path, trimmed);
+}
+
+// "/x", "\x" and "C:\x" name a real place on disk. Anything else is a name
+// relative to Tiles, which is how the area browser names maps.
+int project_path_is_rooted(const char *path)
+{
+   if (path == NULL) return 0;
+   if (path[0] == '/' || path[0] == '\\') return 1;
+   return isalpha((unsigned char) path[0]) && path[1] == ':';
+}
+
+int project_path_has_parent_ref(const char *path)
+{
+   const char *p;
+
+   if (path == NULL) return 0;
+   for (p = path; *p != 0; p++)
+   {
+      if (p[0] == '.' && p[1] == '.' &&
+          (p == path || p[-1] == '/' || p[-1] == '\\') &&
+          (p[2] == 0 || p[2] == '/' || p[2] == '\\'))
+         return 1;
+   }
+   return 0;
+}
+
+static int path_in_install(const char *path, const char *install)
+{
+   if (install == NULL || install[0] == 0) return 0;
+   if (project_path_is_inside(path, install)) return 1;
+   return project_path_is_rooted(path) && project_path_has_parent_ref(path);
+}
+
+int project_path_in_game_install(const char *path)
+{
+   if (path == NULL) return 0;
+   return path_in_install(path, glb_config.d2_install) ||
+          path_in_install(path, glb_project.d2_install);
+}
+
 int project_redirect_ds1_save_path(const char *src, char *dst, int dst_cap)
 {
    const char *suffix;
@@ -339,12 +462,19 @@ int project_redirect_ds1_save_path(const char *src, char *dst, int dst_cap)
    if (!glb_project.is_open)               return 0;
    if (glb_project.path[0] == 0)           return 0;
 
-   // Already inside the project folder -> save in place.
-   if (path_starts_with(src, glb_project.path)) return 0;
+   // Already inside the project folder -> save in place, unless a ".." could
+   // take it back out.
+   if (path_starts_with(src, glb_project.path))
+      return project_path_has_parent_ref(src) ? -1 : 0;
 
    // Only redirect if we can pull a meaningful in-game suffix out.
    suffix = find_tiles_suffix(src);
+   if (suffix == NULL && !project_path_is_rooted(src))
+      suffix = src;
    if (suffix == NULL || suffix[0] == 0)   return 0;
+
+   // A ".." in what gets appended would climb back out of the project.
+   if (project_path_has_parent_ref(suffix)) return -1;
 
    {
       size_t plen = strlen(glb_project.path);
@@ -362,5 +492,40 @@ int project_redirect_ds1_save_path(const char *src, char *dst, int dst_cap)
       dst[dst_cap - 1] = 0;
       return -1;
    }
+#ifndef WIN32
+   // A table can spell a relative name with backslashes.
+   {
+      char *c;
+      for (c = dst + strlen(glb_project.path); *c != 0; c++)
+         if (*c == '\\') *c = '/';
+   }
+#endif
    return 1;
+}
+
+int project_save_would_replace(const char *src)
+{
+   char target[sizeof(glb_ds1[0].name)];
+   struct stat st;
+
+   if (src == NULL) return 0;
+   if (project_redirect_ds1_save_path(src, target, (int) sizeof(target)) != 1)
+      return 0;
+   return stat(target, &st) == 0;
+}
+
+static char s_open_game_folder[PROJECT_PATH_MAX];
+
+void project_set_open_game_folder(const char *d2_install, const char *d2data_mpq)
+{
+   s_open_game_folder[0] = 0;
+   if (d2_install != NULL && d2_install[0] != 0 && d2data_mpq != NULL &&
+       project_path_is_inside(d2data_mpq, d2_install) &&
+       strlen(d2_install) < sizeof(s_open_game_folder))
+      strcpy(s_open_game_folder, d2_install);
+}
+
+const char *project_open_game_folder(void)
+{
+   return s_open_game_folder;
 }

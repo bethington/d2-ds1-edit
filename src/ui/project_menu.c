@@ -9,18 +9,22 @@
 
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_native_dialog.h>
+#include "ui/message_box.h"
 
 #include "structs.h"
 #include "ui/compat.h"
 #include "ui/compose_category_picker.h"
 #include "ui/compose_mode_modal.h"
 #include "ui/compose_preset_picker.h"
+#include "ui/dialogs.h"
 #include "ui/export_type_picker.h"
+#include "ui/map_save_ui.h"
 #include "ui/project_menu.h"
 #include "ui/scope_picker.h"
 #include "ui/upscale_mode_picker.h"
 #include "ui/win_folder_picker.h"
 
+#include "core/area_browser.h"
 #include "core/asset_export.h"
 #include "core/compose_apng.h"
 #include "core/compose_cof_path.h"
@@ -28,6 +32,7 @@
 #include "core/compose_iter.h"
 #include "core/compose_naming.h"
 #include "core/compose_palette.h"
+#include "core/map_state.h"
 #include "core/compose_palette_index.h"
 #include "core/compose_render.h"
 #include "core/export_progress.h"
@@ -37,17 +42,9 @@
 #include "core/preferences.h"
 #include "core/upscale.h"
 #include "platform.h"
-
-// Shortcut debounce helper: wait until all given keys are released.
-static void wait_release(int k1, int k2, int k3)
-{
-   int pressed;
-   do {
-      al_rest(0.01);
-      al_get_keyboard_state(&a5_kb_state);
-      pressed = key_pressed(k1) || key_pressed(k2) || key_pressed(k3);
-   } while (pressed);
-}
+#ifdef __APPLE__
+#include "mac_folder_picker.h"
+#endif
 
 // Basename extraction: returns pointer into `path` at the last path element.
 static const char *basename_of(const char *path)
@@ -59,6 +56,17 @@ static const char *basename_of(const char *path)
          last = p + 1;
    }
    return last;
+}
+
+// Rebuild the area list for the project now in effect, telling the user if the
+// tables could not be read.
+static void reload_area_browser(void)
+{
+   if (area_browser_reload() != 0)
+      ds1_message_box(a5_display, "DS1Edit",
+         "The area list could not be reloaded",
+         "The game's tables could not be read for this project. The list may be out of date.",
+         NULL, ALLEGRO_MESSAGEBOX_ERROR);
 }
 
 // On successful open/create, record the project into prefs and persist.
@@ -87,6 +95,10 @@ static int pick_folder(const char *title, const char *initial,
 {
 #ifdef WIN32
    return win_pick_folder(title, initial, out, out_cap);
+#elif defined(__APPLE__)
+   /* Allegro's panel on macOS can't make a folder and doesn't show the title:
+      see mac_folder_picker.m. */
+   return ds1_mac_pick_folder(title, initial, out, out_cap);
 #else
    ALLEGRO_FILECHOOSER *dlg;
    const char *picked;
@@ -120,19 +132,51 @@ static int pick_folder(const char *title, const char *initial,
 
 /* ---- actions ---- */
 
-static void action_new_project(void)
+/* Saved maps must never touch the game files, so a project cannot live inside
+ * the game's folder. Returns 1 (after telling the user) if `path` does. */
+static int refuse_game_folder(const char *path)
+{
+   if (!project_path_is_inside(path, glb_config.d2_install) &&
+       !project_path_is_inside(path, glb_prefs.last_d2_install))
+      return 0;
+
+   ds1_message_box(a5_display, "Project folder",
+      "That folder is part of the Diablo II install.",
+      "Projects can't live inside the game's folder, because saved maps must never touch the game files. Choose a folder somewhere else.",
+      NULL, ALLEGRO_MESSAGEBOX_WARN);
+   return 1;
+}
+
+/* With a project open, changing project closes its maps, so that a map from the
+ * old project can't save over the new one's copy. Unsaved edits are settled
+ * first, before anything else is asked. With no project open (the first-save
+ * flow) the maps stay loaded and the save's replace prompt protects them. */
+static int resolve_unsaved_for_project_change(void)
+{
+   return !glb_project.is_open || map_save_ui_resolve_unsaved(
+      "\nChanging project closes the open maps, and they have unsaved edits.");
+}
+
+static int action_new_project(void)
 {
    char path[PROJECT_PATH_MAX];
    char ini[PROJECT_PATH_MAX];
    const char *install;
    const char *name;
    FILE *fp;
+   int had_project = glb_project.is_open; // project_load() overwrites glb_project
+
+   if (!resolve_unsaved_for_project_change())
+      return 0;
 
    if (!pick_folder(
          "New Project — click \"New folder\" to create one, then Select",
-         glb_prefs.last_d2_install[0] ? glb_prefs.last_d2_install : NULL,
+         (glb_prefs.recent_count > 0) ? glb_prefs.recent_projects[0] : NULL,
          path, sizeof(path)))
-      return;
+      return 0;
+
+   if (refuse_game_folder(path))
+      return 0;
 
    // Refuse to overwrite an existing project.
    if (project_ini_path(path, ini, sizeof(ini)))
@@ -141,13 +185,13 @@ static void action_new_project(void)
       if (fp != NULL)
       {
          fclose(fp);
-         al_show_native_message_box(a5_display,
+         ds1_message_box(a5_display,
             "Project already exists",
             "project.ini was found in the selected folder.",
             "Use Open Project (Ctrl+Shift+O) to load it instead.",
             NULL,
             ALLEGRO_MESSAGEBOX_WARN);
-         return;
+         return 0;
       }
    }
 
@@ -157,98 +201,111 @@ static void action_new_project(void)
 
    if (!project_create(path, name, install))
    {
-      al_show_native_message_box(a5_display,
+      ds1_message_box(a5_display,
          "Create Project failed",
          "Could not write project.ini",
          "Check folder permissions and try again.",
          NULL,
          ALLEGRO_MESSAGEBOX_ERROR);
-      return;
+      return 0;
    }
 
    if (!project_load(path))
    {
-      al_show_native_message_box(a5_display,
+      ds1_message_box(a5_display,
          "Create Project failed",
          "Project was written but could not be re-loaded.",
          NULL, NULL, ALLEGRO_MESSAGEBOX_ERROR);
-      return;
+      return 0;
    }
 
+   if (had_project)
+      area_browser_unload_all();
+
    project_apply_to_config();
+   reload_area_browser();
    record_and_persist(path);
 
    fprintf(stderr, "project_menu: created and opened <%s>\n", path);
+   return 1;
 }
 
-static void action_open_project(void)
+static int action_open_project(void)
 {
    char path[PROJECT_PATH_MAX];
    char ini[PROJECT_PATH_MAX];
    const char *initial;
    FILE *fp;
+   int had_project = glb_project.is_open; // project_load() overwrites glb_project
 
    // Prefer the most recent project dir as the starting location.
    initial = (glb_prefs.recent_count > 0)
            ? glb_prefs.recent_projects[0]
-           : (glb_prefs.last_d2_install[0] ? glb_prefs.last_d2_install : NULL);
+           : NULL;
+
+   if (!resolve_unsaved_for_project_change())
+      return 0;
 
    if (!pick_folder("Open Project — pick the project folder",
                     initial, path, sizeof(path)))
-      return;
+      return 0;
+
+   if (refuse_game_folder(path))
+      return 0;
 
    if (!project_ini_path(path, ini, sizeof(ini)) ||
        (fp = fopen(ini, "rb")) == NULL)
    {
-      al_show_native_message_box(a5_display,
+      ds1_message_box(a5_display,
          "Not a Project",
          "project.ini was not found in the selected folder.",
          "Use Ctrl+Shift+N to create a new project here.",
          NULL,
          ALLEGRO_MESSAGEBOX_ERROR);
-      return;
+      return 0;
    }
    fclose(fp);
 
    if (!project_load(path))
    {
-      al_show_native_message_box(a5_display,
+      ds1_message_box(a5_display,
          "Open Project failed",
          "project.ini could not be parsed.",
          NULL, NULL, ALLEGRO_MESSAGEBOX_ERROR);
-      return;
+      return 0;
    }
 
+   if (had_project)
+      area_browser_unload_all();
+
    project_apply_to_config();
+   reload_area_browser();
    record_and_persist(path);
 
    fprintf(stderr, "project_menu: opened <%s>\n", path);
+   return 1;
 }
 
 static void action_close_project(void)
 {
-   char msg[PROJECT_PATH_MAX + 64];
-
    if (!glb_project.is_open) return;
 
-   snprintf(msg, sizeof(msg),
-            "Close project \"%s\"?\n\nEdits already saved to disk are kept.\n"
-            "Open DS1 files remain open.",
-            glb_project.name[0] ? glb_project.name : glb_project.path);
+   if (map_any_dirty())
+   {
+      int choice = msg_unsaved_main(
+         "\nClosing the project closes its open maps, and they have unsaved edits.");
 
-   int rc = al_show_native_message_box(a5_display,
-      "Close Project",
-      msg,
-      "Closing will clear the current mod overlay; new saves will go to the raw filesystem.",
-      NULL,
-      ALLEGRO_MESSAGEBOX_YES_NO | ALLEGRO_MESSAGEBOX_QUESTION);
-
-   if (rc != 1) return; // Yes == 1
+      if (choice == 0 && map_save_ui_save_dirty() != 0)
+         return;
+      if (choice != 0 && choice != 1)
+         return;
+   }
 
    fprintf(stderr, "project_menu: closing <%s>\n", glb_project.path);
 
    project_close();
-   glb_config.mod_dir[0] = NULL; // clear overlay
+   area_browser_unload_all();
+   reload_area_browser();
 }
 
 static int make_virtual_prefix_from_mod_path(const char *picked_path,
@@ -325,7 +382,7 @@ static int confirm_overwrite_output(const char *title, const char *output_path)
    snprintf(detail, sizeof(detail),
             "The selected output folder already contains files.\n\n%s\n\nOverwrite existing export results?",
             output_path);
-   rc = al_show_native_message_box(a5_display,
+   rc = ds1_message_box(a5_display,
       title,
       "Output folder is not empty.",
       detail,
@@ -374,7 +431,7 @@ static int run_upscale_pipeline(const char *title,
     * detail; rc here just controls flow. */
    (void) rc;
 
-   al_show_native_message_box(a5_display,
+   ds1_message_box(a5_display,
       title,
       "Upscale failed.",
       error[0] ? error
@@ -396,7 +453,7 @@ static void show_export_result(const char *title,
 
    if (exported_count <= 0)
    {
-      al_show_native_message_box(a5_display,
+      ds1_message_box(a5_display,
          title,
          "No PNGs were exported.",
          detail,
@@ -406,7 +463,7 @@ static void show_export_result(const char *title,
    }
 
    snprintf(message, sizeof(message), summary, exported_count);
-   al_show_native_message_box(a5_display,
+   ds1_message_box(a5_display,
       title,
       message,
       output_path,
@@ -1008,7 +1065,7 @@ static void action_export_compose(void)
             "  Skipped (no COF):       %d%s",
             run.success_count, run.failure_count, run.skipped_tuples,
             failure_tail);
-         al_show_native_message_box(a5_display,
+         ds1_message_box(a5_display,
             "Compose Export - Cancelled",
             "The export was interrupted.",
             message, NULL, ALLEGRO_MESSAGEBOX_WARN);
@@ -1043,7 +1100,7 @@ static void action_export_compose(void)
             "exist in the loaded MPQ chain.\n\n"
             "  Skipped (no COF):  %d%s",
             run.skipped_tuples, sample_tail);
-         al_show_native_message_box(a5_display,
+         ds1_message_box(a5_display,
             "Compose Export - Nothing Exported",
             "No animations were produced.",
             message, NULL, ALLEGRO_MESSAGEBOX_WARN);
@@ -1058,7 +1115,7 @@ static void action_export_compose(void)
             "Output: %s%s",
             run.success_count, run.failure_count, run.skipped_tuples,
             output_path, failure_tail);
-         al_show_native_message_box(a5_display,
+         ds1_message_box(a5_display,
             "Compose Export - Done",
             "Compose export finished.",
             message, NULL,
@@ -1094,7 +1151,7 @@ static void action_export_unified(void)
 
    if (glb_config.mod_dir[0] == NULL || glb_config.mod_dir[0][0] == 0)
    {
-      al_show_native_message_box(a5_display,
+      ds1_message_box(a5_display,
          "Export Assets",
          "No mod overlay is configured.",
          "Set a mod directory in Ds1edit.ini before exporting.",
@@ -1157,7 +1214,7 @@ static void action_export_unified(void)
       if (!make_virtual_prefix_from_mod_path(folder_path,
                                              asset_prefix, sizeof(asset_prefix)))
       {
-         al_show_native_message_box(a5_display,
+         ds1_message_box(a5_display,
             "Export Assets",
             "The selected folder is outside the current mod overlay.",
             glb_config.mod_dir[0],
@@ -1183,7 +1240,7 @@ static void action_export_unified(void)
 
       if (candidates == 0)
       {
-         al_show_native_message_box(a5_display,
+         ds1_message_box(a5_display,
             "Export Assets",
             "Scope matched no files.",
             "Check the pattern, the selected folder, or your mod_dir setting.",
@@ -1199,7 +1256,7 @@ static void action_export_unified(void)
             "(export_dc6_single_frame_only=YES). Set it to NO in "
             "Ds1edit.ini to include multi-frame files.",
             candidates);
-         al_show_native_message_box(a5_display,
+         ds1_message_box(a5_display,
             "Export Assets",
             "All matching files were filtered out.",
             detail,
@@ -1236,7 +1293,7 @@ static void action_export_unified(void)
       if (!upscale_create_temp_dir(staging_path, sizeof(staging_path)))
       {
          asset_export_plan_free(&plan);
-         al_show_native_message_box(a5_display,
+         ds1_message_box(a5_display,
             "Export Assets",
             "Failed to prepare temporary export staging.",
             NULL,
@@ -1275,7 +1332,7 @@ static void action_export_unified(void)
          "was kept.", exported_count,
          staging_path[0] != 0 ? staging_path : output_path);
       export_progress_end();
-      al_show_native_message_box(a5_display,
+      ds1_message_box(a5_display,
          "Export Assets",
          "Canceled.",
          detail,
@@ -1289,7 +1346,7 @@ static void action_export_unified(void)
       if (staging_path[0] != 0)
          upscale_remove_tree(staging_path);
       export_progress_end();
-      al_show_native_message_box(a5_display,
+      ds1_message_box(a5_display,
          "Export Assets",
          "No PNGs were written.",
          "The matched assets did not produce any PNGs (decoder errors or empty input).",
@@ -1317,7 +1374,7 @@ static void action_export_unified(void)
                "Canceled during upscale. Native PNGs are at %s; partially "
                "upscaled files are at %s.", staging_path, output_path);
             export_progress_end();
-            al_show_native_message_box(a5_display,
+            ds1_message_box(a5_display,
                "Export Assets",
                "Canceled.",
                detail,
@@ -1345,34 +1402,9 @@ static void action_export_unified(void)
 
 /* ---- public entry points ---- */
 
-void project_menu_handle_shortcuts(void)
-{
-   int ctrl, shift;
+int project_menu_new_project(void)  { return action_new_project(); }
+int project_menu_open_project(void) { return action_open_project(); }
 
-   ctrl  = key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL);
-   shift = key_pressed(KEY_LSHIFT)   || key_pressed(KEY_RSHIFT);
-
-   if (!ctrl || !shift) return;
-
-   if (key_pressed(KEY_N))
-   {
-      wait_release(KEY_N, KEY_LCONTROL, KEY_LSHIFT);
-      action_new_project();
-   }
-   else if (key_pressed(KEY_O))
-   {
-      wait_release(KEY_O, KEY_LCONTROL, KEY_LSHIFT);
-      action_open_project();
-   }
-   else if (key_pressed(KEY_W))
-   {
-      wait_release(KEY_W, KEY_LCONTROL, KEY_LSHIFT);
-      action_close_project();
-   }
-   else if (key_pressed(ALLEGRO_KEY_A))
-   {
-      wait_release(ALLEGRO_KEY_A, KEY_LCONTROL, KEY_LSHIFT);
-      action_export_unified();
-   }
-}
+void project_menu_close_project(void) { action_close_project(); }
+void project_menu_export(void)        { action_export_unified(); }
 

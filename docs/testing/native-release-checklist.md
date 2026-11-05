@@ -110,7 +110,7 @@ for one package says nothing about another build or platform.
   whether the keyboard worked before and after. A build whose keys never reach
   the editor fails P-items even if the window draws.
 
-## Case `gui-edit-undo-save-reopen` (items E1 to E13)
+## Case `gui-edit-undo-save-reopen` (items E1 to E16)
 
 Use act 1 Town and at least two other maps from different acts.
 
@@ -146,10 +146,14 @@ Use act 1 Town and at least two other maps from different acts.
   version (for example `name-000.ds1`) exists.
 - [ ] **E10 Reopen.** Quit, relaunch the same extracted package, reopen the
   saved map: the edit is present and undo history starts empty.
-- [ ] **E11 Unsaved-change handling.** With an unsaved edit, quit. The WARNING
-  dialog offers (S) Save all and quit, (Q) Quit, (Esc) Cancel. Esc returns to
-  the editor with the edit intact. Q quits and leaves a `.tmp` autosave and
-  does not overwrite the map. S saves and quits.
+- [ ] **E11 Unsaved-change handling.** With no unsaved edits, quitting asks
+  nothing. With an unsaved edit, quit: the WARNING dialog offers (S) Save all and
+  quit, (Q) Quit, (Esc) Cancel. Esc returns to the editor with the edit intact. Q
+  quits and leaves a `.tmp` autosave and does not overwrite the map: next to a
+  map opened from a file, in the project's `Global/Tiles` tree for a map from the
+  area browser, and in the editor's `tmp` folder when no project is open or the
+  map is inside the Diablo II install. S saves and quits. Opening another map from the browser with an unsaved edit asks first, and
+  (Esc) keeps the map open with the edit intact.
 - [ ] **E12 Failed save is non-fatal.** Make the target unwritable (read-only
   file, or a folder you cannot write), edit, press **Ctrl+S**. An error box
   titled "The map was not saved" appears with a reason; the editor stays open,
@@ -165,8 +169,88 @@ Use act 1 Town and at least two other maps from different acts.
   does not scroll. Set `mouse_edge_scroll = YES` in `Ds1edit.ini`, restart, and
   edge scrolling works; set it back to `NO` afterwards. While a text field or
   modal is open, the arrow keys and **W A S D** do not scroll the map behind it.
+- [ ] **E14 Project prompt and browser marks.** With no project open, edit a map
+  from the game's archives and press **Ctrl+S**: the editor asks for a project,
+  and (Esc) writes nothing. Create one: the map saves under
+  `<project>/Global/Tiles/`, nothing changes in the game folder, and the browser
+  row shows `M`. Unsaved edits show `*`.
+- [ ] **E15 Menus and hotkeys.** Click each menu title, and open each with **Alt**
+  plus its letter. Arrow keys move and wrap, **Enter** runs, and **Esc** closes the
+  menu without reaching the quit dialog. While a menu is open, the map behind it
+  ignores keys and clicks, and a click that closes the menu doesn't touch the map.
+  Dimmed rows do nothing. **Ctrl+N** doesn't toggle night mode, **Ctrl+S** doesn't
+  scroll, and **Insert** in tile mode creates no map. Side panels and the HUD sit
+  below the bar with no overlap. **Ctrl+Del** names the on-screen map after a
+  preset open and after a number-key switch, or stays dimmed; **No** leaves the
+  map and **Yes** removes it. Hold **Enter** on a menu row: it runs once and
+  doesn't answer the dialog it opens. Check **File > Save** and the Edit rows,
+  **Insert** in object mode, and two HUD rows toggled with **~**. On Windows,
+  check **Alt**+letter. On macOS, repeat with **Cmd**, and confirm **Cmd+W** and
+  **Cmd+C** don't stick. Map lifecycle: **Map > New** with no project asks for
+  one. New creates a map that appears in the browser, scrolled to, showing `N`, and
+  opens when clicked. A bad, duplicate or too-long name keeps the dialog up with a message, and a full Def row says so. Clone of a
+  map with unsaved edits keeps those edits in the copy and leaves the original
+  unsaved, and Clone of an MPQ-only map works. **Ctrl+Del** on `N`, `M` and
+  unmarked rows offers Delete, Revert and Remove. A Removed row is struck through
+  and won't open, and **Restore Slot** brings it back. **Restore from Backup**
+  round trips. `<project>/backup` holds the backups, and nothing changes in the
+  game folder. Repeat on an Unlisted map: clone it, reopen the project, and the new
+  row is still there; remove it, reopen, and it's still struck through. Saving a
+  deleted map that's still open is refused with a message, and quitting still lets
+  you discard it. New on Tristram is refused in the dialog with a short message, and
+  Clone on Tristram works; both New and Clone are refused on Act 1's town. New on the
+  Barracks starts at 11 by 15, and the size follows the tileset. Click a File cell in
+  the properties panel: it's dim, and no edit starts. Remove on a row's only
+  map is refused before any confirmation. After Remove, the row in `LvlPrest.txt` has
+  `Files` lowered and no `0` before the last map, and restore returns the table byte
+  for byte.
+- [ ] **E16 Build and test a project.** Do the steps in order and record what each one showed.
+  1. **Prerequisites.** Two real copies of the game folder, apart from the install the
+     editor reads: a test copy, and a second copy standing for a player's game. In each,
+     `patch_d2.mpq` is the size of the install's. Open a project, open **Build >
+     Launch Profile**, and set the test copy. The defaults are `-w -direct -txt`, and
+     choosing the install folder or the project folder is refused. On Linux and macOS
+     the wrapper is `wine`, which hasn't been tested yet, so record what happened.
+     The test copy shares its save folder and settings with your normal game, so use a
+     throwaway character and back up your saves. On Linux and macOS the same applies
+     per wine prefix, which hasn't been verified.
+  2. **List `DATA`.** Before each **Build & Test**, list every file under `DATA` in the
+     test copy with its size and date, and list it again afterward. Only files under
+     `DATA/GLOBAL/TILES` and `DATA/GLOBAL/EXCEL` change, and `ds1edit-installed.txt`
+     beside `DATA` appears or changes. Also list the install's `DATA` before step 3 and
+     after step 6, and nothing in it has changed.
+  3. **Change a map.** Edit a map you can reach at once. The Act 1 town has four maps
+     (`TownN1`, `TownE1`, `TownS1`, `TownW1`) and which one a game uses wasn't
+     determined, so for the town make the change in all four, or edit a map with a
+     single version. Save, and run **Build & Test**. The game starts windowed from the test copy.
+     Start a game, and the change is in the town.
+  4. **Add a map and change the table.** Close the game from step 3. With **Map > New**
+     on a row that has a size, create a map, and save. Run **Build & Test**. At the game's menu, before starting
+     a game, run **Build MPQ**. It refuses and says the table has changed since the game
+     last compiled it. A new map joins the row's random pick, so seeing it in the game
+     can't be forced, and it may take several new games with new characters. Record the
+     new map as seen, or as "not seen after N games", and that the project's
+     `LvlPrest.txt` lists it. On a row that has a size, the map must match that size.
+  5. **Build the MPQ.** Start a game in the test copy, so the game compiles the tables,
+     then run **Build MPQ**. It succeeds and writes `<project>/build/patch_d2.mpq`.
+  6. **Use the MPQ in a player's copy.** Replace `patch_d2.mpq` in the second copy with
+     that file. On Linux, delete the old `Patch_D2.mpq` first, or the copy holds two
+     names differing only in case and wine picks either. Start the game from it with `-w` and without `-direct -txt`, and the
+     change from step 3 is in the game. Record the platform, the game and the wrapper
+     used, and whether each step passed.
 
-Total items: 13.
+  Windows, 1.13c, 2026-11-03, partly run, so the item stays unchecked on every
+  platform. A tent removed from `TownE1` was seen gone in the town in a D2Fleet slot,
+  with the install's tree copied in by hand (step 3's `TownN1` was not the map in
+  use). A new table was compiled by the game in that slot and entered town with no
+  crash. Build MPQ refused before a game had compiled it, and succeeded once the
+  slot's `.bin` files were copied to the test copy by hand. The built archive holds
+  the 209 retail entries and the project's. Mounted into a running game, it served
+  the edited map. Not shown: the new map drawn, a game entered from the editor's own
+  launch, which reached the menu only, steps 4 and 5 as written, and the built archive
+  mounting at startup in a player's copy (step 6). Linux and macOS are open.
+
+Total items: 16.
 
 ## Case `gui-modal-input` (items M1 to M4)
 
@@ -246,8 +330,8 @@ python -m scripts.equivalence.native_smoke manual ^
     --smoke-report OWNED\native-run\native-smoke-report.json ^
     --tester "Your Name" ^
     --environment "Windows 11 23H2 clean VM, no VC++ redist, 1.13c on D:\" ^
-    --notes "E1-E13 all done; E8 needed a second resize to redraw" ^
-    --items 13 --total 13 --out RESULTS\native.windows-x86.gui-edit-undo-save-reopen.json
+    --notes "E1-E16 all done; E8 needed a second resize to redraw" ^
+    --items 16 --total 16 --out RESULTS\native.windows-x86.gui-edit-undo-save-reopen.json
 ```
 
 Rules the tool enforces and `qualify.py` then checks:

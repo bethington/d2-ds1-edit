@@ -19,29 +19,250 @@
 #include "core/area_browser.h"
 #include "core/ds1_manager.h"
 #include "ui/props_panel.h"
+#include "ui/ui_layout.h"
 #include "ui/tile_picker.h"
 #include "ui/project_menu.h"
 #include "ui/preset_picker.h"
+#include "ui/commands.h"
+#include "ui/menu_bar.h"
 #include "core/export_common.h"
 #include "core/palette.h"
 #include "ui/input.h"
 #include "ui/selftest_verdict.h"
 #include "core/ds1_save_io.h"
+#include "ui/map_save_ui.h"
+#include "ui/map_dialog.h"
+#include "ui/fields_dialog.h"
+#include "core/map_state.h"
+#include "core/project.h"
+#include "core/mpq_build.h"
+#include "core/game_launch.h"
 #include <allegro5/allegro_native_dialog.h>
+#include "ui/message_box.h"
 
-/* Save one map. A failed save changes nothing on disk or in the map (see
- * core/ds1_save_io.h); tell the user so it is never mistaken for success. */
-static int interface_save_map(int ds1_idx, int is_tmp_file)
+/* Ask, naming the map and what will happen. */
+static int interface_confirm_map_op(const char *title, const char *heading_fmt,
+                                    const char *path, const char *text, int warn_unsaved)
 {
-   char error[768];
+   char heading[600], body[1024];
+   int rc, k, dirty = 0;
 
-   if (ds1_save_checked(ds1_idx, is_tmp_file, error, sizeof(error)) == 0)
-      return 0;
-   al_show_native_message_box(a5_display, "DS1Edit",
-      is_tmp_file ? "The autosave (.tmp) was not written"
-                  : "The map was not saved",
-      error, NULL, ALLEGRO_MESSAGEBOX_ERROR);
-   return -1;
+   for (k = 0; k < DS1_MAX && warn_unsaved && !dirty; k++)
+      dirty = glb_ds1[k].name[0] != 0 && map_is_dirty(k) &&
+              map_state_path_matches(glb_ds1[k].name, path);
+
+   snprintf(heading, sizeof(heading), heading_fmt, path);
+   snprintf(body, sizeof(body), "%s%s", text,
+            dirty ? "\n\nThis map has unsaved edits, which won't be saved." : "");
+   rc = ds1_message_box(a5_display, title, heading, body, NULL,
+                                   ALLEGRO_MESSAGEBOX_YES_NO | ALLEGRO_MESSAGEBOX_WARN);
+   input_suppress_held();
+   input_discard_pending();
+   return rc == 1;
+}
+
+/* The box said unsaved edits to this map won't be saved: every slot that has it
+ * open stops asking, so a later Save All can't write it back. */
+static void interface_forget_edits(const char *path)
+{
+   int k;
+
+   for (k = 0; k < DS1_MAX; k++)
+      if (glb_ds1[k].name[0] != 0 && map_state_path_matches(glb_ds1[k].name, path))
+         map_dirty_mark_saved(k);
+}
+
+/* Every slot showing this map now shows a file that's gone, so a real save is
+ * refused until it's reopened: it would recreate a file nothing lists, and block
+ * Restore from Backup. Loading or clearing a slot resets this. */
+static void interface_set_detached(const char *path, int detached)
+{
+   int k;
+
+   for (k = 0; k < DS1_MAX; k++)
+      if (glb_ds1[k].name[0] != 0 && map_state_path_matches(glb_ds1[k].name, path))
+         glb_ds1[k].detached = detached;
+}
+
+static void interface_map_op_failed(const char *title, const char *heading, const char *error)
+{
+   ds1_message_box(a5_display, title, heading, error, NULL, ALLEGRO_MESSAGEBOX_ERROR);
+   input_suppress_held();
+   input_discard_pending();
+}
+
+/* Delete a New map from the project. Undo can't bring it back: this is a file
+ * operation, not a map edit, so it takes a confirmation, and Restore from Backup. */
+static void interface_delete_map(int gi, int ei)
+{
+   AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
+   char error[512] = "", path[256];
+
+   snprintf(path, sizeof(path), "%s", ab->groups[gi].entries[ei].ds1_path);
+   if (ds1_manager_delete_check(gi, ei, error, sizeof(error)) != 0)
+   {
+      interface_map_op_failed("Delete Map", "This map can't be deleted.", error);
+      return;
+   }
+   if (!interface_confirm_map_op("Delete Map", "Delete %s?", path,
+         "This moves the map's file to the project's backup folder and takes it out of "
+         "its row in LvlPrest.txt. Map > Restore from Backup brings it back.", TRUE))
+      return;
+
+   /* ds1_manager_delete removes the row, then finds the open map's row again by
+      path. If this was the open map, it has none now and stays in memory. */
+   if (ds1_manager_delete(gi, ei, error, sizeof(error)) != 0)
+   {
+      interface_map_op_failed("Delete Map", "The map wasn't deleted.", error);
+      return;
+   }
+   interface_forget_edits(path);
+   interface_set_detached(path, TRUE);
+}
+
+static void interface_revert_map(int gi, int ei)
+{
+   AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
+   char error[512] = "", path[256];
+   int was_open = ab->loaded_group == gi && ab->loaded_entry == ei;
+   int def = ab->groups[gi].entries[ei].lvlprest_def;
+
+   snprintf(path, sizeof(path), "%s", ab->groups[gi].entries[ei].ds1_path);
+   if (!interface_confirm_map_op("Revert to Game Version", "Revert %s to the game's version?", path,
+         "This moves the project's copy to the project's backup folder. The game's "
+         "version is used from now on. Map > Restore from Backup brings the copy back.", TRUE))
+      return;
+
+   if (ds1_manager_revert(gi, ei, error, sizeof(error)) != 0)
+   {
+      interface_map_op_failed("Revert to Game Version", "The map wasn't reverted.", error);
+      return;
+   }
+
+   interface_forget_edits(path);
+   interface_set_detached(path, TRUE);
+
+   /* Show what was just reverted to, which reloads every slot. Other open maps with
+      unsaved edits prompt here, and a cancel leaves this one showing until it's
+      reopened. */
+   if (was_open && area_browser_find_row(path, def, &gi, &ei))
+      area_browser_switch_single(gi, ei);
+}
+
+static void interface_remove_map(int gi, int ei)
+{
+   AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
+   char error[512] = "", path[256];
+   int def = ab->groups[gi].entries[ei].lvlprest_def;
+
+   snprintf(path, sizeof(path), "%s", ab->groups[gi].entries[ei].ds1_path);
+   if (!map_save_ui_require_project())
+      return;
+
+   /* Opening a project rebuilds the rows, so find this one again, and only act
+      on it if it's still a game map with no project change. */
+   if (!area_browser_find_row(path, def, &gi, &ei) ||
+       ab->groups[gi].entries[ei].state != MAP_STATE_GAME)
+   {
+      interface_map_op_failed("Remove from Project", "Nothing was removed.",
+         "In this project the map isn't a plain game map any more. Check its row.");
+      return;
+   }
+   if (ds1_manager_remove_check(gi, ei, error, sizeof(error)) != 0)
+   {
+      interface_map_op_failed("Remove from Project", "This map can't be removed.", error);
+      return;
+   }
+   if (!interface_confirm_map_op("Remove from Project", "Remove %s from the project?", path,
+         "This takes it out of the project's LvlPrest.txt, so the game won't use "
+         "this map with your mod. The game's files don't change. Map > Restore Slot "
+         "puts it back.", FALSE))
+      return;
+
+   if (ds1_manager_remove_slot(gi, ei, error, sizeof(error)) != 0)
+      interface_map_op_failed("Remove from Project", "The map wasn't taken out of the row.", error);
+}
+
+static void interface_restore_slot(int gi, int ei)
+{
+   AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
+   char error[512] = "", path[256];
+
+   snprintf(path, sizeof(path), "%s", ab->groups[gi].entries[ei].ds1_path);
+   if (!interface_confirm_map_op("Restore Slot", "Restore %s's slot?", path,
+         "This puts the game's value back in the project's LvlPrest.txt.", FALSE))
+      return;
+   if (ds1_manager_restore_slot(gi, ei, error, sizeof(error)) != 0)
+      interface_map_op_failed("Restore Slot", "The slot wasn't restored.", error);
+}
+
+static void interface_restore_backup(int gi, int ei)
+{
+   AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
+   char error[512] = "", path[256];
+   int i, j, found = 0, was_open, row_gi, row_ei;
+
+   snprintf(path, sizeof(path), "%s", ab->groups[gi].entries[ei].ds1_path);
+   if (!map_save_ui_require_project())
+      return;
+
+   /* Opening a project rebuilds the rows, so find this one again. */
+   for (i = 0; i < ab->group_count && !found; i++)
+      for (j = 0; ab->groups[i].is_backup && j < ab->groups[i].entry_count && !found; j++)
+         if (strcmp(ab->groups[i].entries[j].ds1_path, path) == 0)
+         {
+            gi = i;
+            ei = j;
+            found = 1;
+         }
+   if (!found)
+      return;
+
+   was_open = ab->loaded_group == gi && ab->loaded_entry == ei;
+   if (!interface_confirm_map_op("Restore from Backup", "Restore the backup %s?", path,
+         "This moves it back to the project and registers it in LvlPrest.txt if needed.", TRUE))
+      return;
+   if (ds1_manager_restore(gi, ei, &row_gi, &row_ei, error, sizeof(error)) != 0)
+   {
+      interface_map_op_failed("Restore from Backup", "The backup wasn't restored.", error);
+      return;
+   }
+
+   /* The backup's own file has gone, and the box said its edits wouldn't be saved.
+      A slot still showing the deleted map can save again, now it has a file. */
+   interface_forget_edits(path);
+   interface_set_detached(path, TRUE);
+   if (row_gi >= 0)
+      interface_set_detached(ab->groups[row_gi].entries[row_ei].ds1_path, FALSE);
+
+   /* Like Revert, show what's there now. A cancel at the unsaved prompt leaves the
+      backup showing, refusing saves, until it's reopened. */
+   if (was_open && row_gi >= 0)
+      area_browser_switch_single(row_gi, row_ei);
+}
+
+/* Delete a backup for good. It may be the only copy of a deleted map. */
+static void interface_delete_backup(int gi, int ei)
+{
+   AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
+   char heading[600], path[256];
+   int rc;
+
+   snprintf(path, sizeof(path), "%s", ab->groups[gi].entries[ei].ds1_path);
+   snprintf(heading, sizeof(heading), "Permanently delete the backup %s?", path);
+   rc = ds1_message_box(a5_display, "Delete Backup", heading,
+      "This can't be undone or restored.",
+      NULL, ALLEGRO_MESSAGEBOX_YES_NO | ALLEGRO_MESSAGEBOX_WARN);
+   input_suppress_held();
+   input_discard_pending();
+   if (rc != 1)
+      return;
+
+   if (ds1_manager_delete_permanent(gi, ei) == 0)
+   {
+      interface_set_detached(path, TRUE);
+      printf("Backup deleted permanently\n");
+   }
 }
 
 typedef struct
@@ -307,16 +528,597 @@ static void st_report(int win_w, int win_h, double wall_s, int font_bad,
    }
 }
 
+/* Decide whether the editor may close. Only unsaved maps need a question.
+ * Returns TRUE to close. */
+static int interface_confirm_quit(void)
+{
+   int i;
+
+   if (!input_quit_needs_prompt(map_any_dirty(),
+                                glb_ds1edit.props_panel.pending_count))
+      return TRUE;
+
+   /* The close request has been taken; the dialog must not see it as well. */
+   a5_display_closed = 0;
+
+   switch (msg_quit_main())
+   {
+   case 0:
+      // stay open if any map could not be saved
+      return map_save_ui_save_dirty() == 0;
+
+   case 1:
+      for (i = 0; i < DS1_MAX; i++)
+         if (map_is_dirty(i))
+            map_save_ui_save(i, TRUE); // save a .TMP map
+      return TRUE;
+
+   default:
+      /* Cancel. That includes -1: another window close while the dialog was up.
+         It stays pending, so the next frame asks again. */
+      return FALSE;
+   }
+}
+
+/* Start a copy or cut: the selection follows the mouse until a click pastes it. */
+static void interface_begin_paste(int ds1_idx, int cx, int cy, PASTE_POS_S *paste, int is_cut)
+{
+   int i;
+
+   if (paste->start != FALSE)
+      return;
+   for (i = 0; i < DS1_MAX; i++)
+   {
+      if (strlen(glb_ds1[i].name))
+         edittile_paste_prepare(i);
+   }
+   paste->src_ds1_idx = ds1_idx;
+   paste->old_ds1_idx = ds1_idx;
+   paste->start = TRUE;
+   paste->is_cut = is_cut;
+   paste->cut_saved = FALSE;
+   paste->old_x = cx;
+   paste->old_y = cy;
+   edittile_middle_select(ds1_idx, &paste->start_x, &paste->start_y);
+   edittile_paste_preview(ds1_idx, cx - paste->start_x, cy - paste->start_y, paste);
+}
+
+/* Does the browser's loaded row name the map open in slot ds1_idx? A map opened
+ * from the preset picker or switched to with a number key can leave the row
+ * pointing at another map, and a backup row never names an open map. */
+static int interface_loaded_row_is_open_map(int ds1_idx)
+{
+   AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
+
+   if (!glb_ds1edit.has_loaded_ds1 || ds1_idx < 0 || ds1_idx >= DS1_MAX ||
+       glb_ds1[ds1_idx].name[0] == '\0')
+      return FALSE;
+   if (ab->loaded_group < 0 || ab->loaded_entry < 0 ||
+       ab->loaded_group >= ab->group_count ||
+       ab->loaded_entry >= ab->groups[ab->loaded_group].entry_count)
+      return FALSE;
+   if (ab->groups[ab->loaded_group].is_backup)
+      return FALSE;
+   return map_state_path_matches(glb_ds1[ds1_idx].name,
+             ab->groups[ab->loaded_group].entries[ab->loaded_entry].ds1_path);
+}
+
+/* Create a map, or clone the open one, through the dialog. "The first save or
+ * new map asks the user" for a project. */
+static void interface_new_map(int ds1_idx, int clone)
+{
+   AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
+   int use_loaded = interface_loaded_row_is_open_map(ds1_idx);
+   MAP_DIALOG_S d;
+   char suggested[128], error[512] = "";
+   int gi, ei, rc, i;
+
+   if (clone && !use_loaded)
+      return;
+   if (!map_save_ui_require_project())
+      return;
+
+   /* A project just opened rebuilds the rows. */
+   use_loaded = interface_loaded_row_is_open_map(ds1_idx);
+   gi = use_loaded ? ab->loaded_group : ab->selected_group;
+   ei = use_loaded ? ab->loaded_entry : ab->selected_entry;
+   if (gi < 0 || gi >= ab->group_count || ab->groups[gi].is_backup ||
+       ab->groups[gi].entry_count == 0)
+   {
+      gi = -1;
+      for (i = 0; i < ab->group_count && gi < 0; i++)
+         if (!ab->groups[i].is_backup && ab->groups[i].entry_count > 0)
+            gi = i;
+      ei = 0;
+      if (gi < 0)
+         return;
+   }
+   if (ei < 0 || ei >= ab->groups[gi].entry_count)
+      ei = 0;
+
+   memset(&d, 0, sizeof(d));
+   d.is_clone = clone;
+   d.group_idx = gi;
+   d.def = ab->groups[gi].entries[ei].lvlprest_def;
+   d.width = 20;
+   d.height = 20;
+   if (glb_ds1edit.has_loaded_ds1 && glb_ds1[ds1_idx].name[0] != '\0')
+   {
+      d.width = (int) glb_ds1[ds1_idx].width;
+      d.height = (int) glb_ds1[ds1_idx].height;
+   }
+   ds1_manager_suggest_name(ab->groups[gi].entries[ei].ds1_path, &ab->groups[gi],
+                            suggested, sizeof(suggested));
+   snprintf(d.file_name, sizeof(d.file_name), "%s", suggested);
+
+   if (!map_dialog_show(&d))
+      return;
+
+   if (clone)
+      rc = ds1_manager_clone(ds1_idx, d.group_idx, d.def, d.file_name, error, sizeof(error));
+   else
+      rc = ds1_manager_create_empty(d.group_idx, d.def, d.file_name, d.width, d.height,
+                                    error, sizeof(error));
+   if (rc != 0)
+   {
+      ds1_message_box(a5_display, clone ? "Clone Map" : "New Map",
+         "The map wasn't created. Nothing was changed.", error, NULL,
+         ALLEGRO_MESSAGEBOX_WARN);
+      input_suppress_held();
+   }
+}
+
+/* A box that tells the user something, not a problem. */
+static void interface_info_box(const char *title, const char *heading, const char *text)
+{
+   ds1_message_box(a5_display, title, heading, text, NULL, 0);
+   input_suppress_held();
+   input_discard_pending();
+}
+
+/* True if the open maps are saved or there was nothing to save. Asks first, since a
+ * build or a test run reads the files on disk. A No, or a save that fails, is false. */
+static int interface_save_before(const char *title, const char *heading)
+{
+   int rc;
+
+   if (!map_any_dirty())
+      return TRUE;
+   rc = ds1_message_box(a5_display, title, heading,
+      "Some maps have changes that aren't saved yet. They are used from the saved files.",
+      NULL, ALLEGRO_MESSAGEBOX_YES_NO | ALLEGRO_MESSAGEBOX_QUESTION);
+   input_suppress_held();
+   input_discard_pending();
+   if (rc != 1)
+      return FALSE;
+   return map_save_ui_save_dirty() == 0;
+}
+
+/* mpq_build_run asks with the path relative to Tiles, forward slashes, as the project
+ * has it. misc_load_mpq_file turns the slashes into backslashes and the archives ignore
+ * case, so the path goes through as it is. */
+static int interface_map_in_game(const char *ds1_path, void *ctx)
+{
+   (void) ctx;
+   return area_browser_game_has_map(ds1_path);
+}
+
+/* The folder the open archives came from, set once at startup. A project's d2_install
+ * isn't used: with no archives open the table and in_game can't match the base. */
+static const char *interface_game_folder(void)
+{
+   return project_open_game_folder();
+}
+
+/* Pack the project into <project>/build/patch_d2.mpq. 0 if it was written, else -1,
+ * after telling the user why. quiet skips the report of what was written. */
+static int interface_build_mpq(int quiet)
+{
+   MPQ_BUILD_ARGS_S a;
+   MPQ_BUILD_RESULT_S res;
+   char base[PROJECT_PATH_MAX + 32], out[PROJECT_PATH_MAX + 32];
+   char problems[4096], report[PROJECT_PATH_MAX + 1024];
+   char *table;
+   double t0, secs;
+   char shown[sizeof(out)];
+   int rc;
+
+   if (!glb_project.is_open)
+      return -1;
+   if (interface_game_folder()[0] == '\0')
+   {
+      interface_map_op_failed("Build MPQ", "Nothing was built.",
+         "The editor found no game folder when it started. Set d2_install in Ds1edit.ini and restart.");
+      return -1;
+   }
+   if (!interface_save_before("Build MPQ", "Save all maps and build?"))
+      return -1;
+
+   table = area_browser_game_table();
+   if (table == NULL)
+   {
+      interface_map_op_failed("Build MPQ", "Nothing was built.",
+         "The game's LvlPrest.txt can't be read. Set d2_install in Ds1edit.ini and restart.");
+      return -1;
+   }
+
+   mpq_build_base_path(interface_game_folder(), base, (int) sizeof(base));
+   snprintf(out, sizeof(out), "%s/build/patch_d2.mpq", glb_project.path);
+   memset(&a, 0, sizeof(a));
+   a.project_dir = glb_project.path;
+   a.base_mpq = base;
+   a.test_game_dir = glb_project.test_game_dir;
+   a.out_mpq = out;
+   a.game_table = table;
+   a.in_game = interface_map_in_game;
+   memset(&res, 0, sizeof(res));
+   problems[0] = '\0';
+
+   t0 = al_get_time();
+   rc = mpq_build_run(&a, &res, problems, (int) sizeof(problems));
+   secs = al_get_time() - t0;
+   free(table);
+
+   if (rc != 0)
+   {
+      interface_map_op_failed("Build MPQ", "Nothing was built.", problems);
+      return -1;
+   }
+   if (!quiet)
+   {
+      strcpy(shown, out);
+#ifdef WIN32
+      {
+         char *c;
+
+         for (c = shown; *c != 0; c++)
+            if (*c == '/') *c = '\\';
+      }
+#endif
+      snprintf(report, sizeof(report),
+         "%s\n\n%d %s, %ld bytes, %.1f seconds.\n\n"
+         "%s"
+         "Install it by replacing patch_d2.mpq in a copy of the game. "
+         "Check it in the game before you share it.",
+         shown, res.files, res.files == 1 ? "file" : "files", res.bytes, secs,
+         res.pd2_ignores_tables ?
+            "Project Diablo 2 won't use this MPQ's tables. Its pd2data.mpq outranks "
+            "patch_d2.mpq and has its own LvlPrest, so a new or removed map won't reach "
+            "the game. Changes to maps PD2's archives don't carry still work.\n\n" : "");
+      interface_info_box("Build MPQ", "The MPQ was built.", report);
+   }
+   return 0;
+}
+
+typedef struct PROFILE_FORM
+{
+   char dir[PROJECT_PATH_MAX];
+   char exe[128];
+   char args[256];
+   char wrapper[PROJECT_PATH_MAX];
+} PROFILE_FORM;
+
+#define PROFILE_INSTALLS_MAX (2 + MAX_MPQ_FILE)
+
+/* What a test folder can't overlap: both d2_install values, and the folder of each
+ * archive, since archives can be listed by hand from elsewhere. An archive in a root
+ * folder adds nothing, or every folder on that disk would be refused. The count. */
+static int interface_profile_installs(const char **installs)
+{
+   static char folders[MAX_MPQ_FILE][PROJECT_PATH_MAX];
+   int i, n = 0;
+
+   installs[n++] = glb_config.d2_install;
+   installs[n++] = glb_project.d2_install;
+   for (i = 0; i < MAX_MPQ_FILE; i++)
+   {
+      const char *file = glb_config.mpq_file[i];
+      const char *end, *back;
+      size_t len;
+
+      if (file == NULL)
+         continue;
+      end = strrchr(file, '/');
+      back = strrchr(file, '\\');
+      if (back != NULL && (end == NULL || back > end))
+         end = back;
+      if (end == NULL)
+         continue;
+      len = (size_t) (end - file);
+      if (len == 0 || (len == 2 && file[1] == ':') || len >= sizeof(folders[i]))
+         continue;
+      memcpy(folders[i], file, len);
+      folders[i][len] = '\0';
+      installs[n++] = folders[i];
+   }
+   return n;
+}
+
+static int interface_profile_check(char *status, int cap, void *ctx)
+{
+   const PROFILE_FORM *f = (const PROFILE_FORM *) ctx;
+   GAME_PROFILE_S p;
+   const char *installs[PROFILE_INSTALLS_MAX];
+   int count = interface_profile_installs(installs);
+
+   p.game_dir = f->dir;
+   p.exe = f->exe;
+   p.args = f->args;
+   p.wrapper = f->wrapper;
+   return game_profile_check(&p, glb_project.path, installs, count, status, cap);
+}
+
+/* Edit the test copy of the game and how it starts. 1 if the profile was stored,
+ * 0 for cancel. */
+static int interface_launch_profile(void)
+{
+   PROFILE_FORM f;
+   FIELD_S fields[4];
+
+   if (!glb_project.is_open)
+      return 0;
+   snprintf(f.dir, sizeof(f.dir), "%s", glb_project.test_game_dir);
+   snprintf(f.exe, sizeof(f.exe), "%s", glb_project.test_exe);
+   snprintf(f.args, sizeof(f.args), "%s", glb_project.test_args);
+   snprintf(f.wrapper, sizeof(f.wrapper), "%s", glb_project.test_wrapper);
+   fields[0].label = "Test game folder";
+   fields[0].value = f.dir;
+   fields[0].cap = (int) sizeof(f.dir);
+   fields[1].label = "Executable";
+   fields[1].value = f.exe;
+   fields[1].cap = (int) sizeof(f.exe);
+   fields[2].label = "Arguments";
+   fields[2].value = f.args;
+   fields[2].cap = (int) sizeof(f.args);
+   fields[3].label = "Wrapper";
+   fields[3].value = f.wrapper;
+   fields[3].cap = (int) sizeof(f.wrapper);
+
+   if (!fields_dialog_show("Launch Profile", fields, 4, interface_profile_check, &f))
+      return 0;
+
+   snprintf(glb_project.test_game_dir, sizeof(glb_project.test_game_dir), "%s", f.dir);
+   snprintf(glb_project.test_exe, sizeof(glb_project.test_exe), "%s", f.exe);
+   snprintf(glb_project.test_args, sizeof(glb_project.test_args), "%s", f.args);
+   snprintf(glb_project.test_wrapper, sizeof(glb_project.test_wrapper), "%s", f.wrapper);
+   if (!project_save())
+   {
+      interface_map_op_failed("Launch Profile", "The profile wasn't saved.",
+         "project.ini can't be written. Check that the project folder is writable.");
+      return 0;
+   }
+   return 1;
+}
+
+typedef struct SETTINGS_FORM
+{
+   char name[PROJECT_NAME_MAX];
+   char game[PROJECT_PATH_MAX];
+} SETTINGS_FORM;
+
+static int interface_settings_check(char *status, int cap, void *ctx)
+{
+   const SETTINGS_FORM *f = (const SETTINGS_FORM *) ctx;
+
+   if (f->name[0] == '\0')
+   {
+      snprintf(status, (size_t) cap, "Give the project a name.");
+      return -1;
+   }
+   if (f->game[0] == '\0' || !al_filename_exists(f->game))
+   {
+      snprintf(status, (size_t) cap, "The game folder doesn't exist. Enter the full path to your Diablo II folder.");
+      return -1;
+   }
+   return 0;
+}
+
+static void interface_project_settings(void)
+{
+   SETTINGS_FORM f;
+   FIELD_S fields[2];
+   char old_name[PROJECT_NAME_MAX], old_game[PROJECT_PATH_MAX];
+
+   if (!glb_project.is_open)
+      return;
+   snprintf(f.name, sizeof(f.name), "%s", glb_project.name);
+   snprintf(f.game, sizeof(f.game), "%s", glb_project.d2_install);
+   fields[0].label = "Name";
+   fields[0].value = f.name;
+   fields[0].cap = (int) sizeof(f.name);
+   fields[1].label = "Game folder";
+   fields[1].value = f.game;
+   fields[1].cap = (int) sizeof(f.game);
+
+   if (!fields_dialog_show("Project Settings", fields, 2, interface_settings_check, &f))
+      return;
+
+   snprintf(old_name, sizeof(old_name), "%s", glb_project.name);
+   snprintf(old_game, sizeof(old_game), "%s", glb_project.d2_install);
+   snprintf(glb_project.name, sizeof(glb_project.name), "%s", f.name);
+   snprintf(glb_project.d2_install, sizeof(glb_project.d2_install), "%s", f.game);
+   if (!project_save())
+   {
+      snprintf(glb_project.name, sizeof(glb_project.name), "%s", old_name);
+      snprintf(glb_project.d2_install, sizeof(glb_project.d2_install), "%s", old_game);
+      interface_map_op_failed("Project Settings", "The settings weren't saved.",
+         "project.ini can't be written. Check that the project folder is writable.");
+      return;
+   }
+   if (strcmp(old_game, f.game) != 0)
+      interface_info_box("Project Settings", "The game folder changed.",
+         "The editor reads the game when it starts, so this takes effect after you reopen "
+         "the project and restart the editor, unless Ds1edit.ini sets d2_install, which wins.");
+}
+
+/* Save, install the project's loose files in the test copy and start the game. The
+ * game's window is the answer, so success says nothing. No MPQ: the game reads the
+ * loose files, and a project's first test has no compiled tables to pack. */
+static void interface_build_and_test(void)
+{
+   GAME_PROFILE_S p;
+   const char *installs[PROFILE_INSTALLS_MAX];
+   char error[2048];
+   int count, files = 0;
+
+   if (!glb_project.is_open)
+      return;
+   if (!interface_save_before("Build & Test", "Save all maps and test?"))
+      return;
+
+   p.game_dir = glb_project.test_game_dir;
+   p.exe = glb_project.test_exe;
+   p.args = glb_project.test_args;
+   p.wrapper = glb_project.test_wrapper;
+   count = interface_profile_installs(installs);
+   error[0] = '\0';
+   if (game_profile_check(&p, glb_project.path, installs, count, error, (int) sizeof(error)) != 0)
+   {
+      /* The dialog says what's wrong. A cancel there stops the test. */
+      if (!interface_launch_profile())
+         return;
+   }
+
+   error[0] = '\0';
+   if (game_install(glb_project.path, glb_project.test_game_dir, &files, error,
+                    (int) sizeof(error)) != 0)
+   {
+      interface_map_op_failed("Build & Test", "The game wasn't started.", error);
+      return;
+   }
+   error[0] = '\0';
+   if (game_start(&p, error, (int) sizeof(error)) != 0)
+      interface_map_op_failed("Build & Test", "The game wasn't started.", error);
+}
+
+static CMD_CTX interface_command_context(int ds1_idx, const PASTE_POS_S *paste)
+{
+   AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
+   CMD_CTX c;
+
+   memset(&c, 0, sizeof(c));
+   c.tile_mode = glb_ds1edit.mode == MOD_T;
+   c.object_mode = glb_ds1edit.mode == MOD_O;
+   c.has_map = glb_ds1edit.has_loaded_ds1 && glb_ds1[ds1_idx].name[0] != 0;
+   c.has_open_entry = c.has_map && interface_loaded_row_is_open_map(ds1_idx);
+   if (c.has_open_entry)
+      c.open_state = ab->groups[ab->loaded_group].entries[ab->loaded_entry].state;
+   /* interface_loaded_row_is_open_map rejects backup rows, so test them here. */
+   c.open_is_backup = c.has_map && ab->loaded_group >= 0 &&
+                      ab->loaded_group < ab->group_count &&
+                      ab->groups[ab->loaded_group].is_backup &&
+                      ab->loaded_entry >= 0 &&
+                      ab->loaded_entry < ab->groups[ab->loaded_group].entry_count;
+   c.any_dirty = map_any_dirty();
+   c.has_project = glb_project.is_open;
+   c.paste_active = paste->start != FALSE;
+   c.can_undo_object = c.has_map && glb_ds1[ds1_idx].can_undo_obj != FALSE;
+   return c;
+}
+
+/* Run a command chosen from a menu or a hotkey. Commands the polled code owns
+ * mark their key as hit, so it runs them later in this frame. */
+static void interface_run_command(CMD_ID cmd, int ds1_idx, int cx, int cy,
+                                  PASTE_POS_S *paste, int *done)
+{
+   AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
+   const CMD_DEF *def = commands_get(cmd);
+
+   if (def != NULL && def->inject_key != 0)
+   {
+      a5_key_hit[def->inject_key] = 1;
+      return;
+   }
+
+   switch (cmd)
+   {
+   case CMD_NEW_PROJECT:   project_menu_new_project();   break;
+   case CMD_OPEN_PROJECT:  project_menu_open_project();  break;
+   case CMD_CLOSE_PROJECT: project_menu_close_project(); break;
+   case CMD_OPEN_PRESET:   preset_picker_open();         break;
+   case CMD_EXPORT_ASSETS: project_menu_export();        break;
+
+   case CMD_SAVE:
+      /* The "saved" message only after a save that actually happened. A window
+         close while it's up stays pending for the quit check. */
+      if (map_save_ui_save(ds1_idx, FALSE) == 0)
+         msg_save_main();
+      break;
+
+   case CMD_SAVE_ALL:
+      if (map_save_ui_save_dirty() == 0)
+         msg_save_main();
+      break;
+
+   case CMD_QUIT:
+      if (interface_confirm_quit())
+         *done = TRUE;
+      break;
+
+   case CMD_UNDO:
+      if (glb_ds1edit.mode == MOD_T)
+         undo_apply_tile_buffer(ds1_idx);
+      else if (glb_ds1edit.mode == MOD_O)
+      {
+         editobj_undo(ds1_idx);
+         anim_update_gfx(FALSE);
+      }
+      break;
+
+   case CMD_CUT:  interface_begin_paste(ds1_idx, cx, cy, paste, TRUE);  break;
+   case CMD_COPY: interface_begin_paste(ds1_idx, cx, cy, paste, FALSE); break;
+
+   case CMD_MAP_NEW:   interface_new_map(ds1_idx, FALSE); break;
+   case CMD_MAP_CLONE: interface_new_map(ds1_idx, TRUE);  break;
+
+   case CMD_MAP_DELETE:
+      interface_delete_map(ab->loaded_group, ab->loaded_entry);
+      break;
+   case CMD_MAP_REVERT:
+      interface_revert_map(ab->loaded_group, ab->loaded_entry);
+      break;
+   case CMD_MAP_REMOVE:
+      interface_remove_map(ab->loaded_group, ab->loaded_entry);
+      break;
+   case CMD_MAP_RESTORE_SLOT:
+      interface_restore_slot(ab->loaded_group, ab->loaded_entry);
+      break;
+   case CMD_MAP_RESTORE_BACKUP:
+      interface_restore_backup(ab->loaded_group, ab->loaded_entry);
+      break;
+
+   case CMD_PROJECT_SETTINGS: interface_project_settings();   break;
+   case CMD_BUILD_MPQ:        interface_build_mpq(FALSE);     break;
+   case CMD_BUILD_AND_TEST:   interface_build_and_test();     break;
+   case CMD_LAUNCH_PROFILE:   interface_launch_profile();     break;
+
+   default:
+      break;
+   }
+}
+
+/* The command a right click on this row offers, by its state. */
+static const char *interface_row_action(int state, int *cmd)
+{
+   switch (state)
+   {
+   case MAP_STATE_NEW:      *cmd = CMD_MAP_DELETE;       return "Delete map...";
+   case MAP_STATE_MODIFIED: *cmd = CMD_MAP_REVERT;       return "Revert to game version...";
+   case MAP_STATE_REMOVED:  *cmd = CMD_MAP_RESTORE_SLOT; return "Restore slot...";
+   default:                 *cmd = CMD_MAP_REMOVE;       return "Remove from project...";
+   }
+}
+
 // ==========================================================================
 // MAIN loop
 void interfac_user_handler(int start_ds1_idx)
 {
-   int ds1_idx, done, cx, cy, n, i, dx, dy, old_ds1_idx = 0;
+   int ds1_idx, done, cx = 0, cy = 0, n, i, dx, dy, old_ds1_idx = 0;
    int old_mouse_x = a5_mouse_x, old_mouse_y = a5_mouse_y, old_mouse_b = 0;
    int cur_mouse_z = 0, old_mouse_z = 0;
    int old_cell_x = -1, old_cell_y = -1;
    int old_identical_x = -1, old_identical_y = -1;
-   int ticks_elapsed, ret;
+   int ticks_elapsed;
    int can_swich_mode, key_func_code[7] = {KEY_F1, KEY_F2,
                                            KEY_F5, KEY_F6, KEY_F7, KEY_F8, KEY_F11};
    TMP_SEL_S tmp_sel;
@@ -380,7 +1182,7 @@ void interfac_user_handler(int start_ds1_idx)
                /* Ctrl+Enter applies pending properties; Ctrl+Z discards an
                 * active property edit and otherwise undoes a map edit. */
                if (glb_ds1edit.props_panel_visible &&
-                   (event.keyboard.modifiers & ALLEGRO_KEYMOD_CTRL))
+                   (event.keyboard.modifiers & DS1_KEYMOD_PRIMARY))
                {
                   if (event.keyboard.keycode == ALLEGRO_KEY_ENTER ||
                       event.keyboard.keycode == ALLEGRO_KEY_PAD_ENTER)
@@ -407,6 +1209,10 @@ void interfac_user_handler(int start_ds1_idx)
                   props_panel_handle_keychar(
                       event.keyboard.unichar,
                       event.keyboard.keycode);
+                  /* The panel consumed this press; it may have just given up
+                   * focus, and the quit check below must not see it as well. */
+                  if (event.keyboard.keycode == ALLEGRO_KEY_ESCAPE)
+                     a5_key_hit[ALLEGRO_KEY_ESCAPE] = 0;
                }
             }
          }
@@ -423,7 +1229,13 @@ void interfac_user_handler(int start_ds1_idx)
       /* Close is a request, not an event to be swallowed: honour it here so
          it behaves the same whether or not a panel has focus. */
       if (a5_display_closed)
-         done = TRUE;
+      {
+         /* It clears the request itself once it asks, so a close that arrives
+            during the question stays pending. */
+         done = interface_confirm_quit();
+         if (done)
+            a5_display_closed = 0;
+      }
 
       perf_accumulate(
           &glb_perf_stats.input_ms_total,
@@ -432,11 +1244,40 @@ void interfac_user_handler(int start_ds1_idx)
 
       cur_mouse_z = a5_mouse_z;
 
-      /* Project workflow: Ctrl+Shift+{N,O,W} */
-      project_menu_handle_shortcuts();
+      /* Menus and table-driven hotkeys. This runs before the polled keys below,
+         so a command that marks a key as hit reaches them this frame. */
+      {
+         CMD_CTX cmd_ctx = interface_command_context(ds1_idx, &paste_pos);
+         int z_before = a5_mouse_z;
+         CMD_ID cmd = menu_bar_poll(&cmd_ctx, !glb_ds1edit.props_panel.editing);
 
-      /* Preset picker: Ctrl+Shift+P */
-      preset_picker_handle_shortcut();
+         if (cmd != CMD_NONE)
+            interface_run_command(cmd, ds1_idx, cx, cy, &paste_pos, &done);
+
+         /* A dialog ran its own loop too: take in what happened meanwhile, and
+            keep keys still held from the dialog from acting on the map. */
+         switch (cmd)
+         {
+         case CMD_NEW_PROJECT: case CMD_OPEN_PROJECT: case CMD_CLOSE_PROJECT:
+         case CMD_OPEN_PRESET: case CMD_EXPORT_ASSETS: case CMD_SAVE:
+         case CMD_SAVE_ALL: case CMD_QUIT:
+         case CMD_MAP_NEW: case CMD_MAP_CLONE:
+         case CMD_PROJECT_SETTINGS: case CMD_BUILD_MPQ:
+         case CMD_BUILD_AND_TEST: case CMD_LAUNCH_PROFILE:
+            input_pump();
+            input_suppress_held();
+            break;
+         default:
+            break;
+         }
+
+         /* A menu that ran its own loop pumped input. Wheel turns it took
+            belong to the menu, so they must not scroll or zoom on return. */
+         old_mouse_z += a5_mouse_z - z_before;
+         cur_mouse_z += a5_mouse_z - z_before;
+      }
+      if (!glb_ds1edit.has_loaded_ds1)
+         ds1_idx = 0;  /* closing a project can discard the open maps */
 
       /* Sidebar toggle: [ (left bracket) key */
       if (key_hit(KEY_LBRACKET))
@@ -548,25 +1389,27 @@ void interfac_user_handler(int start_ds1_idx)
 
          }
 
-         /* Right-click in sidebar — context menu for backup entries */
+         /* Right-click in sidebar — context menu for map and backup entries */
          if (mouse_hit(2))
          {
             AREA_BROWSER_S *rc_ab = &glb_ds1edit.area_browser;
             int rc_gi = rc_ab->selected_group;
             int rc_ei = rc_ab->selected_entry;
 
-            /* Wait for button release */
-
-            /* Show context menu if right-clicked on a backup entry */
+            /* Show context menu if right-clicked on a map or backup entry */
             if (rc_gi >= 0 && rc_gi < rc_ab->group_count &&
-                rc_ab->groups[rc_gi].is_backup && rc_ei >= 0 &&
+                rc_ei >= 0 &&
                 rc_ei < rc_ab->groups[rc_gi].entry_count)
             {
-               /* Simple 2-item popup menu */
+               /* Simple popup menu: 2 items for a backup, 1 for a map */
+               int rc_is_backup = rc_ab->groups[rc_gi].is_backup;
                int menu_x = a5_mouse_x;
                int menu_y = a5_mouse_y;
-               int menu_w = 140;
-               int menu_h = 28;
+               int row_cmd;
+               const char *row_label = interface_row_action(
+                  rc_ab->groups[rc_gi].entries[rc_ei].state, &row_cmd);
+               int menu_w = 212;
+               int menu_h = rc_is_backup ? 28 : 14;
                int menu_sel = -1;
                int menu_done = 0;
                int disp_w = al_get_display_width(a5_display);
@@ -605,8 +1448,8 @@ void interfac_user_handler(int start_ds1_idx)
                   if (mx >= menu_x && mx < menu_x + menu_w)
                   {
                      if (my >= menu_y && my < menu_y + 14)
-                        menu_sel = 0; /* Restore */
-                     else if (my >= menu_y + 14 && my < menu_y + 28)
+                        menu_sel = 0; /* Restore, or the row's action */
+                     else if (rc_is_backup && my >= menu_y + 14 && my < menu_y + 28)
                         menu_sel = 1; /* Delete permanently */
                   }
 
@@ -618,19 +1461,22 @@ void interfac_user_handler(int start_ds1_idx)
                                     (float)(menu_x + menu_w) - 0.5f, (float)(menu_y + menu_h) - 0.5f,
                                     mc_border, 1.0f);
 
-                  /* Item 0: Restore */
+                  /* Item 0: Restore, or the row's action */
                   if (menu_sel == 0)
                      al_draw_filled_rectangle((float)menu_x, (float)menu_y,
                                               (float)(menu_x + menu_w), (float)(menu_y + 14), mc_hover);
                   al_draw_textf(a5_font, mc_text, (float)(menu_x + 6), (float)(menu_y + 3), 0,
-                                "Restore");
+                                "%s", rc_is_backup ? "Restore" : row_label);
 
                   /* Item 1: Delete permanently */
-                  if (menu_sel == 1)
-                     al_draw_filled_rectangle((float)menu_x, (float)(menu_y + 14),
-                                              (float)(menu_x + menu_w), (float)(menu_y + 28), mc_hover);
-                  al_draw_textf(a5_font, mc_text, (float)(menu_x + 6), (float)(menu_y + 17), 0,
-                                "Delete permanently");
+                  if (rc_is_backup)
+                  {
+                     if (menu_sel == 1)
+                        al_draw_filled_rectangle((float)menu_x, (float)(menu_y + 14),
+                                                 (float)(menu_x + menu_w), (float)(menu_y + 28), mc_hover);
+                     al_draw_textf(a5_font, mc_text, (float)(menu_x + 6), (float)(menu_y + 17), 0,
+                                   "Delete permanently");
+                  }
 
                   al_flip_display();
                   al_rest(0.02);
@@ -640,20 +1486,25 @@ void interfac_user_handler(int start_ds1_idx)
                   {
                      if (menu_sel >= 0)
                      {
-                        if (menu_sel == 0)
+                        if (!rc_is_backup)
                         {
-                           if (ds1_manager_restore(rc_gi, rc_ei) == 0)
-                              printf("Backup restored successfully\n");
+                           switch (row_cmd)
+                           {
+                           case CMD_MAP_DELETE:       interface_delete_map(rc_gi, rc_ei);   break;
+                           case CMD_MAP_REVERT:       interface_revert_map(rc_gi, rc_ei);   break;
+                           case CMD_MAP_RESTORE_SLOT: interface_restore_slot(rc_gi, rc_ei); break;
+                           default:                   interface_remove_map(rc_gi, rc_ei);   break;
+                           }
                         }
+                        else if (menu_sel == 0)
+                           interface_restore_backup(rc_gi, rc_ei);
                         else
                         {
-                           if (ds1_manager_delete_permanent(rc_gi, rc_ei) == 0)
-                              printf("Backup deleted permanently\n");
+                           interface_delete_backup(rc_gi, rc_ei);
                         }
                         fflush(stdout);
                      }
                      menu_done = 1;
-                     /* Wait for release */
                   }
                   /* Right-click or Escape cancels */
                   if (mouse_hit(2) ||
@@ -669,7 +1520,7 @@ void interfac_user_handler(int start_ds1_idx)
          {
             AREA_BROWSER_S *ab = &glb_ds1edit.area_browser;
             int sy, si, s_last_act = -1, s_draw_row = 0;
-            int s_top = glb_ds1edit.show_2nd_row ? 20 : 9;
+            int s_top = ui_top_bar_height();
             int found = 0;
 
             ab->selected_entry = -1;
@@ -872,7 +1723,13 @@ void interfac_user_handler(int start_ds1_idx)
       if (glb_ds1edit.has_loaded_ds1)
          wpreview_draw_tiles(ds1_idx);
       else
+      {
+         /* No map: wpreview_draw_tiles() is not clearing the frame buffer, so
+          * the last map, dialog and status text would stay on screen. Clear it
+          * the same way wpreview_draw_tiles() does, before the sidebar goes on. */
+         a5_clear(glb_ds1edit.screen_buff);
          misc_draw_screen(a5_mouse_x, a5_mouse_y);
+      }
       glb_ds1edit.fps++;
       if (glb_ds1edit.cmd_line.selftest_frames > 0)
       {
@@ -1157,71 +2014,6 @@ void interfac_user_handler(int start_ds1_idx)
             ds1_idx = nav_idx;
       }
 
-      // Delete key — backup and remove current DS1 file
-      if (key_hit(KEY_DEL) && glb_ds1edit.has_loaded_ds1 &&
-          glb_ds1edit.area_browser.selected_group >= 0 &&
-          glb_ds1edit.area_browser.selected_entry >= 0)
-      {
-
-         {
-            int gi = glb_ds1edit.area_browser.selected_group;
-            int ei = glb_ds1edit.area_browser.selected_entry;
-
-            if (ds1_manager_delete(gi, ei) == 0)
-            {
-               /* Adjust selection after deletion */
-               if (ei >= glb_ds1edit.area_browser.groups[gi].entry_count)
-                  glb_ds1edit.area_browser.selected_entry = glb_ds1edit.area_browser.groups[gi].entry_count - 1;
-               if (glb_ds1edit.area_browser.selected_entry < 0)
-                  glb_ds1edit.area_browser.selected_entry = -1;
-            }
-         }
-      }
-
-      // Insert key — create new DS1 or clone current
-      if (key_hit(KEY_INSERT) &&
-          glb_ds1edit.area_browser.selected_group >= 0)
-      {
-         int gi = glb_ds1edit.area_browser.selected_group;
-         AREA_GROUP_S *ins_g = &glb_ds1edit.area_browser.groups[gi];
-
-
-         if (ins_g->entry_count > 0)
-         {
-            int ei = glb_ds1edit.area_browser.selected_entry;
-
-            /* Shift+Insert = clone current, Insert alone = new empty */
-            if (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT))
-            {
-               /* Clone current DS1 (full copy including tiles/objects) */
-               if (glb_ds1edit.has_loaded_ds1)
-               {
-                  if (ds1_manager_clone(ds1_idx, gi, ei) == 0)
-                     printf("Insert: cloned DS1 successfully\n");
-               }
-            }
-            else
-            {
-               /* Create new empty DS1 (same size as selected, same act) */
-               int new_act = ins_g->act > 0 ? ins_g->act : 1;
-               int new_w = 20, new_h = 20;
-
-               /* Copy dimensions from selected DS1 if loaded */
-               if (glb_ds1edit.has_loaded_ds1 && ds1_idx >= 0 && ds1_idx < DS1_MAX &&
-                   glb_ds1[ds1_idx].name[0] != '\0')
-               {
-                  new_w = (int)glb_ds1[ds1_idx].width;
-                  new_h = (int)glb_ds1[ds1_idx].height;
-                  new_act = (int)glb_ds1[ds1_idx].act;
-               }
-
-               if (ds1_manager_create_empty(gi, ei, new_w, new_h, new_act) == 0)
-                  printf("Insert: created new empty DS1 (%dx%d)\n", new_w, new_h);
-            }
-            fflush(stdout);
-         }
-      }
-
       // layers toggle
       if (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT))
       {
@@ -1473,27 +2265,8 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       // S
-      if (key_hit(KEY_S) && (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL)))
-      {
-         // CTRL + S : save the ds1, in the current state, incremental save
-         // (the "saved" message only after a save that actually happened)
-         if (interface_save_map(ds1_idx, FALSE) == 0)
-         {
-            ret = msg_save_main();
-            switch (ret)
-            {
-            case -1:
-               // error
-               done = TRUE;
-               break;
-
-            case 0:
-               // ok
-               break;
-            }
-         }
-      }
-      if (key_hit(KEY_S) && (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT)) && glb_ds1edit.mode == MOD_T)
+      if (key_hit(KEY_S) && (key_pressed(KEY_LSHIFT) || key_pressed(KEY_RSHIFT)) &&
+          !key_pressed(KEY_LCONTROL) && !key_pressed(KEY_RCONTROL) && glb_ds1edit.mode == MOD_T)
       {
          // Shift+S : show all previously hidden tiles
          edittile_unhide_all(ds1_idx);
@@ -1508,30 +2281,7 @@ void interfac_user_handler(int start_ds1_idx)
             if (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL))
             {
                // CTRL + C : copy selected layers (copy / paste)
-               if (paste_pos.start == FALSE)
-               {
-                  for (i = 0; i < DS1_MAX; i++)
-                  {
-                     if (strlen(glb_ds1[i].name))
-                        edittile_paste_prepare(i);
-                  }
-                  paste_pos.src_ds1_idx = ds1_idx;
-                  paste_pos.old_ds1_idx = ds1_idx;
-                  paste_pos.start = TRUE;
-                  paste_pos.is_cut = FALSE; // just a 'COPY'
-                  paste_pos.cut_saved = FALSE;
-                  paste_pos.old_x = cx;
-                  paste_pos.old_y = cy;
-                  edittile_middle_select(
-                      ds1_idx,
-                      &paste_pos.start_x,
-                      &paste_pos.start_y);
-                  edittile_paste_preview(ds1_idx,
-                                         cx - paste_pos.start_x,
-                                         cy - paste_pos.start_y,
-                                         &paste_pos);
-
-               }
+               interface_begin_paste(ds1_idx, cx, cy, &paste_pos, FALSE);
             }
             else
             {
@@ -1590,42 +2340,14 @@ void interfac_user_handler(int start_ds1_idx)
          if (glb_ds1edit.mode == MOD_T)
          {
             // TILE mode
-            if (paste_pos.start == FALSE)
-            {
-               for (i = 0; i < DS1_MAX; i++)
-               {
-                  if (strlen(glb_ds1[i].name))
-                     edittile_paste_prepare(i);
-               }
-               paste_pos.src_ds1_idx = ds1_idx;
-               paste_pos.old_ds1_idx = ds1_idx;
-               paste_pos.start = TRUE;
-               paste_pos.is_cut = TRUE; // copy with 'CUT'
-               paste_pos.cut_saved = FALSE;
-               paste_pos.old_x = cx;
-               paste_pos.old_y = cy;
-               edittile_middle_select(
-                   ds1_idx,
-                   &paste_pos.start_x,
-                   &paste_pos.start_y);
-               edittile_paste_preview(ds1_idx,
-                                      cx - paste_pos.start_x,
-                                      cy - paste_pos.start_y,
-                                      &paste_pos);
-            }
+            interface_begin_paste(ds1_idx, cx, cy, &paste_pos, TRUE);
          }
       }
 
       // DEL key (regular or keypad) : delete all selected layers of all tiles
-      if (key_pressed(KEY_DEL) || key_pressed(KEY_DEL_PAD))
+      if (input_delete_hits_tiles(glb_ds1edit.mode == MOD_T, paste_pos.start != FALSE))
       {
-         if (glb_ds1edit.mode == MOD_T)
-         {
-            if (paste_pos.start == FALSE)
-            {
-               edittile_delete_selected_tiles(ds1_idx);
-            }
-         }
+         edittile_delete_selected_tiles(ds1_idx);
       }
 
       // Ctrl+Z / Ctrl+U: undo tiles modification
@@ -2101,44 +2823,11 @@ void interfac_user_handler(int start_ds1_idx)
       }
 
       // quit
-      if (key_hit(KEY_ESC) && (glb_ds1[ds1_idx].draw_edit_obj == FALSE))
+      if (key_hit(KEY_ESC) && (glb_ds1[ds1_idx].draw_edit_obj == FALSE) &&
+          input_escape_may_quit(glb_ds1edit.props_panel.editing,
+                                glb_ds1edit.props_panel.has_focus))
       {
-         ret = msg_quit_main();
-         switch (ret)
-         {
-         case -1:
-            // error
-            interface_save_map(ds1_idx, TRUE); // save a .TMP map
-            done = TRUE;
-            break;
-
-         case 0:
-            // save ALL & quit -- but stay open if any map could not be
-            // saved, so its edits are not lost with the process
-            {
-               int all_saved = TRUE;
-
-               for (i = 0; i < DS1_MAX; i++)
-               {
-                  if (strlen(glb_ds1[i].name) &&
-                      interface_save_map(i, FALSE) != 0)
-                     all_saved = FALSE;
-               }
-               done = all_saved;
-            }
-            break;
-
-         case 1:
-            // quit
-            interface_save_map(ds1_idx, TRUE); // save a .TMP map
-            done = TRUE;
-            break;
-
-         case 2:
-         default:
-            // cancel
-            break;
-         }
+         done = interface_confirm_quit();
       }
 
       perf_accumulate(

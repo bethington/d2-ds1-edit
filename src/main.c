@@ -53,6 +53,7 @@ October 30 2011 :
 #include "core/project.h"
 #include "core/palette.h"
 #include "ui/interface.h"
+#include "ui/map_save_ui.h"
 #include "render/preview.h"
 #include "cli/cli.h"
 #include "platform.h"
@@ -1494,6 +1495,7 @@ int main(int argc, char *argv[])
       is relative. Do this first -- it has to precede the INI read. */
    ds1_mac_fix_working_directory();
 #endif
+   ds1_prepare_native_dialogs();
    srand(time(NULL));
    if (!al_init())
       ds1edit_error("main(), error.\nCan't initialize Allegro 5.");
@@ -1604,6 +1606,8 @@ int main(int argc, char *argv[])
    // Fill empty MPQ slots from the resolved install path (explicit INI
    // entries always win).
    d2install_resolve_mpqs();
+   // Build MPQ reads the game from the folder these archives came from.
+   project_set_open_game_folder(glb_config.d2_install, glb_config.mpq_file[MPQ_SLOT_D2DATA]);
 
    // Record the install we landed on back into preferences for next session.
    if (glb_config.d2_install != NULL && glb_config.d2_install[0] != 0)
@@ -2242,6 +2246,7 @@ int main(int argc, char *argv[])
               "WARNING: LvlTypes.txt contains %d Name/Act mismatches; palette selection uses the Act column as the source of truth. Run --audit-lvltypes for details.\n",
               glb_ds1edit.area_browser.lvltypes_act_mismatch_count);
    }
+   area_browser_set_unload_guard(map_save_ui_unload_guard);
    interfac_user_handler(ds1_idx);
 
    // cleanup

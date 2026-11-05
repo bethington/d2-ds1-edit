@@ -59,6 +59,7 @@ void setUp(void)
 
 void tearDown(void)
 {
+   project_close();
    rmrf(SCRATCH_DIR);
 }
 
@@ -202,6 +203,75 @@ void test_project_save_persists_changes(void)
    TEST_ASSERT_EQUAL_STRING("C:\\plugy.mpq", glb_project.extra_mod_mpqs[0]);
 }
 
+void test_project_launch_profile_defaults_on_a_new_project(void)
+{
+   TEST_ASSERT_EQUAL_INT(1, project_create(PROJECT_DIR, "P", ""));
+   TEST_ASSERT_EQUAL_INT(1, project_load(PROJECT_DIR));
+   TEST_ASSERT_EQUAL_STRING("", glb_project.test_game_dir);
+   TEST_ASSERT_EQUAL_STRING("Game.exe", glb_project.test_exe);
+   TEST_ASSERT_EQUAL_STRING(PROJECT_DEFAULT_TEST_ARGS, glb_project.test_args);
+   TEST_ASSERT_EQUAL_STRING("-w -direct -txt", glb_project.test_args);
+#ifdef WIN32
+   TEST_ASSERT_EQUAL_STRING("", glb_project.test_wrapper);
+#else
+   TEST_ASSERT_EQUAL_STRING("wine", glb_project.test_wrapper);
+#endif
+}
+
+void test_project_launch_profile_survives_save_and_load(void)
+{
+   TEST_ASSERT_EQUAL_INT(1, project_create(PROJECT_DIR, "P", ""));
+   TEST_ASSERT_EQUAL_INT(1, project_load(PROJECT_DIR));
+   strcpy(glb_project.test_game_dir, "C:\\Games\\D2Test");
+   strcpy(glb_project.test_exe, "PD2.exe");
+   strcpy(glb_project.test_args, "-direct -txt -ns");
+   strcpy(glb_project.test_wrapper, "wine64");
+   TEST_ASSERT_EQUAL_INT(1, project_save());
+
+   memset(&glb_project, 0, sizeof(glb_project));
+   TEST_ASSERT_EQUAL_INT(1, project_load(PROJECT_DIR));
+   TEST_ASSERT_EQUAL_STRING("C:\\Games\\D2Test", glb_project.test_game_dir);
+   TEST_ASSERT_EQUAL_STRING("PD2.exe", glb_project.test_exe);
+   TEST_ASSERT_EQUAL_STRING("-direct -txt -ns", glb_project.test_args);
+   TEST_ASSERT_EQUAL_STRING("wine64", glb_project.test_wrapper);
+}
+
+void test_project_ini_from_before_the_profile_gets_defaults(void)
+{
+   char ini[PROJECT_PATH_MAX];
+   FILE *f;
+
+   TEST_ASSERT_EQUAL_INT(1, project_create(PROJECT_DIR, "P", ""));
+   project_ini_path(PROJECT_DIR, ini, sizeof(ini));
+   f = fopen(ini, "wb");
+   TEST_ASSERT_NOT_NULL(f);
+   fputs("name=Old\neditor_version=2.2.0\nd2_install=\n", f);
+   fclose(f);
+
+   TEST_ASSERT_EQUAL_INT(1, project_load(PROJECT_DIR));
+   TEST_ASSERT_EQUAL_STRING("Old", glb_project.name);
+   TEST_ASSERT_EQUAL_STRING("", glb_project.test_game_dir);
+   TEST_ASSERT_EQUAL_STRING("Game.exe", glb_project.test_exe);
+   TEST_ASSERT_EQUAL_STRING("-w -direct -txt", glb_project.test_args);
+}
+
+void test_project_empty_exe_or_args_in_the_ini_get_the_default(void)
+{
+   char ini[PROJECT_PATH_MAX];
+   FILE *f;
+
+   TEST_ASSERT_EQUAL_INT(1, project_create(PROJECT_DIR, "P", ""));
+   project_ini_path(PROJECT_DIR, ini, sizeof(ini));
+   f = fopen(ini, "wb");
+   TEST_ASSERT_NOT_NULL(f);
+   fputs("name=P\ntest_exe=\ntest_args=\n", f);
+   fclose(f);
+
+   TEST_ASSERT_EQUAL_INT(1, project_load(PROJECT_DIR));
+   TEST_ASSERT_EQUAL_STRING("Game.exe", glb_project.test_exe);
+   TEST_ASSERT_EQUAL_STRING("-w -direct -txt", glb_project.test_args);
+}
+
 void test_project_apply_to_config(void)
 {
    int rc;
@@ -302,7 +372,7 @@ void test_redirect_handles_mpq_extracted_path(void)
 
    TEST_ASSERT_EQUAL_INT(1, redirected);
    TEST_ASSERT_EQUAL_STRING(
-      T_PREFIX "ACT2\\TOWN\\lutn1.ds1", dst);
+      T_PREFIX "ACT2" T_SEP "TOWN" T_SEP "lutn1.ds1", dst);
 }
 
 void test_redirect_case_insensitive_tiles_match(void)
@@ -330,6 +400,16 @@ void test_redirect_no_tiles_segment_returns_zero(void)
 
    TEST_ASSERT_EQUAL_INT(0, redirected);
    TEST_ASSERT_EQUAL_STRING("C:\\randomplace\\file.ds1", dst);
+}
+
+void test_redirect_refuses_a_relative_name_with_a_parent_component(void)
+{
+   char dst[256];
+
+   open_fake_project(T_ROOT2);
+   TEST_ASSERT_EQUAL_INT(-1, project_redirect_ds1_save_path(
+      "Act1/../../evil.ds1", dst, sizeof(dst)));
+   TEST_ASSERT_EQUAL_STRING("Act1/../../evil.ds1", dst);
 }
 
 void test_redirect_project_subpath_is_preserved(void)
@@ -402,6 +482,59 @@ void test_redirect_project_root_itself_is_inside(void)
       T_ROOT T_SEP "tiles" T_SEP "x.ds1", dst, sizeof(dst)));
 }
 
+void test_path_is_inside_equal_paths(void)
+{
+   TEST_ASSERT_EQUAL_INT(1, project_path_is_inside("C:\\Diablo2", "C:\\Diablo2"));
+}
+
+void test_path_is_inside_child(void)
+{
+   TEST_ASSERT_EQUAL_INT(1, project_path_is_inside("C:\\Diablo2\\mods\\x", "C:\\Diablo2"));
+}
+
+void test_path_is_inside_sibling_with_same_prefix_is_outside(void)
+{
+   TEST_ASSERT_EQUAL_INT(0, project_path_is_inside("C:\\Diablo2x", "C:\\Diablo2"));
+   TEST_ASSERT_EQUAL_INT(0, project_path_is_inside("C:\\Diablo2x\\a", "C:\\Diablo2"));
+}
+
+void test_path_is_inside_ignores_case_and_slash_direction(void)
+{
+   TEST_ASSERT_EQUAL_INT(1, project_path_is_inside("c:/diablo2/Mods", "C:\\Diablo2"));
+}
+
+void test_path_is_inside_dir_with_trailing_separator(void)
+{
+   TEST_ASSERT_EQUAL_INT(1, project_path_is_inside("C:\\Diablo2\\mods", "C:\\Diablo2\\"));
+   TEST_ASSERT_EQUAL_INT(1, project_path_is_inside("C:\\Diablo2", "C:\\Diablo2\\"));
+   TEST_ASSERT_EQUAL_INT(0, project_path_is_inside("C:\\Diablo2x", "C:\\Diablo2\\"));
+}
+
+void test_path_is_inside_null_and_empty_dir_are_never_inside(void)
+{
+   TEST_ASSERT_EQUAL_INT(0, project_path_is_inside("C:\\Diablo2", NULL));
+   TEST_ASSERT_EQUAL_INT(0, project_path_is_inside("C:\\Diablo2", ""));
+   TEST_ASSERT_EQUAL_INT(0, project_path_is_inside(NULL, "C:\\Diablo2"));
+}
+
+void test_open_game_folder_is_where_the_archives_opened_from(void)
+{
+   TEST_ASSERT_EQUAL_STRING("", project_open_game_folder());
+
+   project_set_open_game_folder("C:/D2", "C:/D2/d2data.mpq");
+   TEST_ASSERT_EQUAL_STRING("C:/D2", project_open_game_folder());
+
+   /* An explicit archive elsewhere: nothing was opened from the install. */
+   project_set_open_game_folder("C:/D2", "E:/Mods/d2data.mpq");
+   TEST_ASSERT_EQUAL_STRING("", project_open_game_folder());
+
+   project_set_open_game_folder("C:/D2", "C:/D2/d2data.mpq");
+   project_set_open_game_folder(NULL, "C:/D2/d2data.mpq");
+   TEST_ASSERT_EQUAL_STRING("", project_open_game_folder());
+   project_set_open_game_folder("", NULL);
+   TEST_ASSERT_EQUAL_STRING("", project_open_game_folder());
+}
+
 void test_ensure_parent_dirs_creates_the_chain(void)
 {
    char path[256];
@@ -444,6 +577,10 @@ int main(void)
    RUN_TEST(test_project_create_refuses_overwrite);
    RUN_TEST(test_project_load_missing_returns_zero);
    RUN_TEST(test_project_save_persists_changes);
+   RUN_TEST(test_project_launch_profile_defaults_on_a_new_project);
+   RUN_TEST(test_project_launch_profile_survives_save_and_load);
+   RUN_TEST(test_project_ini_from_before_the_profile_gets_defaults);
+   RUN_TEST(test_project_empty_exe_or_args_in_the_ini_get_the_default);
    RUN_TEST(test_project_apply_to_config);
 
    RUN_TEST(test_redirect_no_project_returns_zero);
@@ -452,11 +589,19 @@ int main(void)
    RUN_TEST(test_redirect_handles_mpq_extracted_path);
    RUN_TEST(test_redirect_case_insensitive_tiles_match);
    RUN_TEST(test_redirect_no_tiles_segment_returns_zero);
+   RUN_TEST(test_redirect_refuses_a_relative_name_with_a_parent_component);
    RUN_TEST(test_redirect_project_subpath_is_preserved);
    RUN_TEST(test_redirect_sibling_with_project_name_as_prefix_is_outside);
    RUN_TEST(test_redirect_reports_a_target_that_does_not_fit);
    RUN_TEST(test_redirect_project_path_with_trailing_separator);
    RUN_TEST(test_redirect_project_root_itself_is_inside);
+   RUN_TEST(test_path_is_inside_equal_paths);
+   RUN_TEST(test_path_is_inside_child);
+   RUN_TEST(test_path_is_inside_sibling_with_same_prefix_is_outside);
+   RUN_TEST(test_path_is_inside_ignores_case_and_slash_direction);
+   RUN_TEST(test_path_is_inside_dir_with_trailing_separator);
+   RUN_TEST(test_path_is_inside_null_and_empty_dir_are_never_inside);
+   RUN_TEST(test_open_game_folder_is_where_the_archives_opened_from);
    RUN_TEST(test_ensure_parent_dirs_creates_the_chain);
    RUN_TEST(test_ensure_parent_dirs_reports_a_file_in_the_way);
 

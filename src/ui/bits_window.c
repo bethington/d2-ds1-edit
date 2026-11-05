@@ -5,6 +5,7 @@
 #include "error.h"
 #include "core/ds1.h"
 #include "ui/bits_window.h"
+#include "core/map_state.h"
 #include "misc.h"
 #include "ui/input.h"
 
@@ -483,6 +484,9 @@ void wbits_main_single_tile(int ds1_idx, int tx, int ty)
    }
    else
    {
+      // bit edits have no undo step
+      map_dirty_mark(ds1_idx);
+
       // find again all tiles
       ds1_make_prop_2_block(ds1_idx);
    }
@@ -1308,6 +1312,9 @@ void wbits_main_multiple_tiles(int ds1_idx, WBITSDATA_S * ptr_wbitsdata)
    {
       // set all new bits values to the selection, where needed
       wbits_apply_modification(ds1_idx, ptr_wbitsdata);
+
+      // bit edits have no undo step
+      map_dirty_mark(ds1_idx);
 
       // find again all tiles
       ds1_make_prop_2_block(ds1_idx);
