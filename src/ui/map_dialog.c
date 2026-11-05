@@ -393,7 +393,7 @@ int map_dialog_show(MAP_DIALOG_S * d)
       m.x0 = (glb_config.screen.width - DLG_W) / 2;
       m.y0 = (glb_config.screen.height - DLG_H) / 2;
 
-      al_get_mouse_state(&a5_ms_state);
+      a5_get_mouse_state(&a5_ms_state);
       mx = a5_mouse_x;
       my = a5_mouse_y;
       mb = a5_mouse_b & 1;

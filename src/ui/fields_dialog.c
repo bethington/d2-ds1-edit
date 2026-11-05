@@ -282,7 +282,7 @@ int fields_dialog_show(const char * title, FIELD_S * fields, int count,
       m.x0 = (glb_config.screen.width - DLG_W) / 2;
       m.y0 = (glb_config.screen.height - m.h) / 2;
 
-      al_get_mouse_state(&a5_ms_state);
+      a5_get_mouse_state(&a5_ms_state);
       mx = a5_mouse_x;
       my = a5_mouse_y;
       mb = a5_mouse_b & 1;
