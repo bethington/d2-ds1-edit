@@ -183,9 +183,47 @@ void test_full_path_never_falls_back_to_a_namesake(void)
 }
 
 
+void test_row_names_ds1_never_crosses_folders_for_a_full_path(void)
+{
+   TEST_ASSERT_TRUE(mpq_index_row_names_ds1("Act4/Lava/LavaE.ds1", "ACT4\\lava\\lavae.ds1"));
+   TEST_ASSERT_TRUE(mpq_index_row_names_ds1("Act4/Lava/LavaE.ds1", "assets/tiles/Act4\\Lava\\LavaE.ds1"));
+   TEST_ASSERT_FALSE(mpq_index_row_names_ds1("Act4/Lava/LavaE.ds1", "expansion\\lavaE.ds1"));
+   TEST_ASSERT_FALSE(mpq_index_row_names_ds1("Act4/Lava/LavaX.ds1", "assets/tiles/expansion\\lavaX.ds1"));
+}
+
+
+void test_row_names_ds1_matches_a_bare_filename_in_any_folder(void)
+{
+   TEST_ASSERT_TRUE(mpq_index_row_names_ds1("Act4/Lava/LavaE.ds1", "lavae.ds1"));
+   TEST_ASSERT_FALSE(mpq_index_row_names_ds1("Act4/Lava/LavaE.ds1", "lavaW.ds1"));
+   TEST_ASSERT_FALSE(mpq_index_row_names_ds1("0", "lavaE.ds1"));
+   TEST_ASSERT_FALSE(mpq_index_row_names_ds1(NULL, "lavaE.ds1"));
+   TEST_ASSERT_FALSE(mpq_index_row_names_ds1("Act4/Lava/LavaE.ds1", NULL));
+}
+
+
+void test_sub_level_type_matches_a_whole_path_only(void)
+{
+   SUB_ENTRY_S subs[2];
+
+   memset(subs, 0, sizeof(subs));
+   strcpy(subs[0].file, "Act1/Outdoors/Waypoint.ds1");
+   subs[0].level_type = 2;
+   strcpy(subs[1].file, "Expansion/Siege/Landmark1.ds1");
+   subs[1].level_type = 31;
+
+   TEST_ASSERT_EQUAL_INT(2, mpq_index_sub_level_type_in(subs, 2, "ACT1\\OUTDOORS\\waypoint.ds1"));
+   TEST_ASSERT_EQUAL_INT(31, mpq_index_sub_level_type_in(subs, 2, "expansion\\siege\\landmark1.ds1"));
+   TEST_ASSERT_EQUAL_INT(-1, mpq_index_sub_level_type_in(subs, 2, "ACT2\\Outdoors\\Waypoint.ds1"));
+   TEST_ASSERT_EQUAL_INT(-1, mpq_index_sub_level_type_in(subs, 2, NULL));
+   TEST_ASSERT_EQUAL_INT(-1, mpq_index_sub_level_type_in(NULL, 0, "x.ds1"));
+}
+
+
 int main(void)
 {
    UNITY_BEGIN();
+   RUN_TEST(test_sub_level_type_matches_a_whole_path_only);
 
    RUN_TEST(test_find_by_basename_exact);
    RUN_TEST(test_find_by_basename_case_insensitive);
@@ -197,5 +235,7 @@ int main(void)
    RUN_TEST(test_full_path_of_a_project_copy_finds_its_preset);
    RUN_TEST(test_full_path_never_falls_back_to_a_namesake);
 
+   RUN_TEST(test_row_names_ds1_never_crosses_folders_for_a_full_path);
+   RUN_TEST(test_row_names_ds1_matches_a_bare_filename_in_any_folder);
    return UNITY_END();
 }

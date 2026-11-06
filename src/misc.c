@@ -10,6 +10,7 @@
 #include "core/txtread.h"
 #include "core/dt1.h"
 #include "core/palette.h"
+#include "core/area_metadata.h"
 #include "core/mpq_index.h"
 #include "mpq/MpqView.h"
 #include "core/area_browser.h"
@@ -862,7 +863,14 @@ int misc_open_1_ds1_checked(int ds1_idx, char *name, int type, int def,
    printf("\nloading dt1 from mpq...\n");
    t0 = open_now_ms();
    if (type > 0)
-      glb_ds1[ds1_idx].txt_act = read_lvltypes_txt(ds1_idx, type);
+   {
+      const int lvltypes_act = read_lvltypes_txt(ds1_idx, type);
+      const int preset_level_type = preset != NULL ? preset->level_type : -1;
+      const int preset_pal        = preset != NULL ? preset->pal : -1;
+
+      glb_ds1[ds1_idx].txt_act = area_palette_act(preset_level_type, preset_pal, type,
+                                                  mpq_index_lvltype_pal(type), lvltypes_act);
+   }
    else
    {
       glb_ds1[ds1_idx].txt_act = 0;
@@ -1365,6 +1373,7 @@ int misc_get_txt_column_num(RQ_ENUM txt_idx, char *col_name)
            {"data\\obj.txt"},
            {"Data\\Global\\Excel\\Objects.txt"},
            {"Data\\Global\\Excel\\Levels.txt"},
+           {"Data\\Global\\Excel\\LvlSub.txt"},
        };
 
    if (txt_idx >= RQ_MAX)

@@ -19,6 +19,7 @@ void  txt_debug                (char * file_path_mem, char * file_path_def, TXT_
 void *txt_read_in_mem_mpq_only (char * txtname);  /* archives only, no mod overlay */
 int   txt_ensure_lvltypes      (void);   /* parse+cache only, no DS1 side effects */
 int   txt_ensure_lvlprest      (void);
+TXT_S * txt_load_lvlsub        (void);
 int   read_lvltypes_txt        (int ds1_idx, int type);
 int   read_lvlprest_txt        (int ds1_idx, int def);
 int   read_obj_txt             (void);
