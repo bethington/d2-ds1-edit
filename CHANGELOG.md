@@ -7,6 +7,14 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
 
 ### Added
 
+- **Readable bars and side panels at any resolution.** The menu bar and its
+  menus, the top and bottom bars, both side panels and the area browser's
+  right-click menu now use a real font (Inter) and a UI scale, picked from the
+  screen height (200% at 2160 pixels tall) or set with `ui_scale` in
+  `Ds1edit.ini` (100 to 300). A window opens at its configured size times the
+  scale of the primary screen, so it keeps its layout on a denser screen.
+  Dialogs and other screens are not scaled yet.
+
 - **Menu bar.** File, Edit, Map, View and Build menus, opened with a click or **Alt** plus the first letter. Commands that have a hotkey show it; six rows (Project Settings, Revert to Game Version, Remove from Project, Restore Slot, Restore from Backup, Launch Profile) have none. Some rows are dimmed when they don't apply, and Project Settings and the Build commands are dimmed until a project is open.
 
 - **Hotkeys for maps.** **Ctrl+N** creates a map, **Ctrl+D** clones the open one, and **Ctrl+Del** deletes, reverts or removes the open one by its state, after asking. These replace **Insert** and **Shift+Insert**, and **Insert** keeps its object-mode role.

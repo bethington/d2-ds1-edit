@@ -1324,16 +1324,16 @@ void interfac_user_handler(int start_ds1_idx)
 
       /* Sidebar: handle click on collapsed tab to expand */
       if (!glb_ds1edit.sidebar_visible && a5_mouse_b &&
-          a5_mouse_x < 16) /* collapsed tab width */
+          ui_mouse_x() < 16) /* collapsed tab width */
       {
          glb_ds1edit.sidebar_visible = TRUE;
       }
 
       /* Properties panel: handle click on collapsed tab to expand */
       {
-         int pp_disp_w = al_get_display_width(a5_display);
+         int pp_disp_w = ui_w();
          if (!glb_ds1edit.props_panel_visible && a5_mouse_b &&
-             a5_mouse_x > pp_disp_w - 16)
+             ui_mouse_x() > pp_disp_w - 16)
          {
             glb_ds1edit.props_panel_visible = TRUE;
          }
@@ -1341,7 +1341,7 @@ void interfac_user_handler(int start_ds1_idx)
 
       /* Sidebar: handle mouse interactions */
       if (glb_ds1edit.sidebar_visible &&
-          a5_mouse_x < glb_ds1edit.sidebar_width)
+          ui_mouse_x() < glb_ds1edit.sidebar_width)
       {
          /* Mouse wheel scrolls the sidebar (consume delta so zoom doesn't fire) */
          if (cur_mouse_z != old_mouse_z)
@@ -1354,9 +1354,9 @@ void interfac_user_handler(int start_ds1_idx)
          if (mouse_hit(1))
          {
             int click_result = area_browser_sidebar_click(
-                a5_mouse_x, a5_mouse_y,
+                ui_mouse_x(), ui_mouse_y(),
                 glb_ds1edit.sidebar_width,
-                al_get_display_height(a5_display));
+                ui_h());
 
             if (click_result == -2)
             {
@@ -1404,8 +1404,8 @@ void interfac_user_handler(int start_ds1_idx)
             {
                /* Simple popup menu: 2 items for a backup, 1 for a map */
                int rc_is_backup = rc_ab->groups[rc_gi].is_backup;
-               int menu_x = a5_mouse_x;
-               int menu_y = a5_mouse_y;
+               int menu_x = ui_mouse_x();
+               int menu_y = ui_mouse_y();
                int row_cmd;
                const char *row_label = interface_row_action(
                   rc_ab->groups[rc_gi].entries[rc_ei].state, &row_cmd);
@@ -1413,12 +1413,13 @@ void interfac_user_handler(int start_ds1_idx)
                int menu_h = rc_is_backup ? 28 : 14;
                int menu_sel = -1;
                int menu_done = 0;
-               int disp_w = al_get_display_width(a5_display);
-               int disp_h = al_get_display_height(a5_display);
+               int disp_w = ui_w();
+               int disp_h = ui_h();
                ALLEGRO_COLOR mc_bg = al_map_rgba(40, 36, 30, 240);
                ALLEGRO_COLOR mc_hover = al_map_rgba(60, 80, 120, 220);
                ALLEGRO_COLOR mc_text = al_map_rgb(220, 220, 220);
                ALLEGRO_COLOR mc_border = al_map_rgb(80, 70, 50);
+               ALLEGRO_TRANSFORM menu_saved;
 
                /* Clamp to display bounds */
                if (menu_x + menu_w > disp_w)
@@ -1441,8 +1442,8 @@ void interfac_user_handler(int start_ds1_idx)
                   input_pump();
                   if (a5_display_closed)
                      menu_done = 1;
-                  mx = al_get_mouse_state_axis(&a5_ms_state, 0);
-                  my = al_get_mouse_state_axis(&a5_ms_state, 1);
+                  mx = (int)((float)al_get_mouse_state_axis(&a5_ms_state, 0) / a5_ui_scale);
+                  my = (int)((float)al_get_mouse_state_axis(&a5_ms_state, 1) / a5_ui_scale);
 
                   /* Determine which menu item is hovered */
                   menu_sel = -1;
@@ -1454,8 +1455,9 @@ void interfac_user_handler(int start_ds1_idx)
                         menu_sel = 1; /* Delete permanently */
                   }
 
-                  /* Draw the popup over current frame */
+                  /* Draw the popup over current frame, scaled like the panel */
                   al_set_target_backbuffer(a5_display);
+                  ui_begin(&menu_saved);
                   al_draw_filled_rectangle((float)menu_x, (float)menu_y,
                                            (float)(menu_x + menu_w), (float)(menu_y + menu_h), mc_bg);
                   al_draw_rectangle((float)menu_x + 0.5f, (float)menu_y + 0.5f,
@@ -1466,8 +1468,8 @@ void interfac_user_handler(int start_ds1_idx)
                   if (menu_sel == 0)
                      al_draw_filled_rectangle((float)menu_x, (float)menu_y,
                                               (float)(menu_x + menu_w), (float)(menu_y + 14), mc_hover);
-                  al_draw_textf(a5_font, mc_text, (float)(menu_x + 6), (float)(menu_y + 3), 0,
-                                "%s", rc_is_backup ? "Restore" : row_label);
+                  ui_textf(mc_text, (float)(menu_x + 6), (float)(menu_y + 3), 0,
+                           "%s", rc_is_backup ? "Restore" : row_label);
 
                   /* Item 1: Delete permanently */
                   if (rc_is_backup)
@@ -1475,9 +1477,10 @@ void interfac_user_handler(int start_ds1_idx)
                      if (menu_sel == 1)
                         al_draw_filled_rectangle((float)menu_x, (float)(menu_y + 14),
                                                  (float)(menu_x + menu_w), (float)(menu_y + 28), mc_hover);
-                     al_draw_textf(a5_font, mc_text, (float)(menu_x + 6), (float)(menu_y + 17), 0,
-                                   "Delete permanently");
+                     ui_textf(mc_text, (float)(menu_x + 6), (float)(menu_y + 17), 0,
+                              "Delete permanently");
                   }
+                  ui_end(&menu_saved);
 
                   al_flip_display();
                   al_rest(0.02);
@@ -1541,7 +1544,7 @@ void interfac_user_handler(int start_ds1_idx)
                /* Group row */
                if (s_draw_row >= ab->scroll_offset)
                {
-                  if (a5_mouse_y >= sy && a5_mouse_y < sy + 14)
+                  if (ui_mouse_y() >= sy && ui_mouse_y() < sy + 14)
                   {
                      ab->selected_group = si;
                      found = 1;
@@ -1558,7 +1561,7 @@ void interfac_user_handler(int start_ds1_idx)
                   {
                      if (s_draw_row >= ab->scroll_offset)
                      {
-                        if (a5_mouse_y >= sy && a5_mouse_y < sy + 14)
+                        if (ui_mouse_y() >= sy && ui_mouse_y() < sy + 14)
                         {
                            ab->selected_group = si;
                            ab->selected_entry = sj;
@@ -1576,9 +1579,9 @@ void interfac_user_handler(int start_ds1_idx)
 
       /* Properties panel: handle mouse interactions (right side) */
       {
-         int pp_disp_w = al_get_display_width(a5_display);
+         int pp_disp_w = ui_w();
          if (glb_ds1edit.props_panel_visible &&
-             a5_mouse_x > pp_disp_w - glb_ds1edit.props_panel_width)
+             ui_mouse_x() > pp_disp_w - glb_ds1edit.props_panel_width)
          {
             /* Mouse wheel scrolls the panel (or zooms tile picker with Ctrl) */
             if (cur_mouse_z != old_mouse_z)
@@ -1596,9 +1599,9 @@ void interfac_user_handler(int start_ds1_idx)
             if (mouse_hit(1))
             {
                int pp_result = props_panel_click(
-                   a5_mouse_x, a5_mouse_y,
+                   ui_mouse_x(), ui_mouse_y(),
                    glb_ds1edit.props_panel_width,
-                   al_get_display_height(a5_display));
+                   ui_h());
 
                if (pp_result == -2)
                   glb_ds1edit.props_panel_visible = FALSE;
@@ -1617,9 +1620,9 @@ void interfac_user_handler(int start_ds1_idx)
       /* Click outside properties panel removes its focus */
       if (glb_ds1edit.props_panel.has_focus && (a5_mouse_b & 1))
       {
-         int pp_dw = al_get_display_width(a5_display);
+         int pp_dw = ui_w();
          if (!glb_ds1edit.props_panel_visible ||
-             a5_mouse_x <= pp_dw - glb_ds1edit.props_panel_width)
+             ui_mouse_x() <= pp_dw - glb_ds1edit.props_panel_width)
          {
             glb_ds1edit.props_panel.has_focus = FALSE;
          }
@@ -2628,11 +2631,11 @@ void interfac_user_handler(int start_ds1_idx)
              glb_ds1edit.props_panel.tiles.brush.valid &&
              glb_ds1edit.has_loaded_ds1)
          {
-            int pp_disp_w = al_get_display_width(a5_display);
+            int pp_disp_w = ui_w();
             int panel_left = glb_ds1edit.props_panel_visible
                                  ? pp_disp_w - glb_ds1edit.props_panel_width
                                  : pp_disp_w;
-            if (a5_mouse_x < panel_left)
+            if (ui_mouse_x() < panel_left)
             {
                if (cx != tp_last_paint_x || cy != tp_last_paint_y)
                {

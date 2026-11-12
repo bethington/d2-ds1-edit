@@ -158,6 +158,11 @@ void ini_create(char *ininame)
        "; -------------------------------------------------------------------\n"
        "mouse_edge_scroll = NO\n"
        "\n"
+       "; size of the bars and side panels, as a percentage from 100 to 300. 0 picks\n"
+       "; one from the screen height: 200% at 2160 pixels tall\n"
+       "; -------------------------------------------------------------------\n"
+       "ui_scale = 0\n"
+       "\n"
        "\n"
        "; after a Centering (with the 'C' key), wich zoom ?\n"
        "; possible values : NO_CHANGE, 1:1, 1:2, 1:4, 1:8, 1:16\n"
@@ -342,6 +347,7 @@ void ini_read(char *ininame)
            {"winobj_can_scroll_keyb", T_YES, &glb_config.winobj_scroll_keyb, "YES"},
            {"winobj_can_scroll_mouse", T_YES, &glb_config.winobj_scroll_mouse, "NO"},
            {"mouse_edge_scroll", T_YES, &glb_config.mouse_edge_scroll, "NO"},
+           {"ui_scale", T_INT, &glb_config.ui_scale, (void *)-1}, /* auto; NULL here would mean required */
            {"center_zoom", T_ZOOM, &glb_config.center_zoom, "1:1"},
            {"default_zoom", T_ZOOM, &glb_config.default_zoom, "1:1"},
            {"nb_type1_per_act", T_INT, &glb_config.nb_type1_per_act, (void *)60},

@@ -1783,7 +1783,8 @@ double glb_present_ms = 0.0;
 void misc_draw_screen(int mx, int my)
 {
    ALLEGRO_BITMAP *mouse_sprite = glb_ds1edit.mouse_cursor[glb_ds1edit.mode];
-   int disp_h = al_get_display_height(a5_display);
+   int disp_h = ui_h();
+   ALLEGRO_TRANSFORM ui_saved;
    double start_ms = al_get_time() * 1000.0;
 
    al_set_target_backbuffer(a5_display);
@@ -1794,6 +1795,15 @@ void misc_draw_screen(int mx, int my)
    al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_ZERO);
    al_draw_bitmap(glb_ds1edit.screen_buff, 0, 0, 0);
    al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
+
+   /* DS1EDIT_TEST_SCREENSHOT is for looking at the panels, so show them. */
+   if (glb_ds1edit.cmd_line.selftest_frames > 0 && getenv("DS1EDIT_TEST_SCREENSHOT") != NULL)
+   {
+      glb_ds1edit.sidebar_visible = TRUE;
+      glb_ds1edit.props_panel_visible = TRUE;
+   }
+
+   ui_begin(&ui_saved);
 
    /* Draw sidebar overlay or collapsed tab on top of the map */
    if (glb_ds1edit.sidebar_visible)
@@ -1808,6 +1818,8 @@ void misc_draw_screen(int mx, int my)
       props_panel_draw_tab(disp_h);
 
    menu_bar_draw();
+
+   ui_end(&ui_saved);
 
    /* Hand the pointer to the compositor when we can: an OS cursor tracks the
       real device instead of lagging our frame rate. Only draw it ourselves if
@@ -1826,6 +1838,16 @@ void misc_draw_screen(int mx, int my)
    {
       al_draw_bitmap(mouse_sprite, (float)mx, (float)my, 0);
    }
+   /* DS1EDIT_TEST_SCREENSHOT=<png> (test-only): keep the last --selftest frame,
+      the one place the bars and panels can be looked at by a test. */
+   if (glb_ds1edit.cmd_line.selftest_frames > 0)
+   {
+      static int selftest_drawn = 0;
+      const char *shot = getenv("DS1EDIT_TEST_SCREENSHOT");
+      if (++selftest_drawn == glb_ds1edit.cmd_line.selftest_frames && shot != NULL)
+         al_save_bitmap(shot, al_get_backbuffer(a5_display));
+   }
+
    al_flip_display();
 
    glb_present_ms = al_get_time() * 1000.0 - start_ms;

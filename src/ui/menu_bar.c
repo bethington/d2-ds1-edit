@@ -43,12 +43,13 @@ static void draw_dropdown(int bar_h)
       if (i == s_state.item)
          al_draw_filled_rectangle((float) x + 1, (float) y, (float) (x + MENU_DROP_W) - 1,
                                   (float) (y + MENU_ITEM_H), col_hover);
-      al_draw_text(a5_font, col, (float) (x + 6), (float) (y + 3), 0, def->label);
-      al_draw_text(a5_font, col, (float) (x + MENU_DROP_W - 6), (float) (y + 3),
-                   ALLEGRO_ALIGN_RIGHT, def->shortcut);
+      ui_text(col, (float) (x + 6), (float) (y + 3), 0, def->label);
+      ui_text(col, (float) (x + MENU_DROP_W - 6), (float) (y + 3),
+              ALLEGRO_ALIGN_RIGHT, def->shortcut);
    }
 }
 
+/* Drawn in logical pixels, under the UI scale misc_draw_screen() sets. */
 void menu_bar_draw(void)
 {
    int h = ui_menu_bar_height();
@@ -56,7 +57,7 @@ void menu_bar_draw(void)
 
    if (h == 0)
       return;
-   w = al_get_display_width(a5_display);
+   w = ui_w();
 
    al_draw_filled_rectangle(0, 0, (float) w, (float) h, al_map_rgb(36, 30, 24));
    al_draw_line(0, (float) h - 0.5f, (float) w, (float) h - 0.5f, al_map_rgb(120, 110, 90), 1.0f);
@@ -68,7 +69,7 @@ void menu_bar_draw(void)
          al_draw_filled_rectangle((float) (x - 4), 0,
                                   (float) (x + (int) strlen(menu_title(i)) * 8 + 4),
                                   (float) (h - 1), al_map_rgb(60, 80, 130));
-      al_draw_text(a5_font, al_map_rgb(235, 225, 200), (float) x, 3, 0, menu_title(i));
+      ui_text(al_map_rgb(235, 225, 200), (float) x, UI_BAR_TEXT_Y, 0, menu_title(i));
    }
 
    if (s_state.menu >= 0)
@@ -98,7 +99,7 @@ static CMD_ID run_menu(int start_menu, const CMD_CTX *ctx)
    };
    int bar_h = ui_menu_bar_height();
    CMD_ID chosen = CMD_NONE;
-   int last_x = a5_mouse_x, last_y = a5_mouse_y;
+   int last_x = ui_mouse_x(), last_y = ui_mouse_y();
    size_t k;
 
    s_ctx = *ctx;
@@ -119,28 +120,29 @@ static CMD_ID run_menu(int start_menu, const CMD_CTX *ctx)
 
       if (s_state.menu >= 0)
       {
-         int moved = (a5_mouse_x != last_x || a5_mouse_y != last_y);
+         int mx = ui_mouse_x(), my = ui_mouse_y();
+         int moved = (mx != last_x || my != last_y);
 
-         last_x = a5_mouse_x;
-         last_y = a5_mouse_y;
+         last_x = mx;
+         last_y = my;
 
          /* Hover only acts when the pointer moves, so a resting pointer
             doesn't override the arrow keys. */
          if (moved)
          {
-            title = menu_title_at(a5_mouse_x, a5_mouse_y, bar_h);
+            title = menu_title_at(mx, my, bar_h);
             if (title >= 0 && title != s_state.menu)
                menu_state_open(&s_state, title);
             else
             {
-               item = menu_item_at(s_state.menu, a5_mouse_x, a5_mouse_y, bar_h);
+               item = menu_item_at(s_state.menu, mx, my, bar_h);
                if (item >= 0)
                   s_state.item = item;
             }
          }
 
          /* Judged against the menu that's open now, wherever the click lands. */
-         item = menu_item_at(s_state.menu, a5_mouse_x, a5_mouse_y, bar_h);
+         item = menu_item_at(s_state.menu, mx, my, bar_h);
 
          if (mouse_hit(1))
          {
@@ -195,8 +197,8 @@ CMD_ID menu_bar_poll(const CMD_CTX *ctx, int keys_enabled)
    if (bar_h == 0)
       return CMD_NONE;
 
-   if (mouse_hit(1) && a5_mouse_y < bar_h)
-      return run_menu(menu_title_at(a5_mouse_x, a5_mouse_y, bar_h), ctx);
+   if (mouse_hit(1) && ui_mouse_y() < bar_h)
+      return run_menu(menu_title_at(ui_mouse_x(), ui_mouse_y(), bar_h), ctx);
 
    /* While the panel is editing, mnemonics and plain keys belong to it. A key
       with a modifier that the table owns is still used up, so it doesn't reach

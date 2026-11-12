@@ -148,6 +148,10 @@ winobj_can_scroll_mouse = NO
 ; and WASD always scroll; Ctrl+arrows browse maps.
 mouse_edge_scroll = NO
 
+; Size of the bars and side panels, as a percentage from 100 to 300. 0 picks one
+; from the screen height: 200% at 2160 pixels tall.
+ui_scale = 0
+
 
 ; After Centering (the 'C' key), which zoom level to use?
 ; Valid values: NO_CHANGE, 1:1, 1:2, 1:4, 1:8, 1:16

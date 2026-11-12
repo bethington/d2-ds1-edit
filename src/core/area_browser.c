@@ -2630,7 +2630,7 @@ void area_browser_draw_sidebar(int width, int height)
    int y, i, last_act = -1;
    int draw_row = 0;
    int top_bar_h = ui_top_bar_height();
-   int bottom_bar_h = 10;
+   int bottom_bar_h = UI_BAR_H;
    int panel_top = top_bar_h;
    int panel_bottom = height - bottom_bar_h;
    ALLEGRO_COLOR col_title    = al_map_rgb(255, 200, 80);
@@ -2654,10 +2654,10 @@ void area_browser_draw_sidebar(int width, int height)
    /* Header */
    al_draw_filled_rectangle(0, (float)panel_top, (float)width,
                              (float)(panel_top + SB_HEADER_H), al_map_rgba(36, 30, 24, 220));
-   al_draw_textf(a5_font, col_title, (float)SB_MARGIN_X, (float)(panel_top + 7), 0, "Areas");
+   ui_textf(col_title, (float)SB_MARGIN_X, (float)(panel_top + 7), 0, "Areas");
 
    /* Close button "X" */
-   al_draw_textf(a5_font, col_close, (float)(width - 16), (float)(panel_top + 7), 0, "X");
+   ui_textf(col_close, (float)(width - 16), (float)(panel_top + 7), 0, "X");
 
    /* Area list */
    y = panel_top + SB_HEADER_H + 4;
@@ -2672,8 +2672,8 @@ void area_browser_draw_sidebar(int width, int height)
          if (draw_row >= ab->scroll_offset && y + SB_LINE_H < panel_bottom)
          {
             char section[32];
-            al_draw_textf(a5_font, col_act, (float)SB_MARGIN_X, (float)y, 0, "%s",
-                          area_group_section_label(g, section, sizeof(section)));
+            ui_textf(col_act, (float)SB_MARGIN_X, (float)y, 0, "%s",
+                     area_group_section_label(g, section, sizeof(section)));
             y += SB_LINE_H;
          }
          draw_row++;
@@ -2701,16 +2701,16 @@ void area_browser_draw_sidebar(int width, int height)
 
          /* Arrow */
          if (g->entry_count > 0)
-            al_draw_textf(a5_font, text_col, (float)(SB_MARGIN_X + 4), (float)y, 0,
+            ui_textf(text_col, (float)(SB_MARGIN_X + 4), (float)y, 0,
                            "%s", arrow);
 
          /* Name */
-         al_draw_textf(a5_font, text_col, (float)(SB_MARGIN_X + 16), (float)y, 0,
+         ui_textf(text_col, (float)(SB_MARGIN_X + 16), (float)y, 0,
                         "%s", g->name);
 
          /* Count */
          sprintf(count_str, "%d", g->entry_count);
-         al_draw_textf(a5_font, is_selected ? col_sel_text : col_count,
+         ui_textf(is_selected ? col_sel_text : col_count,
                         (float)(width - 32), (float)y, 0,
                         "%s", count_str);
 
@@ -2748,11 +2748,11 @@ void area_browser_draw_sidebar(int width, int height)
 
                if (g->entries[j].slot_cleared)
                   fc = al_map_rgb(110, 110, 110);
-               al_draw_textf(a5_font, fc, (float)(SB_MARGIN_X + 22), (float)y, 0,
+               ui_textf(fc, (float)(SB_MARGIN_X + 22), (float)y, 0,
                               "%s", fname);
                if (g->entries[j].slot_cleared)
                   al_draw_line((float)(SB_MARGIN_X + 22), (float)y + 4.5f,
-                               (float)(SB_MARGIN_X + 22 + al_get_text_width(a5_font, fname)),
+                               (float)(SB_MARGIN_X + 22 + ui_text_width(fname)),
                                (float)y + 4.5f, fc, 1.0f);
                {
                   /* State letter, then * if an open copy has unsaved edits. */
@@ -2762,9 +2762,9 @@ void area_browser_draw_sidebar(int width, int height)
                      entry_dirty = glb_ds1[k].name[0] != 0 && map_is_dirty(k) &&
                         map_state_path_matches(glb_ds1[k].name, g->entries[j].ds1_path);
 
-                  al_draw_textf(a5_font, fc, (float)(width - 28), (float)y, 0, "%s%s",
-                                map_state_mark((MAP_STATE_E) g->entries[j].state),
-                                entry_dirty ? "*" : "");
+                  ui_textf(fc, (float)(width - 28), (float)y, 0, "%s%s",
+                           map_state_mark((MAP_STATE_E) g->entries[j].state),
+                           entry_dirty ? "*" : "");
                }
 
                y += SB_LINE_H;
@@ -2783,7 +2783,7 @@ void area_browser_draw_sidebar(int width, int height)
 void area_browser_draw_sidebar_tab(int height)
 {
    int top_bar_h = ui_top_bar_height();
-   int bottom_bar_h = 10;
+   int bottom_bar_h = UI_BAR_H;
    int panel_top = top_bar_h;
    int panel_bottom = height - bottom_bar_h;
    ALLEGRO_COLOR col_bg   = al_map_rgba(36, 30, 24, 180);
@@ -2793,7 +2793,7 @@ void area_browser_draw_sidebar_tab(int height)
    al_draw_line((float)SB_TAB_W - 0.5f, (float)panel_top,
                 (float)SB_TAB_W - 0.5f, (float)panel_bottom,
                 al_map_rgb(60, 50, 40), 1.0f);
-   al_draw_textf(a5_font, col_text, 4, (float)((panel_top + panel_bottom) / 2 - 4), 0, ">");
+   ui_textf(col_text, 4, (float)((panel_top + panel_bottom) / 2 - 4), 0, ">");
 }
 
 /* Handle a mouse click in the sidebar.
@@ -2874,7 +2874,7 @@ void area_browser_scroll_to_row(int group_idx, int entry_idx)
    AREA_BROWSER_S * ab = &glb_ds1edit.area_browser;
    int i, last_act = -1, row = 0, visible;
    int first_y = ui_top_bar_height() + SB_HEADER_H + 4;
-   int disp_h = a5_display != NULL ? al_get_display_height(a5_display) : glb_config.screen.height;
+   int disp_h = a5_display != NULL ? ui_h() : glb_config.screen.height;
 
    if (group_idx < 0 || group_idx >= ab->group_count ||
        entry_idx < 0 || entry_idx >= ab->groups[group_idx].entry_count)
@@ -2885,7 +2885,7 @@ void area_browser_scroll_to_row(int group_idx, int entry_idx)
    ab->selected_entry = entry_idx;
    glb_ds1edit.sidebar_visible = TRUE;
 
-   /* The rows area_browser_draw_sidebar counts, with its bottom bar of 10. */
+   /* The rows area_browser_draw_sidebar counts, above its bottom bar. */
    for (i = 0; i <= group_idx; i++)
    {
       if (area_group_section(&ab->groups[i]) != last_act)
@@ -2903,7 +2903,7 @@ void area_browser_scroll_to_row(int group_idx, int entry_idx)
          row += ab->groups[i].entry_count;
    }
 
-   visible = (disp_h - 10 - first_y - 1) / SB_LINE_H;
+   visible = (disp_h - UI_BAR_H - first_y - 1) / SB_LINE_H;
    if (visible < 1)
       visible = 1;
    if (row < ab->scroll_offset)

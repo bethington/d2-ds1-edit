@@ -212,7 +212,7 @@ static int pp_draw_button(int x, int y, int w, int panel_bottom,
    al_draw_rectangle((float)x + 0.5f, (float)y + 0.5f,
                       (float)(x + w) - 0.5f, (float)(y + PP_LINE_H - 2) - 0.5f,
                       al_map_rgb(80, 110, 160), 1.0f);
-   al_draw_textf(a5_font, al_map_rgb(200, 220, 255),
+   ui_textf(al_map_rgb(200, 220, 255),
                   (float)(x + 4), (float)(y + 1), 0, "%s", text);
    return 1;
 }
@@ -270,13 +270,13 @@ static int pp_draw_section(int panel_x, int panel_right, int y,
                             al_map_rgb(80, 100, 160), 1.0f);
       }
 
-      al_draw_textf(a5_font, col_section,
+      ui_textf(col_section,
                      (float)(panel_x + PP_MARGIN_X), (float)y, 0,
                      "%s %s", arrow, title);
       if (scope != NULL)
       {
          ALLEGRO_COLOR col_scope = al_map_rgb(200, 160, 60);
-         al_draw_textf(a5_font, col_scope,
+         ui_textf(col_scope,
                         (float)(panel_right - 80 - PP_MARGIN_X), (float)y, 0,
                         "%s", scope);
       }
@@ -381,10 +381,10 @@ static int pp_draw_field(int panel_x, int panel_right, int y,
                             (float)(panel_right - 4) - 0.5f,
                             (float)(y + PP_LINE_H - 1) - 0.5f,
                             al_map_rgb(100, 120, 180), 1.0f);
-         al_draw_textf(a5_font, col_label,
+         ui_textf(col_label,
                         (float)(panel_x + PP_MARGIN_X + 8), (float)text_y, 0,
                         "%s", label);
-         al_draw_textf(a5_font, al_map_rgb(255, 255, 255),
+         ui_textf(al_map_rgb(255, 255, 255),
                         (float)text_x, (float)text_y, 0,
                         "%s", pp->edit_buf);
          /* Blinking cursor */
@@ -392,7 +392,11 @@ static int pp_draw_field(int panel_x, int panel_right, int y,
             double t = al_get_time();
             if (((int)(t * 2.0)) & 1)
             {
-               int cx = text_x + pp->edit_cursor * 8;
+               char before_cursor[PP_EDIT_BUF_MAX];
+               int cx;
+               snprintf(before_cursor, sizeof(before_cursor), "%.*s",
+                        pp->edit_cursor, pp->edit_buf);
+               cx = text_x + ui_text_width(before_cursor);
                al_draw_line((float)cx, (float)text_y,
                             (float)cx, (float)(text_y + PP_FONT_H + 1),
                             al_map_rgb(255, 255, 255), 1.0f);
@@ -403,7 +407,7 @@ static int pp_draw_field(int panel_x, int panel_right, int y,
       }
 
       /* Draw label */
-      al_draw_textf(a5_font, col_label,
+      ui_textf(col_label,
                      (float)(panel_x + PP_MARGIN_X + 8), (float)y, 0,
                      "%s", label);
 
@@ -418,12 +422,12 @@ static int pp_draw_field(int panel_x, int panel_right, int y,
             strncpy(trunc, value, max_chars - 3);
             trunc[max_chars - 3] = '\0';
             strcat(trunc, "...");
-            al_draw_textf(a5_font, col_value, (float)val_x, (float)y, 0,
+            ui_textf(col_value, (float)val_x, (float)y, 0,
                            "%s", trunc);
          }
          else
          {
-            al_draw_textf(a5_font, col_value, (float)val_x, (float)y, 0,
+            ui_textf(col_value, (float)val_x, (float)y, 0,
                            "%s", value);
          }
       }
@@ -564,9 +568,9 @@ static int pp_draw_field_num_tagged(int panel_x, int width, int y,
 void props_panel_draw(int width, int height)
 {
    PROPS_PANEL_S * pp = &glb_ds1edit.props_panel;
-   int disp_w = al_get_display_width(a5_display);
+   int disp_w = ui_w();
    int top_bar_h = ui_top_bar_height();
-   int bottom_bar_h = 10;
+   int bottom_bar_h = UI_BAR_H;
    int panel_top = top_bar_h;
    int panel_bottom = height - bottom_bar_h;
    int panel_x = disp_w - width;
@@ -594,10 +598,10 @@ void props_panel_draw(int width, int height)
                              (float)(panel_top + PP_TITLE_H),
                              focused ? al_map_rgba(28, 32, 48, 230)
                                      : al_map_rgba(36, 30, 24, 220));
-   al_draw_textf(a5_font, col_title,
+   ui_textf(col_title,
                   (float)(panel_x + PP_MARGIN_X), (float)(panel_top + 7),
                   0, "Properties");
-   al_draw_textf(a5_font, col_close,
+   ui_textf(col_close,
                   (float)(panel_right - 16), (float)(panel_top + 7),
                   0, "X");
 
@@ -616,8 +620,7 @@ void props_panel_draw(int width, int height)
                                 (float)(tab_mid - 1), (float)tab_y1,
                                 pp->active_tab == PP_TAB_PROPERTIES
                                    ? col_active : col_inactive);
-      al_draw_textf(a5_font,
-                     pp->active_tab == PP_TAB_PROPERTIES
+      ui_textf(pp->active_tab == PP_TAB_PROPERTIES
                         ? col_tab_act : col_tab_text,
                      (float)((panel_x + tab_mid) / 2), (float)(tab_y0 + 3),
                      ALLEGRO_ALIGN_CENTRE, "Properties");
@@ -627,8 +630,7 @@ void props_panel_draw(int width, int height)
                                 (float)(panel_right - 2), (float)tab_y1,
                                 pp->active_tab == PP_TAB_TILES
                                    ? col_active : col_inactive);
-      al_draw_textf(a5_font,
-                     pp->active_tab == PP_TAB_TILES
+      ui_textf(pp->active_tab == PP_TAB_TILES
                         ? col_tab_act : col_tab_text,
                      (float)((tab_mid + panel_right) / 2), (float)(tab_y0 + 3),
                      ALLEGRO_ALIGN_CENTRE, "Tiles");
@@ -645,14 +647,14 @@ void props_panel_draw(int width, int height)
    pp_field_idx = 0;    /* Reset field counter for edit tracking */
    pp_row_idx = 0;      /* Reset row counter for keyboard navigation */
    pp_section_count = 0; /* Reset section header tracking */
-   pp_hover_mx = a5_mouse_x;
-   pp_hover_my = a5_mouse_y;
+   pp_hover_mx = ui_mouse_x();
+   pp_hover_my = ui_mouse_y();
    pp_hover_panel_x = panel_x;
    pp_hover_panel_right = panel_right;
 
    if (!glb_ds1edit.has_loaded_ds1)
    {
-      al_draw_textf(a5_font, col_none,
+      ui_textf(col_none,
                      (float)(panel_x + PP_MARGIN_X), (float)y,
                      0, "No DS1 loaded");
       return;
@@ -661,7 +663,7 @@ void props_panel_draw(int width, int height)
    idx = pp->ds1_idx;
    if (idx < 0 || idx >= DS1_MAX || glb_ds1[idx].name[0] == '\0')
    {
-      al_draw_textf(a5_font, col_none,
+      ui_textf(col_none,
                      (float)(panel_x + PP_MARGIN_X), (float)y,
                      0, "No DS1 selected");
       return;
@@ -1123,10 +1125,10 @@ void props_panel_draw(int width, int height)
                {
                   char idx_str[8];
                   sprintf(idx_str, "[%d]", fi + 1);
-                  al_draw_textf(a5_font, al_map_rgb(100, 100, 100),
+                  ui_textf(al_map_rgb(100, 100, 100),
                                  (float)(panel_x + PP_MARGIN_X + 8), (float)y, 0,
                                  "%s", idx_str);
-                  al_draw_textf(a5_font, al_map_rgb(160, 180, 200),
+                  ui_textf(al_map_rgb(160, 180, 200),
                                  (float)(panel_x + PP_MARGIN_X + 36), (float)y, 0,
                                  "%s", fname);
                }
@@ -1140,7 +1142,7 @@ void props_panel_draw(int width, int height)
          {
             if (draw_row >= pp->scroll_offset && y + PP_LINE_H < panel_bottom)
             {
-               al_draw_textf(a5_font, col_none,
+               ui_textf(col_none,
                               (float)(panel_x + PP_MARGIN_X + 8), (float)y, 0,
                               "(none)");
             }
@@ -1193,7 +1195,7 @@ draw_footer:
          al_draw_rectangle((float)apply_x + 0.5f, (float)(footer_y + 3) + 0.5f,
                             (float)(apply_x + btn_w) - 0.5f, (float)(footer_y + 18) - 0.5f,
                             fc_border, 1.0f);
-         al_draw_textf(a5_font, fc_text,
+         ui_textf(fc_text,
                         (float)(apply_x + btn_w / 2), (float)(footer_y + 6),
                         ALLEGRO_ALIGN_CENTRE, "%s", btn_text);
 
@@ -1207,20 +1209,20 @@ draw_footer:
          al_draw_rectangle((float)discard_x + 0.5f, (float)(footer_y + 3) + 0.5f,
                             (float)(discard_x + btn_w) - 0.5f, (float)(footer_y + 18) - 0.5f,
                             fc_border, 1.0f);
-         al_draw_textf(a5_font, fc_text,
+         ui_textf(fc_text,
                         (float)(discard_x + btn_w / 2), (float)(footer_y + 6),
                         ALLEGRO_ALIGN_CENTRE, "Discard");
       }
       else if (pp->active_tab == PP_TAB_TILES)
       {
-         al_draw_textf(a5_font, al_map_rgb(80, 80, 80),
+         ui_textf(al_map_rgb(80, 80, 80),
                         (float)((panel_x + panel_right) / 2), (float)(footer_y + 6),
                         ALLEGRO_ALIGN_CENTRE,
                         "Click=brush  Ctrl+wheel=zoom  Ctrl+]=tabs");
       }
       else
       {
-         al_draw_textf(a5_font, al_map_rgb(80, 80, 80),
+         ui_textf(al_map_rgb(80, 80, 80),
                         (float)((panel_x + panel_right) / 2), (float)(footer_y + 6),
                         ALLEGRO_ALIGN_CENTRE, "No changes  Ctrl+Enter=Apply");
       }
@@ -1363,9 +1365,9 @@ void props_panel_apply(void)
 /* Draw collapsed panel tab — thin "<" button on right edge. */
 void props_panel_draw_tab(int height)
 {
-   int disp_w = al_get_display_width(a5_display);
+   int disp_w = ui_w();
    int top_bar_h = ui_top_bar_height();
-   int bottom_bar_h = 10;
+   int bottom_bar_h = UI_BAR_H;
    int panel_top = top_bar_h;
    int panel_bottom = height - bottom_bar_h;
    ALLEGRO_COLOR col_bg   = al_map_rgba(36, 30, 24, 180);
@@ -1376,7 +1378,7 @@ void props_panel_draw_tab(int height)
    al_draw_line((float)(disp_w - PP_TAB_W) + 0.5f, (float)panel_top,
                 (float)(disp_w - PP_TAB_W) + 0.5f, (float)panel_bottom,
                 al_map_rgb(60, 50, 40), 1.0f);
-   al_draw_textf(a5_font, col_text,
+   ui_textf(col_text,
                   (float)(disp_w - 12),
                   (float)((panel_top + panel_bottom) / 2 - 4),
                   0, "<");
@@ -1388,11 +1390,11 @@ void props_panel_draw_tab(int height)
 int props_panel_click(int mx, int my, int panel_w, int disp_h)
 {
    PROPS_PANEL_S * pp = &glb_ds1edit.props_panel;
-   int disp_w = al_get_display_width(a5_display);
+   int disp_w = ui_w();
    int panel_x = disp_w - panel_w;
    int top_bar_h = ui_top_bar_height();
    int panel_top = top_bar_h;
-   int bottom_bar_h = 10;
+   int bottom_bar_h = UI_BAR_H;
    int panel_bottom = disp_h - bottom_bar_h;
    int y, draw_row;
    int idx;
@@ -2051,8 +2053,8 @@ void props_panel_handle_keychar(int unichar, int keycode)
                 * center and a y that corresponds to the focused row. */
                if (!is_section)
                {
-                  int disp_w = al_get_display_width(a5_display);
-                  int disp_h = al_get_display_height(a5_display);
+                  int disp_w = ui_w();
+                  int disp_h = ui_h();
                   int top_h = ui_top_bar_height();
                   int click_x = disp_w - glb_ds1edit.props_panel_width / 2;
                   int click_y = top_h + PP_HEADER_H + 4

@@ -415,6 +415,8 @@ static void wpreview_draw_rectfill(int x1, int y1, int x2, int y2, int color)
 #define wpreview_draw_vline(x, y1, y2, color) wpreview_draw_line((x), (y1), (x), (y2), (color))
 #define wpreview_textprintf(x, y, color, ...) \
    al_draw_textf(a5_font, pal_color(color), (float)(x), (float)(y), 0, __VA_ARGS__)
+#define hud_text(x, y, color, ...) \
+   ui_textf(pal_color(color), (float)(x), (float)(y), 0, __VA_ARGS__)
 
 #ifdef WIN32
 #pragma warning(push)
@@ -3180,31 +3182,35 @@ void wpreview_draw_tiles(int ds1_idx)
 
    // make up & bottom border black, with white line
    perf_section_start_ms = render_perf_now_ms();
+   ALLEGRO_TRANSFORM hud_saved;
+   int hud_w = (int)((float)glb_config.screen.width / a5_ui_scale);
+   int hud_h = (int)((float)glb_config.screen.height / a5_ui_scale);
+   ui_begin(&hud_saved);
    if (glb_ds1edit.show_2nd_row == TRUE)
    {
-      wpreview_draw_rectfill(0, 0, glb_config.screen.width, hud_y + 19, 0);
-      wpreview_draw_hline(0, hud_y + 9, glb_config.screen.width, 29);
-      wpreview_draw_hline(0, hud_y + 20, glb_config.screen.width, 255);
+      al_draw_filled_rectangle(0, 0, (float)hud_w, hud_y + 2 * UI_BAR_H, al_map_rgb(0, 0, 0));
+      wpreview_draw_hline(0, hud_y + UI_BAR_H - 1, hud_w, 29);
+      wpreview_draw_hline(0, hud_y + 2 * UI_BAR_H - 1, hud_w, 255);
 
       // 2nd row datas
-      wpreview_textprintf(0, hud_y + 11, 255, "Set:");
-      wpreview_textprintf(32, hud_y + 11, 109, "%i", glb_ds1edit.ds1_group_idx + 1);
+      hud_text(0, hud_y + UI_BAR_H + UI_BAR_TEXT_Y, 255, "Set:");
+      hud_text(32, hud_y + UI_BAR_H + UI_BAR_TEXT_Y, 109, "%i", glb_ds1edit.ds1_group_idx + 1);
 
-      wpreview_textprintf(65, hud_y + 11, 255, "Ds1Index:");
-      wpreview_textprintf(137, hud_y + 11, 109, "%i", ds1_idx + 1);
+      hud_text(65, hud_y + UI_BAR_H + UI_BAR_TEXT_Y, 255, "Ds1Index:");
+      hud_text(137, hud_y + UI_BAR_H + UI_BAR_TEXT_Y, 109, "%i", ds1_idx + 1);
 
-      wpreview_textprintf(175, hud_y + 11, 255, "File:");
-      wpreview_textprintf(215, hud_y + 11, 109, "%s", glb_ds1[ds1_idx].name);
+      hud_text(175, hud_y + UI_BAR_H + UI_BAR_TEXT_Y, 255, "File:");
+      hud_text(215, hud_y + UI_BAR_H + UI_BAR_TEXT_Y, 109, "%s", glb_ds1[ds1_idx].name);
    }
    else
    {
-      wpreview_draw_rectfill(0, 0, glb_config.screen.width, hud_y + 8, 0);
-      wpreview_draw_hline(0, hud_y + 9, glb_config.screen.width, 255);
+      al_draw_filled_rectangle(0, 0, (float)hud_w, hud_y + UI_BAR_H, al_map_rgb(0, 0, 0));
+      wpreview_draw_hline(0, hud_y + UI_BAR_H - 1, hud_w, 255);
    }
 
    // bottom row background
-   wpreview_draw_rectfill(0, glb_config.screen.height - 9, glb_config.screen.width, glb_config.screen.height, 0);
-   wpreview_draw_hline(0, glb_config.screen.height - 10, glb_config.screen.width, 255);
+   al_draw_filled_rectangle(0, (float)(hud_h - UI_BAR_H), (float)hud_w, (float)hud_h, al_map_rgb(0, 0, 0));
+   wpreview_draw_hline(0, hud_h - UI_BAR_H, hud_w, 255);
 
    // layers toggle
 
@@ -3212,24 +3218,24 @@ void wpreview_draw_tiles(int ds1_idx)
    for (i = 0; i < glb_ds1[ds1_idx].floor_num; i++)
    {
       if (glb_ds1[ds1_idx].floor_layer_mask[i] == 0)
-         wpreview_textprintf(20 * i, hud_y, 98, "f%i", i + 1);
+         hud_text(20 * i, hud_y + UI_BAR_TEXT_Y, 98, "f%i", i + 1);
       else
-         wpreview_textprintf(20 * i, hud_y, 132, "f%i", i + 1);
+         hud_text(20 * i, hud_y + UI_BAR_TEXT_Y, 132, "f%i", i + 1);
    }
 
    // animation layer (F3)
    switch (glb_ds1[ds1_idx].animations_layer_mask)
    {
    case 0:
-      wpreview_textprintf(50, hud_y, 98, "anims");
+      hud_text(50, hud_y + UI_BAR_TEXT_Y, 98, "anims");
       break;
 
    case 1:
-      wpreview_textprintf(50, hud_y, 132, "anims");
+      hud_text(50, hud_y + UI_BAR_TEXT_Y, 132, "anims");
       break;
 
    default:
-      wpreview_textprintf(50, hud_y, 108, "anims");
+      hud_text(50, hud_y + UI_BAR_TEXT_Y, 108, "anims");
       break;
    }
 
@@ -3237,19 +3243,19 @@ void wpreview_draw_tiles(int ds1_idx)
    switch (glb_ds1[ds1_idx].objects_layer_mask)
    {
    case OL_NONE:
-      wpreview_textprintf(100, hud_y, 98, "obj");
+      hud_text(100, hud_y + UI_BAR_TEXT_Y, 98, "obj");
       break;
 
    case OL_TYPEID:
-      wpreview_textprintf(100, hud_y, 210, "obj");
+      hud_text(100, hud_y + UI_BAR_TEXT_Y, 210, "obj");
       break;
 
    case OL_SPEED:
-      wpreview_textprintf(100, hud_y, 108, "obj");
+      hud_text(100, hud_y + UI_BAR_TEXT_Y, 108, "obj");
       break;
 
    case OL_DESC:
-      wpreview_textprintf(100, hud_y, 132, "obj");
+      hud_text(100, hud_y + UI_BAR_TEXT_Y, 132, "obj");
       break;
 
    default:
@@ -3260,11 +3266,11 @@ void wpreview_draw_tiles(int ds1_idx)
    switch (glb_ds1[ds1_idx].special_layer_mask)
    {
    case 0:
-      wpreview_textprintf(240, hud_y, 98, "spl");
+      hud_text(240, hud_y + UI_BAR_TEXT_Y, 98, "spl");
       break;
 
    default:
-      wpreview_textprintf(240, hud_y, 132, "spl");
+      hud_text(240, hud_y + UI_BAR_TEXT_Y, 132, "spl");
       break;
    }
 
@@ -3272,86 +3278,79 @@ void wpreview_draw_tiles(int ds1_idx)
    for (i = 0; i < glb_ds1[ds1_idx].wall_num; i++)
    {
       if (glb_ds1[ds1_idx].wall_layer_mask[i] == 0)
-         wpreview_textprintf(140 + 20 * i, hud_y, 98, "w%i", i + 1);
+         hud_text(140 + 20 * i, hud_y + UI_BAR_TEXT_Y, 98, "w%i", i + 1);
       else
-         wpreview_textprintf(140 + 20 * i, hud_y, 132, "w%i", i + 1);
+         hud_text(140 + 20 * i, hud_y + UI_BAR_TEXT_Y, 132, "w%i", i + 1);
    }
 
    // paths layer (F10)
    if (glb_ds1[ds1_idx].paths_layer_mask == 0)
-      wpreview_textprintf(280, hud_y, 98, "path");
+      hud_text(280, hud_y + UI_BAR_TEXT_Y, 98, "path");
    else
-      wpreview_textprintf(280, hud_y, 132, "path");
+      hud_text(280, hud_y + UI_BAR_TEXT_Y, 132, "path");
 
    // shadow layer (F11)
    switch (glb_ds1[ds1_idx].shadow_layer_mask[0])
    {
    case 1:
-      wpreview_textprintf(340, hud_y, 210, "shad");
+      hud_text(340, hud_y + UI_BAR_TEXT_Y, 210, "shad");
       break;
 
    case 2:
-      wpreview_textprintf(340, hud_y, 255, "shad");
+      hud_text(340, hud_y + UI_BAR_TEXT_Y, 255, "shad");
       break;
 
    case 3:
-      wpreview_textprintf(340, hud_y, 132, "shad");
+      hud_text(340, hud_y + UI_BAR_TEXT_Y, 132, "shad");
       break;
 
    default:
-      wpreview_textprintf(340, hud_y, 98, "shad");
+      hud_text(340, hud_y + UI_BAR_TEXT_Y, 98, "shad");
       break;
    }
 
    // other infos
 
    // zoom (+, -)
-   wpreview_textprintf(390, hud_y, 255, "zoom=%i:%i",
+   hud_text(390, hud_y + UI_BAR_TEXT_Y, 255, "zoom=%i:%i",
                        glb_ds1[ds1_idx].height_mul, glb_ds1[ds1_idx].height_div);
 
    // gamma (F12)
-   wpreview_textprintf(490, hud_y, 255, "gamma=%s",
+   hud_text(490, hud_y + UI_BAR_TEXT_Y, 255, "gamma=%s",
                        glb_gamma_str[glb_ds1edit.cur_gamma].str);
 
    // ds1 file name
-   wpreview_textprintf(606, hud_y, 109, "%s",
+   hud_text(606, hud_y + UI_BAR_TEXT_Y, 109, "%s",
                        glb_ds1[ds1_idx].filename);
 
    // cell coordinates
    if (glb_ds1edit.mode == MOD_T)
    {
       // mode Tiles, 1 cell = 1 Tile
-      wpreview_textprintf(
-          0, glb_config.screen.height - 8, 255,
+      hud_text(0, hud_h - UI_BAR_H + UI_BAR_TEXT_Y, 255,
           "Cell (%3i, %3i)",
           cx, cy);
    }
    else
    {
       // mode Objects or Paths, 1 cell = 1 sub-Tile
-      wpreview_textprintf(
-          0, glb_config.screen.height - 8, 255,
+      hud_text(0, hud_h - UI_BAR_H + UI_BAR_TEXT_Y, 255,
           "Sub-Cell (%3i, %3i)",
           cx, cy);
    }
 
    // frames per second
-   wpreview_textprintf(
-       glb_config.screen.width - 80, hud_y, 255,
+   hud_text(hud_w - 80, hud_y + UI_BAR_TEXT_Y, 255,
        "  fps=%i",
        glb_ds1edit.old_fps);
 
    // refresh rate
-   wpreview_textprintf(
-       glb_config.screen.width - 168, glb_config.screen.height - 8,
-       92,
+   hud_text(hud_w - 168, hud_h - UI_BAR_H + UI_BAR_TEXT_Y, 92,
        "%iHz",
        glb_ds1edit.current_refresh_rate);
 
    // current number of objects / max number of objects
-   wpreview_textprintf(
-       200, glb_config.screen.height - 8,
-       92,
+   hud_text(200, hud_h - UI_BAR_H + UI_BAR_TEXT_Y, 92,
        "[Objects : %ld / %ld]",
        glb_ds1[ds1_idx].obj_num,
        glb_ds1[ds1_idx].current_obj_max);
@@ -3359,9 +3358,7 @@ void wpreview_draw_tiles(int ds1_idx)
    // active project (when one is open); sits between [Objects] and Mode
    if (glb_project.is_open)
    {
-      wpreview_textprintf(
-          420, glb_config.screen.height - 8,
-          109,
+      hud_text(420, hud_h - UI_BAR_H + UI_BAR_TEXT_Y, 109,
           "Proj:%.40s",
           glb_project.name[0] ? glb_project.name : "<unnamed>");
    }
@@ -3390,10 +3387,9 @@ void wpreview_draw_tiles(int ds1_idx)
       mode = "?      ";
       break;
    }
-   wpreview_textprintf(
-       glb_config.screen.width - 112, glb_config.screen.height - 8, 255, "Mode :");
-   wpreview_textprintf(
-       glb_config.screen.width - 56, glb_config.screen.height - 8, 108, "%s", mode);
+   hud_text(hud_w - 112, hud_h - UI_BAR_H + UI_BAR_TEXT_Y, 255, "Mode :");
+   hud_text(hud_w - 56, hud_h - UI_BAR_H + UI_BAR_TEXT_Y, 108, "%s", mode);
+   ui_end(&hud_saved);
    render_perf_add(
        &glb_render_perf_stats.hud_ms_total,
        &glb_render_perf_stats.hud_ms_max,
