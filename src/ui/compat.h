@@ -14,6 +14,7 @@
 #include <allegro5/allegro_font.h>
 #include <allegro5/allegro_primitives.h>
 
+#include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -349,6 +350,77 @@ static inline void a5_vline(ALLEGRO_BITMAP *bmp, int x, int y1, int y2, int colo
     } while(0)
 
 
+/* ---- UI scale: see ui/ui_scale.h ---- */
+extern float         a5_ui_scale;
+extern ALLEGRO_FONT *a5_ui_font;
+
+#define UI_BAR_H      14   /* logical height of one bar row, line included */
+#define UI_BAR_TEXT_Y 3    /* where an 8-pixel text cell sits in that row */
+#define UI_TOP_BAR_H  (glb_ds1edit.show_2nd_row ? 2 * UI_BAR_H : UI_BAR_H)
+
+static inline int ui_w(void) { return (int)((float)al_get_display_width(a5_display) / a5_ui_scale); }
+static inline int ui_h(void) { return (int)((float)al_get_display_height(a5_display) / a5_ui_scale); }
+
+static inline void ui_begin(ALLEGRO_TRANSFORM *saved)
+{
+   ALLEGRO_TRANSFORM t;
+
+   al_copy_transform(saved, al_get_current_transform());
+   al_identity_transform(&t);
+   al_scale_transform(&t, a5_ui_scale, a5_ui_scale);
+   al_use_transform(&t);
+}
+
+static inline void ui_end(const ALLEGRO_TRANSFORM *saved)
+{
+   al_use_transform(saved);
+}
+
+/* Draw text at a logical position, centred on the 8-pixel cell callers still
+   lay out for. The glyphs are already at physical size, so the transform comes
+   off for them, and they carry premultiplied alpha whatever blender is set. */
+static inline void ui_text(ALLEGRO_COLOR color, float x, float y, int flags, const char *str)
+{
+   ALLEGRO_TRANSFORM saved, identity;
+   int op, src, dst;
+
+   if (a5_ui_font == NULL)
+   {
+      al_draw_text(a5_font, color, x, y, flags, str);
+      return;
+   }
+
+   al_copy_transform(&saved, al_get_current_transform());
+   al_transform_coordinates(&saved, &x, &y);
+   y += (8.0f * a5_ui_scale - (float)al_get_font_line_height(a5_ui_font)) / 2.0f;
+   al_identity_transform(&identity);
+   al_use_transform(&identity);
+   al_get_blender(&op, &src, &dst);
+   al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_INVERSE_ALPHA);
+   al_draw_text(a5_ui_font, color, (float)(int)x, (float)(int)y, flags, str);
+   al_set_blender(op, src, dst);
+   al_use_transform(&saved);
+}
+
+static inline void ui_textf(ALLEGRO_COLOR color, float x, float y, int flags, const char *fmt, ...)
+{
+   char buf[1024];
+   va_list ap;
+
+   va_start(ap, fmt);
+   vsnprintf(buf, sizeof(buf), fmt, ap);
+   va_end(ap);
+   ui_text(color, x, y, flags, buf);
+}
+
+/* Logical width of a string. */
+static inline int ui_text_width(const char *str)
+{
+   if (a5_ui_font == NULL)
+      return al_get_text_width(a5_font, str);
+   return (int)((float)al_get_text_width(a5_ui_font, str) / a5_ui_scale + 0.5f);
+}
+
 /* ---- Keyboard compat ---- */
 /* Keyboard state: al_key_down(&state, ALLEGRO_KEY_X) */
 extern ALLEGRO_KEYBOARD_STATE a5_kb_state;
@@ -485,6 +557,10 @@ extern ALLEGRO_MOUSE_STATE a5_ms_state;
 #define a5_mouse_y (a5_ms_state.y)
 #define a5_mouse_b (a5_ms_state.buttons)
 #define a5_mouse_z (a5_ms_state.z)
+
+/* The pointer in the logical pixels ui_begin() draws in. */
+#define ui_mouse_x() ((int)((float)a5_mouse_x / a5_ui_scale))
+#define ui_mouse_y() ((int)((float)a5_mouse_y / a5_ui_scale))
 
 /* Everything goes through these rather than al_get_mouse_state() and friends.
    On macOS the pointer comes from Cocoa, not Allegro's driver (mac_pointer.m),
