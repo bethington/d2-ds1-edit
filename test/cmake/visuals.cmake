@@ -58,7 +58,8 @@ ds1edit_visual_test(test_dcc_decode ALLEGRO SOURCES test_dcc_decode.c
     ${_core}/dcc.c ${_core}/index_frame.c ${_vsup} ${_vglobals})
 ds1edit_visual_add_test(dcc_decode test_dcc_decode)
 
-ds1edit_visual_test(test_txtread_buffer ALLEGRO SOURCES test_txtread_buffer.c ${_vsup} ${_vglobals})
+ds1edit_visual_test(test_txtread_buffer ALLEGRO SOURCES test_txtread_buffer.c
+    ${_core}/mpq_index_query.c ${_vsup} ${_vglobals})
 ds1edit_visual_add_test(txtread_buffer test_txtread_buffer)
 
 # The reference probe: decode one asset with the real decoders and write raw

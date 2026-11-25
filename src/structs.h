@@ -598,6 +598,7 @@ typedef struct AREA_GROUP_S
    int  entry_max;             /* Allocated capacity                   */
    int  is_expanded;           /* TRUE if showing individual DS1 files */
    int  is_backup;             /* TRUE if this is a backup group       */
+   int  is_pd2;                /* TRUE if under "Project Diablo 2"     */
 } AREA_GROUP_S;
 
 typedef struct AREA_BROWSER_S
@@ -1296,6 +1297,7 @@ typedef enum RQ_ENUM
    RQ_OBJ,
    RQ_OBJECTS,
    RQ_LEVELS,
+   RQ_LVLSUB,
    RQ_MAX
 } RQ_ENUM;
 

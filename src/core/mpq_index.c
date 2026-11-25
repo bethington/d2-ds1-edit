@@ -17,6 +17,12 @@ static PRESET_ENTRY_S *s_presets    = NULL;
 static int             s_preset_cap = 0;
 static int             s_preset_num = 0;
 static int             s_ready      = 0;
+static SUB_ENTRY_S    *s_subs       = NULL;
+static int             s_sub_num    = 0;
+
+// How many levels of each tileset use each Levels.Pal value.
+#define MPQ_INDEX_TYPE_MAX 256
+static int             s_type_pal[MPQ_INDEX_TYPE_MAX][5];
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -93,7 +99,9 @@ typedef struct LEVELS_ROW_S
 {
    int id;
    int act;
+   int pal;
    int level_type;
+   int sub_type;
 } LEVELS_ROW_S;
 
 typedef struct LVLTYPES_ROW_S
@@ -116,6 +124,44 @@ static int find_lvltype(LVLTYPES_ROW_S *rows, int n, int id)
    return -1;
 }
 
+// LvlSub.txt names its maps by sub-type, and Levels.SubType says who places
+// them. Only some sub-types have a level; the rest stay unlinked. The table is
+// a nicety, so a mod without it costs nothing.
+static void build_sub_entries(const LEVELS_ROW_S *levels_rows, int levels_num)
+{
+   TXT_S *lvlsub = txt_load_lvlsub();
+   char file[MPQ_INDEX_PATH_LEN];
+   int i, l;
+
+   if (lvlsub == NULL) return;
+
+   s_subs = (SUB_ENTRY_S *) calloc(lvlsub->line_num > 0 ? lvlsub->line_num : 1,
+                                   sizeof(SUB_ENTRY_S));
+   if (s_subs != NULL)
+   {
+      for (i = 0; i < lvlsub->line_num; i++)
+      {
+         const int sub_type = (int) read_long_col(lvlsub, i, "Type", RQ_LVLSUB, -1);
+         int level_type = 0;
+
+         read_str_col(lvlsub, i, "File", RQ_LVLSUB, file, MPQ_INDEX_PATH_LEN);
+         if (file[0] == 0 || (file[0] == '0' && file[1] == 0)) continue;
+
+         for (l = 0; l < levels_num; l++)
+         {
+            if (levels_rows[l].id > 0 && levels_rows[l].level_type > 0
+                && levels_rows[l].sub_type == sub_type)
+               level_type = area_merge_level_type(level_type, levels_rows[l].level_type);
+         }
+
+         strcpy(s_subs[s_sub_num].file, file);
+         s_subs[s_sub_num].level_type = level_type;
+         s_sub_num++;
+      }
+   }
+   txt_destroy(lvlsub);
+}
+
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
@@ -127,6 +173,22 @@ void mpq_index_destroy(void)
    s_preset_cap = 0;
    s_preset_num = 0;
    s_ready      = 0;
+   free(s_subs);
+   s_subs       = NULL;
+   s_sub_num    = 0;
+   memset(s_type_pal, 0, sizeof(s_type_pal));
+}
+
+int mpq_index_sub_level_type(const char *ds1_path)
+{
+   if (!s_ready) return -1;
+   return mpq_index_sub_level_type_in(s_subs, s_sub_num, ds1_path);
+}
+
+int mpq_index_lvltype_pal(int level_type)
+{
+   if (!s_ready || level_type <= 0 || level_type >= MPQ_INDEX_TYPE_MAX) return -1;
+   return area_most_common_pal(s_type_pal[level_type]);
 }
 
 int mpq_index_is_ready(void) { return s_ready; }
@@ -189,9 +251,17 @@ int mpq_index_build(void)
    {
       levels_rows[i].id         = (int) read_long_col(levels, i, "Id",        RQ_LEVELS, -1);
       levels_rows[i].act        = (int) read_long_col(levels, i, "Act",       RQ_LEVELS,  0);
+      levels_rows[i].pal        = (int) read_long_col(levels, i, "Pal",       RQ_LEVELS, -1);
       levels_rows[i].level_type = (int) read_long_col(levels, i, "LevelType", RQ_LEVELS, -1);
+      levels_rows[i].sub_type   = (int) read_long_col(levels, i, "SubType",   RQ_LEVELS, -1);
       if (levels_rows[i].id >= 0) levels_n++;
+      if (levels_rows[i].id > 0
+          && levels_rows[i].level_type > 0 && levels_rows[i].level_type < MPQ_INDEX_TYPE_MAX
+          && levels_rows[i].pal >= 0 && levels_rows[i].pal <= 4)
+         s_type_pal[levels_rows[i].level_type][levels_rows[i].pal]++;
    }
+
+   build_sub_entries(levels_rows, levels->line_num);
 
    // LvlTypes.id -> name.
    lvltypes_rows = (LVLTYPES_ROW_S *) calloc(lvltypes->line_num,
@@ -239,6 +309,7 @@ int mpq_index_build(void)
       // Levels.Act is zero-based. LevelId 0 is the Null placeholder, so use
       // the Act prefix in LvlPrest.Name when a preset has no real level row.
       e->level_type = -1;
+      e->pal        = -1;
       e->act        = area_preset_resolve_act(level_id, -1, e->name);
       file_idx = level_id > 0
                ? find_level(levels_rows, levels->line_num, level_id) : -1;
@@ -247,6 +318,7 @@ int mpq_index_build(void)
          e->act = area_preset_resolve_act(level_id,
                                           levels_rows[file_idx].act, e->name);
          e->level_type = levels_rows[file_idx].level_type;
+         e->pal        = levels_rows[file_idx].pal;
       }
 
       // Join LvlTypes -> type_name

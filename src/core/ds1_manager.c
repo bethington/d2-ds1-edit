@@ -644,7 +644,7 @@ static char * txt_read_raw_by_type(RQ_ENUM txt_type, long * out_len)
    long len;
    char * buf;
    const char * filenames[] = {
-      "LvlTypes.txt", "LvlPrest.txt", "obj.txt", "Objects.txt", "Levels.txt"
+      "LvlTypes.txt", "LvlPrest.txt", "obj.txt", "Objects.txt", "Levels.txt", "LvlSub.txt"
    };
    const char * fname;
 
@@ -696,7 +696,7 @@ static int txt_write_raw_by_type(RQ_ENUM txt_type, const char * buf, long len)
    char path[512], dir[512];
    FILE * out;
    const char * filenames[] = {
-      "LvlTypes.txt", "LvlPrest.txt", "obj.txt", "Objects.txt", "Levels.txt"
+      "LvlTypes.txt", "LvlPrest.txt", "obj.txt", "Objects.txt", "Levels.txt", "LvlSub.txt"
    };
 
    if (glb_config.mod_dir[0] == NULL) return -1;

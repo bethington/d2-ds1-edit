@@ -121,6 +121,34 @@ Notable changes to DS1Edit. Releases before 2.1.1 are described on the
   while the key was down, stacking empty undo steps, so the first Ctrl+Z could
   appear to do nothing.
 - **Native dialogs no longer crash the Linux build on Wayland.** Allegro's GTK dialogs wrap the editor's X11 window, and segfaulted when GTK chose its Wayland backend, so an error box such as "The map was not saved" took the editor and any unsaved work with it. The editor now sets `GDK_BACKEND=x11` at startup.
+- **The map browser files maps where they belong.** Maps that `LvlPrest` names
+  under a different word than their area, such as Burbs, Slums and Fortress, no
+  longer land in "Unlisted", so Act 3 Kurast and Act 4 Town are no longer empty.
+  A row's level now outranks its name, so `tempEnter.ds1` and `MtnTop.ds1` open
+  with Barricade tiles instead of mostly missing ones. Maps no table names are
+  placed by the DT1 names saved in the file, which also corrects guesses such as
+  `chaos08x08_4.ds1` in Act 3 Kurast, then by folder. Guild and arena maps have
+  explicit homes. Five of the 952 unlisted maps remain, because nothing in them
+  points to one tileset. Empty areas and repeated maps are gone.
+- **Thirteen maps no longer close the editor.** A map no `LvlPrest` row names,
+  such as `expansion\\lavaE.ds1` or `ACT1\\OUTDOORS\\ruin1.ds1`, stopped the editor
+  with a fatal error if rows in other folders used its filename. Those rows are
+  other maps, so they no longer count, and a map several rows really do name
+  opens with all its tiles enabled.
+- **Maps use the palette the game uses.** The game loads a level's `Pal` column
+  from `Levels.txt`, but the editor used `LvlTypes.txt`'s `Act` and guessed from
+  folder names. Now the map's own level decides, then the levels sharing its
+  tileset. Vanilla maps look the same, and Project Diablo 2's Zhar Rivers, Djinns
+  Domain and guild maps get their real colors. A map with no tileset took its
+  palette from its folder's act even when the file named another; a file naming
+  Act 2 to 5 is now believed.
+- **Project Diablo 2 maps have their own section.** Maps only PD2 ships appear
+  under "Project Diablo 2", named by their `LvlPrest` row, and open with the
+  tileset `Levels.txt` gives them, so they draw in full. A map with no level uses
+  the tileset nearest its saved DT1 names, which may draw only part of it. This
+  needs PD2's current tables: an older `mod_dir` copy of them overrides these
+  names and tilesets.
+
 - **The pointer works on any Mac, including over a remote desktop.** macOS now
   reads the pointer from Cocoa events instead of Allegro's mouse driver, which
   refuses to install on a Mac with no HID pointing device, as with Jump Desktop
