@@ -60,9 +60,21 @@ void setUp(void)
    err[0] = 0;
 }
 
+/* A test that started the fake game returns once fake_game.out appears, which is
+ * just before that process exits. Until it has, Windows keeps its Game.exe or
+ * wrapper.exe locked: the tree can't be removed and the next setUp can't rewrite
+ * Game.exe. Wait for the tree to go, up to 20 seconds. */
 void tearDown(void)
 {
-   tt_remove_tree(root);
+   int i;
+
+   for (i = 0; i < 400; i++)
+   {
+      tt_remove_tree(root);
+      if (!tt_file_exists(root))
+         return;
+      al_rest(0.05);
+   }
 }
 
 static GAME_PROFILE_S profile(const char *dir, const char *exe, const char *args)
@@ -1094,14 +1106,14 @@ static void make_executable(const char *path)
 #endif
 }
 
-/* What the fake game wrote, NUL-ended, or NULL after 5 seconds. Free it. */
+/* What the fake game wrote, NUL-ended, or NULL after 20 seconds. Free it. */
 static char *wait_for_output(void)
 {
    char path[1400];
    int i;
 
    snprintf(path, sizeof(path), "%s/fake_game.out", game);
-   for (i = 0; i < 100; i++)
+   for (i = 0; i < 400; i++)
    {
       char *text = read_text(path);
 
