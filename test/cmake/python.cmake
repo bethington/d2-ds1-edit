@@ -43,6 +43,11 @@ else()
             TIMEOUT 60
             ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1")
     endforeach()
+    # The slowest Python suite: about 20 seconds alone, and it starts a process
+    # per case, so a parallel run beside the adversarial campaign overran 60.
+    if(TEST py_release_record)
+        set_tests_properties(py_release_record PROPERTIES TIMEOUT 240)
+    endif()
     # Lanes that drive a native probe get its path; without it they fail
     # rather than skip.
     if(TARGET test_ds1_reference_probe AND TEST py_ds1_cases)

@@ -97,7 +97,10 @@ env:
 
 jobs:
   windows:
-    runs-on: windows-latest
+    # Pinned: windows-latest is the VS 2026 image, whose MSVC 14.52 can't
+    # compile vcpkg's openal-soft 1.25.2 (alc.cpp, C3889). Go back to
+    # windows-latest once that port builds there.
+    runs-on: windows-2022
     defaults:
       run:
         shell: bash
