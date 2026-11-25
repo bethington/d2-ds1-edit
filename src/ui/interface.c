@@ -17,6 +17,7 @@
 #include "ui/dialogs.h"
 #include "ui/interface.h"
 #include "core/area_browser.h"
+#include "core/area_metadata.h"
 #include "core/ds1_manager.h"
 #include "ui/props_panel.h"
 #include "ui/ui_layout.h"
@@ -1527,12 +1528,15 @@ void interfac_user_handler(int start_ds1_idx)
             sy = s_top + 22 + 4; /* panel_top + SB_HEADER_H + 4 */
             for (si = 0; si < ab->group_count && !found; si++)
             {
-               if (ab->groups[si].act != s_last_act)
+               /* One heading per section, as the panel draws them */
+               int s_section = area_section_key(ab->groups[si].is_pd2, ab->groups[si].act);
+
+               if (s_section != s_last_act)
                {
                   if (s_draw_row >= ab->scroll_offset)
                      sy += 14;
                   s_draw_row++;
-                  s_last_act = ab->groups[si].act;
+                  s_last_act = s_section;
                }
                /* Group row */
                if (s_draw_row >= ab->scroll_offset)
